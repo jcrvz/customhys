@@ -40,8 +40,19 @@ def Jong(x):
 # 0. Basics
 # ---------------------------------------------------------------------------
 
-# 0.1. 
+# 0.1. Rescale population from [lower,upper] to [-1,1] per dimension
+# TODO write this function
+
+# 0.2. Rescale population from [-1,1] to [lower,upper] per dimension
+def rescaleBack(agent, lowerBoundaries, upperBoundaries):
+    if agent.shape[0] == 1:
+        agent.transpose()
+    # y = ((b - a) * x + (a + b)) / 2
+    return ((upperBoundaries + lowerBoundaries) + agent.transpose() * (upperBoundaries - lowerBoundaries)) / 2
+
+# 0.2. Evaluate problem function for each agent into population
 def problemEvaluation(problemFunction,population):
+    # TODO rescale agents
     # Initialise populationFitness array with elements equal to nan
     fitness = np.full(population.shape[1],np.nan)
     for agent in range(0,population.shape[1]):
@@ -75,7 +86,18 @@ def simpleRandomWalk(population, scale = 0.01):
 # ---------------------------------------------------------------------------
 
 # 3.1. 
-def greedySelector(population,fitness,new_population,new_fitness):
+def findBest(population, fitness, bestAgent=None, bestFitness=None):
+    current_bestAgent = population[:,fitness.argmin()]
+    current_bestFitness = fitness.min()
+    if bestFitness:
+        if current_bestFitness > bestFitness:
+            current_bestAgent = bestAgent
+            current_bestFitness = bestFitness                
+    return current_bestAgent, current_bestFitness
+
+# 3.2. 
+def greedySelector(population, fitness, new_population, new_fitness):
+    # TODO improve by using np.ndarray.min(,axis) and np.ndarray.argmin(,axis)
     for agent in range(0,population.shape[1]):
         if new_fitness[agent] <= fitness[agent]:
             fitness[agent] = new_fitness[agent]
