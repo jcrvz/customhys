@@ -8,7 +8,7 @@ Created on Sun Sep 15 16:35:32 2019
 
 from operatos import *
 
-def RandomSearch(problemFunction, nbDimensions=2, nbPopulation=25, nbIterations=100):
+def RandomSearch(problemFunction=Jong, nbDimensions=2, nbPopulation=25, nbIterations=100):
     # Initialisation phase
     population = uniformInitialisation(nbDimensions, nbPopulation)
     

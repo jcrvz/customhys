@@ -18,6 +18,7 @@ Created on Sat Sep 14 16:33:14 2019
 """
 
 import numpy as np
+import random
 
 # -- to delete
 def test():
@@ -68,7 +69,11 @@ def uniformInitialisation(nbDimensions, nbPopulation):
     # Require:  nbDimensions, nbPopulation : int
     # Ensure:   out: ndarray, shape (nbDimensions, nbPopulation), 
     #                elements with uniform distribution between -1 and 1
-    return 2 * np.random.rand(nbDimensions,nbPopulation) - 1
+    population = np.full((nbDimensions, nbPopulation), np.nan)
+    for agent in range(0, nbPopulation):
+        for dimension in range(0, nbDimensions):
+            population[dimension, agent] = random.uniform(-1,1)        
+    return population
 
 #TODO Add more initialisation operators like grid, boundary, etc.
 
@@ -78,8 +83,12 @@ def uniformInitialisation(nbDimensions, nbPopulation):
 
 # 2.1. 
 def simpleRandomWalk(population, scale = 0.01):
-    #TODO if nb arguments are not provided, then calculate them    
-    return population + scale *  (2 * np.random.rand(population.shape[0], population.shape[1]) - 1)# nbDimensions, nbPopulation
+    #TODO if nb arguments are not provided, then calculate them   
+    #new_population = np.full(population.shape, np.nan)
+    for agent in range(0, population.shape[1]):
+        for dimension in range(0, population.shape[0]):
+            population[dimension, agent] += scale * random.uniform(-1,1)        
+    return population
 
 # ---------------------------------------------------------------------------
 # 3. Selectors
