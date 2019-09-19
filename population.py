@@ -136,7 +136,7 @@ class Population():
     # [E] 3.4. Update population positions according to a selection scheme
     def update_population(self, selection_method = "all"):
         for agent in range(0,self.num_agents):
-            if locals()[selection_method+"_selection"](self.fitness[agent], 
+            if getattr(self,selection_method+"_selection")(self.fitness[agent], 
                      self.previous_fitness[agent]):
                 # if new positions are improved, then update past register ...
                 self.previous_fitness[agent] = self.fitness[agent]
@@ -148,8 +148,8 @@ class Population():
 
     # [E] 3.5. Update particular positions acording to a selection scheme
     def update_particular(self, selection_method = "greedy"):        
-        for agent in range(0,self.num_agents):
-            if locals()[selection_method+"_selection"](self.fitness[agent], 
+        for agent in range(0, self.num_agents):            
+            if getattr(self,selection_method+"_selection")(self.fitness[agent], 
                      self.particular_best_fitness[agent]):
                 self.particular_best_fitness[agent] = self.fitness[agent]
                 self.particular_best_position[agent,:] =self.positions[agent,:]
@@ -159,8 +159,8 @@ class Population():
         # Read current global best agent
         current_global_best_position = self.positions[self.fitness.argmin(),:]
         current_global_best_fitness = self.fitness.min()
-        if locals()[selection_method+"_selection"](current_global_best_fitness, 
-                 self.global_best_fitness):
+        if getattr(self,selection_method+"_selection")(current_global_best_fitness, 
+                 self.global_best_fitness) or np.isinf(self.global_best_fitness):
             self.particular_best_position = current_global_best_position
             self.current_global_best_fitness = current_global_best_fitness 
     
@@ -168,16 +168,16 @@ class Population():
     # 4. Selector methods
     # -------------------------------------------------------------------------
     
-    def greedy_selection(new, old, *args):
+    def greedy_selection(self,new, old, *args):
         return new < old
     
-    def none_selection(new, old, *args):
+    def none_selection(self, *args):
         return False
     
-    def all_selection(new, old, *args):
+    def all_selection(self, *args):
         return True
     
-    def metropolis_selection(new, old, T_0=1000, c=0.01, n=1, *args):
+    def metropolis_selection(self, new, old, T_0=1000, c=0.01, n=1, *args):
         # T_0 - initial temperature (T_0)
         # c - cooling rate (c)
         # n - current iteration (it | n)
