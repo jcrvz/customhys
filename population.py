@@ -5,9 +5,11 @@ Created on Tue Sep 17 14:29:43 2019
 @author: jkpvsz
 """
 import numpy as np
+from itertools import combinations
 
 __operators__ = ['random_search', 'random_sample', 'rayleigh_flight', 'inertial_pso',
-                 'constricted_pso','levy_flight']
+                 'constricted_pso','levy_flight','mutation_de',
+                 'binomial_crossover_de','exponential_crossover_de']
 __selection__ = ['all','none','greedy','metropolis']
 
 class Population():
@@ -27,8 +29,18 @@ class Population():
     
     levy_alpha = 1.0
     levy_beta = 1.5
+    cs_probability = 0.75
     
+    de_f = 0.8
+    de_cr = 0.2
+    de_mutation_scheme = ("current-to-best",1) # DE/current-to-best/1/
+    
+    # Random-based search parameter
     random_scale = 0.01
+    
+    rotation_angle = np.pi/8
+    spiral_radius = 0.9
+    rotation_matrix = []
 
     def __init__(self, problem, desired_fitness = 1E-6, num_agents = 30, 
                  is_constrained = True):        
@@ -108,48 +120,19 @@ class Population():
             self.num_dimensions))
         if self.is_constrained: self.check_simple_constraints()
     
-    # [E] 2.1. Random Walk    
+    # [E] 2.2. Random Walk    
     def random_search(self):
         self.positions += self.random_scale * np.random.uniform(-1,1,
             (self.num_agents, self.num_dimensions))
         if self.is_constrained: self.check_simple_constraints()    
     
+    # [E] 2.3. Rayleigh Flight 
     def rayleigh_flight(self):
         self.positions += self.random_scale * np.random.standard_normal(
             (self.num_agents, self.num_dimensions))
         if self.is_constrained: self.check_simple_constraints()
-    
-    # [E] 2.2. Inertial PSO movement
-    def inertial_pso(self):        
-        r_1 = self.pso_self_confidence * \
-                np.random.uniform(0,1,(self.num_agents, self.num_dimensions))
-        r_2 = self.pso_swarm_confidence * \
-                np.random.uniform(0,1,(self.num_agents, self.num_dimensions))
         
-        self.velocities = self.pso_inertial * self.velocities + r_1 * \
-                (self.particular_best_positions - self.positions) + r_2 * \
-                (np.tile(self.global_best_position, (self.num_agents, 1)) - \
-                 self.positions)
-        self.positions += self.velocities
-        if self.is_constrained: self.check_simple_constraints()
-    
-    # [E] 2.3. Constricted PSO movement                
-    def constricted_pso(self):
-        phi = self.pso_self_confidence + self.pso_swarm_confidence
-        chi = 2 * self.pso_kappa / np.abs(2 - phi - np.sqrt(phi**2 - 4*phi))
-        r_1 = self.pso_self_confidence * \
-                np.random.uniform(0,1,(self.num_agents, self.num_dimensions))
-        r_2 = self.pso_swarm_confidence * \
-                np.random.uniform(0,1,(self.num_agents, self.num_dimensions))
-        
-        self.velocities = chi *(self.velocities + r_1 * \
-                (self.particular_best_positions - self.positions) + r_2 * \
-                (np.tile(self.global_best_position, (self.num_agents, 1)) - \
-                 self.positions))
-        self.positions += self.velocities
-        if self.is_constrained: self.check_simple_constraints()
-        
-    # [E] 2.4. Lévy flight from Cuckoo Search
+    # [E] 2.4. Lévy flight (Mantegna's algorithm)
     def levy_flight(self):
         # Calculate std dev of u (Mantegna's algorithm)
         sigma = ((np.math.gamma(1 + self.levy_beta) * np.sin(np.pi*
@@ -166,7 +149,137 @@ class Population():
         
         self.positions += self.levy_alpha * z * levy * (self.positions - \
                 np.tile(self.global_best_position, (self.num_agents, 1)))
+    
+    # [E] 2.5. Inertial PSO movement
+    def inertial_pso(self):        
+        r_1 = self.pso_self_confidence * \
+                np.random.uniform(0,1,(self.num_agents, self.num_dimensions))
+        r_2 = self.pso_swarm_confidence * \
+                np.random.uniform(0,1,(self.num_agents, self.num_dimensions))
         
+        self.velocities = self.pso_inertial * self.velocities + r_1 * \
+                (self.particular_best_positions - self.positions) + r_2 * \
+                (np.tile(self.global_best_position, (self.num_agents, 1)) - \
+                 self.positions)
+        self.positions += self.velocities
+        if self.is_constrained: self.check_simple_constraints()
+    
+    # [E] 2.6. Constricted PSO movement                
+    def constricted_pso(self):
+        phi = self.pso_self_confidence + self.pso_swarm_confidence
+        chi = 2 * self.pso_kappa / np.abs(2 - phi - np.sqrt(phi**2 - 4*phi))
+        r_1 = self.pso_self_confidence * \
+                np.random.uniform(0,1,(self.num_agents, self.num_dimensions))
+        r_2 = self.pso_swarm_confidence * \
+                np.random.uniform(0,1,(self.num_agents, self.num_dimensions))
+        
+        self.velocities = chi *(self.velocities + r_1 * \
+                (self.particular_best_positions - self.positions) + r_2 * \
+                (np.tile(self.global_best_position, (self.num_agents, 1)) - \
+                 self.positions))
+        self.positions += self.velocities
+        if self.is_constrained: self.check_simple_constraints()
+        
+    # [E] 2.7. Differential evolution mutation
+    def mutation_de(self):
+        # Read the kind of expression and the number of sums to use
+        expression, num_rands = self.de_mutation_scheme 
+        
+        if expression == "rand":
+            mutant = self.positions[np.random.permutation(self.num_agents),:]
+            
+        elif expression == "best": 
+            mutant = np.tile(self.global_best_position, (self.num_agents, 1)) 
+            
+        elif expression == "current":            
+            mutant = self.positions  
+            
+        elif expression == "current-to-best":
+            mutant = self.positions + self.de_f * ( np.tile(
+                self.global_best_position, (self.num_agents, 1)) - \
+                self.positions[np.random.permutation(self.num_agents),:] )  
+            
+        elif expression == "rand-to-best":
+            mutant = self.positions[np.random.permutation(self.num_agents),:] \
+                + self.de_f * ( np.tile(self.global_best_position, 
+                (self.num_agents, 1)) - self.positions[np.random.permutation( \
+                self.num_agents),:] )    
+                
+        elif expression == "rand-to-bestandcurrent":
+            mutant = self.positions[np.random.permutation(self.num_agents),:] \
+                + self.de_f * ( np.tile(self.global_best_position, 
+                (self.num_agents, 1)) - self.positions[np.random.permutation( \
+                self.num_agents),:] + self.positions[np.random.permutation(   \
+                self.num_agents),:] - self.positions)        
+        else:
+            print('[Error] Check de_mutation_scheme!')
+            
+        if num_rands >= 0:
+            for _ in range(num_rands):
+                mutant += self.de_f * (self.positions[np.random.permutation(  \
+                self.num_agents),:] - self.positions[np.random.permutation(   \
+                self.num_agents),:])
+        else:
+            print('[Error] Check de_mutation_scheme!')
+        
+        self.positions = mutant
+        if self.is_constrained: self.check_simple_constraints()
+    
+    # [E] 2.8. Binomial crossover from Differential evolution
+    def binomial_crossover_de(self):
+        indices = np.tile(np.arange(self.num_dimensions),(self.num_agents,1))
+        rand_indices = np.vectorize(np.random.permutation, 
+                signature='(n)->(n)')(indices)
+        
+        condition = np.logical_not((indices == rand_indices) | (np.random.rand(
+                self.num_agents, self.num_dimensions) <= self.de_cr))
+        
+        # It is assumed that mutants are already in current population
+        self.positions[condition] = self.previous_positions[condition]
+        
+        if self.is_constrained: self.check_simple_constraints()
+    
+    # [E] 2.9. Exponential crossover from Differential evolution
+    def exponential_crossover_de(self):
+        for agent in range(self.num_agents):
+            for dim in range(self.num_dimensions):
+                L = 0; n = np.random.randint(self.num_dimensions)
+                while True:
+                    L += 1
+                    if np.logical_not((np.random.rand() < self.de_cr) and 
+                        (L < self.num_dimensions)):
+                        break
+                if not dim in [(n + x) % self.num_dimensions for x in 
+                    range(L)]:
+                    self.positions[agent, dim] = \
+                        self.previous_positions[agent, dim]
+        if self.is_constrained: self.check_simple_constraints()
+    
+    
+    # [E] 2.10. Local random walk from Cuckoo Search
+    def local_random_walk(self):
+        r_1 = self.pso_self_confidence * \
+                np.random.uniform(0,1,(self.num_agents, self.num_dimensions))
+        r_2 = self.pso_swarm_confidence * \
+                np.random.uniform(0,1,(self.num_agents, self.num_dimensions))
+                
+        self.positions += r_1 * (self.positions[np.random.permutation(   \
+                self.num_agents),:] - self.positions[np.random.permutation(   \
+                self.num_agents),:])* np.heaviside(r_2 - self.cs_probability,0)
+        
+        if self.is_constrained: self.check_simple_constraints()
+        
+    # [E] 2.11. Spiral dynamic
+    def spiral_dynamic(self):
+        # Update rotation matrix 
+        self.get_rotation_matrix()
+        
+        for agent in range(self.num_agents):
+            self.positions[agent,:] = self.global_best_position + \
+                self.spiral_radius * np.matmul(self.rotation_matrix, 
+                (self.positions[agent,:] - self.global_best_position))
+                
+        if self.is_constrained: self.check_simple_constraints()
                 
     # -------------------------------------------------------------------------
     # 3. Basic methods
@@ -192,13 +305,13 @@ class Population():
 
     # [E] 3.3. Evaluate population positions in the problem function
     def evaluate_fitness(self):
-        for agent in range(0, self.num_agents):
+        for agent in range(self.num_agents):
             self.fitness[agent] = self.problem.get_func_val(
                     self.rescale_back(self.positions[agent,:]))
     
     # [E] 3.4. Update population positions according to a selection scheme
     def update_population(self, selection_method = "all"):
-        for agent in range(0,self.num_agents):
+        for agent in range(self.num_agents):
             if getattr(self,selection_method+"_selection")(self.fitness[agent], 
                      self.previous_fitness[agent]):
                 # if new positions are improved, then update past register ...
@@ -213,7 +326,7 @@ class Population():
 
     # [E] 3.5. Update particular positions acording to a selection scheme
     def update_particular(self, selection_method = "greedy"):        
-        for agent in range(0, self.num_agents):            
+        for agent in range(self.num_agents):            
             if getattr(self,selection_method+"_selection")(self.fitness[agent], 
                      self.particular_best_fitness[agent]):
                 self.particular_best_fitness[agent] = self.fitness[agent]
@@ -254,6 +367,31 @@ class Population():
             else: selection_conditon = False
         return selection_conditon 
     
-    
+    # -------------------------------------------------------------------------
+    # 5. Additional tools
+    # -------------------------------------------------------------------------
+    def get_rotation_matrix(self):
+        # Initialise the rotation matrix
+        R = np.eye(self.num_dimensions)
         
+        # Find the combinations without repetions
+        planes = list(combinations(range(self.num_dimensions),2))
         
+        # Create the rotation matrix
+        for xy in range(len(planes)):
+            # Read dimensions
+            x, y = planes[xy]
+            
+            # (Re)-initialise a rotation matrix for each plane
+            rotation_plane = np.eye(self.num_dimensions)
+            
+            # Assign corresponding values
+            rotation_plane[x,y] = np.cos(self.rotation_angle) 
+            rotation_plane[y,y] = np.cos(self.rotation_angle) 
+            rotation_plane[x,y] = -np.sin(self.rotation_angle) 
+            rotation_plane[y,x] = np.sin(self.rotation_angle) 
+            
+            R = np.matmul(R,rotation_plane)
+        
+        self.rotation_matrix = R
+            
