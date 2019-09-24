@@ -9,7 +9,8 @@ from itertools import combinations
 
 __operators__ = ['random_search', 'random_sample', 'rayleigh_flight', 'inertial_pso',
                  'constricted_pso','levy_flight','mutation_de',
-                 'binomial_crossover_de','exponential_crossover_de']
+                 'binomial_crossover_de','exponential_crossover_de', 
+                 'deterministic_spiral', 'stochastic_spiral', 'central_force']
 __selection__ = ['all','none','greedy','metropolis']
 
 class Population():
@@ -18,8 +19,9 @@ class Population():
     iteration = 1
     
     # Parameters per selection method    
-    metropolis_temperature = 1000
+    metropolis_temperature = 1000.1
     metropolis_rate = 0.01
+    boltzmann_constant = 1.0
     
     # Parameters per perturbation operator
     pso_self_confidence = 2.25
@@ -40,7 +42,18 @@ class Population():
     
     rotation_angle = np.pi/8
     spiral_radius = 0.9
+    radius_span = 0.2 # random radii = spiral_radius +/- radius_span
     rotation_matrix = []
+    
+    firefly_epsilon = "uniform" # "gaussian" or "uniform"
+    firefly_gamma = 1.0
+    firefly_beta = 1.0
+    firefly_alpha = 0.2
+    
+    cf_gravity = 2.0
+    cf_alpha = 1.0
+    cf_beta = 2.0
+    cf_time_interval = 1.0
 
     def __init__(self, problem, desired_fitness = 1E-6, num_agents = 30, 
                  is_constrained = True):        
@@ -268,19 +281,103 @@ class Population():
                 self.num_agents),:])* np.heaviside(r_2 - self.cs_probability,0)
         
         if self.is_constrained: self.check_simple_constraints()
-        
-    # [E] 2.11. Spiral dynamic
+    
+    # [E] 2.11. Deterministic Spiral dynamic
     def spiral_dynamic(self):
         # Update rotation matrix 
         self.get_rotation_matrix()
         
         for agent in range(self.num_agents):
+            random_radii = np.random.uniform(self.spiral_radius - 
+                self.radius_span/2, self.spiral_radius + self.radius_span/2, 
+                self.num_dimensions)
             self.positions[agent,:] = self.global_best_position + \
-                self.spiral_radius * np.matmul(self.rotation_matrix, 
+                random_radii * np.matmul(self.rotation_matrix, 
                 (self.positions[agent,:] - self.global_best_position))
                 
         if self.is_constrained: self.check_simple_constraints()
                 
+#    # [E] 2.12. Firefly (base)
+#    def firefly(self):
+#        light_intensity = np.sort(self.fitness)
+#        indices = np.argsort(self.fitness)
+#        fireflies = self.positions[indices,:]
+#        
+#        for candidate in range(self.num_agents):
+#            for agent in range(self.num_agents):
+#                if light_intensity[candidate] < light_intensity[agent]:
+#                    # Determine vectorial distance
+#                    delta = fireflies[candidate,:] - fireflies[agent,:]
+#                    
+#                    # Find epsilon 
+#                    if self.firefly_epsilon == "gaussian":
+#                        epsilon =np.random.standard_normal(self.num_dimensions)
+#                    if self.firefly_epsilon == "uniform":
+#                        epsilon=np.random.uniform(-0.5,0.5,self.num_dimensions)
+#                        
+#                    fireflies[agent,:] += self.firefly_beta * np.exp(
+#                            -self.firefly_gamma*(np.linalg.norm(delta)**2)) * \
+#                        delta + self.firefly_alpha * epsilon
+#        
+#        self.positions[indices,:] = fireflies
+#        if self.is_constrained: self.check_simple_constraints()
+    
+    # [E] 2.12. Firefly (generalised)
+    def firefly(self):
+        # Find epsilon 
+        if self.firefly_epsilon == "gaussian":
+            epsilon = np.random.standard_normal((self.num_agents, 
+                self.num_dimensions))
+        if self.firefly_epsilon == "uniform":
+            epsilon = np.random.uniform(-0.5,0.5,(self.num_agents, 
+                self.num_dimensions))
+            
+        # Initialise delta
+        delta = np.zeros((self.num_agents,self.num_dimensions))
+        
+        for candidate in range(self.num_agents):
+            for agent in range(self.num_agents):
+                if self.fitness[candidate] < self.fitness[agent]:
+                    # Determine vectorial distance
+                    delta[candidate,:] = self.positions[candidate,:] - \
+                        self.positions[agent,:]       
+        
+        self.positions += self.firefly_beta * np.exp( -self.firefly_gamma*
+            (np.linalg.norm(delta)**2)) * delta + self.firefly_alpha * epsilon
+        if self.is_constrained: self.check_simple_constraints()
+    
+    # [E] 2.13. Central Force Optimisation (CFO)
+    def central_force(self):
+        # Initialise acceleration
+        acceleration = np.zeros((self.num_agents, self.num_dimensions))
+        
+        for agent in range(self.num_agents):
+            # Select indices in order to avoid division by zero
+            indices = (np.arange(self.num_agents) != agent)
+            
+            # Determine all masses differences with respect to agent
+            delta_masses = self.fitness[indices] - np.tile(self.fitness[agent],
+                (1,self.num_agents-1))
+            
+            # Determine all vectorial distances with respect to agent
+            delta_positions = self.positions[indices,:] - np.tile(
+                self.positions[agent,:],(self.num_agents-1, 1))
+            
+            distances = np.linalg.norm(delta_positions,2,1)
+            
+            # Find the quotient part    ! -> - delta_masses (cz minimisation)
+            quotient = np.heaviside(-delta_masses,0) * (np.abs(delta_masses)**\
+                self.cf_alpha)/(distances**self.cf_beta)
+            
+            # Determine the acceleraton for each agent
+            acceleration[agent,:] = self.cf_gravity * np.sum( delta_positions *
+                np.tile(quotient.transpose(), (1,self.num_dimensions)), 0)
+        
+        self.positions += 0.5 * acceleration * (self.cf_time_interval ** 2)
+        
+        if self.is_constrained: self.check_simple_constraints()
+                
+        
     # -------------------------------------------------------------------------
     # 3. Basic methods
     # -------------------------------------------------------------------------
@@ -361,8 +458,9 @@ class Population():
         # It depends of metropolis_temperature, metropolis_rate, and iteration
         if new <= old: selection_conditon = True
         else:
-            if np.math.exp(-(new - old)/(self.metropolis_temperature*\
-                (1 - self.metropolis_rate)**self.iteration))> np.random.rand(): 
+            if np.math.exp(-(new - old)/(self.boltzmann_constant * \
+                self.metropolis_temperature * ((1 - \
+                self.metropolis_rate)**self.iteration)))> np.random.rand(): 
                 selection_conditon = True
             else: selection_conditon = False
         return selection_conditon 
