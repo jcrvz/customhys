@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Sep 25 15:19:20 2019
+
+@author: L03130342
+"""
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -15,18 +22,18 @@ import matplotlib.pyplot as plt
     # Problem definition
 num_dimensions = 2
 num_agents = 50
-num_iterations = 1000
+num_iterations = 100
 
-problem = bf.Sphere(num_dimensions)
+#problem = bf.Sphere(num_dimensions)
 #problem = bf.Rosenbrock(num_dimensions)
 #problem = bf.Ackley(num_dimensions)
-#problem = bf.Griewank(num_dimensions)
+problem = bf.Griewank(num_dimensions)
 
 is_constrained = True
 desired_fitness = 1e-6
 
-problem.max_search_range = problem.max_search_range/100
-problem.min_search_range = problem.min_search_range/100
+#problem.max_search_range = problem.max_search_range/100
+#problem.min_search_range = problem.min_search_range/100
     
     # Call optimisation method
 #RandomSearch(problem, num_dimensions, num_agents, num_iterations, 
@@ -58,12 +65,12 @@ pop.update_global("greedy")
 
 #pop.pso_self_confidence = 1.56  # <- inertial
 #pop.pso_swarm_confidence = 1.56 # <-inertial 
-#pop.pso_self_confidence = 2.25  # <- constraint
-#pop.pso_swarm_confidence = 2.56 # <- constraint
-#pop.pso_kappa = 1.0
-#pop.pso_inertial = 0.6
+pop.pso_self_confidence = 2.25  # <- constraint
+pop.pso_swarm_confidence = 2.56 # <- constraint
+pop.pso_kappa = 1.0
+pop.pso_inertial = 0.6
 
-#pop.cs_probability = 0.75
+pop.cs_probability = 0.75
 
 pop.metropolis_temperature = 10000
 pop.metropolis_rate = 1
@@ -75,15 +82,15 @@ pop.de_cr = 0.5
 pop.spiral_radius = 0.9
 pop.radius_span = 0.2
 
-#pop.firefly_epsilon = "uniform"
-#pop.firefly_gamma = 1.0
-#pop.firefly_beta = 1.0
-#pop.firefly_alpha = 0.8
+pop.firefly_epsilon = "uniform"
+pop.firefly_gamma = 1.0
+pop.firefly_beta = 1.0
+pop.firefly_alpha = 0.8
 
-#pop.cf_gravity = 0.001
-#pop.cf_alpha = 0.001
-#pop.cf_beta = 1.5
-#pop.cf_time_interval = 1.0
+pop.cf_gravity = 0.001
+pop.cf_alpha = 0.001
+pop.cf_beta = 1.5
+pop.cf_time_interval = 1.0
 
 pop.gs_gravity = 1
 pop.gs_alpha = 2/100
@@ -103,13 +110,13 @@ for iteration in range(1, num_iterations + 1):
 #    pop.random_sample()
 #    pop.rayleigh_flight()
 #    pop.levy_flight()          # CS
-#    pop.local_random_walk()    # CS
+    pop.local_random_walk()    # CS
 #    pop.mutation_de()          # DE
 #    pop.firefly()              # FA
     
 #    pop.constricted_pso()      # PSO
 #    pop.inertial_pso()         # PSO     
-    pop.spiral_dynamic(0.89,22.5,0)       # D/S-SOA
+#    pop.spiral_dynamic()       # D/S-SOA
 #    pop.central_force()        # CFO    
 #    pop.gravitational_search() # GSA    
     
@@ -142,3 +149,29 @@ for iteration in range(1, num_iterations + 1):
         
 plt.ioff()
 plt.show()
+
+
+#    # [E] 2.12. Firefly (base)
+#    def firefly(self):
+#        light_intensity = np.sort(self.fitness)
+#        indices = np.argsort(self.fitness)
+#        fireflies = self.positions[indices,:]
+#        
+#        for candidate in range(self.num_agents):
+#            for agent in range(self.num_agents):
+#                if light_intensity[candidate] < light_intensity[agent]:
+#                    # Determine vectorial distance
+#                    delta = fireflies[candidate,:] - fireflies[agent,:]
+#                    
+#                    # Find epsilon 
+#                    if self.firefly_epsilon == "gaussian":
+#                        epsilon =np.random.standard_normal(self.num_dimensions)
+#                    if self.firefly_epsilon == "uniform":
+#                        epsilon=np.random.uniform(-0.5,0.5,self.num_dimensions)
+#                        
+#                    fireflies[agent,:] += self.firefly_beta * np.exp(
+#                            -self.firefly_gamma*(np.linalg.norm(delta)**2)) * \
+#                        delta + self.firefly_alpha * epsilon
+#        
+#        self.positions[indices,:] = fireflies
+#        if self.is_constrained: self.check_simple_constraints()

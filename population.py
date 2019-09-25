@@ -7,10 +7,11 @@ Created on Tue Sep 17 14:29:43 2019
 import numpy as np
 from itertools import combinations
 
-__operators__ = ['random_search', 'random_sample', 'rayleigh_flight', 'inertial_pso',
-                 'constricted_pso','levy_flight','mutation_de',
+__operators__ = ['random_search', 'random_sample', 'rayleigh_flight', 
+                 'inertial_pso', 'constricted_pso','levy_flight','mutation_de',
                  'binomial_crossover_de','exponential_crossover_de', 
-                 'deterministic_spiral', 'stochastic_spiral', 'central_force']
+                 'deterministic_spiral', 'stochastic_spiral', 'central_force',
+                 'gravitational_search']
 __selection__ = ['all','none','greedy','metropolis']
 
 class Population():
@@ -19,31 +20,31 @@ class Population():
     iteration = 1
     
     # Parameters per selection method    
-    metropolis_temperature = 1000.1
+    metropolis_temperature = 1000.0
     metropolis_rate = 0.01
     boltzmann_constant = 1.0
     
     # Parameters per perturbation operator
-    pso_self_confidence = 2.25
-    pso_swarm_confidence = 2.52
-    pso_kappa = 1.0
-    pso_inertial = 0.8
+#    pso_self_confidence = 2.25
+#    pso_swarm_confidence = 2.52
+#    pso_kappa = 1.0
+#    pso_inertial = 0.8
     
-    levy_alpha = 1.0
-    levy_beta = 1.5
-    cs_probability = 0.75
+#    levy_alpha = 1.0
+#    levy_beta = 1.5
+#    cs_probability = 0.75
     
-    de_f = 0.8
-    de_cr = 0.2
-    de_mutation_scheme = ("current-to-best",1) # DE/current-to-best/1/
+#    de_f = 0.8
+#    de_cr = 0.2
+#    de_mutation_scheme = ("current-to-best",1) # DE/current-to-best/1/
     
     # Random-based search parameter
-    random_scale = 0.01
+#    random_scale = 0.01
     
-    rotation_angle = np.pi/8
-    spiral_radius = 0.9
-    radius_span = 0.2 # random radii = spiral_radius +/- radius_span
-    rotation_matrix = []
+    __rotation_angle = np.pi/8
+#    spiral_radius = 0.9
+#    radius_span = 0.2 # random radii = spiral_radius +/- radius_span
+    __rotation_matrix = []
     
     firefly_epsilon = "uniform" # "gaussian" or "uniform"
     firefly_gamma = 1.0
@@ -54,8 +55,12 @@ class Population():
     cf_alpha = 1.0
     cf_beta = 2.0
     cf_time_interval = 1.0
+    
+    gs_gravity = 100
+    gs_alpha = 0.2
+    gs_epsilon = 1e-23
 
-    def __init__(self, problem, desired_fitness = 1E-6, num_agents = 30, 
+    def __init__(self, problem, desired_fitness = 1e-6, num_agents = 30, 
                  is_constrained = True):        
         # Read problem (from opteval import benchmark_func as bf)
         self.problem = problem
@@ -77,17 +82,17 @@ class Population():
         
         # Initialise positions and fitness values
         self.positions = np.full((self.num_agents, self.num_dimensions),np.nan)
-        self.fitness = np.full(self.num_agents, np.nan)
-        
-        # Initialise additional params (those corresponding to other algs)
-        # -> Velocities for PSO-based search methods
-#        self.velocities = np.random.uniform(-self.span_boundaries, 
-#                self.span_boundaries, (self.num_agents, self.num_dimensions))
         self.velocities = np.full((self.num_agents, self.num_dimensions), 0)
-        
+        self.fitness = np.full(self.num_agents, np.nan)
+                
         # General fitness measurements        
         self.global_best_position = np.full(self.num_dimensions, np.nan)
         self.global_best_fitness = float('inf')
+        
+        self.current_best_position = np.full(self.num_dimensions, np.nan)
+        self.current_best_fitness = float('inf')
+        self.current_worst_position = np.full(self.num_dimensions, np.nan)
+        self.current_worst_fitness = -float('inf')
     
         self.particular_best_positions = np.full(
                 (self.num_agents,self.num_dimensions), np.nan)
@@ -95,10 +100,9 @@ class Population():
         
         self.previous_positions = np.full((self.num_agents, 
                                            self.num_dimensions), np.nan)
-        self.previous_fitness = np.full(self.num_agents,np.nan)
-        
         self.previous_velocities = np.full((self.num_agents, 
                                             self.num_dimensions), np.nan)
+        self.previous_fitness = np.full(self.num_agents,np.nan)
         
         self.is_constrained = is_constrained
         
@@ -106,16 +110,17 @@ class Population():
         # self.local_best_fitness = self.fitness
         # self.local_best_positions = self.positions
     
-    # [E] Generate a string containing the current state of the population
+    # 0. Generate a string containing the current state of the population
     def get_state(self):
-        return ("x_best = "+str(self.rescale_back(self.global_best_position))+
-                ", with f_best = "+str(self.global_best_fitness))
+        return ("x_best = " + str(self.__rescale_back(
+                self.global_best_position)) + ", with f_best = " + 
+                str(self.global_best_fitness))
     
     # -------------------------------------------------------------------------
     # 1. Initialisators
     # -------------------------------------------------------------------------
     
-    # [E] 1.1. Initialise population using a random uniform distribution in [-1,1]]
+    # [1.1. Initialise population using a random uniform in [-1,1]]
     def initialise_uniformly(self):
         for agent in range(0, self.num_agents):
             self.positions[agent] = np.random.uniform(-1, 1, 
@@ -127,77 +132,111 @@ class Population():
     # 2. Perturbators
     # -------------------------------------------------------------------------
     
-    # [E] 2.1. Random sample  
+    # 2.1. Random sample  
+    # -------------------------------------------------------------------------
     def random_sample(self):
+        # Create random positions using random numbers between -1 and 1
         self.positions = np.random.uniform(-1,1,(self.num_agents, 
-            self.num_dimensions))
-        if self.is_constrained: self.check_simple_constraints()
-    
-    # [E] 2.2. Random Walk    
-    def random_search(self):
-        self.positions += self.random_scale * np.random.uniform(-1,1,
-            (self.num_agents, self.num_dimensions))
-        if self.is_constrained: self.check_simple_constraints()    
-    
-    # [E] 2.3. Rayleigh Flight 
-    def rayleigh_flight(self):
-        self.positions += self.random_scale * np.random.standard_normal(
-            (self.num_agents, self.num_dimensions))
-        if self.is_constrained: self.check_simple_constraints()
+            self.num_dimensions))      
         
-    # [E] 2.4. Lévy flight (Mantegna's algorithm)
-    def levy_flight(self):
-        # Calculate std dev of u (Mantegna's algorithm)
-        sigma = ((np.math.gamma(1 + self.levy_beta) * np.sin(np.pi*
-            self.levy_beta/2)) / (np.math.gamma((1 + self.levy_beta)/2)*\
-            self.levy_beta*(2**((self.levy_beta - 1)/2))))** (1/self.levy_beta)
+        # Check constraints
+        if self.is_constrained: self.__check_simple_constraints()
+    
+    # 2.2. Random Walk   
+    # -------------------------------------------------------------------------
+    def random_search(self, scale = 0.01):
+        # Move each agent using uniform random displacements
+        self.positions += scale * np.random.uniform(-1,1,(self.num_agents,
+            self.num_dimensions))  
         
+        # Check constraints
+        if self.is_constrained: self.__check_simple_constraints()    
+    
+    # 2.3. Rayleigh Flight 
+    # -------------------------------------------------------------------------
+    def rayleigh_flight(self, scale = 0.01):
+        # Move each agent using gaussian random displacements
+        self.positions += scale * np.random.standard_normal((self.num_agents, 
+            self.num_dimensions))   
+        
+        # Check constraints
+        if self.is_constrained: self.__check_simple_constraints()
+        
+    # 2.4. Lévy flight (Mantegna's algorithm)
+    # -------------------------------------------------------------------------
+    def levy_flight(self, scale = 1.0, beta = 1.5):
+        # Calculate x's std dev (Mantegna's algorithm)
+        sigma = ((np.math.gamma(1 + beta) * np.sin(np.pi * beta/2)) / 
+            (np.math.gamma((1 + beta)/2) * beta*(2**((beta - 1)/2))))**(1/beta)
+        
+        # Determine x and y using normal distributions with sigma_y = 1
         x = sigma * np.random.standard_normal((self.num_agents, 
                 self.num_dimensions))
         y = np.abs(np.random.standard_normal((self.num_agents, 
-                self.num_dimensions)))
+                self.num_dimensions)))       
+        
+        # Calculate the random number with levy stable distribution
+        levy_random = x / (y ** (1/beta))
+        
+        # Determine z as an additional normal random number
         z = np.random.standard_normal((self.num_agents, self.num_dimensions))
         
-        levy = x / (y ** (1/self.levy_beta))
+        # Move each agent using levy random displacements
+        self.positions += scale * z * levy_random * (self.positions - \
+                np.tile(self.global_best_position, (self.num_agents, 1)))    
         
-        self.positions += self.levy_alpha * z * levy * (self.positions - \
-                np.tile(self.global_best_position, (self.num_agents, 1)))
-    
-    # [E] 2.5. Inertial PSO movement
-    def inertial_pso(self):        
-        r_1 = self.pso_self_confidence * \
-                np.random.uniform(0,1,(self.num_agents, self.num_dimensions))
-        r_2 = self.pso_swarm_confidence * \
-                np.random.uniform(0,1,(self.num_agents, self.num_dimensions))
+        # Check constraints
+        if self.is_constrained: self.__check_simple_constraints()
         
-        self.velocities = self.pso_inertial * self.velocities + r_1 * \
-                (self.particular_best_positions - self.positions) + r_2 * \
-                (np.tile(self.global_best_position, (self.num_agents, 1)) - \
-                 self.positions)
-        self.positions += self.velocities
-        if self.is_constrained: self.check_simple_constraints()
+    # 2.5. Inertial PSO movement
+    # -------------------------------------------------------------------------
+    def inertial_pso(self, inertial = 0.7, self_conf = 1.54, swarm_conf =1.56):   
+        # Determine random numbers
+        r_1 = self_conf * np.random.rand(self.num_agents, self.num_dimensions)
+        r_2 = swarm_conf * np.random.rand(self.num_agents, self.num_dimensions)
+        
+        # Find new velocities 
+        self.velocities = inertial * self.velocities + r_1 * (
+                self.particular_best_positions - self.positions) + r_2 * (
+                np.tile(self.global_best_position, (self.num_agents, 1)) -
+                self.positions)
+        
+        # Move each agent using velocity's information
+        self.positions += self.velocities        
+        
+        # Check constraints
+        if self.is_constrained: self.__check_simple_constraints()
     
-    # [E] 2.6. Constricted PSO movement                
-    def constricted_pso(self):
-        phi = self.pso_self_confidence + self.pso_swarm_confidence
+    # 2.6. Constricted PSO movement  
+    # -------------------------------------------------------------------------              
+    def constricted_pso(self, kappa = 1.0, self_conf = 2.54, swarm_conf =2.56):
+        # Find the constriction factor chi using phi
+        phi = self_conf + swarm_conf
         chi = 2 * self.pso_kappa / np.abs(2 - phi - np.sqrt(phi**2 - 4*phi))
-        r_1 = self.pso_self_confidence * \
-                np.random.uniform(0,1,(self.num_agents, self.num_dimensions))
-        r_2 = self.pso_swarm_confidence * \
-                np.random.uniform(0,1,(self.num_agents, self.num_dimensions))
         
-        self.velocities = chi *(self.velocities + r_1 * \
-                (self.particular_best_positions - self.positions) + r_2 * \
-                (np.tile(self.global_best_position, (self.num_agents, 1)) - \
-                 self.positions))
-        self.positions += self.velocities
-        if self.is_constrained: self.check_simple_constraints()
+        # Determine random numbers
+        r_1 = self_conf * np.random.rand(self.num_agents, self.num_dimensions)
+        r_2 = swarm_conf * np.random.rand(self.num_agents, self.num_dimensions)
         
-    # [E] 2.7. Differential evolution mutation
-    def mutation_de(self):
+        # Find new velocities 
+        self.velocities = chi *(self.velocities + r_1 * (
+                self.particular_best_positions - self.positions) + r_2 * (
+                np.tile(self.global_best_position, (self.num_agents, 1)) - 
+                self.positions))
+        
+        # Move each agent using velocity's information
+        self.positions += self.velocities   
+        
+        # Check constraints
+        if self.is_constrained: self.__check_simple_constraints()
+        
+    # 2.7. Differential evolution mutation
+    # -------------------------------------------------------------------------
+    def mutation_de(self, scheme = ("current-to-best",1), F = 1.0):
         # Read the kind of expression and the number of sums to use
-        expression, num_rands = self.de_mutation_scheme 
+        expression, num_rands = scheme 
         
+        # Create mutants using the expression provided in scheme
         if expression == "rand":
             mutant = self.positions[np.random.permutation(self.num_agents),:]
             
@@ -208,123 +247,124 @@ class Population():
             mutant = self.positions  
             
         elif expression == "current-to-best":
-            mutant = self.positions + self.de_f * ( np.tile(
+            mutant = self.positions + F * ( np.tile(
                 self.global_best_position, (self.num_agents, 1)) - \
                 self.positions[np.random.permutation(self.num_agents),:] )  
             
         elif expression == "rand-to-best":
             mutant = self.positions[np.random.permutation(self.num_agents),:] \
-                + self.de_f * ( np.tile(self.global_best_position, 
+                + F * (np.tile(self.global_best_position, 
                 (self.num_agents, 1)) - self.positions[np.random.permutation( \
-                self.num_agents),:] )    
+                self.num_agents),:])    
                 
         elif expression == "rand-to-bestandcurrent":
             mutant = self.positions[np.random.permutation(self.num_agents),:] \
-                + self.de_f * ( np.tile(self.global_best_position, 
+                + F * (np.tile(self.global_best_position, 
                 (self.num_agents, 1)) - self.positions[np.random.permutation( \
                 self.num_agents),:] + self.positions[np.random.permutation(   \
                 self.num_agents),:] - self.positions)        
         else:
             print('[Error] Check de_mutation_scheme!')
-            
+        
+        # Add random parts according to num_rands
         if num_rands >= 0:
             for _ in range(num_rands):
-                mutant += self.de_f * (self.positions[np.random.permutation(  \
+                mutant += F * (self.positions[np.random.permutation(  \
                 self.num_agents),:] - self.positions[np.random.permutation(   \
                 self.num_agents),:])
         else:
             print('[Error] Check de_mutation_scheme!')
         
+        # Replace mutant population in the current one
         self.positions = mutant
-        if self.is_constrained: self.check_simple_constraints()
+        
+        # Check constraints
+        if self.is_constrained: self.__check_simple_constraints()
     
-    # [E] 2.8. Binomial crossover from Differential evolution
-    def binomial_crossover_de(self):
+    # 2.8. Binomial crossover from Differential evolution
+    # -------------------------------------------------------------------------
+    def binomial_crossover_de(self, CR = 0.5):
+        # Define indices
         indices = np.tile(np.arange(self.num_dimensions),(self.num_agents,1))
+        
+        # Permute indices per dimension
         rand_indices = np.vectorize(np.random.permutation, 
                 signature='(n)->(n)')(indices)
         
+        # Calculate the NOT condition (because positions were already updated!)
         condition = np.logical_not((indices == rand_indices) | (np.random.rand(
-                self.num_agents, self.num_dimensions) <= self.de_cr))
+                self.num_agents, self.num_dimensions) <= CR))
         
-        # It is assumed that mutants are already in current population
+        # Reverse the ones to their previous positions 
         self.positions[condition] = self.previous_positions[condition]
         
-        if self.is_constrained: self.check_simple_constraints()
+        # Check constraints
+        if self.is_constrained: self.__check_simple_constraints()
     
-    # [E] 2.9. Exponential crossover from Differential evolution
-    def exponential_crossover_de(self):
+    # 2.9. Exponential crossover from Differential evolution
+    # -------------------------------------------------------------------------
+    def exponential_crossover_de(self, CR = 0.5):
+        # Perform the exponential crossover procedure
         for agent in range(self.num_agents):
             for dim in range(self.num_dimensions):
+                # Initialise L and choose a random index n
                 L = 0; n = np.random.randint(self.num_dimensions)
                 while True:
+                    # Increase L and check the exponential crossover condition
                     L += 1
-                    if np.logical_not((np.random.rand() < self.de_cr) and 
-                        (L < self.num_dimensions)):
-                        break
-                if not dim in [(n + x) % self.num_dimensions for x in 
-                    range(L)]:
+                    if np.logical_not((np.random.rand() < CR) and (L < 
+                        self.num_dimensions)): break
+                
+                # Perform the crossover if the following condition is met
+                if not dim in [(n+x) % self.num_dimensions for x in range(L)]:
                     self.positions[agent, dim] = \
                         self.previous_positions[agent, dim]
-        if self.is_constrained: self.check_simple_constraints()
+                        
+        # Check constraints
+        if self.is_constrained: self.__check_simple_constraints()
     
     
-    # [E] 2.10. Local random walk from Cuckoo Search
-    def local_random_walk(self):
-        r_1 = self.pso_self_confidence * \
-                np.random.uniform(0,1,(self.num_agents, self.num_dimensions))
-        r_2 = self.pso_swarm_confidence * \
-                np.random.uniform(0,1,(self.num_agents, self.num_dimensions))
-                
-        self.positions += r_1 * (self.positions[np.random.permutation(   \
-                self.num_agents),:] - self.positions[np.random.permutation(   \
-                self.num_agents),:])* np.heaviside(r_2 - self.cs_probability,0)
+    # 2.10. Local random walk from Cuckoo Search
+    # -------------------------------------------------------------------------
+    def local_random_walk(self, probability = 0.75, scale = 1.0):
+        # Determine random numbers
+        r_1 = np.random.rand(self.num_agents, self.num_dimensions)
+        r_2 = np.random.rand(self.num_agents, self.num_dimensions)
         
-        if self.is_constrained: self.check_simple_constraints()
+        # Move positions with a displacement due permutations and probabilities
+        self.positions += scale * r_1 * (self.positions[np.random.permutation(
+                self.num_agents),:] - self.positions[np.random.permutation(
+                self.num_agents),:])* np.heaviside(r_2 - probability,0)
+        
+        # Check constraints
+        if self.is_constrained: self.__check_simple_constraints()
     
-    # [E] 2.11. Deterministic Spiral dynamic
-    def spiral_dynamic(self):
+    # 2.11. Deterministic Spiral dynamic
+    # -------------------------------------------------------------------------
+    def spiral_dynamic(self, radius = 0.9, angle = 22.5, radius_span = 0.2):
         # Update rotation matrix 
-        self.get_rotation_matrix()
+        self.__rotation_angle = angle * 180.0 / np.pi
+        self.__get_rotation_matrix()
         
         for agent in range(self.num_agents):
-            random_radii = np.random.uniform(self.spiral_radius - 
-                self.radius_span/2, self.spiral_radius + self.radius_span/2, 
-                self.num_dimensions)
-            self.positions[agent,:] = self.global_best_position + \
-                random_radii * np.matmul(self.rotation_matrix, 
-                (self.positions[agent,:] - self.global_best_position))
-                
-        if self.is_constrained: self.check_simple_constraints()
-                
-#    # [E] 2.12. Firefly (base)
-#    def firefly(self):
-#        light_intensity = np.sort(self.fitness)
-#        indices = np.argsort(self.fitness)
-#        fireflies = self.positions[indices,:]
-#        
-#        for candidate in range(self.num_agents):
-#            for agent in range(self.num_agents):
-#                if light_intensity[candidate] < light_intensity[agent]:
-#                    # Determine vectorial distance
-#                    delta = fireflies[candidate,:] - fireflies[agent,:]
-#                    
-#                    # Find epsilon 
-#                    if self.firefly_epsilon == "gaussian":
-#                        epsilon =np.random.standard_normal(self.num_dimensions)
-#                    if self.firefly_epsilon == "uniform":
-#                        epsilon=np.random.uniform(-0.5,0.5,self.num_dimensions)
-#                        
-#                    fireflies[agent,:] += self.firefly_beta * np.exp(
-#                            -self.firefly_gamma*(np.linalg.norm(delta)**2)) * \
-#                        delta + self.firefly_alpha * epsilon
-#        
-#        self.positions[indices,:] = fireflies
-#        if self.is_constrained: self.check_simple_constraints()
-    
-    # [E] 2.12. Firefly (generalised)
-    def firefly(self):
-        # Find epsilon 
+            # Find random radii when radius_span is greater than zero
+            if radius_span != 0.0 :
+                radii = np.random.uniform(radius - radius_span/2, radius + 
+                    radius_span/2, self.num_dimensions)
+            else: radii = radius
+            
+            # Rotate each agent around the best agent as centre
+            self.positions[agent,:] = self.global_best_position + radii * \
+                np.matmul(self.__rotation_matrix, (self.positions[agent,:] - 
+                self.global_best_position))
+         
+        # Check constraints       
+        if self.is_constrained: self.__check_simple_constraints()
+        
+    # 2.12. Firefly (generalised)
+    # -------------------------------------------------------------------------
+    def firefly(self, epsilon = "uniform", alpha = 0.8, beta = 1.0, gamma=1.0):
+        # Determine epsilon values
         if self.firefly_epsilon == "gaussian":
             epsilon = np.random.standard_normal((self.num_agents, 
                 self.num_dimensions))
@@ -332,22 +372,40 @@ class Population():
             epsilon = np.random.uniform(-0.5,0.5,(self.num_agents, 
                 self.num_dimensions))
             
-        # Initialise delta
-        delta = np.zeros((self.num_agents,self.num_dimensions))
+        # Initialise delta or difference between two positions
+        delta_positions = np.zeros((self.num_agents,self.num_dimensions))
         
-        for candidate in range(self.num_agents):
-            for agent in range(self.num_agents):
-                if self.fitness[candidate] < self.fitness[agent]:
-                    # Determine vectorial distance
-                    delta[candidate,:] = self.positions[candidate,:] - \
-                        self.positions[agent,:]       
+        for agent in range(self.num_agents):
+            # Select indices in order to avoid division by zero
+            indices = (np.arange(self.num_agents) != agent)
+            
+            # Determine all vectorial distances with respect to agent
+            delta =  self.positions[indices,:] - np.tile(
+                self.positions[agent,:],(self.num_agents-1, 1))
+            
+            # Determine differences between lights
+            delta_lights = np.tile((self.fitness[indices] - np.tile(
+                    self.fitness[agent],(1, self.num_agents-1))).transpose(),
+                    (1, self.num_dimensions))
+            
+            # Find the total attractionfor each agent
+            delta_positions[agent,:] = np.sum(np.heaviside(-delta_lights,0) * 
+                delta,0)
         
-        self.positions += self.firefly_beta * np.exp( -self.firefly_gamma*
-            (np.linalg.norm(delta)**2)) * delta + self.firefly_alpha * epsilon
-        if self.is_constrained: self.check_simple_constraints()
-    
-    # [E] 2.13. Central Force Optimisation (CFO)
-    def central_force(self):
+        # Determine the distances
+        distances = np.tile((np.linalg.norm(delta_positions,2,1)).reshape(
+                self.num_agents,1),(1, self.num_dimensions))
+        
+        # Move fireflies according to their attractions
+        self.positions += alpha * epsilon + beta * delta_positions * \
+                np.exp( -gamma * (distances ** 2))
+        
+        # Check constraints
+        if self.is_constrained: self.__check_simple_constraints()
+        
+    # 2.13. Central Force Optimisation (CFO)
+    # -------------------------------------------------------------------------
+    def central_force(self, G = 0.001, alpha = 0.001, beta = 1.5, dt = 1.0):
         # Initialise acceleration
         acceleration = np.zeros((self.num_agents, self.num_dimensions))
         
@@ -361,56 +419,86 @@ class Population():
             
             # Determine all vectorial distances with respect to agent
             delta_positions = self.positions[indices,:] - np.tile(
-                self.positions[agent,:],(self.num_agents-1, 1))
+                self.positions[agent,:],(self.num_agents - 1, 1))
             
             distances = np.linalg.norm(delta_positions,2,1)
             
             # Find the quotient part    ! -> - delta_masses (cz minimisation)
-            quotient = np.heaviside(-delta_masses,0) * (np.abs(delta_masses)**\
-                self.cf_alpha)/(distances**self.cf_beta)
+            quotient = np.heaviside(-delta_masses,0) * (np.abs(delta_masses)**
+                alpha)/(distances ** beta)
             
             # Determine the acceleraton for each agent
-            acceleration[agent,:] = self.cf_gravity * np.sum( delta_positions *
+            acceleration[agent,:] = G * np.sum( delta_positions *
                 np.tile(quotient.transpose(), (1,self.num_dimensions)), 0)
         
-        self.positions += 0.5 * acceleration * (self.cf_time_interval ** 2)
+        self.positions += 0.5 * acceleration * (dt ** 2)
         
-        if self.is_constrained: self.check_simple_constraints()
-                
+        # Check constraints
+        if self.is_constrained: self.__check_simple_constraints()
+        
+    # 2.14. Gravitational Search Algorithm (GSA) simplified
+    # -------------------------------------------------------------------------
+    def gravitational_search(self, G = 1, alpha = 0.02, epsilon = 1e-23):
+        # Initialise acceleration
+        acceleration = np.zeros((self.num_agents, self.num_dimensions))
+        
+        # Determine the gravitaional constant
+        gravitation = G * np.exp(- alpha * self.iteration)
+        
+        # Determine mass for each agent
+        raw_masses = (self.fitness - np.tile(self.current_worst_fitness,(1,
+            self.num_agents))) 
+        masses = (raw_masses / np.sum(raw_masses)).reshape(self.num_agents)
+        
+        for agent in range(self.num_agents):
+            # Select indices in order to avoid division by zero
+            indices = (np.arange(self.num_agents) != agent)
+            
+            # Determine all vectorial distances with respect to agent
+            delta_positions = self.positions[indices,:] - np.tile(
+                self.positions[agent,:],(self.num_agents - 1, 1))
+            
+            quotient = masses[indices] /(np.linalg.norm(delta_positions,2,1) + 
+                epsilon)
+            
+            # Force interaction
+            force_interaction = gravitation * np.tile(quotient.reshape(
+                    self.num_agents - 1,1), (1, self.num_dimensions)) * \
+                    delta_positions
+            
+            # Acceleration
+            acceleration[agent,:] = np.sum(np.random.rand(self.num_agents - 1, 
+                self.num_dimensions) * force_interaction, 0)
+            
+        # Update velocities
+        self.velocities = np.random.rand(self.num_agents, 
+            self.num_dimensions) * self.velocities + acceleration
+        
+        # Update positions
+        self.positions += self.velocities
+        
+        # Check constraints
+        if self.is_constrained: self.__check_simple_constraints()
         
     # -------------------------------------------------------------------------
     # 3. Basic methods
     # -------------------------------------------------------------------------
     
-    # 3.1. Check simple contraints if self.is_constrained = True
-    def check_simple_constraints(self):
-        
-        low_check = self.positions < -1.
-        if low_check.any():
-            self.positions[low_check] = -1.
-            self.velocities[low_check] = 0.
-            
-        upp_check = self.positions > 1.
-        if upp_check.any():
-            self.positions[upp_check] = 1.
-            self.velocities[upp_check] = 0.
-        
-    # 3.2. Rescale an agent from [-1,1] to [lower,upper] per dimension
-    def rescale_back(self, position):
-        return ((self.upper_boundaries + self.lower_boundaries) + position * \
-                (self.upper_boundaries - self.lower_boundaries)) / 2
-
-    # [E] 3.3. Evaluate population positions in the problem function
+    # 3.1. Evaluate population positions in the problem function
+    # -------------------------------------------------------------------------
     def evaluate_fitness(self):
         for agent in range(self.num_agents):
             self.fitness[agent] = self.problem.get_func_val(
-                    self.rescale_back(self.positions[agent,:]))
+                    self.__rescale_back(self.positions[agent,:]))
+    # TODO Generalise this method for any kind of function
     
-    # [E] 3.4. Update population positions according to a selection scheme
+    # 3.2. Update population positions according to a selection scheme
+    # -------------------------------------------------------------------------
     def update_population(self, selection_method = "all"):
+        # Update population positons, velocities, and fitness        
         for agent in range(self.num_agents):
-            if getattr(self,selection_method+"_selection")(self.fitness[agent], 
-                     self.previous_fitness[agent]):
+            if getattr(self, "_" + selection_method + "_selection")(
+                    self.fitness[agent], self.previous_fitness[agent]):
                 # if new positions are improved, then update past register ...
                 self.previous_fitness[agent] = self.fitness[agent]
                 self.previous_positions[agent,:] = self.positions[agent,:]
@@ -420,57 +508,73 @@ class Population():
                 self.fitness[agent] = self.previous_fitness[agent]
                 self.positions[agent,:] = self.previous_positions[agent,:]
                 self.velocities[agent,:] = self.previous_velocities[agent,:]
+        
+        # Update the current best and worst positions (forced to greedy)
+        self.current_best_position = self.positions[self.fitness.argmin(),:]
+        self.current_best_fitness = self.fitness.min()
+        
+        self.current_worst_position = self.positions[self.fitness.argmax(),:]
+        self.current_worst_fitness = self.fitness.max()
 
-    # [E] 3.5. Update particular positions acording to a selection scheme
+    # 3.3. Update particular positions acording to a selection scheme
+    # -------------------------------------------------------------------------
     def update_particular(self, selection_method = "greedy"):        
         for agent in range(self.num_agents):            
-            if getattr(self,selection_method+"_selection")(self.fitness[agent], 
-                     self.particular_best_fitness[agent]):
+            if getattr(self, "_" + selection_method + "_selection")(
+                    self.fitness[agent], self.particular_best_fitness[agent]):
                 self.particular_best_fitness[agent] = self.fitness[agent]
                 self.particular_best_positions[agent,:]=self.positions[agent,:]
     
-    # 3.6. [E] Update global position according to a selection scheme
+    # 3.4. Update global position according to a selection scheme
+    # -------------------------------------------------------------------------
     def update_global(self, selection_method = "greedy"):       
+        # Perform particular updating
         self.update_particular(selection_method)
+        
         # Read current global best agent
         candidate_position = self.particular_best_positions[\
                 self.particular_best_fitness.argmin(),:]
         candidate_fitness = self.particular_best_fitness.min()
-        if getattr(self,selection_method+"_selection")(candidate_fitness, 
-                  self.global_best_fitness) or np.isinf(candidate_fitness):
+        if getattr(self, "_" + selection_method + "_selection")(
+                candidate_fitness, self.global_best_fitness) or np.isinf(
+                candidate_fitness):
             self.global_best_position = candidate_position
             self.global_best_fitness = candidate_fitness 
     
     # -------------------------------------------------------------------------
-    # 4. Selector methods
+    # 4. Internal methods (avoid using them outside)
     # -------------------------------------------------------------------------
-
-    def greedy_selection(self, new, old):
-        return new <= old
     
-    def none_selection(self, *args):
-        return False
-    
-    def all_selection(self, *args):
-        return True
-    
-    def metropolis_selection(self, new, old):
-        # It depends of metropolis_temperature, metropolis_rate, and iteration
-        if new <= old: selection_conditon = True
-        else:
-            if np.math.exp(-(new - old)/(self.boltzmann_constant * \
-                self.metropolis_temperature * ((1 - \
-                self.metropolis_rate)**self.iteration)))> np.random.rand(): 
-                selection_conditon = True
-            else: selection_conditon = False
-        return selection_conditon 
-    
+    # 4.1. Check simple contraints if self.is_constrained = True
     # -------------------------------------------------------------------------
-    # 5. Additional tools
+    def __check_simple_constraints(self):
+        # Check if agents are beyond lower boundaries
+        low_check = self.positions < -1.
+        if low_check.any():
+            # Fix them
+            self.positions[low_check] = -1.
+            self.velocities[low_check] = 0.
+        
+        # Check if agents are beyond upper boundaries
+        upp_check = self.positions > 1.
+        if upp_check.any():
+            # Fix them
+            self.positions[upp_check] = 1.
+            self.velocities[upp_check] = 0.
+        
+    # TODO Add a rescale method for all the population
+    
+    # 4.2. Rescale an agent from [-1,1] to [lower,upper] per dimension
     # -------------------------------------------------------------------------
-    def get_rotation_matrix(self):
+    def __rescale_back(self, position):
+        return ((self.upper_boundaries + self.lower_boundaries) + position * \
+                (self.upper_boundaries - self.lower_boundaries)) / 2    
+    
+    # 4.3. Generate a N-D rotation matrix for a given angle
+    # -------------------------------------------------------------------------
+    def __get_rotation_matrix(self):
         # Initialise the rotation matrix
-        R = np.eye(self.num_dimensions)
+        rotation_matrix = np.eye(self.num_dimensions)
         
         # Find the combinations without repetions
         planes = list(combinations(range(self.num_dimensions),2))
@@ -484,12 +588,41 @@ class Population():
             rotation_plane = np.eye(self.num_dimensions)
             
             # Assign corresponding values
-            rotation_plane[x,y] = np.cos(self.rotation_angle) 
-            rotation_plane[y,y] = np.cos(self.rotation_angle) 
-            rotation_plane[x,y] = -np.sin(self.rotation_angle) 
-            rotation_plane[y,x] = np.sin(self.rotation_angle) 
+            rotation_plane[x,y] = np.cos(self.__rotation_angle) 
+            rotation_plane[y,y] = np.cos(self.__rotation_angle) 
+            rotation_plane[x,y] = -np.sin(self.__rotation_angle) 
+            rotation_plane[y,x] = np.sin(self.__rotation_angle) 
             
-            R = np.matmul(R,rotation_plane)
+            rotation_matrix = np.matmul(rotation_matrix, rotation_plane)
         
-        self.rotation_matrix = R
+        self.__rotation_matrix = rotation_matrix
+    
+    # 4.4. Greedy selection : new is better than old one
+    # -------------------------------------------------------------------------
+    def _greedy_selection(self, new, old):
+        return new <= old
+    
+    # 4.5. Metropolis selection : apply greedy selection and worst with a prob
+    # -------------------------------------------------------------------------
+    def _metropolis_selection(self, new, old):
+        # It depends of metropolis_temperature, metropolis_rate, and iteration
+        if new <= old: selection_conditon = True
+        else:
+            if np.math.exp(-(new - old)/(self.boltzmann_constant * 
+                        self.metropolis_temperature * ((1 - 
+                        self.metropolis_rate)**self.iteration) + 1e-23)) > \
+                        np.random.rand(): 
+                selection_conditon = True
+            else: selection_conditon = False
+        return selection_conditon 
+    
+    # 4.6. All selection : only new does matter
+    # -------------------------------------------------------------------------
+    def _all_selection(self, *args):
+        return True
+    
+    # 4.7. None selection : new does not matter
+    # -------------------------------------------------------------------------
+    def _none_selection(self, *args):
+        return False
             
