@@ -7,8 +7,7 @@ Created on Sun Sep 15 16:35:32 2019
 """
 # Packages
 import numpy as np
-from population import Population
-from metaheuristic import Metaheuristic
+from population import Population 
 from opteval import benchmark_func as bf
 import matplotlib.pyplot as plt
 
@@ -33,40 +32,11 @@ problem_function = lambda x : problem.get_func_val(x)
 boundaries = (problem.max_search_range, problem.min_search_range)
     
 # Create population
-pop = Population(problem_function,boundaries, num_agents, is_constrained)
+pop = Population(problem_function,boundaries,desired_fitness,num_agents,
+                 is_constrained)
 
 # Initialise population with random elements uniformly distributed in space
 pop.initialise_uniformly()
-
-
-# %% test pour lire les paramètres
-simple_heuristics = [("spiral_dynamic", {"radius" : 0.8, "span" : 0.4, 
-                                         "angle" : 23}),
-                     ("binomial_crossover_de", {"CR": 0.35})]
-
-#for operator, parameters in simple_heuristics:
-#    if len(parameters) >= 0:
-#        sep = ","
-#        str_parameters = []
-#        for parameter, value in parameters.items():
-#            if type(value) == str:
-#                str_parameters.append(f"{parameter} = '{value}'")
-#            else: 
-#                str_parameters.append(f"{parameter} = {value}")
-##        print(str_parameters)
-##        print(sep.join(str_parameters))
-#        
-#    full_string = f"{operator}({sep.join(str_parameters)})"
-#    print(full_string)
-
-
-
-mh = Metaheuristic(problem_function, boundaries, simple_heuristics, 
-                    is_constrained, num_agents, desired_fitness)
-
-        
-# %%
-
 
 # -- plot population
 plt.figure(1)
@@ -91,15 +61,15 @@ pop.update_global("greedy")
 
 #pop.cs_probability = 0.75
 
-#pop.metropolis_temperature = 100
-#pop.metropolis_rate = 1
-#
-#pop.de_mutation_scheme = ("current-to-best",1)
-#pop.de_f = 1.0
-#pop.de_cr = 0.5
-#
-#pop.spiral_radius = 0.95
-#pop.radius_span = 0.1
+pop.metropolis_temperature = 100
+pop.metropolis_rate = 1
+
+pop.de_mutation_scheme = ("current-to-best",1)
+pop.de_f = 1.0
+pop.de_cr = 0.5
+
+pop.spiral_radius = 0.95
+pop.radius_span = 0.1
 
 #pop.firefly_epsilon = "uniform"
 #pop.firefly_gamma = 1.0
@@ -133,9 +103,9 @@ for iteration in range(1, num_iterations + 1):
 #    pop.mutation_de()          # DE
 #    pop.firefly()              # FA
     
-    pop.constricted_pso(self_conf = 2.11, swarm_conf = 2.66)      # PSO
+#    pop.constricted_pso()      # PSO
 #    pop.inertial_pso()         # PSO     
-#    pop.spiral_dynamic()#0.90,22.5,0.2)       # D/S-SOA
+    pop.spiral_dynamic()#0.90,22.5,0.2)       # D/S-SOA
 #    pop.central_force()        # CFO    
 #    pop.gravitational_search() # GSA    
     

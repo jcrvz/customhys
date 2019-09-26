@@ -13,6 +13,19 @@ __operators__ = ['random_search', 'random_sample', 'rayleigh_flight',
 __crossover__ = ['binomial_crossover_de','exponential_crossover_de']
 __selection__ = ['greedy', 'probabilistic', 'metropolis', 'all', 'none']
 
+# %% --------------------------------------------------------------------------
+class Metaheristic():
+    # Internal variables
+    
+    # Class initialisation
+    def __init__(self, problem_function, boundaries, is_constrained = True, 
+                 desired_performance = 1e-6, num_agents = 30):     
+        
+        # Create population
+        self.pop = Population(problem_function, boundaries, num_agents, 
+                              is_constrained)
+        
+    
         
 # %% --------------------------------------------------------------------------
 class Population():    

@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
     # Problem definition
 num_dimensions = 2
 num_agents = 50
-num_iterations = 1000
+num_iterations = 100
 
 problem = bf.Sphere(num_dimensions)
 #problem = bf.Rosenbrock(num_dimensions)
@@ -25,19 +25,15 @@ problem = bf.Sphere(num_dimensions)
 is_constrained = True
 desired_fitness = 1e-6
 
-problem.max_search_range = problem.max_search_range/100
-problem.min_search_range = problem.min_search_range/100
-    
-    # Call optimisation method
-#RandomSearch(problem, num_dimensions, num_agents, num_iterations, 
-#                 desired_fitness, is_constrained)
-    
-#def RandomSearch(problem, num_dimensions = 2, num_agents = 30, 
-#                     num_iterations = 100, desired_fitness = 1E-6, 
-#                     is_constrained = True):
+# Find the proble function : objective function to minimise
+problem_function = lambda x : problem.get_func_val(x)
+
+# Define the problem domain
+boundaries = (problem.max_search_range, problem.min_search_range)
     
 # Create population
-pop = Population(problem,desired_fitness,num_agents,is_constrained)
+pop = Population(problem_function,boundaries,desired_fitness,num_agents,
+                 is_constrained)
 
 # Initialise population with random elements uniformly distributed in space
 pop.initialise_uniformly()
@@ -65,15 +61,15 @@ pop.update_global("greedy")
 
 #pop.cs_probability = 0.75
 
-pop.metropolis_temperature = 10000
+pop.metropolis_temperature = 100
 pop.metropolis_rate = 1
 
 pop.de_mutation_scheme = ("current-to-best",1)
 pop.de_f = 1.0
 pop.de_cr = 0.5
 
-pop.spiral_radius = 0.9
-pop.radius_span = 0.2
+pop.spiral_radius = 0.95
+pop.radius_span = 0.1
 
 #pop.firefly_epsilon = "uniform"
 #pop.firefly_gamma = 1.0
@@ -109,7 +105,7 @@ for iteration in range(1, num_iterations + 1):
     
 #    pop.constricted_pso()      # PSO
 #    pop.inertial_pso()         # PSO     
-    pop.spiral_dynamic(0.89,22.5,0)       # D/S-SOA
+    pop.spiral_dynamic()#0.90,22.5,0.2)       # D/S-SOA
 #    pop.central_force()        # CFO    
 #    pop.gravitational_search() # GSA    
     

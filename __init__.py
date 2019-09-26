@@ -1,4 +1,4 @@
 __all__ = [
-        'uniformInitialisation',
-        'simpleRandomWalk'
+        'Metaheuristic',
+        'Population'
         ]
