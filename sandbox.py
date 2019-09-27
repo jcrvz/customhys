@@ -24,7 +24,6 @@ problem = bf.Sphere(num_dimensions)
 #problem = bf.Griewank(num_dimensions)
 
 is_constrained = True
-desired_fitness = 1e-6
 
 # Find the proble function : objective function to minimise
 problem_function = lambda x : problem.get_func_val(x)
@@ -35,20 +34,21 @@ boundaries = (problem.max_search_range, problem.min_search_range)
 # Create population
 pop = Population(problem_function,boundaries, num_agents, is_constrained)
 
-# Initialise population with random elements uniformly distributed in space
-pop.initialise_uniformly()
-
-
 # %% test pour lire les paramètres
 simple_heuristics = [("spiral_dynamic", {"radius" : 0.8, "span" : 0.4, 
-                                         "angle" : 23}),
-                     ("binomial_crossover_de", {"CR": 0.35})]
+                                         "angle" : 23}, "all"),
+                     ("local_random_walk", {"probability" : 0.75, 
+                                            "scale" : 1.0}, "greedy")]
+#                     ("binomial_crossover_de", {"CR": 0.35})]
 
-#for operator, parameters in simple_heuristics:
+#selectors = []
+#for operator, parameters, selector in simple_heuristics:
+#    selectors.append(selector)
+#    
 #    if len(parameters) >= 0:
 #        sep = ","
 #        str_parameters = []
-#        for parameter, value in parameters.items():
+#        for parameter, value in parameters.items():            
 #            if type(value) == str:
 #                str_parameters.append(f"{parameter} = '{value}'")
 #            else: 
@@ -62,11 +62,16 @@ simple_heuristics = [("spiral_dynamic", {"radius" : 0.8, "span" : 0.4,
 
 
 mh = Metaheuristic(problem_function, boundaries, simple_heuristics, 
-                    is_constrained, num_agents, desired_fitness)
+                   is_constrained, num_agents, num_iterations)
 
-        
 # %%
 
+
+
+
+# %%
+# Initialise population with random elements uniformly distributed in space
+pop.initialise_uniformly()
 
 # -- plot population
 plt.figure(1)
@@ -133,9 +138,9 @@ for iteration in range(1, num_iterations + 1):
 #    pop.mutation_de()          # DE
 #    pop.firefly()              # FA
     
-    pop.constricted_pso(self_conf = 2.11, swarm_conf = 2.66)      # PSO
+#    pop.constricted_pso(self_conf = 2.11, swarm_conf = 2.66)      # PSO
 #    pop.inertial_pso()         # PSO     
-#    pop.spiral_dynamic()#0.90,22.5,0.2)       # D/S-SOA
+    pop.spiral_dynamic(radius=0.8, span=0.4, angle=22.5)#0.90,22.5,0.2)       # D/S-SOA
 #    pop.central_force()        # CFO    
 #    pop.gravitational_search() # GSA    
     

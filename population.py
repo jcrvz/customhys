@@ -27,6 +27,7 @@ class Population():
     probability_selection = 0.5
     
     # Class initialisation
+    # -------------------------------------------------------------------------
     def __init__(self, problem_function, boundaries, num_agents = 30, 
                  is_constrained = True):        
         # Read problem, it must be a callable function
@@ -111,9 +112,6 @@ class Population():
         for agent in range(self.num_agents):
             self.fitness[agent] = self.problem_function(
                     self.__rescale_back(self.positions[agent,:]))
-#            self.fitness[agent] = self.problem.get_func_val(
-#                    self.__rescale_back(self.positions[agent,:]))
-    # TODO Generalise this method for any kind of function
     
     # Update population positions according to a selection scheme
     # -------------------------------------------------------------------------
