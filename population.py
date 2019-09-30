@@ -13,7 +13,24 @@ __operators__ = ['random_search', 'random_sample', 'rayleigh_flight',
 __crossover__ = ['binomial_crossover_de','exponential_crossover_de']
 __selection__ = ['greedy', 'probabilistic', 'metropolis', 'all', 'none']
 
-        
+#     Operator call name, dictionary with default parameters, default selector
+__simple_heuristics__ = [
+("spiral_dynamic", {"radius" : 0.8, "span" : 0.4, "angle" : 23}, "all"),
+("local_random_walk", {"probability" : 0.75, "scale" : 1.0}, "greedy"),
+("random_search", {"scale": 0.01}, "greedy"),
+("random_sample", {}, "greedy"),
+("rayleigh_flight", {"scale": 0.01}, "greedy"),
+("levy_flight", {"scale": 1.0, "beta": 1.5}, "greedy"),
+("mutation_de", {"scheme": ("current-to-best",1), "F": 1.0}, "greedy"),
+("binomial_crossover_de", {"CR": 0.5}, "greedy"),
+("exponential_crossover_de", {"CR": 0.5}, "greedy"),
+("firefly", {"epsilon":"uniform","alpha":0.8,"beta":1.0,"gamma":1.0},"greedy"),   
+("inertial_pso", {"inertial":0.7, "self_conf":1.54, "swarm_conf":1.56}, "all"),
+("constricted_pso", {"kappa":1.0, "self_conf":2.54, "swarm_conf":2.56}, "all"),
+("gravitational_search", {"alpha": 0.02, "epsilon": 1e-23}, "all"),
+("central_force", {"G":0.001, "alpha":0.001, "beta":1.5, "dt":1.0}, "all"),
+("spiral_dynamic", {"radius": 0.9, "angle": 22.5, "span": 0.2}, "all")
+        ] 
 # %% --------------------------------------------------------------------------
 class Population():    
     # Internal variables
@@ -370,7 +387,6 @@ class Population():
         # Check constraints
         if self.is_constrained: self.__check_simple_constraints()
     
-    
     # Local random walk from Cuckoo Search
     # -------------------------------------------------------------------------
     def local_random_walk(self, probability = 0.75, scale = 1.0):
@@ -402,7 +418,6 @@ class Population():
         # Check constraints
         if self.is_constrained: self.__check_simple_constraints()
         
-    
     # Firefly (generalised)
     # -------------------------------------------------------------------------
     def firefly(self, epsilon = "uniform", alpha = 0.8, beta = 1.0, gamma=1.0):
@@ -521,8 +536,7 @@ class Population():
         
         # Check constraints
         if self.is_constrained: self.__check_simple_constraints()
-        
-    
+     
     # %% ----------------------------------------------------------------------
     #    INTERNAL METHODS (avoid using them outside)
     # -------------------------------------------------------------------------

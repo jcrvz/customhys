@@ -1,4 +1,4 @@
 __all__ = [
-        'Metaheuristic',
-        'Population'
+        'metaheuristic',
+        'population'
         ]
