@@ -8,7 +8,7 @@ Created on Sun Sep 15 16:35:32 2019
 # Packages
 import numpy as np
 import dascop as dso
-from opteval import benchmark_func as bf
+import benchmark_func as bf
 import matplotlib.pyplot as plt
 
 #def run():
@@ -34,11 +34,8 @@ boundaries = (problem.max_search_range, problem.min_search_range)
 #pop = dso.Population(problem_function,boundaries, num_agents, is_constrained)
 
 # test pour lire les paramètres
-simple_heuristics = [("spiral_dynamic", {"radius" : 0.8, "span" : 0.4, 
-                                         "angle" : 23}, "all"),
-                     ("local_random_walk", {"probability" : 0.75, 
-                                            "scale" : 1.0}, "greedy")]
-#                     ("binomial_crossover_de", {"CR": 0.35})]
+simple_heuristics = [("spiral_dynamic", dict(radius=0.9, angle=22.5, sigma=0.1), "all"),
+                     ("local_random_walk", dict(probability=0.75, scale=1.0), "greedy")]
 
 #selectors = []
 #for operator, parameters, selector in simple_heuristics:
@@ -67,4 +64,5 @@ mh.run()
 mh.show_performance()
 
 # %%
+
 
