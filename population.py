@@ -189,8 +189,7 @@ class Population():
     # -------------------------------------------------------------------------
     def initialise_uniformly(self):
         for agent in range(0, self.num_agents):
-            self.positions[agent] = np.random.uniform(-1, 1,
-                                                      self.num_dimensions)
+            self.positions[agent] = np.random.uniform(-1, 1, self.num_dimensions)
 
             # TODO Add more initialisation operators like grid, boundary, etc.
 
@@ -202,8 +201,7 @@ class Population():
     # -------------------------------------------------------------------------
     def random_sample(self):
         # Create random positions using random numbers between -1 and 1
-        self.positions = np.random.uniform(-1, 1, (self.num_agents,
-                                                   self.num_dimensions))
+        self.positions = np.random.uniform(-1, 1, (self.num_agents, self.num_dimensions))
 
         # Check constraints
         if self.is_constrained: self.__check_simple_constraints()
@@ -212,8 +210,7 @@ class Population():
     # -------------------------------------------------------------------------
     def random_search(self, scale=0.01):
         # Move each agent using uniform random displacements
-        self.positions += scale * np.random.uniform(-1, 1, (self.num_agents,
-                                                            self.num_dimensions))
+        self.positions += scale * np.random.uniform(-1, 1, (self.num_agents, self.num_dimensions))
 
         # Check constraints
         if self.is_constrained: self.__check_simple_constraints()
@@ -223,8 +220,7 @@ class Population():
     # -------------------------------------------------------------------------
     def rayleigh_flight(self, scale=0.01):
         # Move each agent using gaussian random displacements
-        self.positions += scale * np.random.standard_normal((self.num_agents,
-                                                             self.num_dimensions))
+        self.positions += scale * np.random.standard_normal((self.num_agents, self.num_dimensions))
 
         # Check constraints
         if self.is_constrained: self.__check_simple_constraints()
@@ -233,14 +229,12 @@ class Population():
     # -------------------------------------------------------------------------
     def levy_flight(self, scale=1.0, beta=1.5):
         # Calculate x's std dev (Mantegna's algorithm)
-        sigma = ((np.math.gamma(1 + beta) * np.sin(np.pi * beta / 2)) /
-                 (np.math.gamma((1 + beta) / 2) * beta * (2 ** ((beta - 1) / 2)))) ** (1 / beta)
+        sigma = ((np.math.gamma(1 + beta) * np.sin(np.pi * beta / 2)) / (np.math.gamma((1 + beta) / 2) * beta *
+                                                                         (2 ** ((beta - 1) / 2)))) ** (1 / beta)
 
         # Determine x and y using normal distributions with sigma_y = 1
-        x = sigma * np.random.standard_normal((self.num_agents,
-                                               self.num_dimensions))
-        y = np.abs(np.random.standard_normal((self.num_agents,
-                                              self.num_dimensions)))
+        x = sigma * np.random.standard_normal((self.num_agents, self.num_dimensions))
+        y = np.abs(np.random.standard_normal((self.num_agents, self.num_dimensions)))
 
         # Calculate the random number with levy stable distribution
         levy_random = x / (y ** (1 / beta))
@@ -265,8 +259,7 @@ class Population():
         # Find new velocities 
         self.velocities = inertial * self.velocities + r_1 * (
                 self.particular_best_positions - self.positions) + r_2 * (
-                                  np.tile(self.global_best_position, (self.num_agents, 1)) -
-                                  self.positions)
+                                  np.tile(self.global_best_position, (self.num_agents, 1)) - self.positions)
 
         # Move each agent using velocity's information
         self.positions += self.velocities
@@ -279,17 +272,16 @@ class Population():
     def constriction_pso(self, kappa=1.0, self_conf=2.54, swarm_conf=2.56):
         # Find the constriction factor chi using phi
         phi = self_conf + swarm_conf
-        chi = 2 * kappa / np.abs(2 - phi - np.sqrt(phi ** 2 - 4 * phi))
+        if phi > 4: chi = 2 * kappa / np.abs(2 - phi - np.sqrt(phi ** 2 - 4 * phi))
+        else: chi = np.sqrt(kappa)
 
         # Determine random numbers
         r_1 = self_conf * np.random.rand(self.num_agents, self.num_dimensions)
         r_2 = swarm_conf * np.random.rand(self.num_agents, self.num_dimensions)
 
         # Find new velocities 
-        self.velocities = chi * (self.velocities + r_1 * (
-                self.particular_best_positions - self.positions) + r_2 * (
-                                         np.tile(self.global_best_position, (self.num_agents, 1)) -
-                                         self.positions))
+        self.velocities = chi * (self.velocities + r_1 * (self.particular_best_positions - self.positions) +
+                                 r_2 * (np.tile(self.global_best_position, (self.num_agents, 1)) - self.positions))
 
         # Move each agent using velocity's information
         self.positions += self.velocities
@@ -314,8 +306,7 @@ class Population():
             mutant = self.positions
 
         elif expression == "current-to-best":
-            mutant = self.positions + factor * (np.tile(
-                self.global_best_position, (self.num_agents, 1)) -
+            mutant = self.positions + factor * (np.tile(self.global_best_position, (self.num_agents, 1)) -
                                                 self.positions[np.random.permutation(self.num_agents), :])
 
         elif expression == "rand-to-best":
@@ -405,7 +396,7 @@ class Population():
     # -------------------------------------------------------------------------
     def spiral_dynamic(self, radius=0.9, angle=22.5, sigma=0.1):
         # Update rotation matrix 
-        self.__get_rotation_matrix((angle * np.pi / 180))
+        self.__get_rotation_matrix(np.deg2rad(angle))
 
         for agent in range(self.num_agents):
             random_radii = np.random.uniform(radius - sigma, radius + sigma, self.num_dimensions)
@@ -528,6 +519,28 @@ class Population():
 
         # Check constraints
         if self.is_constrained: self.__check_simple_constraints()
+
+    # Genetic Algorithm (GA)
+    # -------------------------------------------------------------------------
+    def ga_natural_selection(self, mechanism="mean"):
+        assert not any(np.isnan(self.fitness))
+        # Sort population according to its fitness values
+        sorted_values, sorted_indices = np.sort(self.fitness), np.argsort(self.fitness)
+
+        # Find the portion of population to be selected according to mechanism
+        assert isinstance(mechanism, (str, float, int))
+        if isinstance(mechanism, str):
+            if mechanism == "mean":
+                num_selection = np.searchsorted(sorted_values,sorted_values.mean(), 'right') # -1 (cz, < val) +1 (cz, num)
+            elif mechanism == "median":
+                num_selection = np.searchsorted(sorted_values, np.median(sorted_values), 'right')  # same as mean
+        else:
+            # it is assumed that mechanism is a proportion between 0 and 1
+            num_selection = np.round(mechanism * self.num_agents)
+
+        # Return indices that form the mating pool
+        return sorted_indices[:int(num_selection)]
+
 
     # %% ----------------------------------------------------------------------
     #    INTERNAL METHODS (avoid using them outside)
