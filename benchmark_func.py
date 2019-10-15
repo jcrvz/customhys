@@ -310,8 +310,8 @@ class SchafferN4(OptimalBasic):
         super().__init__(2)
         self.max_search_range = np.array([100.]*self.variable_num)
         self.min_search_range = np.array([-100]*self.variable_num)
-        self.optimal_solution = np.array([0.,1.25313])
-        self.global_optimum_solution = 0
+        self.optimal_solution = np.array([0.,1.253115])
+        self.global_optimum_solution = 0.292579
         self.plot_place = 10
         self.func_name = 'SchafferN4'
 
