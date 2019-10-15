@@ -29,7 +29,7 @@ problem_function = lambda x : problem.get_func_val(x)
 
 # Define the problem domain
 boundaries = (problem.max_search_range, problem.min_search_range)
-    
+
 # Create population
 #pop = dso.Population(problem_function,boundaries, num_agents, is_constrained)
 
@@ -40,29 +40,27 @@ simple_heuristics = [("spiral_dynamic", dict(radius=0.9, angle=22.5, sigma=0.1),
 #selectors = []
 #for operator, parameters, selector in simple_heuristics:
 #    selectors.append(selector)
-#    
+#
 #    if len(parameters) >= 0:
 #        sep = ","
 #        str_parameters = []
-#        for parameter, value in parameters.items():            
+#        for parameter, value in parameters.items():
 #            if type(value) == str:
 #                str_parameters.append(f"{parameter} = '{value}'")
-#            else: 
+#            else:
 #                str_parameters.append(f"{parameter} = {value}")
 ##        print(str_parameters)
 ##        print(sep.join(str_parameters))
-#        
+#
 #    full_string = f"{operator}({sep.join(str_parameters)})"
 #    print(full_string)
 
 verbose_option = True
 
-mh = dso.Metaheuristic(problem_function, boundaries, simple_heuristics, 
+mh = dso.Metaheuristic(problem_function, boundaries, simple_heuristics,
                    is_constrained, num_agents, num_iterations, verbose_option)
 mh.run()
 
 mh.show_performance()
 
 # %%
-
-
