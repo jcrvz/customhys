@@ -47,7 +47,7 @@ class OptimalBasic:
         return self.optimal_solution
 
     def get_search_range(self):
-        return [self.max_search_range, self.min_search_range]
+        return (self.max_search_range, self.min_search_range)
 
     def get_func_val(self, variables):
         return -1
