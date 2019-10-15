@@ -327,7 +327,7 @@ class StyblinskiTang(OptimalBasic):
         self.max_search_range = np.array([5.]*self.variable_num)
         self.min_search_range = np.array([-5.]*self.variable_num)
         self.optimal_solution = np.array([-2.903534]*self.variable_num)
-        self.global_optimum_solution = -39.166165*self.variable_num
+        self.global_optimum_solution = -39.16599*self.variable_num
         self.func_name = 'StyblinskiTang'
 
     def get_func_val(self, variables):
