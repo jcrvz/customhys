@@ -28,7 +28,7 @@ is_constrained = True
 problem_function = lambda x : problem.get_func_val(x)
 
 # Define the problem domain
-boundaries = (problem.max_search_range, problem.min_search_range)
+boundaries = (problem.min_search_range, problem.max_search_range)
 
 # Create population
 #pop = dso.Population(problem_function,boundaries, num_agents, is_constrained)
