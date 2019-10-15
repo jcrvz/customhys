@@ -61,7 +61,7 @@ class OptimalBasic:
             z = []
             for xy_input in zip(xy_list[0],xy_list[1]):
                 tmp = list(xy_input)
-                tmp.extend(list(self.optimal_solution[0:self.variable_num-2]))
+                tmp.extend(list(self.optimal_solution[2:self.variable_num]))
                 z.append(self.get_func_val(np.array(tmp)))
             Z.append(z)
         Z = np.array(Z)
@@ -79,7 +79,7 @@ class OptimalBasic:
             z = []
             for xy_input in zip(xy_list[0],xy_list[1]):
                 tmp = list(xy_input)
-                tmp.extend(list(self.optimal_solution[0:self.variable_num-2]))
+                tmp.extend(list(self.optimal_solution[2:self.variable_num]))
                 z.append(self.get_func_val(np.array(tmp)))
             Z.append(z)
         Z = np.array(Z)
@@ -111,7 +111,7 @@ class Sphere(OptimalBasic):
         super().__init__(variable_num)
         self.max_search_range = np.array([1000]*self.variable_num) # nearly inf
         self.min_search_range = np.array([-1000]*self.variable_num) # nearly inf
-        self.optimal_solution = np.array([1]*self.variable_num)
+        self.optimal_solution = np.array([0]*self.variable_num)
         self.global_optimum_solution = 0
         self.plot_place = 10
         self.func_name = 'Sphere'
