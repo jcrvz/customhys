@@ -61,7 +61,7 @@ class OptimalBasic:
             z = []
             for xy_input in zip(xy_list[0],xy_list[1]):
                 tmp = list(xy_input)
-                tmp.extend(list(self.optimal_solution[0:self.variable_num-2]))
+                tmp.extend(list(self.optimal_solution[2:self.variable_num]))
                 z.append(self.get_func_val(np.array(tmp)))
             Z.append(z)
         Z = np.array(Z)
@@ -79,7 +79,7 @@ class OptimalBasic:
             z = []
             for xy_input in zip(xy_list[0],xy_list[1]):
                 tmp = list(xy_input)
-                tmp.extend(list(self.optimal_solution[0:self.variable_num-2]))
+                tmp.extend(list(self.optimal_solution[2:self.variable_num]))
                 z.append(self.get_func_val(np.array(tmp)))
             Z.append(z)
         Z = np.array(Z)
