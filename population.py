@@ -91,7 +91,7 @@ class Population():
 
         self.is_constrained = is_constrained
 
-        # TODO Add capábility for dealing with topologies (neighbourhoods)
+        # TODO Add capability for dealing with topologies (neighbourhoods)
         # self.local_best_fitness = self.fitness
         # self.local_best_positions = self.positions
 
@@ -155,7 +155,7 @@ class Population():
         self.current_worst_position = self.positions[self.fitness.argmax(), :]
         self.current_worst_fitness = self.fitness.max()
 
-    # Update particular positions acording to a selection scheme
+    # Update particular positions according to a selection scheme
     # -------------------------------------------------------------------------
     def update_particular(self, selection_method="greedy"):
         for agent in range(self.num_agents):
@@ -343,8 +343,7 @@ class Population():
         indices = np.tile(np.arange(self.num_dimensions), (self.num_agents, 1))
 
         # Permute indices per dimension
-        rand_indices = np.vectorize(np.random.permutation,
-                                    signature='(n)->(n)')(indices)
+        rand_indices = np.vectorize(np.random.permutation, signature='(n)->(n)')(indices)
 
         # Calculate the NOT condition (because positions were already updated!)
         condition = np.logical_not((indices == rand_indices) | (np.random.rand(self.num_agents, self.num_dimensions) <=
@@ -420,30 +419,21 @@ class Population():
 
         # Initialise delta or difference between two positions
         difference_positions = np.zeros((self.num_agents, self.num_dimensions))
-        exponential_factor = np.zeros((self.num_agents, self.num_dimensions))
 
         for agent in range(self.num_agents):
             # Select indices in order to avoid division by zero
             indices = (np.arange(self.num_agents) != agent)
 
             # Determine all vectorial distances with respect to agent
-            delta = self.positions[indices, :] - np.tile(
-                self.positions[agent, :], (self.num_agents - 1, 1))
+            delta = self.positions[indices, :] - np.tile(self.positions[agent, :], (self.num_agents - 1, 1))
 
             # Determine differences between lights
             delta_lights = np.tile((self.fitness[indices] - np.tile(self.fitness[agent],
-                                                                    (1, self.num_agents - 1))).transpose(),
-                                   (1, self.num_dimensions))
+                                    (1, self.num_agents - 1))).transpose(), (1, self.num_dimensions))
 
             # Find the total attraction for each agent
             difference_positions[agent, :] = np.sum(np.heaviside(-delta_lights, 0) * delta *
                                                     np.exp(-gamma * np.linalg.norm(delta, 2, 1) ** 2), 0)
-
-            # Find
-
-        # Determine the distances
-        #distances = np.tile((np.linalg.norm(difference_positions, 2, 1)).reshape(self.num_agents, 1), (1,
-        #                                                                                          self.num_dimensions))
 
         # Move fireflies according to their attractions
         self.positions += alpha * epsilon_value + beta * difference_positions
@@ -520,27 +510,71 @@ class Population():
         # Check constraints
         if self.is_constrained: self.__check_simple_constraints()
 
-    # Genetic Algorithm (GA)
+    # Genetic Algorithm (GA): Crossover
     # -------------------------------------------------------------------------
-    def ga_natural_selection(self, mechanism="mean"):
-        assert not any(np.isnan(self.fitness))
+    def ge_crossover(self, mating_pool_factor=0.1, mating_selection="natural", elitism_factor=0.01):
+        # Mating pool size
+        num_mates = np.round(mating_pool_factor * self.num_agents)
+
+        # Number of elite agents
+        num_elite = np.ceil(elitism_factor * self.num_agents)
+
+        # Number of offsprings
+        num_offsprings = self.num_agents - num_mates - num_elite
+
+        # Get the mating pool using the selection strategy specified
+        mating_pool_indices = self._ga_natural_selection(num_mates)
+
+        # Identify offspring indices
+        offspring_indices = np.setdiff1d(np.arange(self.num_agents), mating_pool_factor, True)
+
+        # Perform crossover
+        #for offspring in range(num_offsprings):
+            # Choose two parents from mating pool using a selection strategy
+
+    # Genetic Algorithm (GA): Selection strategies
+    # -------------------------------------------------------------------------
+    # -> Natural selection to obtain the mating pool
+    def _ga_natural_selection(self, num_mates):
         # Sort population according to its fitness values
-        sorted_values, sorted_indices = np.sort(self.fitness), np.argsort(self.fitness)
+        sorted_indices = np.argsort(self.fitness)
 
-        # Find the portion of population to be selected according to mechanism
-        assert isinstance(mechanism, (str, float, int))
-        if isinstance(mechanism, str):
-            if mechanism == "mean":
-                num_selection = np.searchsorted(sorted_values,sorted_values.mean(), 'right') # -1 (cz, < val) +1 (cz, num)
-            elif mechanism == "median":
-                num_selection = np.searchsorted(sorted_values, np.median(sorted_values), 'right')  # same as mean
-        else:
-            # it is assumed that mechanism is a proportion between 0 and 1
-            num_selection = np.round(mechanism * self.num_agents)
+        # Return indices corresponding mating pool
+        return sorted_indices[:num_mates]
 
-        # Return indices that form the mating pool
-        return sorted_indices[:int(num_selection)]
+    # -> Tournament pairing
+    def _ga_tournament_pairing(self, mating_pool, tournament_size=2, probability=1.0):
+        # Calculate probabilities
+        probabilities = probability * (1 - probability) ** np.arange(tournament_size)
 
+        # Initialise the mother and father indices
+        mate_indices = np.full(2, np.nan)
+
+        # Perform tournaments until all mates are selected
+        mate = 0
+        while mate < 2:
+            # Choose tournament candidates
+            random_indices = np.random.permutation(self.num_agents)[:tournament_size]
+
+            # Determine the candidate fitness values
+            candidates_indices = random_indices[np.argsort(self.fitness[random_indices])]
+
+            # Find the best according to its fitness and probability
+            possible_winner = candidates_indices[np.random.rand(tournament_size) < probabilities]
+            if possible_winner.size > 0:
+                mate_indices[mate] = possible_winner[0]
+                mate += 1
+
+        # Return the mating pool and its fitness
+        return mate_indices
+
+    # -> Roulette Wheel (Rank Weighting) Selection
+    def _ga_rank_weighting_pairing(self, mating_pool):
+        # Determine the probabilities
+        probabilities = (mating_pool.size - np.arange(mating_pool.size)) / np.sum(np.arange(mating_pool.size) + 1)
+
+        # Perform the roulette wheel selection and return parents
+        return np.searchsorted(np.cumsum(probabilities), np.random.rand(2))
 
     # %% ----------------------------------------------------------------------
     #    INTERNAL METHODS (avoid using them outside)

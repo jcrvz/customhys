@@ -24,7 +24,7 @@ problem = bf.Rosenbrock(num_dimensions)
 
 is_constrained = True
 
-# Find the proble function : objective function to minimise
+# Find the problem function : objective function to minimise
 problem_function = lambda x : problem.get_func_val(x)
 
 # Define the problem domain
