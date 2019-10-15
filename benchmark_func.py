@@ -111,7 +111,7 @@ class Sphere(OptimalBasic):
         super().__init__(variable_num)
         self.max_search_range = np.array([1000]*self.variable_num) # nearly inf
         self.min_search_range = np.array([-1000]*self.variable_num) # nearly inf
-        self.optimal_solution = np.array([1]*self.variable_num)
+        self.optimal_solution = np.array([0]*self.variable_num)
         self.global_optimum_solution = 0
         self.plot_place = 10
         self.func_name = 'Sphere'
