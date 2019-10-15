@@ -175,7 +175,7 @@ class Booth(OptimalBasic):
         super().__init__(2)
         self.max_search_range = np.array([10.]*self.variable_num)
         self.min_search_range = np.array([-10.]*self.variable_num)
-        self.optimal_solution = np.array([1.,-3.])
+        self.optimal_solution = np.array([1.,3.])
         self.global_optimum_solution = 0
         self.func_name = 'Booth'
 
