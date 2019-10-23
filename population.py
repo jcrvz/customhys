@@ -57,8 +57,8 @@ class Population():
         self.num_dimensions = len(boundaries[0])
 
         # Read the upper and lower boundaries of search space
-        self.lower_boundaries = boundaries[1]
-        self.upper_boundaries = boundaries[0]
+        self.lower_boundaries = boundaries[0]
+        self.upper_boundaries = boundaries[1]
         self.span_boundaries = self.upper_boundaries - self.lower_boundaries
         self.centre_boundaries = (self.upper_boundaries + self.lower_boundaries) / 2
 
