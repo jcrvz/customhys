@@ -38,7 +38,7 @@ class Population():
     iteration = 1
     rotation_matrix = []
 
-    # Parameters per selection method    
+    # Parameters per selection method
     metropolis_temperature = 1000.0
     metropolis_rate = 0.01
     metropolis_boltzmann = 1.0
@@ -53,7 +53,7 @@ class Population():
 
         # boundaries must be a tuple of np.ndarrays
 
-        # Read number of variables or dimension 
+        # Read number of variables or dimension
         self.num_dimensions = len(boundaries[0])
 
         # Read the upper and lower boundaries of search space
@@ -70,7 +70,7 @@ class Population():
         self.velocities = np.full((self.num_agents, self.num_dimensions), 0)
         self.fitness = np.full(self.num_agents, np.nan)
 
-        # General fitness measurements        
+        # General fitness measurements
         self.global_best_position = np.full(self.num_dimensions, np.nan)
         self.global_best_fitness = float('inf')
 
@@ -134,7 +134,7 @@ class Population():
     # Update population positions according to a selection scheme
     # -------------------------------------------------------------------------
     def update_population(self, selection_method="all"):
-        # Update population positons, velocities, and fitness        
+        # Update population positons, velocities, and fitness
         for agent in range(self.num_agents):
             if getattr(self, "_" + selection_method + "_selection")(
                     self.fitness[agent], self.previous_fitness[agent]):
@@ -197,7 +197,7 @@ class Population():
     #    PERTURBATORS
     # -------------------------------------------------------------------------
 
-    # Random sample  
+    # Random sample
     # -------------------------------------------------------------------------
     def random_sample(self):
         # Create random positions using random numbers between -1 and 1
@@ -206,7 +206,7 @@ class Population():
         # Check constraints
         if self.is_constrained: self.__check_simple_constraints()
 
-    # Random Walk   
+    # Random Walk
     # -------------------------------------------------------------------------
     def random_search(self, scale=0.01):
         # Move each agent using uniform random displacements
@@ -256,7 +256,7 @@ class Population():
         r_1 = self_conf * np.random.rand(self.num_agents, self.num_dimensions)
         r_2 = swarm_conf * np.random.rand(self.num_agents, self.num_dimensions)
 
-        # Find new velocities 
+        # Find new velocities
         self.velocities = inertial * self.velocities + r_1 * (
                 self.particular_best_positions - self.positions) + r_2 * (
                                   np.tile(self.global_best_position, (self.num_agents, 1)) - self.positions)
@@ -267,8 +267,8 @@ class Population():
         # Check constraints
         if self.is_constrained: self.__check_simple_constraints()
 
-    # Constricted PSO movement  
-    # -------------------------------------------------------------------------              
+    # Constricted PSO movement
+    # -------------------------------------------------------------------------
     def constriction_pso(self, kappa=1.0, self_conf=2.54, swarm_conf=2.56):
         # Find the constriction factor chi using phi
         phi = self_conf + swarm_conf
@@ -349,7 +349,7 @@ class Population():
         condition = np.logical_not((indices == rand_indices) | (np.random.rand(self.num_agents, self.num_dimensions) <=
                                                                 crossover_rate))
 
-        # Reverse the ones to their previous positions 
+        # Reverse the ones to their previous positions
         self.positions[condition] = self.previous_positions[condition]
 
         # Check constraints

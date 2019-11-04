@@ -66,15 +66,15 @@ class Metaheuristic():
 
                     # Check if a value is string
                     if type(value) == str:
-                        str_parameters.append(f"{parameter} = '{value}'")
+                        str_parameters.append("{} = '{}'".format(parameter, value))
                     else:
-                        str_parameters.append(f"{parameter} = {value}")
+                        str_parameters.append("{} = {}".format(parameter, value))
 
                 # Create an executable string with given arguments
-                full_string = f"{operator}({sep.join(str_parameters)})"
+                full_string = "{}({})".format(operator, sep.join(str_parameters))
             else:
                 # Create an executable string with default arguments
-                full_string = f"{operator}()"
+                full_string = "{}()".format(operator)
 
             # Store the read operator
             executable_operators.append(full_string)
@@ -106,7 +106,7 @@ class Metaheuristic():
             # Update the current iteration
             self.pop.iteration = iteration
 
-            self.__verbose(f"\nIteration {iteration}:\n{'-' * 50}")
+            self.__verbose("\nIteration {}:\n{}".format(iteration, '-' * 50))
 
             # Implement the sequence of operators and selectors
             for operator, selector in zip(self.operators, self.selectors):
@@ -116,7 +116,7 @@ class Metaheuristic():
                 # Evaluate fitness values
                 self.pop.evaluate_fitness()
 
-                # Update population 
+                # Update population
                 if selector in pop.__selection__:
                     self.pop.update_population(selector)
                 else:
@@ -126,20 +126,20 @@ class Metaheuristic():
                 self.pop.update_global()
 
                 # Report change
-                self.__verbose(f"{operator} and {selector} selection were "
-                               + f"applied!")
+                self.__verbose("{} and {} selection were ".format(operator, selector)
+                               + "applied!")
 
             # Update historical variables
             self.__update_historicals()
 
             # Verbose (if so) some information
             self.__verbose("Stagnation counter: " +
-                           f"{self.historical_stagnation[-1]}, population radious: " +
-                           f"{self.historical_radius[-1]}")
+                           "{}, population radious: ".format(self.historical_stagnation[-1]) +
+                           "{}".format(self.historical_radius[-1]))
             self.__verbose(self.pop.get_state())
 
     # Show historical variables
-    # -------------------------------------------------------------------------   
+    # -------------------------------------------------------------------------
     def show_performance(self):
         # Show historical fitness
         fig1, ax1 = plt.subplots()

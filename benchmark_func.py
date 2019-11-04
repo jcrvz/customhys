@@ -47,7 +47,7 @@ class OptimalBasic:
         return self.optimal_solution
 
     def get_search_range(self):
-        return [self.max_search_range, self.min_search_range]
+        return (self.max_search_range, self.min_search_range)
 
     def get_func_val(self, variables):
         return -1
@@ -175,7 +175,7 @@ class Booth(OptimalBasic):
         super().__init__(2)
         self.max_search_range = np.array([10.]*self.variable_num)
         self.min_search_range = np.array([-10.]*self.variable_num)
-        self.optimal_solution = np.array([1.,-3.])
+        self.optimal_solution = np.array([1.,3.])
         self.global_optimum_solution = 0
         self.func_name = 'Booth'
 
@@ -310,8 +310,8 @@ class SchafferN4(OptimalBasic):
         super().__init__(2)
         self.max_search_range = np.array([100.]*self.variable_num)
         self.min_search_range = np.array([-100]*self.variable_num)
-        self.optimal_solution = np.array([0.,1.25313])
-        self.global_optimum_solution = 0
+        self.optimal_solution = np.array([0.,1.253115])
+        self.global_optimum_solution = 0.292579
         self.plot_place = 10
         self.func_name = 'SchafferN4'
 
@@ -327,7 +327,7 @@ class StyblinskiTang(OptimalBasic):
         self.max_search_range = np.array([5.]*self.variable_num)
         self.min_search_range = np.array([-5.]*self.variable_num)
         self.optimal_solution = np.array([-2.903534]*self.variable_num)
-        self.global_optimum_solution = -39.166165*self.variable_num
+        self.global_optimum_solution = -39.16599*self.variable_num
         self.func_name = 'StyblinskiTang'
 
     def get_func_val(self, variables):
