@@ -91,7 +91,7 @@ class Population():
 
         self.is_constrained = is_constrained
 
-        # TODO Add capábility for dealing with topologies (neighbourhoods)
+        # TODO Add capability for dealing with topologies (neighbourhoods)
         # self.local_best_fitness = self.fitness
         # self.local_best_positions = self.positions
 
@@ -155,7 +155,7 @@ class Population():
         self.current_worst_position = self.positions[self.fitness.argmax(), :]
         self.current_worst_fitness = self.fitness.max()
 
-    # Update particular positions acording to a selection scheme
+    # Update particular positions according to a selection scheme
     # -------------------------------------------------------------------------
     def update_particular(self, selection_method="greedy"):
         for agent in range(self.num_agents):
@@ -189,8 +189,7 @@ class Population():
     # -------------------------------------------------------------------------
     def initialise_uniformly(self):
         for agent in range(0, self.num_agents):
-            self.positions[agent] = np.random.uniform(-1, 1,
-                                                      self.num_dimensions)
+            self.positions[agent] = np.random.uniform(-1, 1, self.num_dimensions)
 
             # TODO Add more initialisation operators like grid, boundary, etc.
 
@@ -202,8 +201,7 @@ class Population():
     # -------------------------------------------------------------------------
     def random_sample(self):
         # Create random positions using random numbers between -1 and 1
-        self.positions = np.random.uniform(-1, 1, (self.num_agents,
-                                                   self.num_dimensions))
+        self.positions = np.random.uniform(-1, 1, (self.num_agents, self.num_dimensions))
 
         # Check constraints
         if self.is_constrained: self.__check_simple_constraints()
@@ -212,8 +210,7 @@ class Population():
     # -------------------------------------------------------------------------
     def random_search(self, scale=0.01):
         # Move each agent using uniform random displacements
-        self.positions += scale * np.random.uniform(-1, 1, (self.num_agents,
-                                                            self.num_dimensions))
+        self.positions += scale * np.random.uniform(-1, 1, (self.num_agents, self.num_dimensions))
 
         # Check constraints
         if self.is_constrained: self.__check_simple_constraints()
@@ -223,8 +220,7 @@ class Population():
     # -------------------------------------------------------------------------
     def rayleigh_flight(self, scale=0.01):
         # Move each agent using gaussian random displacements
-        self.positions += scale * np.random.standard_normal((self.num_agents,
-                                                             self.num_dimensions))
+        self.positions += scale * np.random.standard_normal((self.num_agents, self.num_dimensions))
 
         # Check constraints
         if self.is_constrained: self.__check_simple_constraints()
@@ -233,14 +229,12 @@ class Population():
     # -------------------------------------------------------------------------
     def levy_flight(self, scale=1.0, beta=1.5):
         # Calculate x's std dev (Mantegna's algorithm)
-        sigma = ((np.math.gamma(1 + beta) * np.sin(np.pi * beta / 2)) /
-                 (np.math.gamma((1 + beta) / 2) * beta * (2 ** ((beta - 1) / 2)))) ** (1 / beta)
+        sigma = ((np.math.gamma(1 + beta) * np.sin(np.pi * beta / 2)) / (np.math.gamma((1 + beta) / 2) * beta *
+                                                                         (2 ** ((beta - 1) / 2)))) ** (1 / beta)
 
         # Determine x and y using normal distributions with sigma_y = 1
-        x = sigma * np.random.standard_normal((self.num_agents,
-                                               self.num_dimensions))
-        y = np.abs(np.random.standard_normal((self.num_agents,
-                                              self.num_dimensions)))
+        x = sigma * np.random.standard_normal((self.num_agents, self.num_dimensions))
+        y = np.abs(np.random.standard_normal((self.num_agents, self.num_dimensions)))
 
         # Calculate the random number with levy stable distribution
         levy_random = x / (y ** (1 / beta))
@@ -265,8 +259,7 @@ class Population():
         # Find new velocities
         self.velocities = inertial * self.velocities + r_1 * (
                 self.particular_best_positions - self.positions) + r_2 * (
-                                  np.tile(self.global_best_position, (self.num_agents, 1)) -
-                                  self.positions)
+                                  np.tile(self.global_best_position, (self.num_agents, 1)) - self.positions)
 
         # Move each agent using velocity's information
         self.positions += self.velocities
@@ -279,17 +272,16 @@ class Population():
     def constriction_pso(self, kappa=1.0, self_conf=2.54, swarm_conf=2.56):
         # Find the constriction factor chi using phi
         phi = self_conf + swarm_conf
-        chi = 2 * kappa / np.abs(2 - phi - np.sqrt(phi ** 2 - 4 * phi))
+        if phi > 4: chi = 2 * kappa / np.abs(2 - phi - np.sqrt(phi ** 2 - 4 * phi))
+        else: chi = np.sqrt(kappa)
 
         # Determine random numbers
         r_1 = self_conf * np.random.rand(self.num_agents, self.num_dimensions)
         r_2 = swarm_conf * np.random.rand(self.num_agents, self.num_dimensions)
 
-        # Find new velocities
-        self.velocities = chi * (self.velocities + r_1 * (
-                self.particular_best_positions - self.positions) + r_2 * (
-                                         np.tile(self.global_best_position, (self.num_agents, 1)) -
-                                         self.positions))
+        # Find new velocities 
+        self.velocities = chi * (self.velocities + r_1 * (self.particular_best_positions - self.positions) +
+                                 r_2 * (np.tile(self.global_best_position, (self.num_agents, 1)) - self.positions))
 
         # Move each agent using velocity's information
         self.positions += self.velocities
@@ -314,8 +306,7 @@ class Population():
             mutant = self.positions
 
         elif expression == "current-to-best":
-            mutant = self.positions + factor * (np.tile(
-                self.global_best_position, (self.num_agents, 1)) -
+            mutant = self.positions + factor * (np.tile(self.global_best_position, (self.num_agents, 1)) -
                                                 self.positions[np.random.permutation(self.num_agents), :])
 
         elif expression == "rand-to-best":
@@ -352,8 +343,7 @@ class Population():
         indices = np.tile(np.arange(self.num_dimensions), (self.num_agents, 1))
 
         # Permute indices per dimension
-        rand_indices = np.vectorize(np.random.permutation,
-                                    signature='(n)->(n)')(indices)
+        rand_indices = np.vectorize(np.random.permutation, signature='(n)->(n)')(indices)
 
         # Calculate the NOT condition (because positions were already updated!)
         condition = np.logical_not((indices == rand_indices) | (np.random.rand(self.num_agents, self.num_dimensions) <=
@@ -404,8 +394,8 @@ class Population():
     # Deterministic/Stochastic Spiral dynamic
     # -------------------------------------------------------------------------
     def spiral_dynamic(self, radius=0.9, angle=22.5, sigma=0.1):
-        # Update rotation matrix
-        self.__get_rotation_matrix((angle * np.pi / 180))
+        # Update rotation matrix 
+        self.__get_rotation_matrix(np.deg2rad(angle))
 
         for agent in range(self.num_agents):
             random_radii = np.random.uniform(radius - sigma, radius + sigma, self.num_dimensions)
@@ -429,30 +419,21 @@ class Population():
 
         # Initialise delta or difference between two positions
         difference_positions = np.zeros((self.num_agents, self.num_dimensions))
-        exponential_factor = np.zeros((self.num_agents, self.num_dimensions))
 
         for agent in range(self.num_agents):
             # Select indices in order to avoid division by zero
             indices = (np.arange(self.num_agents) != agent)
 
             # Determine all vectorial distances with respect to agent
-            delta = self.positions[indices, :] - np.tile(
-                self.positions[agent, :], (self.num_agents - 1, 1))
+            delta = self.positions[indices, :] - np.tile(self.positions[agent, :], (self.num_agents - 1, 1))
 
             # Determine differences between lights
             delta_lights = np.tile((self.fitness[indices] - np.tile(self.fitness[agent],
-                                                                    (1, self.num_agents - 1))).transpose(),
-                                   (1, self.num_dimensions))
+                                    (1, self.num_agents - 1))).transpose(), (1, self.num_dimensions))
 
             # Find the total attraction for each agent
             difference_positions[agent, :] = np.sum(np.heaviside(-delta_lights, 0) * delta *
                                                     np.exp(-gamma * np.linalg.norm(delta, 2, 1) ** 2), 0)
-
-            # Find
-
-        # Determine the distances
-        #distances = np.tile((np.linalg.norm(difference_positions, 2, 1)).reshape(self.num_agents, 1), (1,
-        #                                                                                          self.num_dimensions))
 
         # Move fireflies according to their attractions
         self.positions += alpha * epsilon_value + beta * difference_positions
@@ -528,6 +509,72 @@ class Population():
 
         # Check constraints
         if self.is_constrained: self.__check_simple_constraints()
+
+    # Genetic Algorithm (GA): Crossover
+    # -------------------------------------------------------------------------
+    def ge_crossover(self, mating_pool_factor=0.1, mating_selection="natural", elitism_factor=0.01):
+        # Mating pool size
+        num_mates = np.round(mating_pool_factor * self.num_agents)
+
+        # Number of elite agents
+        num_elite = np.ceil(elitism_factor * self.num_agents)
+
+        # Number of offsprings
+        num_offsprings = self.num_agents - num_mates - num_elite
+
+        # Get the mating pool using the selection strategy specified
+        mating_pool_indices = self._ga_natural_selection(num_mates)
+
+        # Identify offspring indices
+        offspring_indices = np.setdiff1d(np.arange(self.num_agents), mating_pool_factor, True)
+
+        # Perform crossover
+        #for offspring in range(num_offsprings):
+            # Choose two parents from mating pool using a selection strategy
+
+    # Genetic Algorithm (GA): Selection strategies
+    # -------------------------------------------------------------------------
+    # -> Natural selection to obtain the mating pool
+    def _ga_natural_selection(self, num_mates):
+        # Sort population according to its fitness values
+        sorted_indices = np.argsort(self.fitness)
+
+        # Return indices corresponding mating pool
+        return sorted_indices[:num_mates]
+
+    # -> Tournament pairing
+    def _ga_tournament_pairing(self, mating_pool, tournament_size=2, probability=1.0):
+        # Calculate probabilities
+        probabilities = probability * (1 - probability) ** np.arange(tournament_size)
+
+        # Initialise the mother and father indices
+        mate_indices = np.full(2, np.nan)
+
+        # Perform tournaments until all mates are selected
+        mate = 0
+        while mate < 2:
+            # Choose tournament candidates
+            random_indices = np.random.permutation(self.num_agents)[:tournament_size]
+
+            # Determine the candidate fitness values
+            candidates_indices = random_indices[np.argsort(self.fitness[random_indices])]
+
+            # Find the best according to its fitness and probability
+            possible_winner = candidates_indices[np.random.rand(tournament_size) < probabilities]
+            if possible_winner.size > 0:
+                mate_indices[mate] = possible_winner[0]
+                mate += 1
+
+        # Return the mating pool and its fitness
+        return mate_indices
+
+    # -> Roulette Wheel (Rank Weighting) Selection
+    def _ga_rank_weighting_pairing(self, mating_pool):
+        # Determine the probabilities
+        probabilities = (mating_pool.size - np.arange(mating_pool.size)) / np.sum(np.arange(mating_pool.size) + 1)
+
+        # Perform the roulette wheel selection and return parents
+        return np.searchsorted(np.cumsum(probabilities), np.random.rand(2))
 
     # %% ----------------------------------------------------------------------
     #    INTERNAL METHODS (avoid using them outside)

@@ -9,6 +9,7 @@ import numpy as np
 import population as pop
 import matplotlib.pyplot as plt
 
+
 class Metaheuristic():
     # Internal variables
 
