@@ -512,7 +512,7 @@ class Population():
 
     # Genetic Algorithm (GA): Crossover
     # -------------------------------------------------------------------------
-    def ge_crossover(self, mating_pool_factor=0.1, mating_selection="natural", elitism_factor=0.01):
+    def ga_crossover(self, mating_pool_factor=0.1, pairing_method="cost", elitism_factor=0.01):
         # Mating pool size
         num_mates = np.round(mating_pool_factor * self.num_agents)
 
@@ -524,6 +524,10 @@ class Population():
 
         # Get the mating pool using the selection strategy specified
         mating_pool_indices = self._ga_natural_selection(num_mates)
+        
+        # Get parents (at least a couple per offspring)
+        couple_indices = getattr(self, "_ga_" + pairing_method + "_pairing")(
+                    mating_pool, num_offsprings)
 
         # Identify offspring indices
         offspring_indices = np.setdiff1d(np.arange(self.num_agents), mating_pool_factor, True)
@@ -541,40 +545,146 @@ class Population():
 
         # Return indices corresponding mating pool
         return sorted_indices[:num_mates]
+    
+    # Genetic Algorithm (GA): Pairing strategies
+    # -------------------------------------------------------------------------
+    # -> Even-and-Odd pairing
+    def _ga_evenodd_pairing(self, mating_pool, num_couples):
+        # Check if the num of mates is even
+        mating_pool_size = mating_pool.size - (mating_pool.size % 2)
+        half_size = mating_pool_size // 2
+        
+        # Dummy indices according to the mating pool size
+        remaining = num_couples - half_size
+        if remaining > 0:
+            dummy_indices = np.tile(np.reshape(np.arange(mating_pool_size),(-1,2)).transpose(), (1, int(np.ceil(num_couples / half_size))))
+        else:
+            dummy_indices = np.reshape(np.arange(mating_pool_size),(-1,2)).transpose()
+        
+        # Return couple_indices
+        return mating_pool[dummy_indices[:, :num_couples]]
+            
+    
+    # -> Random pairing
+    def _ga_random_pairing(self, mating_pool, num_couples):
+        # Return two random indices from mating pool
+        return mating_pool[np.random.randint(mating_pool.size, size = (2, num_couples))]        
 
     # -> Tournament pairing
-    def _ga_tournament_pairing(self, mating_pool, tournament_size=2, probability=1.0):
+    def _ga_tournament_pairing(self, mating_pool, num_couples, tournament_size = 2, probability = 1.0):
         # Calculate probabilities
         probabilities = probability * (1 - probability) ** np.arange(tournament_size)
 
         # Initialise the mother and father indices
-        mate_indices = np.full(2, np.nan)
+        couple_indices = np.full((2, num_couples), np.nan)
 
         # Perform tournaments until all mates are selected
-        mate = 0
-        while mate < 2:
-            # Choose tournament candidates
-            random_indices = np.random.permutation(self.num_agents)[:tournament_size]
-
-            # Determine the candidate fitness values
-            candidates_indices = random_indices[np.argsort(self.fitness[random_indices])]
-
-            # Find the best according to its fitness and probability
-            possible_winner = candidates_indices[np.random.rand(tournament_size) < probabilities]
-            if possible_winner.size > 0:
-                mate_indices[mate] = possible_winner[0]
-                mate += 1
+        couple = 0
+        while couple < num_couples:
+            mate = 0
+            while mate < 2:
+                # Choose tournament candidates
+                random_indices = mating_pool[np.random.permutation(mating_pool.size)[:tournament_size]]
+    
+                # Determine the candidate fitness values
+                candidates_indices = random_indices[np.argsort(self.fitness[random_indices])]
+    
+                # Find the best according to its fitness and probability
+                possible_winner = candidates_indices[np.random.rand(tournament_size) < probabilities]
+                if possible_winner.size > 0:
+                    couple_indices[mate, couple] = possible_winner[0]
+                    mate += 1; couple += 1
 
         # Return the mating pool and its fitness
-        return mate_indices
+        return couple_indices
 
     # -> Roulette Wheel (Rank Weighting) Selection
-    def _ga_rank_weighting_pairing(self, mating_pool):
+    def _ga_rank_pairing(self, mating_pool, num_couples):
         # Determine the probabilities
         probabilities = (mating_pool.size - np.arange(mating_pool.size)) / np.sum(np.arange(mating_pool.size) + 1)
 
-        # Perform the roulette wheel selection and return parents
-        return np.searchsorted(np.cumsum(probabilities), np.random.rand(2))
+        # Perform the roulette wheel selection and return couples
+        couple_indices = np.searchsorted(np.cumsum(probabilities), np.random.rand(2*num_couples))
+        
+        # Return couples
+        return couple_indices.reshape((2, -1))
+    
+    # -> Roulette Wheel (Cost Weighting) Selection
+    def _ga_cost_pairing(self, mating_pool, num_couples):
+        # Cost normalisation from mating pool: cost - min(cost @ rejected mates)
+        normalised_cost = self.fitness[mating_pool] - np.min(self.fitness(np.setdiff1d(np.arange(self.num_agents),mating_pool)))
+        
+        # Determine the related probabilities
+        probabilities = np.abs(normalised_cost / np.sum(normalised_cost))
+        
+        # Perform the roulette wheel selection and return couples
+        couple_indices = np.searchsorted(np.cumsum(probabilities), np.random.rand(2*num_couples))
+        
+        # Return couples
+        return couple_indices.reshape((2, -1))     
+    
+    # Genetic Algorithm (GA): Crossover strategies
+    # -------------------------------------------------------------------------
+    # -> Single-Point Crossover
+    def _ga_single_crossover(self, parent_indices):
+        # Determine the single point per each couple
+        single_points = np.tile(np.random.randint(self.num_dimensions, size=parent_indices.shape[1]),(self.num_dimensions,1)).transpose()
+        
+        # Crossover condition mask 
+        crossover_mask = np.tile(np.arange(self.num_dimensions),(parent_indices.shape[1],1)) <= single_points
+        
+        # Get father and mother
+        father_position = self.positions[parent_indices[0,:],:]
+        mother_position = self.positions[parent_indices[1,:],:]
+        
+        # Initialise offsprings with mother positions
+        offsprings = mother_position
+        offsprings[crossover_mask] = father_position[crossover_mask]
+        
+        # Return offspring positions
+        return offsprings
+    
+    # -> Two-Point Crossover
+    # !!! It can be extended to multiple points
+    def _ga_two_crossover(self, parent_indices):
+        # Find raw points
+        raw_points = np.sort(np.random.randint(self.num_dimensions, size = (parent_indices.shape[1],2)))
+        
+        # Determine the single point per each couple
+        points = [np.tile(raw_points[:,x],(self.num_dimensions,1)).transpose() for x in range(raw_points.shape[1])]
+        
+        # Range matrix
+        dummy_matrix = np.tile(np.arange(self.num_dimensions),(parent_indices.shape[1],1))
+        
+        # Crossover condition mask (only for two points)
+        crossover_mask = (dummy_matrix <= points[0]) | (dummy_matrix > points[1])
+        
+        # Get father and mother
+        father_position = self.positions[parent_indices[0,:],:]
+        mother_position = self.positions[parent_indices[1,:],:]
+        
+        # Initialise offsprings with mother positions
+        offsprings = mother_position
+        offsprings[crossover_mask] = father_position[crossover_mask]
+        
+        # Return offspring positions
+        return offsprings
+    
+    # -> Uniform Crossover
+    def _ga_uniform_crossover(self, parent_indices):        
+        # Crossover condition mask (only for two points)
+        crossover_mask = np.random.rand(parent_indices.shape[1], self.num_dimensions) < 0.5
+        
+        # Get father and mother
+        father_position = self.positions[parent_indices[0,:],:]
+        mother_position = self.positions[parent_indices[1,:],:]
+        
+        # Initialise offsprings with mother positions
+        offsprings = mother_position
+        offsprings[crossover_mask] = father_position[crossover_mask]
+        
+        # Return offspring positions
+        return offsprings
 
     # %% ----------------------------------------------------------------------
     #    INTERNAL METHODS (avoid using them outside)
@@ -604,7 +714,7 @@ class Population():
 
     # Generate a N-D rotation matrix for a given angle
     # -------------------------------------------------------------------------
-    def __get_rotation_matrix(self, angle=0.39269908169872414):
+    def __get_rotation_matrix(self, angle = 0.39269908169872414):
         # Initialise the rotation matrix
         rotation_matrix = np.eye(self.num_dimensions)
 
