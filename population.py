@@ -188,8 +188,7 @@ class Population():
     # Initialise population using a random uniform in [-1,1]
     # -------------------------------------------------------------------------
     def initialise_uniformly(self):
-        for agent in range(0, self.num_agents):
-            self.positions[agent] = np.random.uniform(-1, 1, self.num_dimensions)
+        self.positions = np.random.uniform(-1, 1, (self.num_agents,self.num_dimensions))
 
             # TODO Add more initialisation operators like grid, boundary, etc.
 
@@ -527,7 +526,7 @@ class Population():
                     mating_pool_indices, num_offsprings)
 
         # Identify offspring indices
-        offspring_indices = np.setdiff1d(np.arange(self.num_agents), mating_pool_factor, True)
+        offspring_indices = np.setdiff1d(np.arange(self.num_agents), mating_pool_indices, True)
 
         # Perform crossover and assign to population
         self.positions[offspring_indices,:] = getattr(self, "_ga_" + crossover + "_crossover")(
@@ -561,7 +560,7 @@ class Population():
         # Return couple_indices
         return mating_pool[dummy_indices[:, :num_couples]]
 
-
+ 
     # -> Random pairing
     def _ga_random_pairing(self, mating_pool, num_couples):
         # Return two random indices from mating pool
@@ -709,6 +708,37 @@ class Population():
 
         # Return offspring positions
         return offsprings
+    
+    # Genetic Algorithm (GA): Selection strategies
+    # -------------------------------------------------------------------------
+    # -> Natural selection to obtain the mating pool
+    def ga_mutation(self, elite_rate=0.0, mutation_rate=0.2, distribution="uniform", parameter=1.0):
+        # Number of mutations to perform
+        num_mutation = np.round(self.num_agents * self.num_dimensions * mutation_rate)        
+        
+        # Identify mutable agents
+        agent_indices = np.random.randint(np.ceil(self.num_agents * elite_rate), 
+                                          self.num_agents, num_mutation)
+        dimension_indices = np.random.randint(0, self.num_dimensions, num_mutation)
+        
+        # If elitism is required
+        if elite_rate != 0.0:
+            agent_indices = np.argsort(self.fitness)[agent_indices]
+        
+        # Transform indices
+        rows, columns = np.meshgrid(agent_indices, dimension_indices)
+        
+        # Perform mutation according to the random distribution
+        if distribution == "uniform":
+            mutants = np.random.uniform(-1, 1, (num_mutation, num_mutation))
+            
+        elif distribution == "normal":
+            # Normal with mu = 0 and sigma = parameter
+            mutants = parameter * np.random.standard_normal((num_mutation, num_mutation))
+            
+        # Store mutants
+        self.positions[rows.flatten(), columns.flatten()] = mutants
+            
 
     # %% ----------------------------------------------------------------------
     #    INTERNAL METHODS (avoid using them outside)
