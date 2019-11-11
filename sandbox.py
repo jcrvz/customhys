@@ -34,8 +34,32 @@ boundaries = (problem.min_search_range, problem.max_search_range)
 #pop = dso.Population(problem_function,boundaries, num_agents, is_constrained)
 
 # test pour lire les paramètres
-simple_heuristics = [("spiral_dynamic", dict(radius=0.9, angle=22.5, sigma=0.1), "all"),
-                     ("local_random_walk", dict(probability=0.75, scale=1.0), "greedy")]
+#simple_heuristics = [("spiral_dynamic", dict(radius=0.9, angle=22.5, sigma=0.1), "all"),
+#                     ("local_random_walk", dict(probability=0.75, scale=1.0), "greedy")]
+
+# Pairing mechanics
+# evenodd, additional parameters = none
+# rank, additional parameters = none
+# cost, additional parameters = none
+# tournament, additional parameters = (tournament_size = 2, probability = 1.0)
+
+# Crossover mechanics
+# single, aditional parameters = none
+# two, aditional parameters = none
+# uniform, aditional parameters = none
+# blend, aditional parameters = none
+# linear, aditional parameters = coefficients[0.5, 0.5] -> coef_1 * father + coef_2 * mother
+
+# Mutation mechanichs
+# uniform, additional parameters = sigma (step scale)
+# normal, additional parameters = sigma (standard deviation)
+
+# Genetic algorithm
+simple_heuristics = [
+        #("ga_crossover", dict(pairing="tournament", crossover="uniform", mating_pool_factor=0.1, 
+        #                  coefficients=[0.5,0.5]), "all"),
+    ("ga_mutation", dict(elite_rate=0.1, mutation_rate=0.25, 
+                                          distribution="normal", sigma=1.0), "all")]
 
 verbose_option = True
 

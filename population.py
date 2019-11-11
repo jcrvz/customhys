@@ -28,8 +28,26 @@ __simple_heuristics__ = [
     ("constriction_pso", dict(kappa=1.0, self_conf=2.54, swarm_conf=2.56), "all"),          # 11
     ("gravitational_search", dict(alpha=0.02, epsilon=1e-23), "all"),                         # 12
     ("central_force", dict(gravity=0.001, alpha=0.001, beta=1.5, dt=1.0), "all"),       # 13
-    ("spiral_dynamic", dict(radius=0.9, angle=22.5, sigma=0.1), "all")                      # 14
+    ("spiral_dynamic", dict(radius=0.9, angle=22.5, sigma=0.1), "all"),                      # 14
+    ("ga_mutation", dict(elite_rate=0.0, mutation_rate=0.2, distribution="uniform", sigma=1.0), "all"),
+    ("ga_crossover", dict(pairing="cost", crossover="single", mating_pool_factor=0.1, coefficients=[0.5,0.5]), "all")
 ]
+
+# Genetic Algorithm internal mechanics
+
+# Crossover mechanics
+# single, aditional parameters = none
+# two, aditional parameters = none
+# uniform, aditional parameters = none
+# blend, aditional parameters = none
+# linear, aditional parameters = coefficients[0.5, 0.5] -> coef_1 * father + coef_2 * mother
+
+# Pairing mechanics
+# evenodd, additional parameters = none
+# rank, additional parameters = none
+# cost, additional parameters = none
+# tournament, additional parameters = (tournament_size = 2, probability = 1.0)
+
 
 
 # %% --------------------------------------------------------------------------
@@ -511,9 +529,10 @@ class Population():
 
     # Genetic Algorithm (GA): Crossover
     # -------------------------------------------------------------------------
-    def ga_crossover(self, pairing="cost", crossover="single", mating_pool_factor=0.1, coefficients=[0.5,0.5]):
+    def ga_crossover(self, pairing="cost", crossover="single", mating_pool_factor=0.1, 
+                     coefficients=[0.5,0.5]):
         # Mating pool size
-        num_mates = np.round(mating_pool_factor * self.num_agents)
+        num_mates = int(np.round(mating_pool_factor * self.num_agents))
 
         # Number of offsprings
         num_offsprings = self.num_agents - num_mates
@@ -530,7 +549,7 @@ class Population():
 
         # Perform crossover and assign to population
         self.positions[offspring_indices,:] = getattr(self, "_ga_" + crossover + "_crossover")(
-                    couple_indices, coefficients)
+                    couple_indices.astype(np.int64), coefficients)
 
     # Genetic Algorithm (GA): Selection strategies
     # -------------------------------------------------------------------------
@@ -544,7 +563,7 @@ class Population():
 
     # Genetic Algorithm (GA): Pairing strategies
     # -------------------------------------------------------------------------
-    # -> Even-and-Odd pairing
+    # FIXME -> Even-and-Odd pairing
     def _ga_evenodd_pairing(self, mating_pool, num_couples):
         # Check if the num of mates is even
         mating_pool_size = mating_pool.size - (mating_pool.size % 2)
@@ -575,8 +594,7 @@ class Population():
         couple_indices = np.full((2, num_couples), np.nan)
 
         # Perform tournaments until all mates are selected
-        couple = 0
-        while couple < num_couples:
+        for couple in range(num_couples):
             mate = 0
             while mate < 2:
                 # Choose tournament candidates
@@ -586,10 +604,10 @@ class Population():
                 candidates_indices = random_indices[np.argsort(self.fitness[random_indices])]
 
                 # Find the best according to its fitness and probability
-                possible_winner = candidates_indices[np.random.rand(tournament_size) < probabilities]
-                if possible_winner.size > 0:
-                    couple_indices[mate, couple] = possible_winner[0]
-                    mate += 1; couple += 1
+                winner = candidates_indices[np.random.rand(tournament_size) < probabilities]
+                if winner.size > 0:
+                    couple_indices[mate, couple] = int(winner[0])
+                    mate += 1; 
 
         # Return the mating pool and its fitness
         return couple_indices
@@ -608,7 +626,8 @@ class Population():
     # -> Roulette Wheel (Cost Weighting) Selection
     def _ga_cost_pairing(self, mating_pool, num_couples):
         # Cost normalisation from mating pool: cost - min(cost @ rejected mates)
-        normalised_cost = self.fitness[mating_pool] - np.min(self.fitness(np.setdiff1d(np.arange(self.num_agents),mating_pool)))
+        normalised_cost = self.fitness[mating_pool] - np.min(
+                self.fitness[np.setdiff1d(np.arange(self.num_agents),mating_pool)])
 
         # Determine the related probabilities
         probabilities = np.abs(normalised_cost / np.sum(normalised_cost))
@@ -712,32 +731,39 @@ class Population():
     # Genetic Algorithm (GA): Selection strategies
     # -------------------------------------------------------------------------
     # -> Natural selection to obtain the mating pool
-    def ga_mutation(self, elite_rate=0.0, mutation_rate=0.2, distribution="uniform", parameter=1.0):
-        # Number of mutations to perform
-        num_mutation = np.round(self.num_agents * self.num_dimensions * mutation_rate)        
+    def ga_mutation(self, elite_rate=0.0, mutation_rate=0.2, distribution="uniform", 
+                    sigma=1.0):
+        num_elite = int(np.ceil(self.num_agents * elite_rate))
         
-        # Identify mutable agents
-        agent_indices = np.random.randint(np.ceil(self.num_agents * elite_rate), 
-                                          self.num_agents, num_mutation)
-        dimension_indices = np.random.randint(0, self.num_dimensions, num_mutation)
+        # If num_elite equals num_agents then do nothing, or ...
+        if (num_elite < self.num_agents):
+            # Number of mutations to perform
+            num_mutations = int(np.round(self.num_agents * self.num_dimensions 
+                                         * mutation_rate))
         
-        # If elitism is required
-        if elite_rate != 0.0:
-            agent_indices = np.argsort(self.fitness)[agent_indices]
+            # Identify mutable agents
+            dimension_indices = np.random.randint(0, self.num_dimensions, num_mutations)
         
-        # Transform indices
-        rows, columns = np.meshgrid(agent_indices, dimension_indices)
+            if num_elite > 0:
+                agent_indices = np.argsort(self.fitness)[np.random.randint(num_elite, 
+                                          self.num_agents, num_mutations)]
+            else:
+                agent_indices = np.random.randint(num_elite, self.num_agents, 
+                                                  num_mutations)           
         
-        # Perform mutation according to the random distribution
-        if distribution == "uniform":
-            mutants = np.random.uniform(-1, 1, (num_mutation, num_mutation))
+            # Transform indices
+            rows, columns = np.meshgrid(agent_indices, dimension_indices)
+        
+            # Perform mutation according to the random distribution
+            if distribution == "uniform":
+                mutants = sigma * np.random.uniform(-1, 1, num_mutations ** 2)
             
-        elif distribution == "normal":
-            # Normal with mu = 0 and sigma = parameter
-            mutants = parameter * np.random.standard_normal((num_mutation, num_mutation))
+            elif distribution == "normal":
+                # Normal with mu = 0 and sigma = parameter
+                mutants = sigma * np.random.standard_normal(num_mutations ** 2)
             
-        # Store mutants
-        self.positions[rows.flatten(), columns.flatten()] = mutants
+            # Store mutants
+            self.positions[rows.flatten(), columns.flatten()] = mutants
             
 
     # %% ----------------------------------------------------------------------
