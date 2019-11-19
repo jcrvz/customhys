@@ -563,7 +563,7 @@ class Population():
 
     # Genetic Algorithm (GA): Pairing strategies
     # -------------------------------------------------------------------------
-    # FIXME -> Even-and-Odd pairing
+    # -> Even-and-Odd pairing
     def _ga_evenodd_pairing(self, mating_pool, num_couples):
         # Check if the num of mates is even
         mating_pool_size = mating_pool.size - (mating_pool.size % 2)

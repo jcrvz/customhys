@@ -56,8 +56,8 @@ boundaries = (problem.min_search_range, problem.max_search_range)
 
 # Genetic algorithm
 simple_heuristics = [
-        #("ga_crossover", dict(pairing="tournament", crossover="uniform", mating_pool_factor=0.1, 
-        #                  coefficients=[0.5,0.5]), "all"),
+        ("ga_crossover", dict(pairing="tournament", crossover="uniform", mating_pool_factor=0.1, 
+                          coefficients=[0.5,0.5]), "all"),
     ("ga_mutation", dict(elite_rate=0.1, mutation_rate=0.25, 
                                           distribution="normal", sigma=1.0), "all")]
 
