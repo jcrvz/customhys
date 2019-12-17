@@ -4,8 +4,9 @@ Created on Tue Nov 19 15:09:11 2019
 
 @author: L03130342
 """
+import numpy as np
 
-# List of several possible simple-heuristics
+# List of several possible simple-heuristics and their default parameters
 simple_heuristics = [
         # ********************** LOCAL RANDOM WALK ****************************
         ("local_random_walk", dict(probability=0.75, scale=1.00), "greedy"),    # 1
@@ -33,35 +34,50 @@ simple_heuristics = [
                               mating_pool_factor=0.1), "all")
     ]
 
-# list of possible parameters for each simple-heuristic in simple_heuristic
+# number of possible valuer for continuous parameters
+num_vals = 3
 
+# list of possible parameters for each simple-heuristic in simple_heuristic
 possible_parameters = [
         # n - (heuristic name, par1, par2, ..., recommended selector)
-        ("local_random_walk", dict(probability=[0.0, 1.0], scale=[0.0, 1.0]), "greedy"),
-        ('random_search', dict(scale=[0.0, 1.0]), "greedy"),  
+        ("local_random_walk", dict(probability = np.linspace(0.0,1.0,num_vals), 
+                                   scale = np.linspace(0.0,1.0,num_vals)), "greedy"),
+        ('random_search', dict(scale=np.linspace(0.0,1.0,num_vals)), "greedy"),  
         ("random_sample", dict(), "greedy"),
-        ("rayleigh_flight", dict(scale=[0.0, 1.0]), "greedy"),
-        ("levy_flight", dict(scale=[0.0, 1.0], beta=1.5), "greedy"),
+        ("rayleigh_flight", dict(scale=np.linspace(0.0,1.0,num_vals)), "greedy"),
+        ("levy_flight", dict(scale=np.linspace(0.0,1.0,num_vals), beta=[1.5]), "greedy"),
         ("mutation_de", dict(expression=["rand", "best", "current", "current-to-best", 
                                          "rand-to-best", "rand-to-bestandcurrent"], 
-                             num_rands=[1,3], factor=[0.0, 2.0]), "greedy"),
-        ('binomial_crossover_de', dict(crossover_rate=[0.0, 1.0]), "greedy"),
-        ("exponential_crossover_de", dict(crossover_rate=[0.0, 1.0]), "greedy"),
-        ("firefly", dict(epsilon=["uniform", "gaussian"], alpha=[0.0, 1.0], beta=1.0, 
-                         gamma=[1.0, 100.0]), "greedy"),
-        ("inertial_pso", dict(inertial=[0.0, 1.0], self_conf=[0.0, 5.0], 
-                              swarm_conf=[0.0, 5.0]), "all"), 
-        ("constriction_pso", dict(kappa=[0.0, 1.0], self_conf=[0.0, 5.0], 
-                                  swarm_conf=[0.0, 5.0]), "all"),
-        ("gravitational_search", dict(gravity=[0.0, 1.0], alpha=[0.0, 1.0], 
-                                      epsilon=1e-23), "all"),
-        ("central_force", dict(gravity=[0.0, 1.0], alpha=[0.0, 1.0], 
-                               beta=[0.0, 1.0], dt=1.0), "all"),   
-        ("spiral_dynamic", dict(radius=[0.0, 1.0], angle=[0.0, 180], 
-                                sigma=[0.0, 1.0]), "all"),
-        ("ga_mutation", dict(elite_rate=[0.0, 1.0], mutation_rate=[0.0, 1.0], 
-                             distribution=["uniform", "gaussian"], sigma=[0.0, 1.0]), 
-                                "all"),
+                             num_rands=[1,2,3], 
+                             factor=np.linspace(0.0,2.0,num_vals)), "greedy"),
+        ('binomial_crossover_de', dict(
+                         crossover_rate=np.linspace(0.0,1.0,num_vals)), "greedy"),
+        ("exponential_crossover_de", dict(
+                         crossover_rate=np.linspace(0.0,1.0,num_vals)), "greedy"),
+        ("firefly", dict(epsilon=["uniform", "gaussian"], 
+                         alpha=np.linspace(0.0,1.0,num_vals), 
+                         beta=[1.0], 
+                         gamma=np.linspace(1.0,100.0,num_vals)), "greedy"),
+        ("inertial_pso", dict(inertial=np.linspace(0.0,1.0,num_vals), 
+                              self_conf=np.linspace(0.0,5.0,num_vals), 
+                              swarm_conf=np.linspace(0.0,5.0,num_vals)), "all"), 
+        ("constriction_pso", dict(kappa=np.linspace(0.0,1.0,num_vals), 
+                                  self_conf=np.linspace(0.0,5.0,num_vals), 
+                                  swarm_conf=np.linspace(0.0,5.0,num_vals)), "all"),
+        ("gravitational_search", dict(gravity=np.linspace(0.0,1.0,num_vals), 
+                                      alpha=np.linspace(0.0,1.0,num_vals), 
+                                      epsilon=[1e-23]), "all"),
+        ("central_force", dict(gravity=np.linspace(0.0,1.0,num_vals), 
+                               alpha=np.linspace(0.0,1.0,num_vals), 
+                               beta=np.linspace(0.0,1.0,num_vals), 
+                               dt=[1.0]), "all"),   
+        ("spiral_dynamic", dict(radius=np.linspace(0.0,1.0,num_vals), 
+                                angle=np.linspace(0.0,1.0,num_vals), 
+                                sigma=np.linspace(0.0,1.0,num_vals)), "all"),
+        ("ga_mutation", dict(elite_rate=np.linspace(0.0,1.0,num_vals), 
+                             mutation_rate=np.linspace(0.0,1.0,num_vals), 
+                             distribution=["uniform", "gaussian"], 
+                             sigma=np.linspace(0.0,1.0,num_vals)), "all"),
         ("ga_crossover", dict(pairing=["evenodd", "rank", "cost", 
                                        "tournament_2_100", "tournament_2_75", 
                                        "tournament_3_100", "tournament_3_75"],
@@ -69,5 +85,75 @@ possible_parameters = [
                                         "linear_0.5_0.5", "linear_1.5_0.5", 
                                         "linear_0.5_1.5", "linear_1.5_1.5", 
                                         "linear_-0.5_0.5", "linear_0.5_-0.5"], 
-                              mating_pool_factor=[0.0, 1.0]), "all")
+                              mating_pool_factor=np.linspace(0.0,1.0,num_vals)), "all")
         ]
+
+def generate_heuristics(heuristics = possible_parameters):
+    # Initialise the collection of simple heuristics
+    file = open('operators_collection.txt', 'w')
+        
+    # For each simple heuristic, read their parameters and values
+    for operator, parameters, selector in heuristics:
+        # Store selectors
+        #selectors.append(selector)
+        print(f"\n\n-----\n{operator}:")
+        
+        # Read the number of parameters and how many values have each one
+        num_parameters = len(parameters)
+        if num_parameters > 0:
+            # Read the name and possible values of parameters
+            par_names = list(parameters.keys())
+            par_values = list(parameters.values())
+            
+            # Find the number of values for each parameter
+            par_num_values = [np.size(x) for x in par_values]
+            
+            # Determine the number of combinations
+            num_combinations = np.prod(par_num_values)
+            
+            # Create the table of all possible combinations (index per parameter)
+            indices = [x.flatten() for x in np.meshgrid(
+                *list(map(lambda x: np.arange(x), par_num_values)))]
+            
+            # For each combination, create a single dictionary which corresponds 
+            # to a simple search operator
+            for combi in range(num_combinations):
+                list_tuples = [(par_names[k], par_values[k][indices[k][combi]]) 
+                    for k in range(num_parameters)]
+                simple_par_combination = dict(list_tuples)
+                file.write(f"('{operator}', {simple_par_combination}, " + 
+                      f"'{selector}')\n")
+        
+    file.close()
+            
+            # f = open('file.txt', 'w')
+            # for t in list_of_tuples:
+            #     line = ' '.join(str(x) for x in t)
+            #     f.write(line + '\n')
+            # f.close()
+        
+        # if num_parameters >= 0:
+        #     sep = ","
+        #     str_parameters = []
+            
+    #         # For each parameter read its possible values
+    #         for parameter, values in parameters.items():
+
+    #             # Check if a value is string
+    #             if type(value) == str:
+    #                 str_parameters.append("{} = '{}'".format(parameter, value))
+    #             else:
+    #                 str_parameters.append("{} = {}".format(parameter, value))
+
+    #         # Create an executable string with given arguments
+    #         full_string = "{}({})".format(operator, sep.join(str_parameters))
+    #     else:
+    #         # Create an executable string with default arguments
+    #         full_string = "{}()".format(operator)
+
+    #     # Store the read operator
+    #     executable_operators.append(full_string)
+
+    # return executable_operators, selectors
+                
+generate_heuristics()
