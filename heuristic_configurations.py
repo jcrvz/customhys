@@ -35,7 +35,7 @@ simple_heuristics = [
     ]
 
 # number of possible valuer for continuous parameters
-num_vals = 3
+num_vals = 5
 
 # list of possible parameters for each simple-heuristic in simple_heuristic
 possible_parameters = [
@@ -89,14 +89,16 @@ possible_parameters = [
         ]
 
 def generate_heuristics(heuristics = possible_parameters):
+    # Counters: [classes, methods]
+    total_counters = [0, 0]
+    
     # Initialise the collection of simple heuristics
     file = open('operators_collection.txt', 'w')
         
     # For each simple heuristic, read their parameters and values
     for operator, parameters, selector in heuristics:
-        # Store selectors
-        #selectors.append(selector)
-        print(f"\n\n-----\n{operator}:")
+        # Update the total classes counter
+        total_counters[0] += 1
         
         # Read the number of parameters and how many values have each one
         num_parameters = len(parameters)
@@ -123,37 +125,16 @@ def generate_heuristics(heuristics = possible_parameters):
                 simple_par_combination = dict(list_tuples)
                 file.write(f"('{operator}', {simple_par_combination}, " + 
                       f"'{selector}')\n")
-        
+        else:
+            num_combinations = 0
+            
+        # Update the total combination counter
+        total_counters[1] += num_combinations
+            
+        print(f"{operator}: parameters={num_parameters}, " + 
+              f"combinations:{num_combinations}")
+    
     file.close()
-            
-            # f = open('file.txt', 'w')
-            # for t in list_of_tuples:
-            #     line = ' '.join(str(x) for x in t)
-            #     f.write(line + '\n')
-            # f.close()
-        
-        # if num_parameters >= 0:
-        #     sep = ","
-        #     str_parameters = []
-            
-    #         # For each parameter read its possible values
-    #         for parameter, values in parameters.items():
-
-    #             # Check if a value is string
-    #             if type(value) == str:
-    #                 str_parameters.append("{} = '{}'".format(parameter, value))
-    #             else:
-    #                 str_parameters.append("{} = {}".format(parameter, value))
-
-    #         # Create an executable string with given arguments
-    #         full_string = "{}({})".format(operator, sep.join(str_parameters))
-    #     else:
-    #         # Create an executable string with default arguments
-    #         full_string = "{}()".format(operator)
-
-    #     # Store the read operator
-    #     executable_operators.append(full_string)
-
-    # return executable_operators, selectors
-                
-generate_heuristics()
+    print("-" * 50 + "--\nTOTAL: classes=%d, operators=%d" % 
+          tuple(total_counters))        
+           
