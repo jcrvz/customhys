@@ -564,19 +564,23 @@ class Population():
         elif expression == "current-to-best":
             mutant = self.positions + factor * \
                 (np.tile(self.global_best_position,
-                         (self.num_agents, 1)) -\
+                         (self.num_agents, 1)) -
                  self.positions[np.random.permutation(self.num_agents), :])
 
         elif expression == "rand-to-best":
             mutant = self.positions[np.random.permutation(self.num_agents),
                                     :] + factor * \
-                (np.tile(self.global_best_position,(self.num_agents, 1)) -
+                (np.tile(self.global_best_position, (self.num_agents, 1)) -
                  self.positions[np.random.permutation(self.num_agents), :])
 
         elif expression == "rand-to-bestandcurrent":
-            mutant = self.positions[np.random.permutation(self.num_agents), :] + factor * \
-                     (np.tile(self.global_best_position, (self.num_agents, 1)) - self.positions[np.random.permutation(
-                         self.num_agents), :] +self.positions[np.random.permutation(self.num_agents), :]-self.positions)
+            mutant = self.positions[np.random.permutation(
+                self.num_agents), :] + factor * (np.tile(
+                    self.global_best_position, (self.num_agents, 1)) -
+                    self.positions[np.random.permutation(
+                        self.num_agents), :] + self.positions[
+                            np.random.permutation(
+                                self.num_agents), :] - self.positions)
         else:
             mutant = []
             raise self.__PopulationError('Invalid DE mutation scheme!')
@@ -584,8 +588,9 @@ class Population():
         # Add random parts according to num_rands
         if num_rands >= 0:
             for _ in range(num_rands):
-                mutant += factor * (self.positions[np.random.permutation(self.num_agents), :] -
-                               self.positions[np.random.permutation(self.num_agents), :])
+                mutant += factor * (self.positions[np.random.permutation(
+                    self.num_agents), :] - self.positions[
+                        np.random.permutation(self.num_agents), :])
         else:
             raise self.__PopulationError('Invalid DE mutation scheme!')
 
@@ -593,7 +598,8 @@ class Population():
         self.positions = mutant
 
         # Check constraints
-        if self.is_constrained: self.__check_simple_constraints()
+        if self.is_constrained:
+            self.__check_simple_constraints()
 
     def binomial_crossover_de(self, crossover_rate=0.5):
         """
@@ -611,22 +617,25 @@ class Population():
         """
         # Check the scale and beta value
         self.__check_parameter('crossover_rate', crossover_rate)
-        
+
         # Define indices
         indices = np.tile(np.arange(self.num_dimensions), (self.num_agents, 1))
 
         # Permute indices per dimension
-        rand_indices = np.vectorize(np.random.permutation, signature='(n)->(n)')(indices)
+        rand_indices = np.vectorize(np.random.permutation,
+                                    signature='(n)->(n)')(indices)
 
         # Calculate the NOT condition (because positions were already updated!)
-        condition = np.logical_not((indices == rand_indices) | (np.random.rand(self.num_agents, self.num_dimensions) <=
-                                                                crossover_rate))
+        condition = np.logical_not((indices == rand_indices) | (
+            np.random.rand(self.num_agents, self.num_dimensions) <=
+            crossover_rate))
 
         # Reverse the ones to their previous positions
         self.positions[condition] = self.previous_positions[condition]
 
         # Check constraints
-        if self.is_constrained: self.__check_simple_constraints()
+        if self.is_constrained:
+            self.__check_simple_constraints()
 
     def exponential_crossover_de(self, crossover_rate=0.5):
         """
@@ -644,7 +653,7 @@ class Population():
         """
         # Check the scale and beta value
         self.__check_parameter('crossover_rate', crossover_rate)
-        
+
         # Perform the exponential crossover procedure
         for agent in range(self.num_agents):
             for dim in range(self.num_dimensions):
@@ -654,14 +663,19 @@ class Population():
                 while True:
                     # Increase L and check the exponential crossover condition
                     exp_var += 1
-                    if np.logical_not((np.random.rand() < crossover_rate) and (exp_var < self.num_dimensions)): break
+                    if np.logical_not((np.random.rand() < crossover_rate) and
+                                      (exp_var < self.num_dimensions)):
+                        break
 
                 # Perform the crossover if the following condition is met
-                if dim not in [(n + x) % self.num_dimensions for x in range(exp_var)]:
-                    self.positions[agent, dim] = self.previous_positions[agent, dim]
+                if dim not in [(n + x) % self.num_dimensions for x in
+                               range(exp_var)]:
+                    self.positions[agent, dim] = self.previous_positions[
+                        agent, dim]
 
         # Check constraints
-        if self.is_constrained: self.__check_simple_constraints()
+        if self.is_constrained:
+            self.__check_simple_constraints()
 
     def local_random_walk(self, probability=0.75, scale=1.0):
         """
@@ -670,8 +684,8 @@ class Population():
         Parameters
         ----------
         probability : float, optional
-            It is the probability of discovering an alien egg (change an agent's position). 
-            The default is 0.75.
+            It is the probability of discovering an alien egg (change an
+            agent's position). The default is 0.75.
         scale : float, optional
             It is the step scale between [0.0, 1.0]. The default is 1.0.
 
@@ -689,10 +703,10 @@ class Population():
         r_2 = np.random.rand(self.num_agents, self.num_dimensions)
 
         # Move positions with a displacement due permutations and probabilities
-        self.positions += scale * r_1 * \
-            (self.positions[np.random.permutation(self.num_agents), :] -
-             self.positions[np.random.permutation(self.num_agents), :]) *\
-                np.heaviside(r_2 - probability, 0)
+        self.positions += scale * r_1 * (self.positions[
+            np.random.permutation(self.num_agents), :] - self.positions[
+                np.random.permutation(self.num_agents), :]) * np.heaviside(
+                    r_2 - probability, 0)
 
         # Check constraints
         if self.is_constrained:
@@ -721,7 +735,7 @@ class Population():
         self.__check_parameter('radius', radius)
         self.__check_parameter('angle', angle, (0.0, 360.0))
         self.__check_parameter('sigma', sigma)
-        
+
         # Update rotation matrix
         self.__get_rotation_matrix(np.deg2rad(angle))
 
@@ -735,7 +749,8 @@ class Population():
                                            self.global_best_position))
 
         # Check constraints
-        if self.is_constrained: self.__check_simple_constraints()
+        if self.is_constrained:
+            self.__check_simple_constraints()
 
     # Firefly (generalised)
     # -------------------------------------------------------------------------
@@ -764,7 +779,7 @@ class Population():
         self.__check_parameter('alpha', alpha)
         self.__check_parameter('beta', beta)
         self.__check_parameter('gamma', gamma)
-        
+
         # Determine epsilon values
         if epsilon == "gaussian":
             epsilon_value = np.random.standard_normal(
@@ -786,21 +801,26 @@ class Population():
             indices = (np.arange(self.num_agents) != agent)
 
             # Determine all vectorial distances with respect to agent
-            delta = self.positions[indices, :] - np.tile(self.positions[agent, :], (self.num_agents - 1, 1))
+            delta = self.positions[indices, :] - np.tile(
+                self.positions[agent, :], (self.num_agents - 1, 1))
 
             # Determine differences between lights
-            delta_lights = np.tile((self.fitness[indices] - np.tile(self.fitness[agent],
-                                    (1, self.num_agents - 1))).transpose(), (1, self.num_dimensions))
+            delta_lights = np.tile(
+                (self.fitness[indices] - np.tile(
+                    self.fitness[agent], (1, self.num_agents-1))).transpose(),
+                (1, self.num_dimensions))
 
             # Find the total attraction for each agent
-            difference_positions[agent, :] = np.sum(np.heaviside(-delta_lights, 0) * delta *
-                                                    np.exp(-gamma * np.linalg.norm(delta, 2, 1) ** 2), 0)
+            difference_positions[agent, :] = np.sum(
+                np.heaviside(-delta_lights, 0) * delta *
+                np.exp(-gamma * np.linalg.norm(delta, 2, 1) ** 2), 0)
 
         # Move fireflies according to their attractions
         self.positions += alpha * epsilon_value + beta * difference_positions
 
         # Check constraints
-        if self.is_constrained: self.__check_simple_constraints()
+        if self.is_constrained:
+            self.__check_simple_constraints()
 
     # Central Force Optimisation (CFO)
     # -------------------------------------------------------------------------
@@ -813,24 +833,29 @@ class Population():
             indices = (np.arange(self.num_agents) != agent)
 
             # Determine all masses differences with respect to agent
-            delta_masses = self.fitness[indices] - np.tile(self.fitness[agent], (1, self.num_agents - 1))
+            delta_masses = self.fitness[indices] - np.tile(
+                self.fitness[agent], (1, self.num_agents - 1))
 
             # Determine all vectorial distances with respect to agent
-            delta_positions = self.positions[indices, :] - np.tile(self.positions[agent, :], (self.num_agents - 1, 1))
+            delta_positions = self.positions[indices, :] - np.tile(
+                self.positions[agent, :], (self.num_agents - 1, 1))
 
             distances = np.linalg.norm(delta_positions, 2, 1)
 
             # Find the quotient part    ! -> - delta_masses (cz minimisation)
-            quotient = np.heaviside(-delta_masses, 0) * (np.abs(delta_masses) ** alpha) / (distances ** beta)
+            quotient = np.heaviside(-delta_masses, 0) * (
+                np.abs(delta_masses) ** alpha) / (distances ** beta)
 
             # Determine the acceleration for each agent
-            acceleration[agent, :] = gravity * np.sum(delta_positions * np.tile(quotient.transpose(),
-                                                                                (1, self.num_dimensions)), 0)
+            acceleration[agent, :] = gravity * np.sum(
+                delta_positions * np.tile(quotient.transpose(),
+                                          (1, self.num_dimensions)), 0)
 
         self.positions += 0.5 * acceleration * (dt ** 2)
 
         # Check constraints
-        if self.is_constrained: self.__check_simple_constraints()
+        if self.is_constrained:
+            self.__check_simple_constraints()
 
     # Gravitational Search Algorithm (GSA) simplified
     # -------------------------------------------------------------------------
@@ -842,7 +867,8 @@ class Population():
         gravitation = gravity * np.exp(- alpha * self.iteration)
 
         # Determine mass for each agent
-        raw_masses = (self.fitness - np.tile(self.current_worst_fitness, (1, self.num_agents)))
+        raw_masses = (self.fitness - np.tile(self.current_worst_fitness,
+                                             (1, self.num_agents)))
         masses = (raw_masses / np.sum(raw_masses)).reshape(self.num_agents)
 
         for agent in range(self.num_agents):
@@ -850,30 +876,37 @@ class Population():
             indices = (np.arange(self.num_agents) != agent)
 
             # Determine all vectorial distances with respect to agent
-            delta_positions = self.positions[indices, :] - np.tile(self.positions[agent, :], (self.num_agents - 1, 1))
+            delta_positions = self.positions[indices, :] - np.tile(
+                self.positions[agent, :], (self.num_agents - 1, 1))
 
-            quotient = masses[indices] / (np.linalg.norm(delta_positions, 2, 1) + epsilon)
+            quotient = masses[indices] / (
+                np.linalg.norm(delta_positions, 2, 1) + epsilon)
 
             # Force interaction
-            force_interaction = gravitation * np.tile(quotient.reshape(self.num_agents - 1, 1),
-                                                      (1, self.num_dimensions)) * delta_positions
+            force_interaction = gravitation * np.tile(
+                quotient.reshape(self.num_agents - 1, 1),
+                (1, self.num_dimensions)) * delta_positions
 
             # Acceleration
-            acceleration[agent, :] = np.sum(np.random.rand(self.num_agents - 1, self.num_dimensions) *
-                                            force_interaction, 0)
+            acceleration[agent, :] = np.sum(np.random.rand(
+                self.num_agents - 1, self.num_dimensions) *
+                force_interaction, 0)
 
         # Update velocities
-        self.velocities = np.random.rand(self.num_agents, self.num_dimensions) * self.velocities + acceleration
+        self.velocities = acceleration + np.random.rand(
+            self.num_agents, self.num_dimensions) * self.velocities
 
         # Update positions
         self.positions += self.velocities
 
         # Check constraints
-        if self.is_constrained: self.__check_simple_constraints()
+        if self.is_constrained:
+            self.__check_simple_constraints()
 
     # Genetic Algorithm (GA): Crossover
     # -------------------------------------------------------------------------
-    def ga_crossover(self, pairing="cost", crossover="single", mating_pool_factor=0.1):
+    def ga_crossover(self, pairing="cost", crossover="single",
+                     mating_pool_factor=0.1):
         # Mating pool size
         num_mates = int(np.round(mating_pool_factor * self.num_agents))
 
@@ -884,25 +917,28 @@ class Population():
         mating_pool_indices = self._ga_natural_selection(num_mates)
 
         # Get parents (at least a couple per offspring)
-        if len(pairing) > 10:          # if pairing = 'tournament_2_100', for example
-            pairing, tournament_size, tournament_probability = pairing.split("_")
-        else: # dummy (it must not be used)
-            tournament_size, tournament_probability = '-1.5', '-1'  
+        if len(pairing) > 10:  # if pairing = 'tournament_2_100', for example
+            pairing, tournament_size, tournament_probability = \
+                pairing.split("_")
+        else:  # dummy (it must not be used)
+            tournament_size, tournament_probability = '-1.5', '-1'
         couple_indices = getattr(self, "_ga_" + pairing + "_pairing")(
-                    mating_pool_indices, num_offsprings, int(tournament_size), 
+                    mating_pool_indices, num_offsprings, int(tournament_size),
                     float(tournament_probability)/100)
 
         # Identify offspring indices
-        offspring_indices = np.setdiff1d(np.arange(self.num_agents), mating_pool_indices, True)
+        offspring_indices = np.setdiff1d(
+            np.arange(self.num_agents), mating_pool_indices, True)
 
         # Perform crossover and assign to population
-        if len(crossover) > 7:          # if crossover = 'linear_0.5_0.5', for example
+        if len(crossover) > 7:  # if crossover = 'linear_0.5_0.5', for example
             crossover, coeff1, coeff2 = crossover.split("_")
             coefficients = [float(coeff1), float(coeff2)]
-        else: # dummy (it must not be used)
-            coefficients = [np.nan, np.nan]  
-        self.positions[offspring_indices,:] = getattr(self, "_ga_" + crossover + "_crossover")(
-                    couple_indices.astype(np.int64), coefficients)
+        else:  # dummy (it must not be used)
+            coefficients = [np.nan, np.nan]
+        self.positions[offspring_indices, :] = getattr(
+            self, "_ga_" + crossover + "_crossover")(
+                couple_indices.astype(np.int64), coefficients)
 
     # Genetic Algorithm (GA): Selection strategies
     # -------------------------------------------------------------------------
@@ -921,27 +957,32 @@ class Population():
         # Check if the num of mates is even
         mating_pool_size = mating_pool.size - (mating_pool.size % 2)
         half_size = mating_pool_size // 2
-        
+
         # Dummy indices according to the mating pool size
         remaining = num_couples - half_size
         if remaining > 0:
-            dummy_indices = np.tile(np.reshape(np.arange(mating_pool_size),(-1,2)).transpose(), (1, int(np.ceil(num_couples / half_size))))
+            dummy_indices = np.tile(
+                np.reshape(np.arange(mating_pool_size), (-1, 2)).transpose(),
+                (1, int(np.ceil(num_couples / half_size))))
         else:
-            dummy_indices = np.reshape(np.arange(mating_pool_size),(-1,2)).transpose()
-            
+            dummy_indices = np.reshape(np.arange(mating_pool_size),
+                                       (-1, 2)).transpose()
+
         # Return couple_indices
         return mating_pool[dummy_indices[:, :num_couples]]
 
- 
     # -> Random pairing
     def _ga_random_pairing(self, mating_pool, num_couples, *args):
         # Return two random indices from mating pool
-        return mating_pool[np.random.randint(mating_pool.size, size = (2, num_couples))]
+        return mating_pool[np.random.randint(mating_pool.size,
+                                             size=(2, num_couples))]
 
     # -> Tournament pairing
-    def _ga_tournament_pairing(self, mating_pool, num_couples, tournament_size = 2, probability = 1.0):
+    def _ga_tournament_pairing(self, mating_pool, num_couples,
+                               tournament_size=2, probability=1.0):
         # Calculate probabilities
-        probabilities = probability * (1 - probability) ** np.arange(tournament_size)
+        probabilities = probability * (
+            (1 - probability) ** np.arange(tournament_size))
 
         # Initialise the mother and father indices
         couple_indices = np.full((2, num_couples), np.nan)
@@ -951,16 +992,19 @@ class Population():
             mate = 0
             while mate < 2:
                 # Choose tournament candidates
-                random_indices = mating_pool[np.random.permutation(mating_pool.size)[:tournament_size]]
+                random_indices = mating_pool[
+                    np.random.permutation(mating_pool.size)[:tournament_size]]
 
                 # Determine the candidate fitness values
-                candidates_indices = random_indices[np.argsort(self.fitness[random_indices])]
+                candidates_indices = random_indices[
+                    np.argsort(self.fitness[random_indices])]
 
                 # Find the best according to its fitness and probability
-                winner = candidates_indices[np.random.rand(tournament_size) < probabilities]
+                winner = candidates_indices[
+                    np.random.rand(tournament_size) < probabilities]
                 if winner.size > 0:
                     couple_indices[mate, couple] = int(winner[0])
-                    mate += 1; 
+                    mate += 1
 
         # Return the mating pool and its fitness
         return couple_indices
@@ -968,25 +1012,28 @@ class Population():
     # -> Roulette Wheel (Rank Weighting) Selection
     def _ga_rank_pairing(self, mating_pool, num_couples, *args):
         # Determine the probabilities
-        probabilities = (mating_pool.size - np.arange(mating_pool.size)) / np.sum(np.arange(mating_pool.size) + 1)
+        probabilities = (mating_pool.size - np.arange(mating_pool.size)) /\
+            np.sum(np.arange(mating_pool.size) + 1)
 
         # Perform the roulette wheel selection and return couples
-        couple_indices = np.searchsorted(np.cumsum(probabilities), np.random.rand(2*num_couples))
+        couple_indices = np.searchsorted(
+            np.cumsum(probabilities), np.random.rand(2*num_couples))
 
         # Return couples
         return couple_indices.reshape((2, -1))
 
     # -> Roulette Wheel (Cost Weighting) Selection
     def _ga_cost_pairing(self, mating_pool, num_couples, *args):
-        # Cost normalisation from mating pool: cost - min(cost @ rejected mates)
-        normalised_cost = self.fitness[mating_pool] - np.min(
-                self.fitness[np.setdiff1d(np.arange(self.num_agents),mating_pool)])
+        # Cost normalisation from mating pool: cost - min(cost @ non mates)
+        normalised_cost = self.fitness[mating_pool] - np.min(self.fitness[
+            np.setdiff1d(np.arange(self.num_agents), mating_pool)])
 
         # Determine the related probabilities
         probabilities = np.abs(normalised_cost / np.sum(normalised_cost))
 
         # Perform the roulette wheel selection and return couples
-        couple_indices = np.searchsorted(np.cumsum(probabilities), np.random.rand(2*num_couples))
+        couple_indices = np.searchsorted(np.cumsum(probabilities),
+                                         np.random.rand(2*num_couples))
 
         # Return couples
         return couple_indices.reshape((2, -1))
@@ -996,14 +1043,17 @@ class Population():
     # -> Single-Point Crossover
     def _ga_single_crossover(self, parent_indices, *args):
         # Determine the single point per each couple
-        single_points = np.tile(np.random.randint(self.num_dimensions, size=parent_indices.shape[1]),(self.num_dimensions,1)).transpose()
+        single_points = np.tile(np.random.randint(
+            self.num_dimensions, size=parent_indices.shape[1]),
+            (self.num_dimensions, 1)).transpose()
 
         # Crossover condition mask
-        crossover_mask = np.tile(np.arange(self.num_dimensions),(parent_indices.shape[1],1)) <= single_points
+        crossover_mask = np.tile(np.arange(self.num_dimensions),
+                                 (parent_indices.shape[1], 1)) <= single_points
 
         # Get father and mother
-        father_position = self.positions[parent_indices[0,:],:]
-        mother_position = self.positions[parent_indices[1,:],:]
+        father_position = self.positions[parent_indices[0, :], :]
+        mother_position = self.positions[parent_indices[1, :], :]
 
         # Initialise offsprings with mother positions
         offsprings = mother_position
@@ -1016,20 +1066,26 @@ class Population():
     # !!! It can be extended to multiple points
     def _ga_two_crossover(self, parent_indices, *args):
         # Find raw points
-        raw_points = np.sort(np.random.randint(self.num_dimensions, size = (parent_indices.shape[1],2)))
+        raw_points = np.sort(np.random.randint(
+            self.num_dimensions, size=(parent_indices.shape[1], 2)))
 
         # Determine the single point per each couple
-        points = [np.tile(raw_points[:,x],(self.num_dimensions,1)).transpose() for x in range(raw_points.shape[1])]
+        points = [np.tile(raw_points[:, x], (
+            self.num_dimensions, 1)).transpose()
+            for x in range(raw_points.shape[1])]
 
         # Range matrix
-        dummy_matrix = np.tile(np.arange(self.num_dimensions),(parent_indices.shape[1],1))
+        dummy_matrix = np.tile(np.arange(self.num_dimensions),
+                               (parent_indices.shape[1], 1))
 
         # Crossover condition mask (only for two points)
-        crossover_mask = (dummy_matrix <= points[0]) | (dummy_matrix > points[1])
+        crossover_mask = ((dummy_matrix <= points[0]) |
+                          (dummy_matrix > points[1]))
+        # OPTIMIZE : crossover_mask = points[1] < dummy_matrix <= points[0]
 
         # Get father and mother
-        father_position = self.positions[parent_indices[0,:],:]
-        mother_position = self.positions[parent_indices[1,:],:]
+        father_position = self.positions[parent_indices[0, :], :]
+        mother_position = self.positions[parent_indices[1, :], :]
 
         # Initialise offsprings with mother positions
         offsprings = mother_position
@@ -1041,11 +1097,12 @@ class Population():
     # -> Uniform Crossover
     def _ga_uniform_crossover(self, parent_indices, *args):
         # Crossover condition mask (only for two points)
-        crossover_mask = np.random.rand(parent_indices.shape[1], self.num_dimensions) < 0.5
+        crossover_mask = np.random.rand(
+            parent_indices.shape[1], self.num_dimensions) < 0.5
 
         # Get father and mother
-        father_position = self.positions[parent_indices[0,:],:]
-        mother_position = self.positions[parent_indices[1,:],:]
+        father_position = self.positions[parent_indices[0, :], :]
+        mother_position = self.positions[parent_indices[1, :], :]
 
         # Initialise offsprings with mother positions
         offsprings = mother_position
@@ -1057,67 +1114,71 @@ class Population():
     # -> Random blending crossover
     def _ga_blend_crossover(self, parent_indices, *args):
         # Initialise random numbers between 0 and 1
-        beta_values = np.random.rand(parent_indices.shape[1], self.num_dimensions)
+        beta_values = np.random.rand(
+            parent_indices.shape[1], self.num_dimensions)
 
         # Get father and mother
-        father_position = self.positions[parent_indices[0,:],:]
-        mother_position = self.positions[parent_indices[1,:],:]
+        father_position = self.positions[parent_indices[0, :], :]
+        mother_position = self.positions[parent_indices[1, :], :]
 
         # Determine offsprings with father and mother positions
-        offsprings = beta_values * father_position + (1 - beta_values) * mother_position
+        offsprings = beta_values * father_position +\
+            (1 - beta_values) * mother_position
 
         # Return offspring positions
         return offsprings
 
-     # -> Linear crossover: ofspring = coeff[0] * father + coeff[1] * mother
-    def _ga_linear_crossover(self, parent_indices, coefficients=[0.5,0.5]):
+    # -> Linear crossover: ofspring = coeff[0] * father + coeff[1] * mother
+    def _ga_linear_crossover(self, parent_indices, coefficients=[0.5, 0.5]):
         # Get father and mother
-        father_position = self.positions[parent_indices[0,:],:]
-        mother_position = self.positions[parent_indices[1,:],:]
+        father_position = self.positions[parent_indices[0, :], :]
+        mother_position = self.positions[parent_indices[1, :], :]
 
         # Determine offsprings with father and mother positions
-        offsprings = coefficients[0] * father_position + coefficients[1] * mother_position
+        offsprings = coefficients[0] * father_position +\
+            coefficients[1] * mother_position
 
         # Return offspring positions
         return offsprings
-    
+
     # Genetic Algorithm (GA): Selection strategies
     # -------------------------------------------------------------------------
     # -> Natural selection to obtain the mating pool
-    def ga_mutation(self, elite_rate=0.0, mutation_rate=0.2, distribution="uniform", 
-                    sigma=1.0):
+    def ga_mutation(self, elite_rate=0.0, mutation_rate=0.2,
+                    distribution="uniform", sigma=1.0):
         num_elite = int(np.ceil(self.num_agents * elite_rate))
-        
+
         # If num_elite equals num_agents then do nothing, or ...
         if (num_elite < self.num_agents):
             # Number of mutations to perform
-            num_mutations = int(np.round(self.num_agents * self.num_dimensions 
+            num_mutations = int(np.round(self.num_agents * self.num_dimensions
                                          * mutation_rate))
-        
+
             # Identify mutable agents
-            dimension_indices = np.random.randint(0, self.num_dimensions, num_mutations)
-        
+            dimension_indices = np.random.randint(
+                0, self.num_dimensions, num_mutations)
+
             if num_elite > 0:
-                agent_indices = np.argsort(self.fitness)[np.random.randint(num_elite, 
-                                          self.num_agents, num_mutations)]
+                agent_indices = np.argsort(self.fitness)[
+                    np.random.randint(num_elite, self.num_agents,
+                                      num_mutations)]
             else:
-                agent_indices = np.random.randint(num_elite, self.num_agents, 
-                                                  num_mutations)           
-        
+                agent_indices = np.random.randint(num_elite, self.num_agents,
+                                                  num_mutations)
+
             # Transform indices
             rows, columns = np.meshgrid(agent_indices, dimension_indices)
-        
+
             # Perform mutation according to the random distribution
             if distribution == "uniform":
                 mutants = sigma * np.random.uniform(-1, 1, num_mutations ** 2)
-            
+
             elif distribution == "gaussian":
                 # Normal with mu = 0 and sigma = parameter
                 mutants = sigma * np.random.standard_normal(num_mutations ** 2)
-            
+
             # Store mutants
             self.positions[rows.flatten(), columns.flatten()] = mutants
-            
 
     # ----------------------------------------------------------------------
     #    INTERNAL METHODS (avoid using them outside)
@@ -1147,7 +1208,7 @@ class Population():
 
     # Generate a N-D rotation matrix for a given angle
     # -------------------------------------------------------------------------
-    def __get_rotation_matrix(self, angle = 0.39269908169872414):
+    def __get_rotation_matrix(self, angle=0.39269908169872414):
         # Initialise the rotation matrix
         rotation_matrix = np.eye(self.num_dimensions)
 
@@ -1172,6 +1233,47 @@ class Population():
 
         self.rotation_matrix = rotation_matrix
 
+    # TODO: Selection in one method - Fix other codes
+    def _selection(self, new, old, selector="greedy"):
+
+        # Greedy selection
+        if selector == "greedy":
+            selection_condition = new <= old
+        #
+        # Metropolis selection
+        elif selector == "metropolis":
+            if new <= old:
+                selection_condition = True
+            else:
+                if np.math.exp(-(new - old) / (
+                        self.metropolis_boltzmann *
+                        self.metropolis_temperature * (
+                            (1 - self.metropolis_rate) ** self.iteration) +
+                        1e-23)) > np.random.rand():
+                    selection_condition = True
+                else:
+                    selection_condition = False
+        #
+        # Probabilistic selection
+        elif selector == "probabilistic":
+            if new <= old:
+                selection_condition = True
+            else:
+                if np.random.rand() < self.probability_selection:
+                    selection_condition = True
+                else:
+                    selection_condition = False
+        #
+        # All selection
+        elif selector == "all":
+            selection_condition = True
+        #
+        # None selection
+        elif selector == "none":
+            selection_condition = False
+
+        return selection_condition
+
     # Greedy selection : new is better than old one
     # -------------------------------------------------------------------------
     def _selection_greedy(self, new, old):
@@ -1184,14 +1286,16 @@ class Population():
         if new <= old:
             selection_condition = True
         else:
-            if np.math.exp(-(new - old) / (self.metropolis_boltzmann * self.metropolis_temperature *
-                                           ((1 - self.metropolis_rate) ** self.iteration) + 1e-23)) > np.random.rand():
+            if np.math.exp(-(new - old) / (
+                    self.metropolis_boltzmann * self.metropolis_temperature *
+                    ((1 - self.metropolis_rate) ** self.iteration) + 1e-23)
+                    ) > np.random.rand():
                 selection_condition = True
             else:
                 selection_condition = False
         return selection_condition
 
-        # Probabilistic selection : apply greedy and worst is chosen if rand < prob
+        # Probabilistic selection: worst is chosen iif rand < prob
 
     # -------------------------------------------------------------------------
     def _selection_probabilistic(self, new, old):
@@ -1213,7 +1317,7 @@ class Population():
 
     # None selection : new does not matter
     # -------------------------------------------------------------------------
-    def _none_selection(self, *args):
+    def _selection_none(self, *args):
         return False
 
     # Additional internal methods
@@ -1222,8 +1326,8 @@ class Population():
         Simple PopulationError to manage exceptions.
         """
         pass
-    
-    def __check_parameter(self, par_name, par_value, interval=(0.0, 1.0), 
+
+    def __check_parameter(self, par_name, par_value, interval=(0.0, 1.0),
                           par_type=float):
         """
         Check if a parameter or variable is into an interval.
@@ -1250,8 +1354,7 @@ class Population():
         """
         # Check if the parameter value is into the interval
         assert isinstance(par_value, par_type)
-        if not interval[0] <= par_value <= interval[1]: 
-            raise self.__PopulationError(f"Invalid value! {par_name} = " + 
-                                         f"{par_value} must be in " + 
+        if not interval[0] <= par_value <= interval[1]:
+            raise self.__PopulationError(f"Invalid value! {par_name} = " +
+                                         f"{par_value} must be in " +
                                          f"[{interval[0]}, {interval[1]}]")
-
