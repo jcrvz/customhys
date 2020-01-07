@@ -50,7 +50,8 @@ class Metaheuristic():
                                   is_constrained)
 
         # Check and read the simple heuristics
-        self.operators, self.selectors = self.process_heuristics(simple_heuristics)
+        self.operators, self.selectors = self.process_heuristics(
+            simple_heuristics)
 
         # Define the maximum number of iterations
         self.num_iterations = threshold_iterations
@@ -117,9 +118,9 @@ class Metaheuristic():
         self.pop.evaluate_fitness()
 
         # Update population, particular, and global
-        self.pop.update_population("all")
-        self.pop.update_particular("all")
-        self.pop.update_global()  # Default: greedy
+        self.pop.update_positions()  # Default: 'population', 'all'
+        self.pop.update_positions('particular', 'all')
+        self.pop.update_positions('global', 'greedy')  # Default: greedy
 
         # Update historical variables
         self.__update_historicals()
@@ -141,12 +142,12 @@ class Metaheuristic():
 
                 # Update population
                 if selector in pop.__selection__:
-                    self.pop.update_population(selector)
+                    self.pop.update_positions('population', selector)
                 else:
-                    self.pop.update_population("all")
+                    self.pop.update_positions()
 
                 # Update global position
-                self.pop.update_global()
+                self.pop.update_positions('global', 'greedy') 
 
                 # Report change
                 self.__verbose("{} and {} selection were ".format(operator, selector)
