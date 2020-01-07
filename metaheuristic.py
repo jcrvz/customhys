@@ -2,7 +2,7 @@
 """
 Created on Thu Sep 26 16:56:01 2019
 
-@author: L03130342
+@author: Jorge Mario Cruz-Duarte (jcrvz.github.io)
 """
 
 import numpy as np
@@ -11,16 +11,39 @@ import matplotlib.pyplot as plt
 
 
 class Metaheuristic():
+    """
+    Create a metaheuristic method by employing different simple search operators
+    """
     # Internal variables
 
     # Class initialisation
     # -------------------------------------------------------------------------
-    def __init__(self, problem_function, boundaries, simple_heuristics, is_constrained=True, num_agents=30,
-                 threshold_iterations=100, verbose=True):
-        #                 threshold_stagnation = 30, threshold_fitness_change = 1e-12,
-        #                 threshold_position_change = 1e-12,
-        #                 threshold_fitness = 1e-12, theoretical_fitness = 0.0
-        #                 threshold_population_radius = 1e-3):
+    def __init__(self, problem_function, boundaries, simple_heuristics, 
+                 is_constrained=True, num_agents=30, threshold_iterations=100, 
+                 verbose=True):
+        """
+        Parameters
+        ----------
+        problem_function : function
+            A function that maps a 1-by-D array of real values ​​to a real value
+        boundaries : TYPE
+            DESCRIPTION.
+        simple_heuristics : TYPE
+            DESCRIPTION.
+        is_constrained : TYPE, optional
+            DESCRIPTION. The default is True.
+        num_agents : TYPE, optional
+            DESCRIPTION. The default is 30.
+        threshold_iterations : TYPE, optional
+            DESCRIPTION. The default is 100.
+        verbose : TYPE, optional
+            DESCRIPTION. The default is True.
+
+        Returns
+        -------
+        None.
+
+        """
 
         # Create population
         self.pop = pop.Population(problem_function, boundaries, num_agents,

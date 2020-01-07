@@ -2,57 +2,53 @@
 """
 Created on Tue Sep 17 14:29:43 2019
 
-@author: jkpvsz
+@author: Jorge Mario Cruz-Duarte (jcrvz.github.io)
 """
 import numpy as np
 from itertools import combinations
 
-__operators__ = ['random_search', 'random_sample', 'rayleigh_flight',
-                 'inertial_pso', 'constricted_pso', 'levy_flight', 'mutation_de',
-                 'spiral_dynamic', 'central_force', 'gravitational_search', 
-                 'ga_mutation', 'ga_crossover']
-__crossover__ = ['binomial_crossover_de', 'exponential_crossover_de']
-__selection__ = ['greedy', 'probabilistic', 'metropolis', 'all', 'none']
+all_operators = ['random_search', 'random_sample', 'rayleigh_flight',
+                 'inertial_pso', 'constricted_pso', 'levy_flight',
+                 'mutation_de', 'spiral_dynamic', 'central_force',
+                 'gravitational_search', 'ga_mutation', 'ga_crossover',
+                 'binomial_crossover_de', 'exponential_crossover_de']
+
+all_selectors = ['greedy', 'probabilistic', 'metropolis', 'all', 'none']
 
 #     Operator call name, dictionary with default parameters, default selector
-__simple_heuristics__ = [
-    ("local_random_walk", dict(probability=0.75, scale=1.0), "greedy"),                       # 1
-    ('random_search', dict(scale=0.01), "greedy"),                                               # 2
-    ("random_sample", dict(), "greedy"),                                                            # 3
-    ("rayleigh_flight", dict(scale=0.01), "greedy"),                                             # 4
-    ("levy_flight", dict(scale=1.0, beta=1.5), "greedy"),                                     # 5
-    ("mutation_de", dict(scheme=("current-to-best", 1), factor=1.0), "greedy"),               # 6
-    ('binomial_crossover_de', dict(crossover_rate=0.5), "greedy"),                               # 7
-    ("exponential_crossover_de", dict(crossover_rate=0.5), "greedy"),                            # 8
-    ("firefly", dict(epsilon="uniform", alpha=0.8, beta=1.0, gamma=1.0), "greedy"),     # 9
-    ("inertial_pso", dict(inertial=0.7, self_conf=1.54, swarm_conf=1.56), "all"),          # 10
-    ("constriction_pso", dict(kappa=1.0, self_conf=2.54, swarm_conf=2.56), "all"),          # 11
-    ("gravitational_search", dict(alpha=0.02, epsilon=1e-23), "all"),                         # 12
-    ("central_force", dict(gravity=0.001, alpha=0.001, beta=1.5, dt=1.0), "all"),       # 13
-    ("spiral_dynamic", dict(radius=0.9, angle=22.5, sigma=0.1), "all"),                      # 14
-    ("ga_mutation", dict(elite_rate=0.0, mutation_rate=0.2, distribution="uniform", sigma=1.0), "all"),
-    ("ga_crossover", dict(pairing="cost", crossover="single", mating_pool_factor=0.1, coefficients=[0.5,0.5]), "all")
+all_heuristics = [
+    ("local_random_walk", dict(probability=0.75, scale=1.0), "greedy"),
+    ('random_search', dict(scale=0.01), "greedy"),
+    ("random_sample", dict(), "greedy"),
+    ("rayleigh_flight", dict(scale=0.01), "greedy"),
+    ("levy_flight", dict(scale=1.0, beta=1.5), "greedy"),
+    ("mutation_de", dict(scheme=("current-to-best", 1), factor=1.0),
+     "greedy"),
+    ('binomial_crossover_de', dict(crossover_rate=0.5), "greedy"),
+    ("exponential_crossover_de", dict(crossover_rate=0.5), "greedy"),
+    ("firefly", dict(epsilon="uniform", alpha=0.8, beta=1.0, gamma=1.0),
+     "greedy"),
+    ("inertial_pso", dict(inertial=0.7, self_conf=1.54, swarm_conf=1.56),
+     "all"),
+    ("constriction_pso", dict(kappa=1.0, self_conf=2.54, swarm_conf=2.56),
+     "all"),
+    ("gravitational_search", dict(alpha=0.02, epsilon=1e-23), "all"),
+    ("central_force", dict(gravity=0.001, alpha=0.001, beta=1.5, dt=1.0),
+     "all"),
+    ("spiral_dynamic", dict(radius=0.9, angle=22.5, sigma=0.1), "all"),
+    ("ga_mutation", dict(elite_rate=0.0, mutation_rate=0.2,
+                         distribution="uniform", sigma=1.0), "all"),
+    ("ga_crossover", dict(pairing="cost", crossover="single",
+                          mating_pool_factor=0.1, coefficients=[0.5, 0.5]),
+     "all")
 ]
 
-# Genetic Algorithm internal mechanics
 
-# Crossover mechanics
-# single, aditional parameters = none
-# two, aditional parameters = none
-# uniform, aditional parameters = none
-# blend, aditional parameters = none
-# linear, aditional parameters = coefficients[0.5, 0.5] -> coef_1 * father + coef_2 * mother
-
-# Pairing mechanics
-# evenodd, additional parameters = none
-# rank, additional parameters = none
-# cost, additional parameters = none
-# tournament, additional parameters = (tournament_size = 2, probability = 1.0)
-
-
-
-# %% --------------------------------------------------------------------------
 class Population():
+    """
+    Generates a population that search along the problem domain using
+    different strategies.
+    """
     # Internal variables
     iteration = 1
     rotation_matrix = []
@@ -67,25 +63,54 @@ class Population():
     # -------------------------------------------------------------------------
     def __init__(self, problem_function, boundaries, num_agents=30,
                  is_constrained=True):
+        """
+        Parameters
+        ----------
+        problem_function : function
+            A function that maps a 1-by-D array of real values ​​to a real
+            value.
+        boundaries : tuple
+            A tuple with two lists of size D corresponding to the lower and
+            upper limits of search space, such as:
+                boundaries = (lower_boundaries, upper_boundaries)
+            Note: Dimensions of search domain are read from these boundaries.
+        num_agents : int, optional
+            Number of search agents or population size. The default is 30.
+        is_constrained : bool, optional
+            Avoid agents abandon the search space. The default is True.
+
+        Returns
+        -------
+        None.
+
+        """
         # Read problem, it must be a callable function
+        assert callable(problem_function)
         self.problem_function = problem_function
 
         # boundaries must be a tuple of np.ndarrays
 
         # Read number of variables or dimension
-        self.num_dimensions = len(boundaries[0])
+        if len(boundaries[0]) == len(boundaries[1]):
+            self.num_dimensions = len(boundaries[0])
+        else:
+            raise self.__PopulationError("Lower and upper boundaries must " +
+                                         "have the same length")
 
         # Read the upper and lower boundaries of search space
         self.lower_boundaries = boundaries[0]
         self.upper_boundaries = boundaries[1]
         self.span_boundaries = self.upper_boundaries - self.lower_boundaries
-        self.centre_boundaries = (self.upper_boundaries + self.lower_boundaries) / 2
+        self.centre_boundaries = (self.upper_boundaries +
+                                  self.lower_boundaries) / 2
 
         # Read number of agents in population
+        assert isinstance(num_agents, int)
         self.num_agents = num_agents
 
         # Initialise positions and fitness values
-        self.positions = np.full((self.num_agents, self.num_dimensions), np.nan)
+        self.positions = np.full((self.num_agents, self.num_dimensions),
+                                 np.nan)
         self.velocities = np.full((self.num_agents, self.num_dimensions), 0)
         self.fitness = np.full(self.num_agents, np.nan)
 
@@ -114,48 +139,96 @@ class Population():
         # self.local_best_fitness = self.fitness
         # self.local_best_positions = self.positions
 
-    # %% ----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     #    BASIC TOOLS
     # -------------------------------------------------------------------------
 
-    # Generate a string containing the current state of the population
-    # -------------------------------------------------------------------------
     def get_state(self):
+        """
+        Generates a string containing the current state of the population
+
+        Returns
+        -------
+        str
+            Information about the best solution found in the current state:
+                str = 'x_best = ARRAY, f_best = VALUE'
+
+        """
         return ("x_best = " + str(self.__rescale_back(
-            self.global_best_position)) + ", with f_best = " +
+            self.global_best_position)) + ", f_best = " +
                 str(self.global_best_fitness))
 
-    # Rescale all agents from [-1,1] to [lower,upper]
-    # -------------------------------------------------------------------------
     def get_population(self):
-        rescaled_positions = np.tile(self.centre_boundaries,
-                                     (self.num_agents, 1)) + self.positions * np.tile(
-            self.span_boundaries / 2, (self.num_agents, 1))
+        """
+        Gives the current population positions from [-1, 1]^num_dimesions to
+        the original search space scale.
 
+        Returns
+        -------
+        rescaled_positions : ndarray
+            Population positions as a num_agents-by-num_dimensions array.
+
+        """
+        rescaled_positions = np.tile(
+            self.centre_boundaries, (self.num_agents, 1)) + self.positions *\
+            np.tile(self.span_boundaries / 2, (self.num_agents, 1))
         return rescaled_positions
 
-    # Rescale all agents from [lower,upper] to [-1,1]
-    # -------------------------------------------------------------------------
     def set_population(self, positions):
+        """
+        Sets the current population positions from the original search space
+        scale to [-1, 1]^num_dimesions.
+
+        Parameters
+        ----------
+        positions : ndarray
+            Population positions as a num_agents-by-num_dimensions array.
+
+        Returns
+        -------
+        rescaled_positions : ndarray
+            Population positions as a num_agents-by-num_dimensions array.
+
+        """
         rescaled_positions = 2 * (positions - np.tile(
             self.centre_boundaries, (self.num_agents, 1))) / np.tile(
             self.span_boundaries, (self.num_agents, 1))
 
         return rescaled_positions
 
-    # Evaluate population positions in the problem function
-    # -------------------------------------------------------------------------
     def evaluate_fitness(self):
+        """
+        Evaluates the population positions in the problem function.
+
+        Returns
+        -------
+        None.
+
+        """
         for agent in range(self.num_agents):
             self.fitness[agent] = self.problem_function(
                 self.__rescale_back(self.positions[agent, :]))
 
-    # Update population positions according to a selection scheme
-    # -------------------------------------------------------------------------
     def update_population(self, selection_method="all"):
+        """
+        Updates the population positions according to a selection scheme.
+        The variable all_selectors contains the possible strings.
+
+        Parameters
+        ----------
+        selection_method : str, optional
+            A string corresponding to a selection method. The selectors
+            available are: 'greedy', 'probabilistic', 'metropolis', 'all',
+            'none'. The default is 'all'.
+
+        Returns
+        -------
+        None.
+
+        """
         # Update population positons, velocities, and fitness
         for agent in range(self.num_agents):
-            if getattr(self, "_" + selection_method + "_selection")(
+            if getattr(self, "_selection_" + selection_method)(
                     self.fitness[agent], self.previous_fitness[agent]):
                 # if new positions are improved, then update past register ...
                 self.previous_fitness[agent] = self.fitness[agent]
@@ -170,89 +243,183 @@ class Population():
         # Update the current best and worst positions (forced to greedy)
         self.current_best_position = self.positions[self.fitness.argmin(), :]
         self.current_best_fitness = self.fitness.min()
-
         self.current_worst_position = self.positions[self.fitness.argmax(), :]
         self.current_worst_fitness = self.fitness.max()
 
-    # Update particular positions according to a selection scheme
-    # -------------------------------------------------------------------------
     def update_particular(self, selection_method="greedy"):
+        """
+        Updates the particular positions according to a selection scheme.
+        The variable all_selectors contains the possible strings.
+
+        Parameters
+        ----------
+        selection_method : str, optional
+            A string corresponding to a selection method. The selectors
+            available are: 'greedy', 'probabilistic', 'metropolis', 'all',
+            'none'. The default is 'greedy'.
+
+        Returns
+        -------
+        None.
+
+        """
         for agent in range(self.num_agents):
-            if getattr(self, "_" + selection_method + "_selection")(
+            if getattr(self, "_selection_" + selection_method)(
                     self.fitness[agent], self.particular_best_fitness[agent]):
                 self.particular_best_fitness[agent] = self.fitness[agent]
-                self.particular_best_positions[agent, :] = self.positions[agent, :]
+                self.particular_best_positions[agent, :] = \
+                    self.positions[agent, :]
 
-    # Update global position according to a selection scheme
-    # -------------------------------------------------------------------------
     def update_global(self, selection_method="greedy"):
+        """
+        Updates the global position according to a selection scheme.
+        The variable all_selectors contains the possible strings.
+
+        Parameters
+        ----------
+        selection_method : str, optional
+            A string corresponding to a selection method. The selectors
+            available are: 'greedy', 'probabilistic', 'metropolis', 'all',
+            'none'. The default is 'greedy'.
+
+        Returns
+        -------
+        None.
+
+        """
         # Perform particular updating
         self.update_particular(selection_method)
 
         # Read current global best agent
-        candidate_position = self.particular_best_positions[ \
+        candidate_position = self.particular_best_positions[
                              self.particular_best_fitness.argmin(), :]
         candidate_fitness = self.particular_best_fitness.min()
-        if getattr(self, "_" + selection_method + "_selection")(
-                candidate_fitness, self.global_best_fitness) or np.isinf(
-            candidate_fitness):
+        if (getattr(self, "_selection_" + selection_method)(
+                candidate_fitness, self.global_best_fitness) or
+                np.isinf(candidate_fitness)):
             self.global_best_position = candidate_position
             self.global_best_fitness = candidate_fitness
 
-            # %% ----------------------------------------------------------------------
-
+    # -------------------------------------------------------------------------
     #    INITIALISATORS
     # -------------------------------------------------------------------------
+    # TODO Add more initialisation operators like grid, boundary, etc.
 
-    # Initialise population using a random uniform in [-1,1]
-    # -------------------------------------------------------------------------
     def initialise_uniformly(self):
-        self.positions = np.random.uniform(-1, 1, (self.num_agents,self.num_dimensions))
+        """
+        Initialises population by using a random uniform distribution in
+        [-1,1].
 
-            # TODO Add more initialisation operators like grid, boundary, etc.
+        Returns
+        -------
+        None.
+        """
 
-    # %% ----------------------------------------------------------------------
+        self.positions = np.random.uniform(-1, 1, (self.num_agents,
+                                                   self.num_dimensions))
+
+    # -------------------------------------------------------------------------
     #    PERTURBATORS
     # -------------------------------------------------------------------------
 
-    # Random sample
-    # -------------------------------------------------------------------------
     def random_sample(self):
+        """
+        Performs a random sampling using a uniform distribution in [-1, 1].
+
+        Returns
+        -------
+        None.
+
+        """
         # Create random positions using random numbers between -1 and 1
-        self.positions = np.random.uniform(-1, 1, (self.num_agents, self.num_dimensions))
+        self.positions = np.random.uniform(-1, 1, (self.num_agents,
+                                                   self.num_dimensions))
 
         # Check constraints
-        if self.is_constrained: self.__check_simple_constraints()
+        if self.is_constrained:
+            self.__check_simple_constraints()
 
-    # Random Walk
-    # -------------------------------------------------------------------------
     def random_search(self, scale=0.01):
+        """
+        Performs a random walk using a uniform distribution in [-1, 1].
+
+        Parameters
+        ----------
+        scale : float, optional
+            It is the step scale between [0.0, 1.0]. The default is 0.01.
+
+        Returns
+        -------
+        None.
+
+        """
+        # Check the scale value
+        self.__check_parameter('scale', scale)
+
         # Move each agent using uniform random displacements
-        self.positions += scale * np.random.uniform(-1, 1, (self.num_agents, self.num_dimensions))
+        self.positions += scale * \
+            np.random.uniform(-1, 1, (self.num_agents, self.num_dimensions))
 
         # Check constraints
-        if self.is_constrained: self.__check_simple_constraints()
+        if self.is_constrained:
+            self.__check_simple_constraints()
 
-        # Rayleigh Flight
-
-    # -------------------------------------------------------------------------
     def rayleigh_flight(self, scale=0.01):
+        """
+        Perform a Rayleigh flight using a normal standard distribution.
+
+        Parameters
+        ----------
+        scale : float, optional
+            It is the step scale between [0.0, 1.0]. The default is 0.01.
+
+        Returns
+        -------
+        None.
+
+        """
+        # Check the scale value
+        self.__check_parameter('scale', scale)
+
         # Move each agent using gaussian random displacements
-        self.positions += scale * np.random.standard_normal((self.num_agents, self.num_dimensions))
+        self.positions += scale * \
+            np.random.standard_normal((self.num_agents, self.num_dimensions))
 
         # Check constraints
-        if self.is_constrained: self.__check_simple_constraints()
+        if self.is_constrained:
+            self.__check_simple_constraints()
 
-    # Lévy flight (Mantegna's algorithm)
-    # -------------------------------------------------------------------------
     def levy_flight(self, scale=1.0, beta=1.5):
+        """
+        Perform a Lévy flight by using the Mantegna's algorithm.
+
+        Parameters
+        ----------
+        scale : float, optional
+            It is the step scale between [0.0, 1.0]. The default is 1.0.
+        beta : float, optional
+            It is the distribution parameter between [1.0, 3.0]. The default
+            is 1.5.
+
+        Returns
+        -------
+        None.
+
+        """
+        # Check the scale and beta value
+        self.__check_parameter('scale', scale)
+        self.__check_parameter('beta', beta, (1.0, 3.0))
+
         # Calculate x's std dev (Mantegna's algorithm)
-        sigma = ((np.math.gamma(1 + beta) * np.sin(np.pi * beta / 2)) / (np.math.gamma((1 + beta) / 2) * beta *
-                                                                         (2 ** ((beta - 1) / 2)))) ** (1 / beta)
+        sigma = ((np.math.gamma(1 + beta) * np.sin(np.pi * beta / 2)) /
+                 (np.math.gamma((1 + beta) / 2) * beta *
+                  (2 ** ((beta - 1) / 2)))) ** (1 / beta)
 
         # Determine x and y using normal distributions with sigma_y = 1
-        x = sigma * np.random.standard_normal((self.num_agents, self.num_dimensions))
-        y = np.abs(np.random.standard_normal((self.num_agents, self.num_dimensions)))
+        x = sigma * np.random.standard_normal((self.num_agents,
+                                               self.num_dimensions))
+        y = np.abs(np.random.standard_normal((self.num_agents,
+                                              self.num_dimensions)))
 
         # Calculate the random number with levy stable distribution
         levy_random = x / (y ** (1 / beta))
@@ -261,55 +428,129 @@ class Population():
         z = np.random.standard_normal((self.num_agents, self.num_dimensions))
 
         # Move each agent using levy random displacements
-        self.positions += scale * z * levy_random * (self.positions - np.tile(self.global_best_position,
-                                                                              (self.num_agents, 1)))
+        self.positions += scale * z * levy_random * \
+            (self.positions - np.tile(self.global_best_position,
+                                      (self.num_agents, 1)))
 
         # Check constraints
-        if self.is_constrained: self.__check_simple_constraints()
+        if self.is_constrained:
+            self.__check_simple_constraints()
 
-    # Inertial PSO movement
-    # -------------------------------------------------------------------------
     def inertial_pso(self, inertial=0.7, self_conf=1.54, swarm_conf=1.56):
+        """
+        Performs a swarm movement by using the inertial version of Particle
+        Swarm Optimisation (PSO).
+
+        Parameters
+        ----------
+        inertial : float, optional
+            Inertial factor. The default is 0.7.
+        self_conf : float, optional
+            Self confidence factor. The default is 1.54.
+        swarm_conf : float, optional
+            Swarm confidence factor. The default is 1.56.
+
+        Returns
+        -------
+        None.
+
+        """
+        # Check the scale and beta value
+        self.__check_parameter('inertial', inertial)
+        self.__check_parameter('self_conf', self_conf, (0.0, 10.0))
+        self.__check_parameter('swarm_conf', swarm_conf, (0.0, 10.0))
+
         # Determine random numbers
         r_1 = self_conf * np.random.rand(self.num_agents, self.num_dimensions)
         r_2 = swarm_conf * np.random.rand(self.num_agents, self.num_dimensions)
 
         # Find new velocities
         self.velocities = inertial * self.velocities + r_1 * (
-                self.particular_best_positions - self.positions) + r_2 * (
-                                  np.tile(self.global_best_position, (self.num_agents, 1)) - self.positions)
+                self.particular_best_positions - self.positions) + \
+            r_2 * (np.tile(self.global_best_position, (self.num_agents, 1)) -
+                   self.positions)
 
         # Move each agent using velocity's information
         self.positions += self.velocities
 
         # Check constraints
-        if self.is_constrained: self.__check_simple_constraints()
+        if self.is_constrained:
+            self.__check_simple_constraints()
 
-    # Constricted PSO movement
-    # -------------------------------------------------------------------------
     def constriction_pso(self, kappa=1.0, self_conf=2.54, swarm_conf=2.56):
+        """
+        Performs a swarm movement by using the constricted version of Particle
+        Swarm Optimisation (PSO).
+
+        Parameters
+        ----------
+        kappa : float, optional
+            Kappa factor. The default is 0.7.
+        self_conf : float, optional
+            Self confidence factor. The default is 1.54.
+        swarm_conf : float, optional
+            Swarm confidence factor. The default is 1.56.
+
+        Returns
+        -------
+        None.
+
+        """
+        # Check the scale and beta value
+        self.__check_parameter('kappa', kappa)
+        self.__check_parameter('self_conf', self_conf, (0.0, 10.0))
+        self.__check_parameter('swarm_conf', swarm_conf, (0.0, 10.0))
+
         # Find the constriction factor chi using phi
         phi = self_conf + swarm_conf
-        if phi > 4: chi = 2 * kappa / np.abs(2 - phi - np.sqrt(phi ** 2 - 4 * phi))
-        else: chi = np.sqrt(kappa)
+        if phi > 4:
+            chi = 2 * kappa / np.abs(2 - phi - np.sqrt(phi ** 2 - 4 * phi))
+        else:
+            chi = np.sqrt(kappa)
 
         # Determine random numbers
         r_1 = self_conf * np.random.rand(self.num_agents, self.num_dimensions)
         r_2 = swarm_conf * np.random.rand(self.num_agents, self.num_dimensions)
 
         # Find new velocities
-        self.velocities = chi * (self.velocities + r_1 * (self.particular_best_positions - self.positions) +
-                                 r_2 * (np.tile(self.global_best_position, (self.num_agents, 1)) - self.positions))
+        self.velocities = chi * (self.velocities + r_1 * (
+            self.particular_best_positions - self.positions) +
+            r_2 * (np.tile(self.global_best_position, (self.num_agents, 1)) -
+                   self.positions))
 
         # Move each agent using velocity's information
         self.positions += self.velocities
 
         # Check constraints
-        if self.is_constrained: self.__check_simple_constraints()
+        if self.is_constrained:
+            self.__check_simple_constraints()
 
-    # Differential evolution mutation
-    # -------------------------------------------------------------------------
-    def mutation_de(self, expression="current-to-best", num_rands=1, factor=1.0):
+    def mutation_de(self, expression="current-to-best", num_rands=1,
+                    factor=1.0):
+        """
+        Mutates the population positions using Differential Evolution (DE)
+
+        Parameters
+        ----------
+        expression : str, optional
+            Type of DE mutation. Available mutations: "rand", "best",
+            "current", "current-to-best", "rand-to-best",
+            "rand-to-bestandcurrent". The default is "current-to-best".
+
+        num_rands : TYPE, optional
+            DESCRIPTION. The default is 1.
+        factor : TYPE, optional
+            DESCRIPTION. The default is 1.0.
+
+        Returns
+        -------
+        None.
+
+        """
+        # Check the scale and beta value
+        assert isinstance(num_rands, int)
+        self.__check_parameter('factor', factor)
+
         # Create mutants using the expression provided in scheme
         if expression == "rand":
             mutant = self.positions[np.random.permutation(self.num_agents), :]
@@ -321,13 +562,16 @@ class Population():
             mutant = self.positions
 
         elif expression == "current-to-best":
-            mutant = self.positions + factor * (np.tile(self.global_best_position, (self.num_agents, 1)) -
-                                                self.positions[np.random.permutation(self.num_agents), :])
+            mutant = self.positions + factor * \
+                (np.tile(self.global_best_position,
+                         (self.num_agents, 1)) -\
+                 self.positions[np.random.permutation(self.num_agents), :])
 
         elif expression == "rand-to-best":
-            mutant = self.positions[np.random.permutation(self.num_agents), :] + factor * (np.tile(
-                self.global_best_position,(self.num_agents, 1)) - self.positions[np.random.permutation(
-                self.num_agents), :])
+            mutant = self.positions[np.random.permutation(self.num_agents),
+                                    :] + factor * \
+                (np.tile(self.global_best_position,(self.num_agents, 1)) -
+                 self.positions[np.random.permutation(self.num_agents), :])
 
         elif expression == "rand-to-bestandcurrent":
             mutant = self.positions[np.random.permutation(self.num_agents), :] + factor * \
@@ -335,7 +579,7 @@ class Population():
                          self.num_agents), :] +self.positions[np.random.permutation(self.num_agents), :]-self.positions)
         else:
             mutant = []
-            print('[Error] Check de_mutation_scheme!')
+            raise self.__PopulationError('Invalid DE mutation scheme!')
 
         # Add random parts according to num_rands
         if num_rands >= 0:
@@ -343,7 +587,7 @@ class Population():
                 mutant += factor * (self.positions[np.random.permutation(self.num_agents), :] -
                                self.positions[np.random.permutation(self.num_agents), :])
         else:
-            print('[Error] Check de_mutation_scheme!')
+            raise self.__PopulationError('Invalid DE mutation scheme!')
 
         # Replace mutant population in the current one
         self.positions = mutant
@@ -351,9 +595,23 @@ class Population():
         # Check constraints
         if self.is_constrained: self.__check_simple_constraints()
 
-    # Binomial crossover from Differential evolution
-    # -------------------------------------------------------------------------
     def binomial_crossover_de(self, crossover_rate=0.5):
+        """
+        Performs the binomial crossover from Differential Evolution (DE).
+
+        Parameters
+        ----------
+        crossover_rate : float, optional
+            Probability factor to perform the crossover. The default is 0.5.
+
+        Returns
+        -------
+        None.
+
+        """
+        # Check the scale and beta value
+        self.__check_parameter('crossover_rate', crossover_rate)
+        
         # Define indices
         indices = np.tile(np.arange(self.num_dimensions), (self.num_agents, 1))
 
@@ -370,9 +628,23 @@ class Population():
         # Check constraints
         if self.is_constrained: self.__check_simple_constraints()
 
-    # Exponential crossover from Differential evolution
-    # -------------------------------------------------------------------------
     def exponential_crossover_de(self, crossover_rate=0.5):
+        """
+        Performs the exponential crossover from Differential Evolution (DE)
+
+        Parameters
+        ----------
+        crossover_rate : float, optional
+            Probability factor to perform the crossover. The default is 0.5.
+
+        Returns
+        -------
+        None.
+
+        """
+        # Check the scale and beta value
+        self.__check_parameter('crossover_rate', crossover_rate)
+        
         # Perform the exponential crossover procedure
         for agent in range(self.num_agents):
             for dim in range(self.num_dimensions):
@@ -391,33 +663,76 @@ class Population():
         # Check constraints
         if self.is_constrained: self.__check_simple_constraints()
 
-    # Local random walk from Cuckoo Search
-    # -------------------------------------------------------------------------
     def local_random_walk(self, probability=0.75, scale=1.0):
+        """
+        Performs the local random walk from Cuckoo Search (CS)
+
+        Parameters
+        ----------
+        probability : float, optional
+            It is the probability of discovering an alien egg (change an agent's position). 
+            The default is 0.75.
+        scale : float, optional
+            It is the step scale between [0.0, 1.0]. The default is 1.0.
+
+        Returns
+        -------
+        None.
+
+        """
+        # Check the scale and beta value
+        self.__check_parameter('probability', probability)
+        self.__check_parameter('scale', scale)
+
         # Determine random numbers
         r_1 = np.random.rand(self.num_agents, self.num_dimensions)
         r_2 = np.random.rand(self.num_agents, self.num_dimensions)
 
         # Move positions with a displacement due permutations and probabilities
-        self.positions += scale * r_1 * (self.positions[np.random.permutation(self.num_agents), :] -
-                                         self.positions[np.random.permutation(self.num_agents), :]) * \
-                          np.heaviside(r_2 - probability, 0)
+        self.positions += scale * r_1 * \
+            (self.positions[np.random.permutation(self.num_agents), :] -
+             self.positions[np.random.permutation(self.num_agents), :]) *\
+                np.heaviside(r_2 - probability, 0)
 
         # Check constraints
-        if self.is_constrained: self.__check_simple_constraints()
+        if self.is_constrained:
+            self.__check_simple_constraints()
 
-    # Deterministic/Stochastic Spiral dynamic
-    # -------------------------------------------------------------------------
     def spiral_dynamic(self, radius=0.9, angle=22.5, sigma=0.1):
+        """
+        Performs the deterministic or stochastic spiral dynamic movement
+
+        Parameters
+        ----------
+        radius : float, optional
+            It is the convergence rate. The default is 0.9.
+        angle : float, optional
+            Rotation angle (in degrees). The default is 22.5 (degrees).
+        sigma : float, optional
+            Variation of random radii. The default is 0.1.
+            Note: sigma equals 0.0 corresponds to the Deterministic Spiral.
+
+        Returns
+        -------
+        None.
+
+        """
+        # Check the scale and beta value
+        self.__check_parameter('radius', radius)
+        self.__check_parameter('angle', angle, (0.0, 360.0))
+        self.__check_parameter('sigma', sigma)
+        
         # Update rotation matrix
         self.__get_rotation_matrix(np.deg2rad(angle))
 
         for agent in range(self.num_agents):
-            random_radii = np.random.uniform(radius - sigma, radius + sigma, self.num_dimensions)
+            random_radii = np.random.uniform(radius - sigma, radius + sigma,
+                                             self.num_dimensions)
             # If random radii need to be constrained to [0, 1]:
-            # random_radii = np.random.uniform(np.max([radius - sigma, 0.0]), np.min([radius + sigma, 1.0], self.num_dimensions)
-            self.positions[agent, :] = self.global_best_position + random_radii * \
-                                np.matmul(self.rotation_matrix, (self.positions[agent, :] - self.global_best_position))
+            self.positions[agent, :] = self.global_best_position + \
+                random_radii * np.matmul(
+                    self.rotation_matrix, (self.positions[agent, :] -
+                                           self.global_best_position))
 
         # Check constraints
         if self.is_constrained: self.__check_simple_constraints()
@@ -425,14 +740,43 @@ class Population():
     # Firefly (generalised)
     # -------------------------------------------------------------------------
     def firefly(self, epsilon="uniform", alpha=0.8, beta=1.0, gamma=1.0):
+        """
+        Performs movements accordint to the Firefly algorithm (FA)
+
+        Parameters
+        ----------
+        epsilon : str, optional
+            Type of random number. Possible options: 'gaussian', 'uniform'.
+            The default is "uniform".
+        alpha : TYPE, optional
+            DESCRIPTION. The default is 0.8.
+        beta : TYPE, optional
+            DESCRIPTION. The default is 1.0.
+        gamma : TYPE, optional
+            DESCRIPTION. The default is 1.0.
+
+        Returns
+        -------
+        None.
+
+        """
+        # Check the scale and beta value
+        self.__check_parameter('alpha', alpha)
+        self.__check_parameter('beta', beta)
+        self.__check_parameter('gamma', gamma)
+        
         # Determine epsilon values
         if epsilon == "gaussian":
-            epsilon_value = np.random.standard_normal((self.num_agents, self.num_dimensions))
+            epsilon_value = np.random.standard_normal(
+                (self.num_agents, self.num_dimensions))
+
         elif epsilon == "uniform":
-            epsilon_value = np.random.uniform(-0.5, 0.5, (self.num_agents, self.num_dimensions))
+            epsilon_value = np.random.uniform(
+                -0.5, 0.5, (self.num_agents, self.num_dimensions))
         else:
             epsilon_value = []
-            print("epsilon value is not valid: 'uniform' | 'gaussian' ")
+            raise self.__PopulationError("Epsilon is not valid: 'uniform' " +
+                                         " or 'gaussian'")
 
         # Initialise delta or difference between two positions
         difference_positions = np.zeros((self.num_agents, self.num_dimensions))
@@ -775,7 +1119,7 @@ class Population():
             self.positions[rows.flatten(), columns.flatten()] = mutants
             
 
-    # %% ----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     #    INTERNAL METHODS (avoid using them outside)
     # -------------------------------------------------------------------------
 
@@ -830,12 +1174,12 @@ class Population():
 
     # Greedy selection : new is better than old one
     # -------------------------------------------------------------------------
-    def _greedy_selection(self, new, old):
+    def _selection_greedy(self, new, old):
         return new <= old
 
     # Metropolis selection : apply greedy selection and worst with a prob
     # -------------------------------------------------------------------------
-    def _metropolis_selection(self, new, old):
+    def _selection_metropolis(self, new, old):
         # It depends of metropolis_temperature, metropolis_rate, and iteration
         if new <= old:
             selection_condition = True
@@ -850,7 +1194,7 @@ class Population():
         # Probabilistic selection : apply greedy and worst is chosen if rand < prob
 
     # -------------------------------------------------------------------------
-    def _probabilistic_selection(self, new, old):
+    def _selection_probabilistic(self, new, old):
         # It depends of metropolis_temperature, metropolis_rate, and iteration
         if new <= old:
             selection_condition = True
@@ -864,10 +1208,50 @@ class Population():
         # All selection : only new does matter
 
     # -------------------------------------------------------------------------
-    def _all_selection(self, *args):
+    def _selection_all(self, *args):
         return True
 
     # None selection : new does not matter
     # -------------------------------------------------------------------------
     def _none_selection(self, *args):
         return False
+
+    # Additional internal methods
+    class __PopulationError(Exception):
+        """
+        Simple PopulationError to manage exceptions.
+        """
+        pass
+    
+    def __check_parameter(self, par_name, par_value, interval=(0.0, 1.0), 
+                          par_type=float):
+        """
+        Check if a parameter or variable is into an interval.
+
+        Parameters
+        ----------
+        par_name: str
+            Variable's name to print the error message (if so)
+        par_value : int, float
+            Variable to check.
+        interval : tuple, optional
+            A tuple corresponding to the interval. The default is (0.0, 1.0).
+        par_type : type, optional
+            The parameter's type is also checked. The default is float.
+
+        Raises
+        ------
+        PopulationError if the parameter does not pass the check.
+
+        Returns
+        -------
+        None.
+
+        """
+        # Check if the parameter value is into the interval
+        assert isinstance(par_value, par_type)
+        if not interval[0] <= par_value <= interval[1]: 
+            raise self.__PopulationError(f"Invalid value! {par_name} = " + 
+                                         f"{par_value} must be in " + 
+                                         f"[{interval[0]}, {interval[1]}]")
+
