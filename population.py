@@ -92,7 +92,7 @@ class Population():
         if len(boundaries[0]) == len(boundaries[1]):
             self.num_dimensions = len(boundaries[0])
         else:
-            raise __PopulationError(
+            raise PopulationError(
                 "Lower and upper boundaries must have the same length")
 
         # Read the upper and lower boundaries of search space
@@ -311,13 +311,24 @@ class Population():
         self.positions = np.random.uniform(-1, 1, (self.num_agents,
                                                    self.num_dimensions))
 
-    # ----------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     #    INTERNAL METHODS (avoid using them outside)
     # -------------------------------------------------------------------------
 
-    # Check simple constraints if self.is_constrained = True
-    # -------------------------------------------------------------------------
     def __check_simple_constraints(self):
+        """
+        Check simple constraints for all the dimensions like:
+            xi_low <= xi <= xi_upp, for all i in 1, 2, ..., D
+        When an agent position is outside the search space, it is
+        reallocated inside.
+
+        Note: This check is performed only if Population.is_constrained = True.
+
+        Returns
+        -------
+        None.
+
+        """
         # Check if agents are beyond lower boundaries
         low_check = self.positions < -1.
         if low_check.any():
@@ -332,12 +343,48 @@ class Population():
             self.positions[upp_check] = 1.
             self.velocities[upp_check] = 0.
 
-    # Rescale an agent from [-1,1] to [lower,upper] per dimension
-    # -------------------------------------------------------------------------
     def __rescale_back(self, position):
+        """
+        Rescale an agent position from [-1.0, 1.0] to the original search space
+        boundaries per dimension.
+
+        Parameters
+        ----------
+        position : ndarray
+            A position given by an array of 1-by-D with elements between [-1.0,
+            1.0].
+
+        Returns
+        -------
+        ndarray
+            The position in the original scale.
+
+        """
         return self.centre_boundaries + position * (self.span_boundaries / 2)
 
     def __selection(self, new, old, selector="greedy"):
+        """
+        Selection procedure for accepting a new position compared with its
+        old value.
+
+        Parameters
+        ----------
+        new : ndarray
+            A new position given by an array of 1-by-D with elements between
+            [-1.0, 1.0].
+        old : TYPE
+            An old position given by an array of 1-by-D with elements between
+            [-1.0, 1.0].
+        selector : str, optional
+            A selection scheme used for deciding if the new position is kept.
+            The default is "greedy".
+
+        Returns
+        -------
+        selection_condition : bool
+            Answer to the question: 'is this new position accepted?'.
+
+        """
         # Greedy selection
         if selector == "greedy":
             selection_condition = new <= old

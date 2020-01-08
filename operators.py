@@ -141,7 +141,35 @@ def levy_flight(pop, scale=1.0, beta=1.5):
         pop.__check_simple_constraints()
 
 
-def inertial_pso(pop, inertial=0.7, self_conf=1.54, swarm_conf=1.56):
+def swarm_dynamic(pop, factor=1.0, self_conf=2.4, swarm_conf=2.6,
+                  version="constriction"):
+    # Check the scale and beta value
+    _check_parameter('factor')
+    _check_parameter('self_conf', (0.0, 10.0))
+    _check_parameter('swarm_conf', (0.0, 10.0))
+    
+    # Determine random numbers
+    r_1 = self_conf * np.random.rand(pop.num_agents, pop.num_dimensions)
+    r_2 = swarm_conf * np.random.rand(pop.num_agents, pop.num_dimensions)
+    
+    # Choose the PSO version = 'inertial' or 'constriction'
+    if version == "intertial":
+        # Find new velocities
+        pop.velocities = factor * pop.velocities + r_1 * (
+                pop.particular_best_positions - pop.positions) + \
+            r_2 * (np.tile(pop.global_best_position, (pop.num_agents, 1)) -
+                   pop.positions)
+    else:
+        # Find the constriction factor chi using phi
+        phi = self_conf + swarm_conf
+        if phi > 4:
+            chi = 2 * kappa / np.abs(2 - phi - np.sqrt(phi ** 2 - 4 * phi))
+        else:
+            chi = np.sqrt(kappa)
+
+
+# Before: interial_pso
+def inertial_swarm(pop, inertial=0.7, self_conf=1.54, swarm_conf=1.56):
     """
     Performs a swarm movement by using the inertial version of Particle
     Swarm Optimisation (PSO).
@@ -185,7 +213,8 @@ def inertial_pso(pop, inertial=0.7, self_conf=1.54, swarm_conf=1.56):
         pop.__check_simple_constraints()
 
 
-def constriction_pso(pop, kappa=1.0, self_conf=2.54, swarm_conf=2.56):
+# Before: constriction_pso
+def constriction_swarm(pop, kappa=1.0, self_conf=2.54, swarm_conf=2.56):
     """
     Performs a swarm movement by using the constricted version of Particle
     Swarm Optimisation (PSO).
@@ -236,7 +265,8 @@ def constriction_pso(pop, kappa=1.0, self_conf=2.54, swarm_conf=2.56):
         pop.__check_simple_constraints()
 
 
-def mutation_de(pop, expression="current-to-best", num_rands=1,
+# Before: mutation_de
+def differential_mutation(pop, expression="current-to-best", num_rands=1,
                 factor=1.0):
     """
     Mutates the population positions using Differential Evolution (DE)
@@ -314,7 +344,8 @@ def mutation_de(pop, expression="current-to-best", num_rands=1,
         pop.__check_simple_constraints()
 
 
-def binomial_crossover_de(pop, crossover_rate=0.5):
+# before: binomial_crossover_de
+def binomial_crossover(pop, crossover_rate=0.5):
     """
     Performs the binomial crossover from Differential Evolution (DE).
 
@@ -353,7 +384,8 @@ def binomial_crossover_de(pop, crossover_rate=0.5):
         pop.__check_simple_constraints()
 
 
-def exponential_crossover_de(pop, crossover_rate=0.5):
+# Before: exponentinal_crossover_de
+def exponential_crossover(pop, crossover_rate=0.5):
     """
     Performs the exponential crossover from Differential Evolution (DE)
 
@@ -477,7 +509,8 @@ def spiral_dynamic(pop, radius=0.9, angle=22.5, sigma=0.1):
         pop.__check_simple_constraints()
 
 
-def firefly(pop, epsilon="uniform", alpha=0.8, beta=1.0, gamma=1.0):
+# Before: firefly
+def firefly_dynamic(pop, epsilon="uniform", alpha=0.8, beta=1.0, gamma=1.0):
     """
     Performs movements accordint to the Firefly algorithm (FA)
 
@@ -548,7 +581,8 @@ def firefly(pop, epsilon="uniform", alpha=0.8, beta=1.0, gamma=1.0):
         pop.__check_simple_constraints()
 
 
-def central_force(pop, gravity=1.0, alpha=0.5, beta=1.5, dt=1.0):
+# Before: central_force
+def central_force_dynamic(pop, gravity=1.0, alpha=0.5, beta=1.5, dt=1.0):
     """
     Central Force Optimisation (CFO)
 
@@ -678,7 +712,8 @@ def gravitational_search(pop, gravity=1.0, alpha=0.5, epsilon=1e-23):
         pop.__check_simple_constraints()
 
 
-def ga_crossover(pop, pairing="cost", crossover="single",
+# Before: ga_crossover
+def genetic_crossover(pop, pairing="cost", crossover="single",
                  mating_pool_factor=0.1):
     """
     Crossover mechanism from Genetic Algorithm (GA)
@@ -698,8 +733,8 @@ def ga_crossover(pop, pairing="cost", crossover="single",
     crossover : str, optional
         It indicates which crossover scheme to employ. Crossover scheme
         availale are: 'single', 'two', 'uniform', 'blend', and 'linear'.
-        Likewise 'tournament' pairing, coefficients of 'linear' are
-        enconded such as 'linear_{coeff1}_{coeff2}' where the offspring is determined
+        Likewise 'tournament' pairing, coefficients of 'linear' are enconded
+        such as 'linear_{coeff1}_{coeff2}' where the offspring is determined
         as follows: offspring = coeff1 * father + coeff2 * mother.
         The default is 'single'.
     mating_pool_factor : float, optional
@@ -713,7 +748,7 @@ def ga_crossover(pop, pairing="cost", crossover="single",
     """
     # Check the mating_pool_factor value
     _check_parameter('mating_pool_factor')
-    
+
     # Mating pool size
     num_mates = int(np.round(mating_pool_factor * pop.num_agents))
 
@@ -935,7 +970,8 @@ def ga_crossover(pop, pairing="cost", crossover="single",
     pop.positions[offspring_indices, :] = offsprings
 
 
-def ga_mutation(pop, elite_rate=0.0, mutation_rate=0.2,
+# Before: ga_mutation
+def genetic_mutation(pop, elite_rate=0.0, mutation_rate=0.2,
                 distribution="uniform", sigma=1.0):
     """
     Mutation mechanism from Genetic Algorithm (GA)
@@ -966,7 +1002,7 @@ def ga_mutation(pop, elite_rate=0.0, mutation_rate=0.2,
     _check_parameter('elite_rate')
     _check_parameter('mutation_rate')
     _check_parameter('sigma')
-    
+
     # Calculate the number of elite agents
     num_elite = int(np.ceil(pop.num_agents * elite_rate))
 
