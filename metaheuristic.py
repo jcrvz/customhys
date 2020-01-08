@@ -7,6 +7,7 @@ Created on Thu Sep 26 16:56:01 2019
 
 import numpy as np
 import population as pop
+import operators as op
 import matplotlib.pyplot as plt
 
 

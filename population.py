@@ -5,7 +5,6 @@ Created on Tue Sep 17 14:29:43 2019
 @author: Jorge Mario Cruz-Duarte (jcrvz.github.io)
 """
 import numpy as np
-from itertools import combinations
 
 all_operators = ['random_search', 'random_sample', 'rayleigh_flight',
                  'inertial_pso', 'constricted_pso', 'levy_flight',

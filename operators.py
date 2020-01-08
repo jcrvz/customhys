@@ -6,7 +6,7 @@ Created on Tue Jan  7 14:54:31 2020
 """
 
 import numpy as np
-from itertools import combinations
+from itertools import combinations as _get_combinations
 
 
 # -------------------------------------------------------------------------
@@ -994,7 +994,7 @@ def _get_rotation_matrix(dimensions, angle=0.39269908169872414):
     rotation_matrix = np.eye(dimensions)
 
     # Find the combinations without repetions
-    planes = list(combinations(range(dimensions), 2))
+    planes = list(_get_combinations(range(dimensions), 2))
 
     # Create the rotation matrix
     for xy in range(len(planes)):

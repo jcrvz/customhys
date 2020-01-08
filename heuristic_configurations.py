@@ -4,7 +4,7 @@ Created on Tue Nov 19 15:09:11 2019
 
 @author: L03130342
 """
-import numpy as np
+from numpy import linspace, size, prod, meshgrid, arange
 
 
 def get_search_operators(num_vals=5):
@@ -34,13 +34,13 @@ def get_search_operators(num_vals=5):
         (
             "local_random_walk",
             dict(
-                probability=np.linspace(0.0, 1.0, num_vals),
-                scale=np.linspace(0.0, 1.0, num_vals)),
+                probability=linspace(0.0, 1.0, num_vals),
+                scale=linspace(0.0, 1.0, num_vals)),
             "greedy"),
         (
             "random_search",
             dict(
-                scale=np.linspace(0.0, 1.0, num_vals)),
+                scale=linspace(0.0, 1.0, num_vals)),
             "greedy"),
         (
             "random_sample",
@@ -49,12 +49,12 @@ def get_search_operators(num_vals=5):
         (
             "rayleigh_flight",
             dict(
-                scale=np.linspace(0.0, 1.0, num_vals)),
+                scale=linspace(0.0, 1.0, num_vals)),
             "greedy"),
         (
             "levy_flight",
             dict(
-                scale=np.linspace(0.0, 1.0, num_vals),
+                scale=linspace(0.0, 1.0, num_vals),
                 beta=[1.5]),
             "greedy"),
         (
@@ -63,59 +63,59 @@ def get_search_operators(num_vals=5):
                 expression=["rand", "best", "current", "current-to-best",
                             "rand-to-best", "rand-to-best-and-current"],
                 num_rands=[1, 2, 3],
-                factor=np.linspace(0.0, 2.0, num_vals)),
+                factor=linspace(0.0, 2.0, num_vals)),
             "greedy"),
         (
             'differential_crossover',
             dict(
-                crossover_rate=np.linspace(0.0, 1.0, num_vals),
+                crossover_rate=linspace(0.0, 1.0, num_vals),
                 version=["binomial", "exponential"]),
             "greedy"),
         (
             "firefly_dynamic",
             dict(
                 epsilon=["uniform", "gaussian"],
-                alpha=np.linspace(0.0, 1.0, num_vals),
+                alpha=linspace(0.0, 1.0, num_vals),
                 beta=[1.0],
-                gamma=np.linspace(1.0, 100.0, num_vals)),
+                gamma=linspace(1.0, 100.0, num_vals)),
             "greedy"),
         (
             "swarm_dynamic",
             dict(
-                factor=np.linspace(0.0, 1.0, num_vals),
-                self_conf=np.linspace(0.0, 5.0, num_vals),
-                swarm_conf=np.linspace(0.0, 5.0, num_vals),
+                factor=linspace(0.0, 1.0, num_vals),
+                self_conf=linspace(0.0, 5.0, num_vals),
+                swarm_conf=linspace(0.0, 5.0, num_vals),
                 version=["inertial", "constriction"]),
             "all"),
         (
             "gravitational_search",
             dict(
-                gravity=np.linspace(0.0, 1.0, num_vals),
-                alpha=np.linspace(0.0, 1.0, num_vals),
+                gravity=linspace(0.0, 1.0, num_vals),
+                alpha=linspace(0.0, 1.0, num_vals),
                 epsilon=[1e-23]),
             "all"),
         (
             "central_force_dynamic",
             dict(
-                gravity=np.linspace(0.0, 1.0, num_vals),
-                alpha=np.linspace(0.0, 1.0, num_vals),
-                beta=np.linspace(0.0, 3.0, num_vals),
+                gravity=linspace(0.0, 1.0, num_vals),
+                alpha=linspace(0.0, 1.0, num_vals),
+                beta=linspace(0.0, 3.0, num_vals),
                 dt=[1.0]),
             "all"),
         (
             "spiral_dynamic",
             dict(
-                radius=np.linspace(0.0, 1.0, num_vals),
-                angle=np.linspace(0.0, 180.0, num_vals),
-                sigma=np.linspace(0.0, 0.5, num_vals)),
+                radius=linspace(0.0, 1.0, num_vals),
+                angle=linspace(0.0, 180.0, num_vals),
+                sigma=linspace(0.0, 0.5, num_vals)),
             "all"),
         (
             "genetic_mutation",
             dict(
-                elite_rate=np.linspace(0.0, 1.0, num_vals),
-                mutation_rate=np.linspace(0.0, 1.0, num_vals),
+                elite_rate=linspace(0.0, 1.0, num_vals),
+                mutation_rate=linspace(0.0, 1.0, num_vals),
                 distribution=["uniform", "gaussian"],
-                sigma=np.linspace(0.0, 1.0, num_vals)),
+                sigma=linspace(0.0, 1.0, num_vals)),
             "all"),
         (
             "genetic_crossover",
@@ -128,7 +128,7 @@ def get_search_operators(num_vals=5):
                            "linear_0.5_0.5", "linear_1.5_0.5",
                            "linear_0.5_1.5", "linear_1.5_1.5",
                            "linear_-0.5_0.5", "linear_0.5_-0.5"],
-                mating_pool_factor=np.linspace(0.0, 1.0, num_vals)),
+                mating_pool_factor=linspace(0.0, 1.0, num_vals)),
             "all")
         ]
 
@@ -153,14 +153,14 @@ def generate_heuristics(heuristics=get_search_operators()):
             par_values = list(parameters.values())
 
             # Find the number of values for each parameter
-            par_num_values = [np.size(x) for x in par_values]
+            par_num_values = [size(x) for x in par_values]
 
             # Determine the number of combinations
-            num_combinations = np.prod(par_num_values)
+            num_combinations = prod(par_num_values)
 
             # Create the table of all possible combinations (index/parameter)
-            indices = [x.flatten() for x in np.meshgrid(
-                *list(map(lambda x: np.arange(x), par_num_values)))]
+            indices = [x.flatten() for x in meshgrid(
+                *list(map(lambda x: arange(x), par_num_values)))]
 
             # For each combination, create a single dictionary which
             # corresponds to a simple search operator
@@ -187,10 +187,10 @@ def generate_heuristics(heuristics=get_search_operators()):
 
 # ----------------------------------------------------------------------------
 # Set the number of values per parameter
-num_values = 5
+# num_values = 5
 
 # Generate a list for testing purposes (using five values / parameter)
-search_operators = get_search_operators(num_values)
+# search_operators = get_search_operators(num_values)
 
 # Create the file of heuristics
-generate_heuristics(search_operators)
+# generate_heuristics(search_operators)

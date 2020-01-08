@@ -11,6 +11,7 @@ import dascop as dso
 import benchmark_func as bf
 import matplotlib.pyplot as plt
 
+
 #%% Problem definition
 num_dimensions = 2
 num_agents = 50
