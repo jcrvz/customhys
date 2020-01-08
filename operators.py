@@ -143,15 +143,39 @@ def levy_flight(pop, scale=1.0, beta=1.5):
 
 def swarm_dynamic(pop, factor=1.0, self_conf=2.4, swarm_conf=2.6,
                   version="constriction"):
+    """
+    Performs a swarm movement by using the inertial or constriction
+    dynamics from Particle Swarm Optimisation (PSO).
+
+    Parameters
+    ----------
+    pop : population
+        It is a population object.
+    factor : float, optional
+        Inertial or Kappa factor, depending of which PSO version is set.
+        The default is 1.0.
+    self_conf : float, optional
+        Self confidence factor. The default is 2.4.
+    swarm_conf : float, optional
+        Swarm confidence factor. The default is 2.6.
+    version : str, optional
+        Version of the Particle Swarm Optimisation strategy. Currently, it
+        can be 'constriction' or 'inertial'. The default is "constriction".
+
+    Returns
+    -------
+    None.
+
+    """
     # Check the scale and beta value
     _check_parameter('factor')
     _check_parameter('self_conf', (0.0, 10.0))
     _check_parameter('swarm_conf', (0.0, 10.0))
-    
+
     # Determine random numbers
     r_1 = self_conf * np.random.rand(pop.num_agents, pop.num_dimensions)
     r_2 = swarm_conf * np.random.rand(pop.num_agents, pop.num_dimensions)
-    
+
     # Choose the PSO version = 'inertial' or 'constriction'
     if version == "intertial":
         # Find new velocities
@@ -159,103 +183,21 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.4, swarm_conf=2.6,
                 pop.particular_best_positions - pop.positions) + \
             r_2 * (np.tile(pop.global_best_position, (pop.num_agents, 1)) -
                    pop.positions)
-    else:
+    elif version == "constriction":
         # Find the constriction factor chi using phi
         phi = self_conf + swarm_conf
         if phi > 4:
-            chi = 2 * kappa / np.abs(2 - phi - np.sqrt(phi ** 2 - 4 * phi))
+            chi = 2 * factor / np.abs(2 - phi - np.sqrt(phi ** 2 - 4 * phi))
         else:
-            chi = np.sqrt(kappa)
-
-
-# Before: interial_pso
-def inertial_swarm(pop, inertial=0.7, self_conf=1.54, swarm_conf=1.56):
-    """
-    Performs a swarm movement by using the inertial version of Particle
-    Swarm Optimisation (PSO).
-
-    Parameters
-    ----------
-    pop : population
-        It is a population object.
-    inertial : float, optional
-        Inertial factor. The default is 0.7.
-    self_conf : float, optional
-        Self confidence factor. The default is 1.54.
-    swarm_conf : float, optional
-        Swarm confidence factor. The default is 1.56.
-
-    Returns
-    -------
-    None.
-
-    """
-    # Check the scale and beta value
-    _check_parameter('inertial')
-    _check_parameter('self_conf', (0.0, 10.0))
-    _check_parameter('swarm_conf', (0.0, 10.0))
-
-    # Determine random numbers
-    r_1 = self_conf * np.random.rand(pop.num_agents, pop.num_dimensions)
-    r_2 = swarm_conf * np.random.rand(pop.num_agents, pop.num_dimensions)
-
-    # Find new velocities
-    pop.velocities = inertial * pop.velocities + r_1 * (
-            pop.particular_best_positions - pop.positions) + \
-        r_2 * (np.tile(pop.global_best_position, (pop.num_agents, 1)) -
-               pop.positions)
-
-    # Move each agent using velocity's information
-    pop.positions += pop.velocities
-
-    # Check constraints
-    if pop.is_constrained:
-        pop.__check_simple_constraints()
-
-
-# Before: constriction_pso
-def constriction_swarm(pop, kappa=1.0, self_conf=2.54, swarm_conf=2.56):
-    """
-    Performs a swarm movement by using the constricted version of Particle
-    Swarm Optimisation (PSO).
-
-    Parameters
-    ----------
-    pop : population
-        It is a population object.
-    kappa : float, optional
-        Kappa factor. The default is 0.7.
-    self_conf : float, optional
-        Self confidence factor. The default is 1.54.
-    swarm_conf : float, optional
-        Swarm confidence factor. The default is 1.56.
-
-    Returns
-    -------
-    None.
-
-    """
-    # Check the scale and beta value
-    _check_parameter('kappa')
-    _check_parameter('self_conf', (0.0, 10.0))
-    _check_parameter('swarm_conf', (0.0, 10.0))
-
-    # Find the constriction factor chi using phi
-    phi = self_conf + swarm_conf
-    if phi > 4:
-        chi = 2 * kappa / np.abs(2 - phi - np.sqrt(phi ** 2 - 4 * phi))
+            chi = np.sqrt(factor)
     else:
-        chi = np.sqrt(kappa)
+        OperatorsError('Invalid swarm_dynamic version')
 
-    # Determine random numbers
-    r_1 = self_conf * np.random.rand(pop.num_agents, pop.num_dimensions)
-    r_2 = swarm_conf * np.random.rand(pop.num_agents, pop.num_dimensions)
-
-    # Find new velocities
-    pop.velocities = chi * (pop.velocities + r_1 * (
-        pop.particular_best_positions - pop.positions) +
-        r_2 * (np.tile(pop.global_best_position, (pop.num_agents, 1)) -
-               pop.positions))
+        # Find new velocities
+        pop.velocities = chi * (pop.velocities + r_1 * (
+            pop.particular_best_positions - pop.positions) +
+            r_2 * (np.tile(pop.global_best_position, (pop.num_agents, 1)) -
+                   pop.positions))
 
     # Move each agent using velocity's information
     pop.positions += pop.velocities
@@ -267,7 +209,7 @@ def constriction_swarm(pop, kappa=1.0, self_conf=2.54, swarm_conf=2.56):
 
 # Before: mutation_de
 def differential_mutation(pop, expression="current-to-best", num_rands=1,
-                factor=1.0):
+                          factor=1.0):
     """
     Mutates the population positions using Differential Evolution (DE)
 
@@ -291,8 +233,8 @@ def differential_mutation(pop, expression="current-to-best", num_rands=1,
 
     """
     # Check the scale and beta value
-    assert isinstance(num_rands, int)
-    _check_parameter('factor')
+    _check_parameter('num_rands', (1, 10), int)
+    _check_parameter('factor', (0.0, 2.0))
 
     # Create mutants using the expression provided in scheme
     if expression == "rand":
@@ -315,7 +257,7 @@ def differential_mutation(pop, expression="current-to-best", num_rands=1,
             factor * (np.tile(pop.global_best_position, (pop.num_agents, 1)) -
                       pop.positions[np.random.permutation(pop.num_agents), :])
 
-    elif expression == "rand-to-bestandcurrent":
+    elif expression == "rand-to-best-and-current":
         mutant = pop.positions[np.random.permutation(
             pop.num_agents), :] + factor * (np.tile(
                 pop.global_best_position, (pop.num_agents, 1)) -
@@ -344,10 +286,10 @@ def differential_mutation(pop, expression="current-to-best", num_rands=1,
         pop.__check_simple_constraints()
 
 
-# before: binomial_crossover_de
-def binomial_crossover(pop, crossover_rate=0.5):
+def differential_crossover(pop, crossover_rate=0.5, version="binomial"):
     """
-    Performs the binomial crossover from Differential Evolution (DE).
+    Performs either the binomial or exponential crossover procedure from
+    Differential Evolution (DE).
 
     Parameters
     ----------
@@ -355,6 +297,9 @@ def binomial_crossover(pop, crossover_rate=0.5):
         It is a population object.
     crossover_rate : float, optional
         Probability factor to perform the crossover. The default is 0.5.
+    version : str, optional
+        Crossover version. It can be 'binomial' or 'exponential'.
+        The default is "binomial".
 
     Returns
     -------
@@ -364,64 +309,47 @@ def binomial_crossover(pop, crossover_rate=0.5):
     # Check the scale and beta value
     _check_parameter('crossover_rate')
 
-    # Define indices
-    indices = np.tile(np.arange(pop.num_dimensions), (pop.num_agents, 1))
+    # Binomial versio
+    if version == "binomial":
+        # Define indices
+        indices = np.tile(np.arange(pop.num_dimensions), (pop.num_agents, 1))
 
-    # Permute indices per dimension
-    rand_indices = np.vectorize(np.random.permutation,
-                                signature='(n)->(n)')(indices)
+        # Permute indices per dimension
+        rand_indices = np.vectorize(np.random.permutation,
+                                    signature='(n)->(n)')(indices)
 
-    # Calculate the NOT condition (because positions were already updated!)
-    condition = np.logical_not((indices == rand_indices) | (
-        np.random.rand(pop.num_agents, pop.num_dimensions) <=
-        crossover_rate))
+        # Calculate the NOT condition (because positions already updated!)
+        condition = np.logical_not((indices == rand_indices) | (
+            np.random.rand(pop.num_agents, pop.num_dimensions) <=
+            crossover_rate))
 
-    # Reverse the ones to their previous positions
-    pop.positions[condition] = pop.previous_positions[condition]
+        # Reverse the ones to their previous positions
+        pop.positions[condition] = pop.previous_positions[condition]
+    #
+    # Exponential version
+    elif version == "exponential":
+        # Perform the exponential crossover procedure
+        for agent in range(pop.num_agents):
+            for dim in range(pop.num_dimensions):
+                # Initialise L and choose a random index n
+                exp_var = 0
+                n = np.random.randint(pop.num_dimensions)
+                while True:
+                    # Increase L and check the exponential crossover condition
+                    exp_var += 1
+                    if np.logical_not((np.random.rand() < crossover_rate) and
+                                      (exp_var < pop.num_dimensions)):
+                        break
 
-    # Check constraints
-    if pop.is_constrained:
-        pop.__check_simple_constraints()
-
-
-# Before: exponentinal_crossover_de
-def exponential_crossover(pop, crossover_rate=0.5):
-    """
-    Performs the exponential crossover from Differential Evolution (DE)
-
-    Parameters
-    ----------
-    pop : population
-        It is a population object.
-    crossover_rate : float, optional
-        Probability factor to perform the crossover. The default is 0.5.
-
-    Returns
-    -------
-    None.
-
-    """
-    # Check the scale and beta value
-    _check_parameter('crossover_rate')
-
-    # Perform the exponential crossover procedure
-    for agent in range(pop.num_agents):
-        for dim in range(pop.num_dimensions):
-            # Initialise L and choose a random index n
-            exp_var = 0
-            n = np.random.randint(pop.num_dimensions)
-            while True:
-                # Increase L and check the exponential crossover condition
-                exp_var += 1
-                if np.logical_not((np.random.rand() < crossover_rate) and
-                                  (exp_var < pop.num_dimensions)):
-                    break
-
-            # Perform the crossover if the following condition is met
-            if dim not in [(n + x) % pop.num_dimensions for x in
-                           range(exp_var)]:
-                pop.positions[agent, dim] = pop.previous_positions[
-                    agent, dim]
+                # Perform the crossover if the following condition is met
+                if dim not in [(n + x) % pop.num_dimensions for x in
+                               range(exp_var)]:
+                    pop.positions[agent, dim] = pop.previous_positions[
+                        agent, dim]
+    #
+    # Invalid version
+    else:
+        OperatorsError('Invalid differential_crossover version')
 
     # Check constraints
     if pop.is_constrained:
@@ -536,7 +464,7 @@ def firefly_dynamic(pop, epsilon="uniform", alpha=0.8, beta=1.0, gamma=1.0):
     # Check the alpha, beta, and gamma value
     _check_parameter('alpha')
     _check_parameter('beta')
-    _check_parameter('gamma')
+    _check_parameter('gamma', (0.0, 100.0))
 
     # Determine epsilon values
     if epsilon == "gaussian":
@@ -714,7 +642,7 @@ def gravitational_search(pop, gravity=1.0, alpha=0.5, epsilon=1e-23):
 
 # Before: ga_crossover
 def genetic_crossover(pop, pairing="cost", crossover="single",
-                 mating_pool_factor=0.1):
+                      mating_pool_factor=0.1):
     """
     Crossover mechanism from Genetic Algorithm (GA)
 
@@ -972,7 +900,7 @@ def genetic_crossover(pop, pairing="cost", crossover="single",
 
 # Before: ga_mutation
 def genetic_mutation(pop, elite_rate=0.0, mutation_rate=0.2,
-                distribution="uniform", sigma=1.0):
+                     distribution="uniform", sigma=1.0):
     """
     Mutation mechanism from Genetic Algorithm (GA)
 

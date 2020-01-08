@@ -348,3 +348,182 @@ couple_indices = getattr(self, "_ga_" + pairing + "_pairing")(
     # -------------------------------------------------------------------------
     def _selection_none(self, *args):
         return False
+    
+# Before: interial_pso
+def inertial_swarm(pop, inertial=0.7, self_conf=1.54, swarm_conf=1.56):
+    """
+    Performs a swarm movement by using the inertial version of Particle
+    Swarm Optimisation (PSO).
+
+    Parameters
+    ----------
+    pop : population
+        It is a population object.
+    inertial : float, optional
+        Inertial factor. The default is 0.7.
+    self_conf : float, optional
+        Self confidence factor. The default is 1.54.
+    swarm_conf : float, optional
+        Swarm confidence factor. The default is 1.56.
+
+    Returns
+    -------
+    None.
+
+    """
+    # Check the scale and beta value
+    _check_parameter('inertial')
+    _check_parameter('self_conf', (0.0, 10.0))
+    _check_parameter('swarm_conf', (0.0, 10.0))
+
+    # Determine random numbers
+    r_1 = self_conf * np.random.rand(pop.num_agents, pop.num_dimensions)
+    r_2 = swarm_conf * np.random.rand(pop.num_agents, pop.num_dimensions)
+
+    # Find new velocities
+    pop.velocities = inertial * pop.velocities + r_1 * (
+            pop.particular_best_positions - pop.positions) + \
+        r_2 * (np.tile(pop.global_best_position, (pop.num_agents, 1)) -
+               pop.positions)
+
+    # Move each agent using velocity's information
+    pop.positions += pop.velocities
+
+    # Check constraints
+    if pop.is_constrained:
+        pop.__check_simple_constraints()
+
+
+# Before: constriction_pso
+def constriction_swarm(pop, kappa=1.0, self_conf=2.54, swarm_conf=2.56):
+    """
+    Performs a swarm movement by using the constricted version of Particle
+    Swarm Optimisation (PSO).
+
+    Parameters
+    ----------
+    pop : population
+        It is a population object.
+    kappa : float, optional
+        Kappa factor. The default is 0.7.
+    self_conf : float, optional
+        Self confidence factor. The default is 1.54.
+    swarm_conf : float, optional
+        Swarm confidence factor. The default is 1.56.
+
+    Returns
+    -------
+    None.
+
+    """
+    # Check the scale and beta value
+    _check_parameter('kappa')
+    _check_parameter('self_conf', (0.0, 10.0))
+    _check_parameter('swarm_conf', (0.0, 10.0))
+
+    # Find the constriction factor chi using phi
+    phi = self_conf + swarm_conf
+    if phi > 4:
+        chi = 2 * kappa / np.abs(2 - phi - np.sqrt(phi ** 2 - 4 * phi))
+    else:
+        chi = np.sqrt(kappa)
+
+    # Determine random numbers
+    r_1 = self_conf * np.random.rand(pop.num_agents, pop.num_dimensions)
+    r_2 = swarm_conf * np.random.rand(pop.num_agents, pop.num_dimensions)
+
+    # Find new velocities
+    pop.velocities = chi * (pop.velocities + r_1 * (
+        pop.particular_best_positions - pop.positions) +
+        r_2 * (np.tile(pop.global_best_position, (pop.num_agents, 1)) -
+               pop.positions))
+
+    # Move each agent using velocity's information
+    pop.positions += pop.velocities
+
+    # Check constraints
+    if pop.is_constrained:
+        pop.__check_simple_constraints()
+        
+        
+# before: binomial_crossover_de
+def binomial_crossover(pop, crossover_rate=0.5):
+    """
+    Performs the binomial crossover from Differential Evolution (DE).
+
+    Parameters
+    ----------
+    pop : population
+        It is a population object.
+    crossover_rate : float, optional
+        Probability factor to perform the crossover. The default is 0.5.
+
+    Returns
+    -------
+    None.
+
+    """
+    # Check the scale and beta value
+    _check_parameter('crossover_rate')
+
+    # Define indices
+    indices = np.tile(np.arange(pop.num_dimensions), (pop.num_agents, 1))
+
+    # Permute indices per dimension
+    rand_indices = np.vectorize(np.random.permutation,
+                                signature='(n)->(n)')(indices)
+
+    # Calculate the NOT condition (because positions were already updated!)
+    condition = np.logical_not((indices == rand_indices) | (
+        np.random.rand(pop.num_agents, pop.num_dimensions) <=
+        crossover_rate))
+
+    # Reverse the ones to their previous positions
+    pop.positions[condition] = pop.previous_positions[condition]
+
+    # Check constraints
+    if pop.is_constrained:
+        pop.__check_simple_constraints()
+        
+# Before: exponentinal_crossover_de
+def exponential_crossover(pop, crossover_rate=0.5):
+    """
+    Performs the exponential crossover from Differential Evolution (DE)
+
+    Parameters
+    ----------
+    pop : population
+        It is a population object.
+    crossover_rate : float, optional
+        Probability factor to perform the crossover. The default is 0.5.
+
+    Returns
+    -------
+    None.
+
+    """
+    # Check the scale and beta value
+    _check_parameter('crossover_rate')
+
+    # Perform the exponential crossover procedure
+    for agent in range(pop.num_agents):
+        for dim in range(pop.num_dimensions):
+            # Initialise L and choose a random index n
+            exp_var = 0
+            n = np.random.randint(pop.num_dimensions)
+            while True:
+                # Increase L and check the exponential crossover condition
+                exp_var += 1
+                if np.logical_not((np.random.rand() < crossover_rate) and
+                                  (exp_var < pop.num_dimensions)):
+                    break
+
+            # Perform the crossover if the following condition is met
+            if dim not in [(n + x) % pop.num_dimensions for x in
+                           range(exp_var)]:
+                pop.positions[agent, dim] = pop.previous_positions[
+                    agent, dim]
+
+    # Check constraints
+    if pop.is_constrained:
+        pop.__check_simple_constraints()
