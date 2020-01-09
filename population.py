@@ -6,42 +6,6 @@ Created on Tue Sep 17 14:29:43 2019
 """
 import numpy as np
 
-all_operators = ['random_search', 'random_sample', 'rayleigh_flight',
-                 'inertial_pso', 'constricted_pso', 'levy_flight',
-                 'mutation_de', 'spiral_dynamic', 'central_force',
-                 'gravitational_search', 'ga_mutation', 'ga_crossover',
-                 'binomial_crossover_de', 'exponential_crossover_de']
-
-all_selectors = ['greedy', 'probabilistic', 'metropolis', 'all', 'none']
-
-#     Operator call name, dictionary with default parameters, default selector
-all_heuristics = [
-    ("local_random_walk", dict(probability=0.75, scale=1.0), "greedy"),
-    ('random_search', dict(scale=0.01), "greedy"),
-    ("random_sample", dict(), "greedy"),
-    ("rayleigh_flight", dict(scale=0.01), "greedy"),
-    ("levy_flight", dict(scale=1.0, beta=1.5), "greedy"),
-    ("mutation_de", dict(scheme=("current-to-best", 1), factor=1.0),
-     "greedy"),
-    ('binomial_crossover_de', dict(crossover_rate=0.5), "greedy"),
-    ("exponential_crossover_de", dict(crossover_rate=0.5), "greedy"),
-    ("firefly", dict(epsilon="uniform", alpha=0.8, beta=1.0, gamma=1.0),
-     "greedy"),
-    ("inertial_pso", dict(inertial=0.7, self_conf=1.54, swarm_conf=1.56),
-     "all"),
-    ("constriction_pso", dict(kappa=1.0, self_conf=2.54, swarm_conf=2.56),
-     "all"),
-    ("gravitational_search", dict(alpha=0.02, epsilon=1e-23), "all"),
-    ("central_force", dict(gravity=0.001, alpha=0.001, beta=1.5, dt=1.0),
-     "all"),
-    ("spiral_dynamic", dict(radius=0.9, angle=22.5, sigma=0.1), "all"),
-    ("ga_mutation", dict(elite_rate=0.0, mutation_rate=0.2,
-                         distribution="uniform", sigma=1.0), "all"),
-    ("ga_crossover", dict(pairing="cost", crossover="single",
-                          mating_pool_factor=0.1, coefficients=[0.5, 0.5]),
-     "all")
-]
-
 
 class Population():
     """

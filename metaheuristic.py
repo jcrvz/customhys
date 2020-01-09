@@ -13,20 +13,21 @@ import matplotlib.pyplot as plt
 
 class Metaheuristic():
     """
-    Create a metaheuristic method by employing different simple search operators
+    Create a metaheuristic method by employing different simple search
+    operators
     """
     # Internal variables
 
     # Class initialisation
-    # -------------------------------------------------------------------------
-    def __init__(self, problem_function, boundaries, simple_heuristics, 
-                 is_constrained=True, num_agents=30, threshold_iterations=100, 
+    # -----------------------------------------------------------------------
+    def __init__(self, problem_function, boundaries, simple_heuristics,
+                 is_constrained=True, num_agents=30, threshold_iterations=100,
                  verbose=True):
         """
         Parameters
         ----------
         problem_function : function
-            A function that maps a 1-by-D array of real values ​​to a real value
+            This function maps a 1-by-D array of real values ​​to a real value
         boundaries : TYPE
             DESCRIPTION.
         simple_heuristics : TYPE
@@ -73,47 +74,14 @@ class Metaheuristic():
         # Set additional variables
         self.verbose = verbose
 
-    def process_heuristics(self, simple_heuristics):
-        # Initialise the list of callable operators (simple heuristics)
-        executable_operators = []
-        selectors = []
-
-        # For each simple heuristic, read their parameters and values
-        for operator, parameters, selector in simple_heuristics:
-            # Store selectors
-            selectors.append(selector)
-
-            if len(parameters) >= 0:
-                sep = ","
-                str_parameters = []
-
-                for parameter, value in parameters.items():
-
-                    # Check if a value is string
-                    if type(value) == str:
-                        str_parameters.append("{} = '{}'".format(parameter, value))
-                    else:
-                        str_parameters.append("{} = {}".format(parameter, value))
-
-                # Create an executable string with given arguments
-                full_string = "{}({})".format(operator, sep.join(str_parameters))
-            else:
-                # Create an executable string with default arguments
-                full_string = "{}()".format(operator)
-
-            # Store the read operator
-            executable_operators.append(full_string)
-
-        return executable_operators, selectors
-
     # Run the metaheuristic search
-    # -------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
     def run(self):
         # Set initial iteration
         self.pop.iteration = 0
 
         # Initialise the population
-        self.pop.initialise_uniformly()
+        self.pop.initialise_positions()  # Default: random
 
         # Evaluate fitness values
         self.pop.evaluate_fitness()
@@ -142,25 +110,24 @@ class Metaheuristic():
                 self.pop.evaluate_fitness()
 
                 # Update population
-                if selector in pop.__selection__:
+                if selector in op.__selectors__:
                     self.pop.update_positions('population', selector)
                 else:
                     self.pop.update_positions()
 
                 # Update global position
-                self.pop.update_positions('global', 'greedy') 
+                self.pop.update_positions('global', 'greedy')
 
                 # Report change
-                self.__verbose("{} and {} selection were ".format(operator, selector)
-                               + "applied!")
+                self.__verbose("{} and {} selection applied!".format(
+                    operator, selector))
 
             # Update historical variables
             self.__update_historicals()
 
             # Verbose (if so) some information
-            self.__verbose("Stagnation counter: " +
-                           "{}, population radious: ".format(self.historical_stagnation[-1]) +
-                           "{}".format(self.historical_radius[-1]))
+            self.__verbose("Stag. counter: {}, pop. radious: {}".format(
+                self.historical_stagnation[-1], self.historical_radius[-1]))
             self.__verbose(self.pop.get_state())
 
     # Show historical variables
@@ -198,9 +165,9 @@ class Metaheuristic():
 
         # Update population centroid and radius
         self.historical_centroid = np.array(self.pop.positions).mean(0)
-        self.historical_radius.append(np.linalg.norm(self.pop.positions -
-                                                     np.tile(self.historical_centroid, (self.num_agents, 1)), 2,
-                                                     1).max())
+        self.historical_radius.append(np.linalg.norm(
+            self.pop.positions - np.tile(self.historical_centroid,
+                                         (self.num_agents, 1)), 2, 1).max())
 
         # Update stagnation
         if (self.pop.iteration > 0) and (self.historical_global_fitness[-2] ==
