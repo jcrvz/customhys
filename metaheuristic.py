@@ -12,51 +12,46 @@ import matplotlib.pyplot as plt
 
 
 class Metaheuristic():
-    """
-    Create a metaheuristic method by employing different simple search
-    operators
-    """
-    # Internal variables
-
-    # Class initialisation
-    # -----------------------------------------------------------------------
-    def __init__(self, problem_function, boundaries, simple_heuristics,
-                 is_constrained=True, num_agents=30, threshold_iterations=100,
-                 verbose=True):
+    def __init__(self, problem_function, boundaries, search_operators,
+                 is_constrained=True, num_agents=30):
         """
+        Create a metaheuristic method by employing different simple search
+        operators.
+
         Parameters
         ----------
         problem_function : function
             This function maps a 1-by-D array of real values ​​to a real value
-        boundaries : TYPE
-            DESCRIPTION.
-        simple_heuristics : TYPE
-            DESCRIPTION.
-        is_constrained : TYPE, optional
-            DESCRIPTION. The default is True.
-        num_agents : TYPE, optional
-            DESCRIPTION. The default is 30.
-        threshold_iterations : TYPE, optional
-            DESCRIPTION. The default is 100.
-        verbose : TYPE, optional
-            DESCRIPTION. The default is True.
+        boundaries : tuple
+            A tuple with two lists of size D corresponding to the lower and
+            upper limits of search space, such as:
+                boundaries = (lower_boundaries, upper_boundaries)
+            Note: Dimensions of search domain are read from these boundaries.
+        search_operators : list
+            A list of available search operators.
+        is_constrained : bool, optional
+            It is a flag to mantain agents inside the search space. 
+            The default is True.
+        num_agents : int, optional
+            Numbre of agents or population size. The default is 30.
 
         Returns
         -------
         None.
 
         """
+        # Define the problem function
+        self.problem_function = problem_function
 
         # Create population
-        self.pop = pop.Population(problem_function, boundaries, num_agents,
-                                  is_constrained)
+        self.pop = pop.Population(boundaries, num_agents, is_constrained)
 
-        # Check and read the simple heuristics
-        self.operators, self.selectors = self.process_heuristics(
-            simple_heuristics)
+        # Check and read the search_operators
+        self.operators, self.selectors = op._process_operators(
+            search_operators)
 
         # Define the maximum number of iterations
-        self.num_iterations = threshold_iterations
+        self.num_iterations = 100
 
         # Read the number of dimensions
         self.num_dimensions = self.pop.num_dimensions
@@ -65,6 +60,13 @@ class Metaheuristic():
         self.num_agents = num_agents
 
         # Initialise historical variables
+        self.historical = dict(
+            fitness=list(),  
+            position=list(),
+            centroid=list(),
+            radius=list(),
+            stagnation=list(),
+            )
         self.historical_global_fitness = list()
         self.historical_global_position = list()
         self.historical_centroid = list()
@@ -72,11 +74,18 @@ class Metaheuristic():
         self.historical_stagnation = list()
 
         # Set additional variables
-        self.verbose = verbose
+        self.verbose = True
 
-    # Run the metaheuristic search
-    # ------------------------------------------------------------------------
+
     def run(self):
+        """
+        Run the metaheuristic for solving a defined problem.
+
+        Returns
+        -------
+        None.
+
+        """
         # Set initial iteration
         self.pop.iteration = 0
 
@@ -84,7 +93,7 @@ class Metaheuristic():
         self.pop.initialise_positions()  # Default: random
 
         # Evaluate fitness values
-        self.pop.evaluate_fitness()
+        self.pop.evaluate_fitness(self.problem_function)
 
         # Update population, particular, and global
         self.pop.update_positions()  # Default: 'population', 'all'
@@ -92,22 +101,22 @@ class Metaheuristic():
         self.pop.update_positions('global', 'greedy')  # Default: greedy
 
         # Update historical variables
-        self.__update_historicals()
+        self._update_historicals()
 
         # Start optimisaton procedure
         for iteration in range(1, self.num_iterations + 1):
             # Update the current iteration
             self.pop.iteration = iteration
 
-            self.__verbose("\nIteration {}:\n{}".format(iteration, '-' * 50))
+            self._verbose("\nIteration {}:\n{}".format(iteration, '-' * 50))
 
             # Implement the sequence of operators and selectors
             for operator, selector in zip(self.operators, self.selectors):
                 # Apply an operator
-                exec("self.pop." + operator)
+                exec("op." + operator)
 
                 # Evaluate fitness values
-                self.pop.evaluate_fitness()
+                self.pop.evaluate_fitness(self.problem_function)
 
                 # Update population
                 if selector in op.__selectors__:
@@ -119,20 +128,27 @@ class Metaheuristic():
                 self.pop.update_positions('global', 'greedy')
 
                 # Report change
-                self.__verbose("{} and {} selection applied!".format(
+                self._verbose("{} and {} selection applied!".format(
                     operator, selector))
 
             # Update historical variables
-            self.__update_historicals()
+            self._update_historicals()
 
             # Verbose (if so) some information
-            self.__verbose("Stag. counter: {}, pop. radious: {}".format(
+            self._verbose("Stag. counter: {}, pop. radious: {}".format(
                 self.historical_stagnation[-1], self.historical_radius[-1]))
-            self.__verbose(self.pop.get_state())
+            self._verbose(self.pop.get_state())
 
-    # Show historical variables
-    # -------------------------------------------------------------------------
+
     def show_performance(self):
+        """
+        Show the solution evolution during the iterative process.
+
+        Returns
+        -------
+        None.
+
+        """
         # Show historical fitness
         fig1, ax1 = plt.subplots()
 
@@ -148,17 +164,24 @@ class Metaheuristic():
 
         color = 'tab:blue'
         ax2.set_ylabel('Population radius', color=color)
-        ax2.plot(np.arange(0, self.num_iterations + 1), self.historical_radius,
-                 color=color)
+        ax2.plot(np.arange(0, self.num_iterations + 1),
+                 self.historical_radius, color=color)
         ax2.tick_params(axis='y', labelcolor=color)
         ax2.set_yscale('log')
 
         fig1.tight_layout()
         plt.show()
 
-    # Update historical variables
-    # -------------------------------------------------------------------------
-    def __update_historicals(self):
+
+    def _update_historicals(self):
+        """
+        Update the historical variables
+
+        Returns
+        -------
+        None.
+
+        """
         # Update historical variables
         self.historical_global_fitness.append(self.pop.global_best_fitness)
         self.historical_global_position.append(self.pop.global_best_position)
@@ -177,11 +200,20 @@ class Metaheuristic():
             instantaneous_stagnation = 0
         self.historical_stagnation.append(instantaneous_stagnation)
 
-    # Print if verbose flag is active
-    # -------------------------------------------------------------------------
-    def __verbose(self, text_to_print):
+
+    def _verbose(self, text_to_print):
+        """
+        Print each step performed during the solution procedure
+
+        Parameters
+        ----------
+        text_to_print : str
+            Explanation about what the metaheuristic is doing.
+
+        Returns
+        -------
+        None.
+
+        """
         if self.verbose:
             print(text_to_print)
-
-    # Process simple heuristics entered as list of tuples
-    # -------------------------------------------------------------------------

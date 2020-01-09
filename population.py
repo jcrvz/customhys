@@ -24,14 +24,10 @@ class Population():
 
     # Class initialisation
     # ------------------------------------------------------------------------
-    def __init__(self, problem_function, boundaries, num_agents=30,
-                 is_constrained=True):
+    def __init__(self, boundaries, num_agents=30, is_constrained=True):
         """
         Parameters
         ----------
-        problem_function : function
-            A function that maps a 1-by-D array of real values ​​to a real
-            value.
         boundaries : tuple
             A tuple with two lists of size D corresponding to the lower and
             upper limits of search space, such as:
@@ -47,10 +43,6 @@ class Population():
         None.
 
         """
-        # Read problem, it must be a callable function
-        assert callable(problem_function)
-        self.problem_function = problem_function
-
         # Read number of variables or dimension
         if len(boundaries[0]) == len(boundaries[1]):
             self.num_dimensions = len(boundaries[0])
@@ -115,7 +107,7 @@ class Population():
                 str = 'x_best = ARRAY, f_best = VALUE'
 
         """
-        return ("x_best = " + str(self.__rescale_back(
+        return ("x_best = " + str(self._rescale_back(
             self.global_best_position)) + ", f_best = " +
                 str(self.global_best_fitness))
 
@@ -184,7 +176,7 @@ class Population():
         # Update population positons, velocities and fitness
         if level == "population":
             for agent in range(self.num_agents):
-                if self.__selection(
+                if self._selection(
                         self.fitness[agent],
                         self.previous_fitness[agent], selector):
                     # if new positions are improved, then update past register
@@ -212,7 +204,7 @@ class Population():
         # Update particular positions, velocities and fitness
         elif level == "particular":
             for agent in range(self.num_agents):
-                if self.__selection(
+                if self._selection(
                         self.fitness[agent],
                         self.particular_best_fitness[agent],
                         selector):
@@ -223,39 +215,48 @@ class Population():
         # Update global positions, velocities and fitness
         elif level == "global":
             # Perform particular updating (recursive)
-            self.update("particular", selector)
+            self.update_positions("particular", selector)
 
             # Read current global best agent
             candidate_position = self.particular_best_positions[
                              self.particular_best_fitness.argmin(), :]
             candidate_fitness = self.particular_best_fitness.min()
-            if self.__selection(candidate_fitness, self.global_best_fitness,
-                                selector) or np.isinf(candidate_fitness):
+            if self._selection(candidate_fitness, self.global_best_fitness,
+                               selector) or np.isinf(candidate_fitness):
                 self.global_best_position = candidate_position
                 self.global_best_fitness = candidate_fitness
         #
         # Raise an error
         else:
-            self._PopulationError("Invalid update level")
+            PopulationError("Invalid update level")
 
-    def evaluate_fitness(self):
+    def evaluate_fitness(self, problem_function):
         """
         Evaluate the population positions in the problem function.
+
+        Parameters
+        ----------
+        problem_function : function
+            A function that maps a 1-by-D array of real values ​​to a real
+            value.
 
         Returns
         -------
         None.
 
         """
+        # Read problem, it must be a callable function
+        assert callable(problem_function)
+
+        # Evaluate each agent in this function
         for agent in range(self.num_agents):
-            self.fitness[agent] = self.problem_function(
-                self.__rescale_back(self.positions[agent, :]))
+            self.fitness[agent] = problem_function(
+                self._rescale_back(self.positions[agent, :]))
 
     # -------------------------------------------------------------------------
     #    INITIALISATORS
     # -------------------------------------------------------------------------
     # TODO Add more initialisation operators like grid, boundary, etc.
-    # !!! Before: initialise_uniformly
     def initialise_positions(self, scheme="random"):
         """
         Initialise population by an initialisation scheme.
@@ -278,7 +279,7 @@ class Population():
     #    INTERNAL METHODS (avoid using them outside)
     # -------------------------------------------------------------------------
 
-    def __check_simple_constraints(self):
+    def _check_simple_constraints(self):
         """
         Check simple constraints for all the dimensions like:
             xi_low <= xi <= xi_upp, for all i in 1, 2, ..., D
@@ -306,7 +307,7 @@ class Population():
             self.positions[upp_check] = 1.
             self.velocities[upp_check] = 0.
 
-    def __rescale_back(self, position):
+    def _rescale_back(self, position):
         """
         Rescale an agent position from [-1.0, 1.0] to the original search space
         boundaries per dimension.
@@ -325,7 +326,7 @@ class Population():
         """
         return self.centre_boundaries + position * (self.span_boundaries / 2)
 
-    def __selection(self, new, old, selector="greedy"):
+    def _selection(self, new, old, selector="greedy"):
         """
         Selection procedure for accepting a new position compared with its
         old value.
@@ -357,24 +358,16 @@ class Population():
             if new <= old:
                 selection_condition = True
             else:
-                if np.math.exp(-(new - old) / (
-                        self.metropolis_boltzmann *
-                        self.metropolis_temperature * (
-                            (1 - self.metropolis_rate) ** self.iteration) +
-                        1e-23)) > np.random.rand():
-                    selection_condition = True
-                else:
-                    selection_condition = False
+                selection_condition = bool(np.math.exp(-(new - old) / (
+                    self.metropolis_boltzmann * self.metropolis_temperature *
+                    ((1 - self.metropolis_rate) ** self.iteration) + 1e-23))
+                    > np.random.rand())
         #
         # Probabilistic selection
         elif selector == "probabilistic":
-            if new <= old:
-                selection_condition = True
-            else:
-                if np.random.rand() < self.probability_selection:
-                    selection_condition = True
-                else:
-                    selection_condition = False
+            selection_condition = bool(
+                (new <= old) or
+                (np.random.rand() <= self.probability_selection))
         #
         # All selection
         elif selector == "all":

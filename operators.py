@@ -9,7 +9,7 @@ import numpy as np
 from itertools import combinations as _get_combinations
 
 # Read all available operators
-__operators__ = [x[0] for x in _get_search_operators(1)]
+__operators__ = [x[0] for x in _obtain_operators(1)]
 __selectors__ = ['greedy', 'probabilistic', 'metropolis', 'all', 'none']
 
 
@@ -36,7 +36,7 @@ def random_sample(pop):
 
     # Check constraints
     if pop.is_constrained:
-        pop.__check_simple_constraints()
+        pop._check_simple_constraints()
 
 
 def random_search(pop, scale=0.01):
@@ -64,7 +64,7 @@ def random_search(pop, scale=0.01):
 
     # Check constraints
     if pop.is_constrained:
-        pop.__check_simple_constraints()
+        pop._check_simple_constraints()
 
 
 def rayleigh_flight(pop, scale=0.01):
@@ -92,7 +92,7 @@ def rayleigh_flight(pop, scale=0.01):
 
     # Check constraints
     if pop.is_constrained:
-        pop.__check_simple_constraints()
+        pop._check_simple_constraints()
 
 
 def levy_flight(pop, scale=1.0, beta=1.5):
@@ -142,7 +142,7 @@ def levy_flight(pop, scale=1.0, beta=1.5):
 
     # Check constraints
     if pop.is_constrained:
-        pop.__check_simple_constraints()
+        pop._check_simple_constraints()
 
 
 def swarm_dynamic(pop, factor=1.0, self_conf=2.4, swarm_conf=2.6,
@@ -184,7 +184,7 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.4, swarm_conf=2.6,
     if version == "intertial":
         # Find new velocities
         pop.velocities = factor * pop.velocities + r_1 * (
-                pop.particular_best_positions - pop.positions) + \
+            pop.particular_best_positions - pop.positions) + \
             r_2 * (np.tile(pop.global_best_position, (pop.num_agents, 1)) -
                    pop.positions)
     elif version == "constriction":
@@ -208,7 +208,7 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.4, swarm_conf=2.6,
 
     # Check constraints
     if pop.is_constrained:
-        pop.__check_simple_constraints()
+        pop._check_simple_constraints()
 
 
 # Before: mutation_de
@@ -287,7 +287,7 @@ def differential_mutation(pop, expression="current-to-best", num_rands=1,
 
     # Check constraints
     if pop.is_constrained:
-        pop.__check_simple_constraints()
+        pop._check_simple_constraints()
 
 
 def differential_crossover(pop, crossover_rate=0.5, version="binomial"):
@@ -357,7 +357,7 @@ def differential_crossover(pop, crossover_rate=0.5, version="binomial"):
 
     # Check constraints
     if pop.is_constrained:
-        pop.__check_simple_constraints()
+        pop._check_simple_constraints()
 
 
 def local_random_walk(pop, probability=0.75, scale=1.0):
@@ -391,11 +391,11 @@ def local_random_walk(pop, probability=0.75, scale=1.0):
     pop.positions += scale * r_1 * (pop.positions[
         np.random.permutation(pop.num_agents), :] - pop.positions[
             np.random.permutation(pop.num_agents), :]) * np.heaviside(
-                r_2 - probability, 0)
+                r_2 - probability, 0.0)
 
     # Check constraints
     if pop.is_constrained:
-        pop.__check_simple_constraints()
+        pop._check_simple_constraints()
 
 
 def spiral_dynamic(pop, radius=0.9, angle=22.5, sigma=0.1):
@@ -438,7 +438,7 @@ def spiral_dynamic(pop, radius=0.9, angle=22.5, sigma=0.1):
 
     # Check constraints
     if pop.is_constrained:
-        pop.__check_simple_constraints()
+        pop._check_simple_constraints()
 
 
 # Before: firefly
@@ -502,7 +502,7 @@ def firefly_dynamic(pop, epsilon="uniform", alpha=0.8, beta=1.0, gamma=1.0):
 
         # Find the total attraction for each agent
         difference_positions[agent, :] = np.sum(
-            np.heaviside(-delta_lights, 0) * delta *
+            np.heaviside(-delta_lights, 0.0) * delta *
             np.exp(-gamma * np.linalg.norm(delta, 2, 1) ** 2), 0)
 
     # Move fireflies according to their attractions
@@ -510,7 +510,7 @@ def firefly_dynamic(pop, epsilon="uniform", alpha=0.8, beta=1.0, gamma=1.0):
 
     # Check constraints
     if pop.is_constrained:
-        pop.__check_simple_constraints()
+        pop._check_simple_constraints()
 
 
 # Before: central_force
@@ -560,7 +560,7 @@ def central_force_dynamic(pop, gravity=1.0, alpha=0.5, beta=1.5, dt=1.0):
         distances = np.linalg.norm(delta_positions, 2, 1)
 
         # Find the quotient part    ! -> - delta_masses (cz minimisation)
-        quotient = np.heaviside(-delta_masses, 0) * (
+        quotient = np.heaviside(-delta_masses, 0.0) * (
             np.abs(delta_masses) ** alpha) / (distances ** beta)
 
         # Determine the acceleration for each agent
@@ -572,10 +572,10 @@ def central_force_dynamic(pop, gravity=1.0, alpha=0.5, beta=1.5, dt=1.0):
 
     # Check constraints
     if pop.is_constrained:
-        pop.__check_simple_constraints()
+        pop._check_simple_constraints()
 
 
-def gravitational_search(pop, gravity=1.0, alpha=0.5, epsilon=1e-23):
+def gravitational_search(pop, gravity=1.0, alpha=0.5):
     """
     Gravitational Search Algorithm (GSA) simplified
 
@@ -587,8 +587,6 @@ def gravitational_search(pop, gravity=1.0, alpha=0.5, epsilon=1e-23):
         It is the initial gravitational value. The default is 1.0.
     alpha : float, optional
         It is the gravitational damping ratio. The default is 0.5.
-    epsilon : float, optional
-        It is a small value to avoid zero division. The default is 1e-23.
 
     Returns
     -------
@@ -620,7 +618,7 @@ def gravitational_search(pop, gravity=1.0, alpha=0.5, epsilon=1e-23):
             pop.positions[agent, :], (pop.num_agents - 1, 1))
 
         quotient = masses[indices] / (
-            np.linalg.norm(delta_positions, 2, 1) + epsilon)
+            np.linalg.norm(delta_positions, 2, 1) + 1e-23)
 
         # Force interaction
         force_interaction = gravitation * np.tile(
@@ -641,7 +639,7 @@ def gravitational_search(pop, gravity=1.0, alpha=0.5, epsilon=1e-23):
 
     # Check constraints
     if pop.is_constrained:
-        pop.__check_simple_constraints()
+        pop._check_simple_constraints()
 
 
 # Before: ga_crossover
@@ -1065,7 +1063,7 @@ class OperatorsError(Exception):
 # GENERATOR OF SEARCH OPERATORS
 # ---------------------------------------------------------------------------
 
-def _get_search_operators(num_vals=5):
+def _obtain_operators(num_vals=5):
     """
     Generate a list of all the available search operators with a given
     number of values for each parameter (if so).
@@ -1191,8 +1189,8 @@ def _get_search_operators(num_vals=5):
         ]
 
 
-def _build_heuristics(heuristics=_get_search_operators(),
-                      file_name="operators_collection"):
+def _build_operators(heuristics=_obtain_operators(),
+                     file_name="operators_collection"):
     """
     Create a text file containing all possible combinations of parameter
     values for each search operator.
@@ -1260,7 +1258,25 @@ def _build_heuristics(heuristics=_get_search_operators(),
     print("-" * 50 + "--\nTOTAL: classes=%d, operators=%d" %
           tuple(total_counters))
 
-def _process_heuristics(self, simple_heuristics):
+
+def _process_operators(self, simple_heuristics):
+    """
+    Decode the list of operators or heuristics and deliver two lists, one
+    with ready-to-execute strings of operators and another with strings of
+    their associated selectors.
+
+    Parameters
+    ----------
+    simple_heuristics : list
+        A list of all the search operators to use.
+
+    Returns
+    -------
+    executable_operators : list
+        A list of ready-to-execute string of search operators.
+    selectors : list
+        A list of strings of the selectors associated to operators.
+    """
     # Initialise the list of callable operators (simple heuristics)
     executable_operators = []
     selectors = []
@@ -1283,7 +1299,7 @@ def _process_heuristics(self, simple_heuristics):
                 else:
                     str_parameters.append("{}={}".format(
                         parameter, value))
-                    
+
             # Create an executable string with given arguments
             full_string = "{}({})".format(
                 operator, sep.join(str_parameters))
