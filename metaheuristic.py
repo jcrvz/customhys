@@ -6,32 +6,34 @@ Created on Thu Sep 26 16:56:01 2019
 """
 
 import numpy as np
-import population as pop
+from population import Population as pop
 import operators as op
 import matplotlib.pyplot as plt
 
 
+# Read all available operators
+__operators__ = op.__all__  # [x[0] for x in op._obtain_operators(1)]
+__selectors__ = ['greedy', 'probabilistic', 'metropolis', 'all', 'none']
+
+
 class Metaheuristic():
-    def __init__(self, problem_function, boundaries, search_operators,
-                 is_constrained=True, num_agents=30):
+    def __init__(self, problem, search_operators, num_agents=30):
         """
         Create a metaheuristic method by employing different simple search
         operators.
 
         Parameters
         ----------
-        problem_function : function
-            This function maps a 1-by-D array of real values ​​to a real value
-        boundaries : tuple
-            A tuple with two lists of size D corresponding to the lower and
-            upper limits of search space, such as:
+        problem : dict
+            This is a dictionary containing the 'function' that maps a 1-by-D
+            array of real values ​​to a real value, 'is_constrained' flag
+            indicated that solution is inside the search space, and the
+            'boundaries' (a tuple with two lists of size D). These two lists
+            correspond to the lower and upper limits of search space, such as:
                 boundaries = (lower_boundaries, upper_boundaries)
             Note: Dimensions of search domain are read from these boundaries.
         search_operators : list
             A list of available search operators.
-        is_constrained : bool, optional
-            It is a flag to mantain agents inside the search space.
-            The default is True.
         num_agents : int, optional
             Numbre of agents or population size. The default is 30.
 
@@ -41,10 +43,11 @@ class Metaheuristic():
 
         """
         # Define the problem function
-        self.problem_function = problem_function
+        self.problem_function = problem['function']
 
         # Create population
-        self.pop = pop.Population(boundaries, num_agents, is_constrained)
+        self.pop = pop.Population(problem['boundaries'],
+                                  num_agents, problem['is_constrained'])
 
         # Check and read the search_operators
         self.operators, self.selectors = op._process_operators(
@@ -60,18 +63,7 @@ class Metaheuristic():
         self.num_agents = num_agents
 
         # Initialise historical variables
-        self.historical = dict(
-            fitness=list(),
-            position=list(),
-            centroid=list(),
-            radius=list(),
-            stagnation=list(),
-            )
-        self.historical_global_fitness = list()
-        self.historical_global_position = list()
-        self.historical_centroid = list()
-        self.historical_radius = list()
-        self.historical_stagnation = list()
+        self.historical = dict()
 
         # Set additional variables
         self.verbose = True
@@ -99,7 +91,8 @@ class Metaheuristic():
         self.pop.update_positions('particular', 'all')
         self.pop.update_positions('global', 'greedy')  # Default: greedy
 
-        # Update historical variables
+        # Initialise and update historical variables
+        self._reset_historicals()
         self._update_historicals()
 
         # Start optimisaton procedure
@@ -118,7 +111,7 @@ class Metaheuristic():
                 self.pop.evaluate_fitness(self.problem_function)
 
                 # Update population
-                if selector in op.__selectors__:
+                if selector in __selectors__:
                     self.pop.update_positions('population', selector)
                 else:
                     self.pop.update_positions()
@@ -137,6 +130,19 @@ class Metaheuristic():
             self._verbose("Stag. counter: {}, pop. radious: {}".format(
                 self.historical_stagnation[-1], self.historical_radius[-1]))
             self._verbose(self.pop.get_state())
+
+    def get_solution(self):
+        """
+        Deliver the last position and fitness obtained after run.
+
+        Returns
+        -------
+        ndarray
+            Best position vector found.
+        float
+            Best fitness value found.
+        """
+        return self.historical['position'][-1], self.historical['fitness'][-1]
 
     def show_performance(self):
         """
@@ -169,6 +175,23 @@ class Metaheuristic():
 
         fig1.tight_layout()
         plt.show()
+
+    def _reset_historicals(self):
+        """
+        Reset the self.historical variable
+
+        Returns
+        -------
+        None.
+
+        """
+        self.historical = dict(
+            fitness=list(),
+            position=list(),
+            centroid=list(),
+            radius=list(),
+            stagnation=list(),
+            )
 
     def _update_historicals(self):
         """

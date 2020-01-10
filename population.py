@@ -6,6 +6,8 @@ Created on Tue Sep 17 14:29:43 2019
 """
 import numpy as np
 
+__all__ = ['Population']
+
 
 class Population():
     """
