@@ -30,7 +30,7 @@ class Metaheuristic():
         search_operators : list
             A list of available search operators.
         is_constrained : bool, optional
-            It is a flag to mantain agents inside the search space. 
+            It is a flag to mantain agents inside the search space.
             The default is True.
         num_agents : int, optional
             Numbre of agents or population size. The default is 30.
@@ -61,7 +61,7 @@ class Metaheuristic():
 
         # Initialise historical variables
         self.historical = dict(
-            fitness=list(),  
+            fitness=list(),
             position=list(),
             centroid=list(),
             radius=list(),
@@ -75,7 +75,6 @@ class Metaheuristic():
 
         # Set additional variables
         self.verbose = True
-
 
     def run(self):
         """
@@ -139,7 +138,6 @@ class Metaheuristic():
                 self.historical_stagnation[-1], self.historical_radius[-1]))
             self._verbose(self.pop.get_state())
 
-
     def show_performance(self):
         """
         Show the solution evolution during the iterative process.
@@ -156,7 +154,7 @@ class Metaheuristic():
         plt.xlabel("Iterations")
         ax1.set_ylabel("Global Fitness", color=color)
         ax1.plot(np.arange(0, self.num_iterations + 1),
-                 self.historical_global_fitness, color=color)
+                 self.historical['fitness'], color=color)
         ax1.tick_params(axis='y', labelcolor=color)
         ax1.set_yscale('linear')
 
@@ -165,13 +163,12 @@ class Metaheuristic():
         color = 'tab:blue'
         ax2.set_ylabel('Population radius', color=color)
         ax2.plot(np.arange(0, self.num_iterations + 1),
-                 self.historical_radius, color=color)
+                 self.historical['radius'], color=color)
         ax2.tick_params(axis='y', labelcolor=color)
         ax2.set_yscale('log')
 
         fig1.tight_layout()
         plt.show()
-
 
     def _update_historicals(self):
         """
@@ -183,23 +180,23 @@ class Metaheuristic():
 
         """
         # Update historical variables
-        self.historical_global_fitness.append(self.pop.global_best_fitness)
-        self.historical_global_position.append(self.pop.global_best_position)
+        self.historical['fitness'].append(self.pop.global_best_fitness)
+        self.historical['position'].append(self.pop.global_best_position)
 
         # Update population centroid and radius
-        self.historical_centroid = np.array(self.pop.positions).mean(0)
-        self.historical_radius.append(np.linalg.norm(
-            self.pop.positions - np.tile(self.historical_centroid,
+        current_centroid = np.array(self.pop.positions).mean(0)
+        self.historical['centroid'].append(current_centroid)
+        self.historical['radius'].append(np.linalg.norm(
+            self.pop.positions - np.tile(current_centroid,
                                          (self.num_agents, 1)), 2, 1).max())
 
         # Update stagnation
-        if (self.pop.iteration > 0) and (self.historical_global_fitness[-2] ==
-                                         self.historical_global_fitness[-1]):
-            instantaneous_stagnation = self.historical_stagnation[-1] + 1
+        if (self.pop.iteration > 0) and (
+                float(self.historical['fitness'][-2:]) == 0.0):
+            instantaneous_stagnation = self.historical['stagnation'][-1] + 1
         else:
             instantaneous_stagnation = 0
-        self.historical_stagnation.append(instantaneous_stagnation)
-
+        self.historical['stagnation'].append(instantaneous_stagnation)
 
     def _verbose(self, text_to_print):
         """
