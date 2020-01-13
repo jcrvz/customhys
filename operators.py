@@ -14,6 +14,7 @@ __all__ = ['local_random_walk', 'random_search', 'random_sample',
            'gravitational_search', 'central_force_dynamic', 'spiral_dynamic',
            'genetic_mutation', 'genetic_crossover']
 
+
 # -------------------------------------------------------------------------
 #    PERTURBATORS
 # -------------------------------------------------------------------------
@@ -57,7 +58,7 @@ def random_search(pop, scale=0.01):
 
     """
     # Check the scale value
-    _check_parameter('scale')
+    _check_parameter(scale)
 
     # Move each agent using uniform random displacements
     pop.positions += scale * \
@@ -85,7 +86,7 @@ def rayleigh_flight(pop, scale=0.01):
 
     """
     # Check the scale value
-    _check_parameter('scale')
+    _check_parameter(scale)
 
     # Move each agent using gaussian random displacements
     pop.positions += scale * \
@@ -116,8 +117,8 @@ def levy_flight(pop, scale=1.0, beta=1.5):
 
     """
     # Check the scale and beta value
-    _check_parameter('scale')
-    _check_parameter('beta', (1.0, 3.0))
+    _check_parameter(scale)
+    _check_parameter(beta, (1.0, 3.0))
 
     # Calculate x's std dev (Mantegna's algorithm)
     sigma = ((np.math.gamma(1 + beta) * np.sin(np.pi * beta / 2)) /
@@ -173,9 +174,9 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.4, swarm_conf=2.6,
 
     """
     # Check the scale and beta value
-    _check_parameter('factor')
-    _check_parameter('self_conf', (0.0, 10.0))
-    _check_parameter('swarm_conf', (0.0, 10.0))
+    _check_parameter(factor)
+    _check_parameter(self_conf, (0.0, 10.0))
+    _check_parameter(swarm_conf, (0.0, 10.0))
 
     # Determine random numbers
     r_1 = self_conf * np.random.rand(pop.num_agents, pop.num_dimensions)
@@ -210,6 +211,8 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.4, swarm_conf=2.6,
     # Check constraints
     if pop.is_constrained:
         pop._check_simple_constraints()
+    
+    return pop
 
 
 # Before: mutation_de
@@ -226,10 +229,9 @@ def differential_mutation(pop, expression="current-to-best", num_rands=1,
         Type of DE mutation. Available mutations: "rand", "best",
         "current", "current-to-best", "rand-to-best",
         "rand-to-bestandcurrent". The default is "current-to-best".
-
-    num_rands : TYPE, optional
+    num_rands : int, optional
         DESCRIPTION. The default is 1.
-    factor : TYPE, optional
+    factor : float, optional
         DESCRIPTION. The default is 1.0.
 
     Returns
@@ -238,8 +240,8 @@ def differential_mutation(pop, expression="current-to-best", num_rands=1,
 
     """
     # Check the scale and beta value
-    _check_parameter('num_rands', (1, 10), int)
-    _check_parameter('factor', (0.0, 2.0))
+    _check_parameter(num_rands, (1, 10), int)
+    _check_parameter(factor, (0.0, 2.0))
 
     # Create mutants using the expression provided in scheme
     if expression == "rand":
@@ -312,7 +314,7 @@ def differential_crossover(pop, crossover_rate=0.5, version="binomial"):
 
     """
     # Check the scale and beta value
-    _check_parameter('crossover_rate')
+    _check_parameter(crossover_rate)
 
     # Binomial versio
     if version == "binomial":
@@ -381,8 +383,8 @@ def local_random_walk(pop, probability=0.75, scale=1.0):
 
     """
     # Check the scale and beta value
-    _check_parameter('probability')
-    _check_parameter('scale')
+    _check_parameter(probability)
+    _check_parameter(scale)
 
     # Determine random numbers
     r_1 = np.random.rand(pop.num_agents, pop.num_dimensions)
@@ -421,9 +423,9 @@ def spiral_dynamic(pop, radius=0.9, angle=22.5, sigma=0.1):
 
     """
     # Check the scale and beta value
-    _check_parameter('radius')
-    _check_parameter('angle', (0.0, 360.0))
-    _check_parameter('sigma')
+    _check_parameter(radius)
+    _check_parameter(angle, (0.0, 360.0))
+    _check_parameter(sigma)
 
     # Determine the rotation matrix
     rotation_matrix = _get_rotation_matrix(pop.num_dimensions,
@@ -467,9 +469,9 @@ def firefly_dynamic(pop, epsilon="uniform", alpha=0.8, beta=1.0, gamma=1.0):
 
     """
     # Check the alpha, beta, and gamma value
-    _check_parameter('alpha')
-    _check_parameter('beta')
-    _check_parameter('gamma', (0.0, 100.0))
+    _check_parameter(alpha)
+    _check_parameter(beta)
+    _check_parameter(gamma, (0.0, 100.0))
 
     # Determine epsilon values
     if epsilon == "gaussian":
@@ -538,10 +540,10 @@ def central_force_dynamic(pop, gravity=1.0, alpha=0.5, beta=1.5, dt=1.0):
 
     """
     # Check the gravity, alpha, beta, and dt value
-    _check_parameter('alpha')
-    _check_parameter('beta', (1.0, 3.0))
-    _check_parameter('dt', (0.0, 10.0))
-    _check_parameter('gravity')
+    _check_parameter(alpha)
+    _check_parameter(beta, (1.0, 3.0))
+    _check_parameter(dt, (0.0, 10.0))
+    _check_parameter(gravity)
 
     # Initialise acceleration
     acceleration = np.zeros((pop.num_agents, pop.num_dimensions))
@@ -595,9 +597,9 @@ def gravitational_search(pop, gravity=1.0, alpha=0.5):
 
     """
     # Check the gravity, alpha, and epsilon value
-    _check_parameter('gravity')
-    _check_parameter('alpha')
-    _check_parameter('epsilon', (0.0, 0.1))
+    _check_parameter(gravity)
+    _check_parameter(alpha)
+    _check_parameter(epsilon, (0.0, 0.1))
 
     # Initialise acceleration
     acceleration = np.zeros((pop.num_agents, pop.num_dimensions))
@@ -678,7 +680,7 @@ def genetic_crossover(pop, pairing="cost", crossover="single",
 
     """
     # Check the mating_pool_factor value
-    _check_parameter('mating_pool_factor')
+    _check_parameter(mating_pool_factor)
 
     # Mating pool size
     num_mates = int(np.round(mating_pool_factor * pop.num_agents))
@@ -930,9 +932,9 @@ def genetic_mutation(pop, elite_rate=0.0, mutation_rate=0.2,
 
     """
     # Check the elite_rate, mutation_rate, and sigma value
-    _check_parameter('elite_rate')
-    _check_parameter('mutation_rate')
-    _check_parameter('sigma')
+    _check_parameter(elite_rate)
+    _check_parameter(mutation_rate)
+    _check_parameter(sigma)
 
     # Calculate the number of elite agents
     num_elite = int(np.ceil(pop.num_agents * elite_rate))
@@ -990,8 +992,8 @@ def _get_rotation_matrix(dimensions, angle=0.39269908169872414):
 
     """
     # Check the dimensions and angle value
-    _check_parameter('dimensions', (2, np.inf), int)
-    _check_parameter('angle', (0.0, 2*np.pi))
+    _check_parameter(dimensions, (2, np.inf), int)
+    _check_parameter(angle, (0.0, 2*np.pi))
 
     # Initialise the rotation matrix
     rotation_matrix = np.eye(dimensions)
@@ -1018,7 +1020,7 @@ def _get_rotation_matrix(dimensions, angle=0.39269908169872414):
     return rotation_matrix
 
 
-def _check_parameter(parameter, interval=(0.0, 1.0),
+def _check_parameter(par_value, interval=(0.0, 1.0),
                      par_type=float):
     """
     Check if a parameter or variable is into an interval.
@@ -1042,15 +1044,13 @@ def _check_parameter(parameter, interval=(0.0, 1.0),
 
     """
     # Prepare some variables to perfom the checking
-    assert isinstance(parameter, str)
-    par_value = eval(parameter)
     assert isinstance(par_value, par_type)
 
     # Check if the parameter value is into the interval
     if not interval[0] <= par_value <= interval[1]:
         raise OperatorsError(
-            "Invalid value! {} = {} is not in [{}, {}]".format(
-                parameter, par_value, interval[0], interval[1]))
+            "Invalid value! {} is not in [{}, {}]".format(
+                par_value, interval[0], interval[1]))
 
 
 class OperatorsError(Exception):
@@ -1148,8 +1148,7 @@ def _obtain_operators(num_vals=5):
             "gravitational_search",
             dict(
                 gravity=np.linspace(0.0, 1.0, num_vals),
-                alpha=np.linspace(0.0, 1.0, num_vals),
-                epsilon=[1e-23]),
+                alpha=np.linspace(0.0, 1.0, num_vals)),
             "all"),
         (
             "central_force_dynamic",
@@ -1260,7 +1259,7 @@ def _build_operators(heuristics=_obtain_operators(),
           tuple(total_counters))
 
 
-def _process_operators(self, simple_heuristics):
+def _process_operators(simple_heuristics):
     """
     Decode the list of operators or heuristics and deliver two lists, one
     with ready-to-execute strings of operators and another with strings of

@@ -6,7 +6,7 @@ Created on Thu Sep 26 16:56:01 2019
 """
 
 import numpy as np
-from population import Population as pop
+from population import Population
 import operators as op
 import matplotlib.pyplot as plt
 
@@ -17,7 +17,8 @@ __selectors__ = ['greedy', 'probabilistic', 'metropolis', 'all', 'none']
 
 
 class Metaheuristic():
-    def __init__(self, problem, search_operators, num_agents=30):
+    def __init__(self, problem, search_operators, num_agents=30,
+                 num_iterations=100):
         """
         Create a metaheuristic method by employing different simple search
         operators.
@@ -46,15 +47,15 @@ class Metaheuristic():
         self.problem_function = problem['function']
 
         # Create population
-        self.pop = pop.Population(problem['boundaries'],
-                                  num_agents, problem['is_constrained'])
+        self.pop = Population(problem['boundaries'], num_agents,
+                              problem['is_constrained'])
 
         # Check and read the search_operators
         self.operators, self.selectors = op._process_operators(
             search_operators)
 
         # Define the maximum number of iterations
-        self.num_iterations = 100
+        self.num_iterations = num_iterations
 
         # Read the number of dimensions
         self.num_dimensions = self.pop.num_dimensions
@@ -87,25 +88,32 @@ class Metaheuristic():
         self.pop.evaluate_fitness(self.problem_function)
 
         # Update population, particular, and global
-        self.pop.update_positions()  # Default: 'population', 'all'
+        self.pop.update_positions('population', 'all')  # Default
         self.pop.update_positions('particular', 'all')
-        self.pop.update_positions('global', 'greedy')  # Default: greedy
+        self.pop.update_positions('global', 'greedy')
 
         # Initialise and update historical variables
         self._reset_historicals()
         self._update_historicals()
+
+        # Report which operators are going to use
+        self._verbose('\nSearch operators to employ:')
+        for operator, selector in zip(self.operators, self.selectors):
+            self._verbose("{} with {}".format(operator, selector))
+        self._verbose("{}".format('-' * 50))
 
         # Start optimisaton procedure
         for iteration in range(1, self.num_iterations + 1):
             # Update the current iteration
             self.pop.iteration = iteration
 
-            self._verbose("\nIteration {}:\n{}".format(iteration, '-' * 50))
-
             # Implement the sequence of operators and selectors
             for operator, selector in zip(self.operators, self.selectors):
+                # Split operator
+                operator_name, operator_params = operator.split('(')
+
                 # Apply an operator
-                exec("op." + operator)
+                exec("op." + operator_name + "(self.pop," + operator_params)
 
                 # Evaluate fitness values
                 self.pop.evaluate_fitness(self.problem_function)
@@ -119,16 +127,13 @@ class Metaheuristic():
                 # Update global position
                 self.pop.update_positions('global', 'greedy')
 
-                # Report change
-                self._verbose("{} and {} selection applied!".format(
-                    operator, selector))
-
             # Update historical variables
             self._update_historicals()
 
             # Verbose (if so) some information
-            self._verbose("Stag. counter: {}, pop. radious: {}".format(
-                self.historical_stagnation[-1], self.historical_radius[-1]))
+            self._verbose("{}\nStag. counter: {}, pop. radious: {}".format(
+                iteration, self.historical['stagnation'][-1],
+                self.historical['radius'][-1]))
             self._verbose(self.pop.get_state())
 
     def get_solution(self):
@@ -144,6 +149,7 @@ class Metaheuristic():
         """
         return self.historical['position'][-1], self.historical['fitness'][-1]
 
+    @property
     def show_performance(self):
         """
         Show the solution evolution during the iterative process.
@@ -215,7 +221,8 @@ class Metaheuristic():
 
         # Update stagnation
         if (self.pop.iteration > 0) and (
-                float(self.historical['fitness'][-2:]) == 0.0):
+                float(self.historical['fitness'][-1]) ==
+                float(self.historical['fitness'][-2])):
             instantaneous_stagnation = self.historical['stagnation'][-1] + 1
         else:
             instantaneous_stagnation = 0

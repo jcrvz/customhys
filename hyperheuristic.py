@@ -7,16 +7,29 @@ Created on Thu Jan  9 15:36:43 2020
 import numpy as np
 import scipy.stats as st
 from metaheuristic import Metaheuristic
+from datetime import datetime
+from json import dump as _save_json
+from os.path import exists as _check_path
+from os import makedirs as _create_path
 
 
 class Hyperheuristic():
     def __init__(self, heuristic_space, problem, parameters={
             'cardinality': 2, 'num_iterations': 100, 'num_agents': 30,
-            'num_replicas': 100}):
+            'num_replicas': 100, 'num_steps':100}):
+        # Read the heuristic space
+        if isinstance(heuristic_space, list):
+            self.heuristic_space = heuristic_space
+        elif isinstance(heuristic_space, str):
+            with open(heuristic_space, 'r') as operators_file:
+                self.heuristic_space = [
+                    eval(line.rstrip('\n')) for line in operators_file]
+        else:
+            HyperheuristicError("Invalid heuristic_space")
+
         # Read the heuristic space (mandatory)
-        self.heuristic_space = heuristic_space
         self.problem = problem
-        self.num_operators = len(heuristic_space)
+        self.num_operators = len(self.heuristic_space)
 
         # Initialise other parameters
         self.parameters = parameters
@@ -53,16 +66,18 @@ class Hyperheuristic():
         # Evaluate this solution
         performance, details = self.evaluate_metaheuristic(solution)
 
-        # Historical variables
+        # Initialise historical register
         historicals = dict(
-            iteration=[0],
             encoded_solution=[encoded_solution],
             solution=[solution],
             performances=[performance],
             details=[details])
 
+        # Save this historical register
+        _save_iteration(0, historicals)
+
         # Perform the random search
-        for iteration in range(self.parameters['num_iterations']):
+        for iteration in range(self.parameters['num_steps']):
 
             # Select randomly a candidate solution
             encoded_candidate_solution = np.random.randint(
@@ -82,18 +97,26 @@ class Hyperheuristic():
                 details = candidate_details
 
                 # Update historicals (only if improves)
-                historicals['iteration'].append(iteration)
-                historicals['encoded_solution'].append(encoded_solution)
-                historicals['solution'].append(solution)
-                historicals['performance'].append(performance)
-                historicals['details'].append(candidate_details)
+                # historicals['iteration'].append(iteration)
+                # historicals['encoded_solution'].append(encoded_solution)
+                # historicals['solution'].append(solution)
+                # historicals['performance'].append(performance)
+                # historicals['details'].append(candidate_details)
+
+                # Save this historical register
+                self._save_iteration(iteration, {
+                    'encoded_solution': encoded_solution,
+                    'solution': solution,
+                    'performance': performance,
+                    'details': details})
 
         return solution, performance, encoded_solution, historicals
 
     def evaluate_metaheuristic(self, search_operators):
         # Call the metaheuristic
         mh = Metaheuristic(self.problem, search_operators,
-                           self.parameters['num_agents'])
+                           self.parameters['num_agents'],
+                           self.parameters['num_steps'])
 
         # Initialise the historical registers
         historical_data = list()
@@ -120,7 +143,8 @@ class Hyperheuristic():
             historical=historical_data, fitness=fitness_data,
             positions=position_data, statistics=fitness_stats)
 
-    def get_performance(self, statistics):
+    @staticmethod
+    def get_performance(statistics):
         # Score function using the statistics from fitness values
         # perf = statistics['Avg']  # Option 1
         # perf = statistics['Avg'] + statistics['Std']  # Option 2
@@ -129,7 +153,8 @@ class Hyperheuristic():
             statistics['Med'] + statistics['IQR']
         return perf
 
-    def get_statistics(self, raw_data):
+    @staticmethod
+    def get_statistics(raw_data):
         # Get descriptive statistics
         dst = st.describe(raw_data)
 
@@ -144,3 +169,32 @@ class Hyperheuristic():
                     IQR=st.iqr(raw_data),
                     Med=np.median(raw_data),
                     MAD=st.median_absolute_deviation(raw_data))
+
+
+def _save_iteration(iteration_number, variable_to_save):
+    # Get the current date
+    now = datetime.now()
+
+    # Define the folder name
+    folder_name = ".raw_data/" + now.strftime("%m_%d_%Y")
+
+    # Check if this path exists
+    if not _check_path(folder_name):
+        _create_path(folder_name)
+
+    # Create a new file for this iteration
+    with open(folder_name + f"/{iteration_number}-" + now.strftime(
+            "%H_%M_%S"), 'w') as json_file:
+        _save_json(variable_to_save, json_file)
+
+
+def set_problem(function, boundaries, is_constrained=True):
+    return {'function': function, 'boundaries': boundaries,
+            'is_constrained': is_constrained}
+
+
+class HyperheuristicError(Exception):
+    """
+    Simple HyperheuristicError to manage exceptions.
+    """
+    pass
