@@ -67,7 +67,7 @@ class Metaheuristic():
         self.historical = dict()
 
         # Set additional variables
-        self.verbose = True
+        self.verbose = False
 
     def run(self):
         """

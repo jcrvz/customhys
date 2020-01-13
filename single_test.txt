@@ -1,1 +1,1 @@
-('swarm_dynamic', {'factor': 1.0, 'self_conf': 2.54, 'swarm_conf': 2.56, 'version': 'constriction'}, 'all')
+('spiral_dynamic', {'radius': 0.9, 'angle': 22.5, 'sigma': 0.1}, 'all')

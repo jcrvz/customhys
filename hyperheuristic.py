@@ -8,7 +8,7 @@ import numpy as np
 import scipy.stats as st
 from metaheuristic import Metaheuristic
 from datetime import datetime
-from json import dump as _save_json
+import json
 from os.path import exists as _check_path
 from os import makedirs as _create_path
 
@@ -104,7 +104,7 @@ class Hyperheuristic():
                 # historicals['details'].append(candidate_details)
 
                 # Save this historical register
-                self._save_iteration(iteration, {
+                _save_iteration(iteration, {
                     'encoded_solution': encoded_solution,
                     'solution': solution,
                     'performance': performance,
@@ -133,8 +133,8 @@ class Hyperheuristic():
 
             # Read and store the solution obtained
             _temporal_position, _temporal_fitness = mh.get_solution()
-            fitness_data.append(_temporal_position)
-            position_data.append(_temporal_fitness)
+            fitness_data.append(_temporal_fitness)
+            position_data.append(_temporal_position)
 
         # Determine a performance metric once finish the repetitions
         fitness_stats = self.get_statistics(fitness_data)
@@ -158,14 +158,14 @@ class Hyperheuristic():
         # Get descriptive statistics
         dst = st.describe(raw_data)
 
-    # Store statistics
-        return dict(nob=dst['nobs'],
-                    Min=dst['minmax'][0],
-                    Max=dst['minmax'][1],
-                    Avg=dst['mean'],
+        # Store statistics
+        return dict(nob=dst.nobs,
+                    Min=dst.minmax[0],
+                    Max=dst.minmax[1],
+                    Avg=dst.mean,
                     Std=np.std(raw_data),
-                    Skw=dst['skewness'],
-                    Kur=dst['kurtosis'],
+                    Skw=dst.skewness,
+                    Kur=dst.kurtosis,
                     IQR=st.iqr(raw_data),
                     Med=np.median(raw_data),
                     MAD=st.median_absolute_deviation(raw_data))
@@ -176,7 +176,7 @@ def _save_iteration(iteration_number, variable_to_save):
     now = datetime.now()
 
     # Define the folder name
-    folder_name = ".raw_data/" + now.strftime("%m_%d_%Y")
+    folder_name = "raw_data/" + now.strftime("%m_%d_%Y")
 
     # Check if this path exists
     if not _check_path(folder_name):
@@ -185,7 +185,7 @@ def _save_iteration(iteration_number, variable_to_save):
     # Create a new file for this iteration
     with open(folder_name + f"/{iteration_number}-" + now.strftime(
             "%H_%M_%S"), 'w') as json_file:
-        _save_json(variable_to_save, json_file)
+        json.dump(variable_to_save, json_file, cls=NumpyEncoder)
 
 
 def set_problem(function, boundaries, is_constrained=True):
@@ -198,3 +198,9 @@ class HyperheuristicError(Exception):
     Simple HyperheuristicError to manage exceptions.
     """
     pass
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)

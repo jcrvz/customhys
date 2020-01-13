@@ -26,8 +26,8 @@ problem = bf.Sphere(num_dimensions)
 problem_function = lambda x : problem.get_func_val(x)
 is_constrained = True
 
-problem.max_search_range = problem.max_search_range/100
-problem.min_search_range = problem.min_search_range/100
+problem.max_search_range = problem.max_search_range/10
+problem.min_search_range = problem.min_search_range/10
     
 boundaries = (problem.min_search_range, problem.max_search_range)
     
@@ -46,12 +46,9 @@ pop.evaluate_fitness(problem_function)
 
 # Update population, global, etc
 pop.update_positions('population', 'all')
-pop.update_positions('particular', 'all')
-pop.update_positions('global', 'greedy')
+pop.update_positions('global', 'all')
 
 print("[0] -> ", pop.get_state())
-
-# %%
 
 plt.plot(pop.positions[:,0], pop.positions[:,1],'ro')
 plt.plot(pop.global_best_position[0], pop.global_best_position[1],'bo')
@@ -64,7 +61,8 @@ plt.draw()
 # Start optimisaton procedure
 for iteration in range(1, num_iterations + 1):
     # Apply an operator
-    pop = Ope.swarm_dynamic(pop)
+    # Ope.spiral_dynamic(pop)
+    Ope.central_force_dynamic(pop)
         
     # Evaluate fitness values
     pop.evaluate_fitness(problem_function)    
@@ -72,7 +70,6 @@ for iteration in range(1, num_iterations + 1):
     # Update population, global
     pop.iteration = iteration
     pop.update_positions('population', 'all')
-    pop.update_positions('particular', 'all')
     pop.update_positions('global', 'greedy')
     
     # -- plot population

@@ -147,7 +147,7 @@ def levy_flight(pop, scale=1.0, beta=1.5):
         pop._check_simple_constraints()
 
 
-def swarm_dynamic(pop, factor=1.0, self_conf=2.4, swarm_conf=2.6,
+def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56,
                   version="constriction"):
     """
     Performs a swarm movement by using the inertial or constriction
@@ -196,14 +196,14 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.4, swarm_conf=2.6,
             chi = 2 * factor / np.abs(2 - phi - np.sqrt(phi ** 2 - 4 * phi))
         else:
             chi = np.sqrt(factor)
-    else:
-        OperatorsError('Invalid swarm_dynamic version')
-
+        
         # Find new velocities
         pop.velocities = chi * (pop.velocities + r_1 * (
             pop.particular_best_positions - pop.positions) +
             r_2 * (np.tile(pop.global_best_position, (pop.num_agents, 1)) -
                    pop.positions))
+    else:
+        OperatorsError('Invalid swarm_dynamic version')
 
     # Move each agent using velocity's information
     pop.positions += pop.velocities
@@ -211,8 +211,6 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.4, swarm_conf=2.6,
     # Check constraints
     if pop.is_constrained:
         pop._check_simple_constraints()
-    
-    return pop
 
 
 # Before: mutation_de
@@ -445,7 +443,7 @@ def spiral_dynamic(pop, radius=0.9, angle=22.5, sigma=0.1):
 
 
 # Before: firefly
-def firefly_dynamic(pop, epsilon="uniform", alpha=0.8, beta=1.0, gamma=1.0):
+def firefly_dynamic(pop, epsilon="uniform", alpha=0.8, beta=0.9, gamma=1.0):
     """
     Performs movements accordint to the Firefly algorithm (FA)
 
@@ -506,7 +504,8 @@ def firefly_dynamic(pop, epsilon="uniform", alpha=0.8, beta=1.0, gamma=1.0):
         # Find the total attraction for each agent
         difference_positions[agent, :] = np.sum(
             np.heaviside(-delta_lights, 0.0) * delta *
-            np.exp(-gamma * np.linalg.norm(delta, 2, 1) ** 2), 0)
+            np.exp(-gamma * np.tile(np.linalg.norm(delta, 2, 1).reshape(
+                pop.num_agents - 1, 1), (1, pop.num_dimensions)) ** 2), 0)
 
     # Move fireflies according to their attractions
     pop.positions += alpha * epsilon_value + beta * difference_positions
@@ -517,7 +516,7 @@ def firefly_dynamic(pop, epsilon="uniform", alpha=0.8, beta=1.0, gamma=1.0):
 
 
 # Before: central_force
-def central_force_dynamic(pop, gravity=1.0, alpha=0.5, beta=1.5, dt=1.0):
+def central_force_dynamic(pop, gravity=0.001, alpha=0.01, beta=1.5, dt=1.0):
     """
     Central Force Optimisation (CFO)
 
@@ -599,7 +598,6 @@ def gravitational_search(pop, gravity=1.0, alpha=0.5):
     # Check the gravity, alpha, and epsilon value
     _check_parameter(gravity)
     _check_parameter(alpha)
-    _check_parameter(epsilon, (0.0, 0.1))
 
     # Initialise acceleration
     acceleration = np.zeros((pop.num_agents, pop.num_dimensions))

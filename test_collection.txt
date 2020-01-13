@@ -6,7 +6,7 @@
 ('differential_mutation', {'expression': 'current-to-best', 'num_rands': 1, 'factor': 2.0}, 'greedy')
 ('differential_crossover', {'crossover_rate': 0.5, 'version': 'binomial'}, 'greedy')
 ('firefly_dynamic', {'epsilon': 'uniform', 'alpha': 0.8, 'beta': 1.0, 'gamma': 1.0}, 'greedy')
-('swarm_dynamic', {'factor': 1.0, 'self_conf': 2.40, 'swarm_conf': 2.60, 'version': 'constriction'}, 'all')
+('swarm_dynamic', {'factor': 1.0, 'self_conf': 2.54, 'swarm_conf': 2.56, 'version': 'constriction'}, 'all')
 ('gravitational_search', {'gravity': 1.0, 'alpha': 0.5}, 'all')
 ('central_force_dynamic', {'gravity': 1.0, 'alpha': 0.5, 'beta': 1.5, 'dt': 1.0}, 'all')
 ('spiral_dynamic', {'radius': 0.9, 'angle': 22.5, 'sigma': 0.1}, 'all')

@@ -31,7 +31,7 @@ boundaries = (0.01*problem.min_search_range, 0.01*problem.max_search_range)
 
 #%% Build the simple heuristic collection (if so)
 
-search_operators = [('swarm_dynamic', {'factor': 1.1, 'self_conf': 2.54, 'swarm_conf': 2.56, 'version': 'constriction'}, 'all')]
+search_operators = [('swarm_dynamic', {'factor': 1.0, 'self_conf': 2.54, 'swarm_conf': 2.56, 'version': 'constriction'}, 'all')]
 mh = metaheuristic.Metaheuristic({
     'function': problem_function, 'boundaries': boundaries,
     'is_constrained': True}, search_operators, num_agents, num_iterations)
