@@ -125,4 +125,5 @@ dmypy.json
 *.iml
 
 raw_data
+
 raw_data/*

@@ -1,0 +1,1 @@
+('spiral_dynamic', {'radius': 0.9, 'angle': 22.5, 'sigma': 0.1}, 'all')

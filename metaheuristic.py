@@ -6,54 +6,56 @@ Created on Thu Sep 26 16:56:01 2019
 """
 
 import numpy as np
-import population as pop
+from population import Population
+import operators as op
 import matplotlib.pyplot as plt
 
 
-class Metaheuristic():
-    """
-    Create a metaheuristic method by employing different simple search operators
-    """
-    # Internal variables
+# Read all available operators
+__operators__ = op.__all__  # [x[0] for x in op._obtain_operators(1)]
+__selectors__ = ['greedy', 'probabilistic', 'metropolis', 'all', 'none']
 
-    # Class initialisation
-    # -------------------------------------------------------------------------
-    def __init__(self, problem_function, boundaries, simple_heuristics, 
-                 is_constrained=True, num_agents=30, threshold_iterations=100, 
-                 verbose=True):
+
+class Metaheuristic():
+    def __init__(self, problem, search_operators, num_agents=30,
+                 num_iterations=100):
         """
+        Create a metaheuristic method by employing different simple search
+        operators.
+
         Parameters
         ----------
-        problem_function : function
-            A function that maps a 1-by-D array of real values ​​to a real value
-        boundaries : TYPE
-            DESCRIPTION.
-        simple_heuristics : TYPE
-            DESCRIPTION.
-        is_constrained : TYPE, optional
-            DESCRIPTION. The default is True.
-        num_agents : TYPE, optional
-            DESCRIPTION. The default is 30.
-        threshold_iterations : TYPE, optional
-            DESCRIPTION. The default is 100.
-        verbose : TYPE, optional
-            DESCRIPTION. The default is True.
+        problem : dict
+            This is a dictionary containing the 'function' that maps a 1-by-D
+            array of real values ​​to a real value, 'is_constrained' flag
+            indicated that solution is inside the search space, and the
+            'boundaries' (a tuple with two lists of size D). These two lists
+            correspond to the lower and upper limits of search space, such as:
+                boundaries = (lower_boundaries, upper_boundaries)
+            Note: Dimensions of search domain are read from these boundaries.
+        search_operators : list
+            A list of available search operators.
+        num_agents : int, optional
+            Numbre of agents or population size. The default is 30.
 
         Returns
         -------
         None.
 
         """
+        # Define the problem function
+        self.problem_function = problem['function']
 
         # Create population
-        self.pop = pop.Population(problem_function, boundaries, num_agents,
-                                  is_constrained)
+        self.pop = Population(problem['boundaries'], num_agents,
+                              problem['is_constrained'])
 
-        # Check and read the simple heuristics
-        self.operators, self.selectors = self.process_heuristics(simple_heuristics)
+        # Check and read the search_operators
+        self.operators, self.selectors = op._process_operators(
+            search_operators)
 
         # Define the maximum number of iterations
-        self.num_iterations = threshold_iterations
+        self.num_iterations = num_iterations
 
         # Read the number of dimensions
         self.num_dimensions = self.pop.num_dimensions
@@ -62,108 +64,101 @@ class Metaheuristic():
         self.num_agents = num_agents
 
         # Initialise historical variables
-        self.historical_global_fitness = list()
-        self.historical_global_position = list()
-        self.historical_centroid = list()
-        self.historical_radius = list()
-        self.historical_stagnation = list()
+        self.historical = dict()
 
         # Set additional variables
-        self.verbose = verbose
+        self.verbose = False
 
-    def process_heuristics(self, simple_heuristics):
-        # Initialise the list of callable operators (simple heuristics)
-        executable_operators = []
-        selectors = []
-
-        # For each simple heuristic, read their parameters and values
-        for operator, parameters, selector in simple_heuristics:
-            # Store selectors
-            selectors.append(selector)
-
-            if len(parameters) >= 0:
-                sep = ","
-                str_parameters = []
-
-                for parameter, value in parameters.items():
-
-                    # Check if a value is string
-                    if type(value) == str:
-                        str_parameters.append("{} = '{}'".format(parameter, value))
-                    else:
-                        str_parameters.append("{} = {}".format(parameter, value))
-
-                # Create an executable string with given arguments
-                full_string = "{}({})".format(operator, sep.join(str_parameters))
-            else:
-                # Create an executable string with default arguments
-                full_string = "{}()".format(operator)
-
-            # Store the read operator
-            executable_operators.append(full_string)
-
-        return executable_operators, selectors
-
-    # Run the metaheuristic search
-    # -------------------------------------------------------------------------
     def run(self):
+        """
+        Run the metaheuristic for solving a defined problem.
+
+        Returns
+        -------
+        None.
+
+        """
         # Set initial iteration
         self.pop.iteration = 0
 
         # Initialise the population
-        self.pop.initialise_uniformly()
+        self.pop.initialise_positions()  # Default: random
 
         # Evaluate fitness values
-        self.pop.evaluate_fitness()
+        self.pop.evaluate_fitness(self.problem_function)
 
         # Update population, particular, and global
-        self.pop.update_population("all")
-        self.pop.update_particular("all")
-        self.pop.update_global()  # Default: greedy
+        self.pop.update_positions('population', 'all')  # Default
+        self.pop.update_positions('particular', 'all')
+        self.pop.update_positions('global', 'greedy')
 
-        # Update historical variables
-        self.__update_historicals()
+        # Initialise and update historical variables
+        self._reset_historicals()
+        self._update_historicals()
+
+        # Report which operators are going to use
+        self._verbose('\nSearch operators to employ:')
+        for operator, selector in zip(self.operators, self.selectors):
+            self._verbose("{} with {}".format(operator, selector))
+        self._verbose("{}".format('-' * 50))
 
         # Start optimisaton procedure
         for iteration in range(1, self.num_iterations + 1):
             # Update the current iteration
             self.pop.iteration = iteration
 
-            self.__verbose("\nIteration {}:\n{}".format(iteration, '-' * 50))
-
             # Implement the sequence of operators and selectors
             for operator, selector in zip(self.operators, self.selectors):
+                # Split operator
+                operator_name, operator_params = operator.split('(')
+
                 # Apply an operator
-                exec("self.pop." + operator)
+                exec("op." + operator_name + "(self.pop," + operator_params)
 
                 # Evaluate fitness values
-                self.pop.evaluate_fitness()
+                self.pop.evaluate_fitness(self.problem_function)
 
                 # Update population
-                if selector in pop.__selection__:
-                    self.pop.update_population(selector)
+                if selector in __selectors__:
+                    self.pop.update_positions('population', selector)
                 else:
-                    self.pop.update_population("all")
+                    self.pop.update_positions()
 
                 # Update global position
-                self.pop.update_global()
-
-                # Report change
-                self.__verbose("{} and {} selection were ".format(operator, selector)
-                               + "applied!")
+                self.pop.update_positions('global', 'greedy')
 
             # Update historical variables
-            self.__update_historicals()
+            self._update_historicals()
 
             # Verbose (if so) some information
-            self.__verbose("Stagnation counter: " +
-                           "{}, population radious: ".format(self.historical_stagnation[-1]) +
-                           "{}".format(self.historical_radius[-1]))
-            self.__verbose(self.pop.get_state())
+            self._verbose("{}\nStag. counter: {}, pop. radious: {}".format(
+                iteration, self.historical['stagnation'][-1],
+                self.historical['radius'][-1]))
+            self._verbose(self.pop.get_state())
 
-    # Show historical variables
-    # -------------------------------------------------------------------------
+    def get_solution(self):
+        """
+        Deliver the last position and fitness obtained after run.
+
+        Returns
+        -------
+        ndarray
+            Best position vector found.
+        float
+            Best fitness value found.
+        """
+        return self.historical['position'][-1], self.historical['fitness'][-1]
+
+    @property
     def show_performance(self):
+        """
+        Show the solution evolution during the iterative process.
+
+        Returns
+        -------
+        None.
+
+        """
         # Show historical fitness
         fig1, ax1 = plt.subplots()
 
@@ -171,7 +166,7 @@ class Metaheuristic():
         plt.xlabel("Iterations")
         ax1.set_ylabel("Global Fitness", color=color)
         ax1.plot(np.arange(0, self.num_iterations + 1),
-                 self.historical_global_fitness, color=color)
+                 self.historical['fitness'], color=color)
         ax1.tick_params(axis='y', labelcolor=color)
         ax1.set_yscale('linear')
 
@@ -179,40 +174,73 @@ class Metaheuristic():
 
         color = 'tab:blue'
         ax2.set_ylabel('Population radius', color=color)
-        ax2.plot(np.arange(0, self.num_iterations + 1), self.historical_radius,
-                 color=color)
+        ax2.plot(np.arange(0, self.num_iterations + 1),
+                 self.historical['radius'], color=color)
         ax2.tick_params(axis='y', labelcolor=color)
         ax2.set_yscale('log')
 
         fig1.tight_layout()
         plt.show()
 
-    # Update historical variables
-    # -------------------------------------------------------------------------
-    def __update_historicals(self):
+    def _reset_historicals(self):
+        """
+        Reset the self.historical variable
+
+        Returns
+        -------
+        None.
+
+        """
+        self.historical = dict(
+            fitness=list(),
+            position=list(),
+            centroid=list(),
+            radius=list(),
+            stagnation=list(),
+            )
+
+    def _update_historicals(self):
+        """
+        Update the historical variables
+
+        Returns
+        -------
+        None.
+
+        """
         # Update historical variables
-        self.historical_global_fitness.append(self.pop.global_best_fitness)
-        self.historical_global_position.append(self.pop.global_best_position)
+        self.historical['fitness'].append(self.pop.global_best_fitness)
+        self.historical['position'].append(self.pop.global_best_position)
 
         # Update population centroid and radius
-        self.historical_centroid = np.array(self.pop.positions).mean(0)
-        self.historical_radius.append(np.linalg.norm(self.pop.positions -
-                                                     np.tile(self.historical_centroid, (self.num_agents, 1)), 2,
-                                                     1).max())
+        current_centroid = np.array(self.pop.positions).mean(0)
+        self.historical['centroid'].append(current_centroid)
+        self.historical['radius'].append(np.linalg.norm(
+            self.pop.positions - np.tile(current_centroid,
+                                         (self.num_agents, 1)), 2, 1).max())
 
         # Update stagnation
-        if (self.pop.iteration > 0) and (self.historical_global_fitness[-2] ==
-                                         self.historical_global_fitness[-1]):
-            instantaneous_stagnation = self.historical_stagnation[-1] + 1
+        if (self.pop.iteration > 0) and (
+                float(self.historical['fitness'][-1]) ==
+                float(self.historical['fitness'][-2])):
+            instantaneous_stagnation = self.historical['stagnation'][-1] + 1
         else:
             instantaneous_stagnation = 0
-        self.historical_stagnation.append(instantaneous_stagnation)
+        self.historical['stagnation'].append(instantaneous_stagnation)
 
-    # Print if verbose flag is active
-    # -------------------------------------------------------------------------
-    def __verbose(self, text_to_print):
+    def _verbose(self, text_to_print):
+        """
+        Print each step performed during the solution procedure
+
+        Parameters
+        ----------
+        text_to_print : str
+            Explanation about what the metaheuristic is doing.
+
+        Returns
+        -------
+        None.
+
+        """
         if self.verbose:
             print(text_to_print)
-
-    # Process simple heuristics entered as list of tuples
-    # -------------------------------------------------------------------------

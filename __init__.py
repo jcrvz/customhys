@@ -1,4 +1,3 @@
 __all__ = [
-        'metaheuristic',
-        'population'
+        'dascop',
         ]
