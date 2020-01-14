@@ -62,14 +62,26 @@ plt.draw()
 for iteration in range(1, num_iterations + 1):
     # Apply an operator
     # Ope.spiral_dynamic(pop)
-    Ope.central_force_dynamic(pop)
-        
+    # Ope.central_force_dynamic(pop)
+    # Ope.gravitational_search(pop)
+    # Ope.swarm_dynamic(pop)
+    # Ope.genetic_mutation(pop)
+    Ope.random_sample(pop)
+    # Ope.local_random_walk(pop)
+    # Ope.firefly_dynamic(pop)
+    # Ope.random_search(pop)
+    # Ope.rayleigh_flight(pop)
+    # Ope.levy_flight(pop)
+    # Ope.differential_mutation(pop)
+    Ope.differential_crossover(pop)
+    # Ope.genetic_crossover(pop)
+    
     # Evaluate fitness values
     pop.evaluate_fitness(problem_function)    
 
     # Update population, global
     pop.iteration = iteration
-    pop.update_positions('population', 'all')
+    pop.update_positions('population', 'greedy')
     pop.update_positions('global', 'greedy')
     
     # -- plot population

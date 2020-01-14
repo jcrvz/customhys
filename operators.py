@@ -291,7 +291,7 @@ def differential_mutation(pop, expression="current-to-best", num_rands=1,
         pop._check_simple_constraints()
 
 
-def differential_crossover(pop, crossover_rate=0.5, version="binomial"):
+def differential_crossover(pop, crossover_rate=0.2, version="exponential"):
     """
     Performs either the binomial or exponential crossover procedure from
     Differential Evolution (DE).
@@ -443,7 +443,8 @@ def spiral_dynamic(pop, radius=0.9, angle=22.5, sigma=0.1):
 
 
 # Before: firefly
-def firefly_dynamic(pop, epsilon="uniform", alpha=0.8, beta=0.9, gamma=1.0):
+def firefly_dynamic(pop, epsilon="uniform", alpha=0.1,
+                    beta=1.0, gamma=100.0):
     """
     Performs movements accordint to the Firefly algorithm (FA)
 
@@ -469,7 +470,7 @@ def firefly_dynamic(pop, epsilon="uniform", alpha=0.8, beta=0.9, gamma=1.0):
     # Check the alpha, beta, and gamma value
     _check_parameter(alpha)
     _check_parameter(beta)
-    _check_parameter(gamma, (0.0, 100.0))
+    _check_parameter(gamma, (0.0, 10000.0))
 
     # Determine epsilon values
     if epsilon == "gaussian":
@@ -577,7 +578,7 @@ def central_force_dynamic(pop, gravity=0.001, alpha=0.01, beta=1.5, dt=1.0):
         pop._check_simple_constraints()
 
 
-def gravitational_search(pop, gravity=1.0, alpha=0.5):
+def gravitational_search(pop, gravity=1.0, alpha=0.02):
     """
     Gravitational Search Algorithm (GSA) simplified
 
@@ -644,8 +645,8 @@ def gravitational_search(pop, gravity=1.0, alpha=0.5):
 
 
 # Before: ga_crossover
-def genetic_crossover(pop, pairing="cost", crossover="single",
-                      mating_pool_factor=0.1):
+def genetic_crossover(pop, pairing="rank", crossover="blend",
+                      mating_pool_factor=0.4):
     """
     Crossover mechanism from Genetic Algorithm (GA)
 
@@ -902,7 +903,7 @@ def genetic_crossover(pop, pairing="cost", crossover="single",
 
 
 # Before: ga_mutation
-def genetic_mutation(pop, elite_rate=0.0, mutation_rate=0.2,
+def genetic_mutation(pop, elite_rate=0.1, mutation_rate=0.25,
                      distribution="uniform", sigma=1.0):
     """
     Mutation mechanism from Genetic Algorithm (GA)
