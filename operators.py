@@ -18,505 +18,6 @@ __all__ = ['local_random_walk', 'random_search', 'random_sample',
 # -------------------------------------------------------------------------
 #    PERTURBATORS
 # -------------------------------------------------------------------------
-def random_sample(pop):
-    """
-    Performs a random sampling using a uniform distribution in [-1, 1].
-
-    Parameters
-    ----------
-    pop : population
-        It is a population object.
-
-    Returns
-    -------
-    None.
-
-    """
-    # Create random positions using random numbers between -1 and 1
-    pop.positions = np.random.uniform(
-        -1, 1, (pop.num_agents, pop.num_dimensions))
-
-    # Check constraints
-    if pop.is_constrained:
-        pop._check_simple_constraints()
-
-
-def random_search(pop, scale=0.01):
-    """
-    Performs a random walk using a uniform distribution in [-1, 1].
-
-    Parameters
-    ----------
-    pop : population
-        It is a population object.
-    scale : float, optional
-        It is the step scale between [0.0, 1.0]. The default is 0.01.
-
-    Returns
-    -------
-    None.
-
-    """
-    # Check the scale value
-    _check_parameter(scale)
-
-    # Move each agent using uniform random displacements
-    pop.positions += scale * \
-        np.random.uniform(-1, 1, (pop.num_agents, pop.num_dimensions))
-
-    # Check constraints
-    if pop.is_constrained:
-        pop._check_simple_constraints()
-
-
-def rayleigh_flight(pop, scale=0.01):
-    """
-    Perform a Rayleigh flight using a normal standard distribution.
-
-    Parameters
-    ----------
-    pop : population
-        It is a population object.
-    scale : float, optional
-        It is the step scale between [0.0, 1.0]. The default is 0.01.
-
-    Returns
-    -------
-    None.
-
-    """
-    # Check the scale value
-    _check_parameter(scale)
-
-    # Move each agent using gaussian random displacements
-    pop.positions += scale * \
-        np.random.standard_normal((pop.num_agents, pop.num_dimensions))
-
-    # Check constraints
-    if pop.is_constrained:
-        pop._check_simple_constraints()
-
-
-def levy_flight(pop, scale=1.0, beta=1.5):
-    """
-    Perform a Lévy flight by using the Mantegna's algorithm.
-
-    Parameters
-    ----------
-    pop : population
-        It is a population object.
-    scale : float, optional
-        It is the step scale between [0.0, 1.0]. The default is 1.0.
-    beta : float, optional
-        It is the distribution parameter between [1.0, 3.0]. The default
-        is 1.5.
-
-    Returns
-    -------
-    None.
-
-    """
-    # Check the scale and beta value
-    _check_parameter(scale)
-    _check_parameter(beta, (1.0, 3.0))
-
-    # Calculate x's std dev (Mantegna's algorithm)
-    sigma = ((np.math.gamma(1 + beta) * np.sin(np.pi * beta / 2)) /
-             (np.math.gamma((1 + beta) / 2) * beta *
-              (2 ** ((beta - 1) / 2)))) ** (1 / beta)
-
-    # Determine x and y using normal distributions with sigma_y = 1
-    x = sigma * np.random.standard_normal((pop.num_agents,
-                                           pop.num_dimensions))
-    y = np.abs(np.random.standard_normal((pop.num_agents,
-                                          pop.num_dimensions)))
-
-    # Calculate the random number with levy stable distribution
-    levy_random = x / (y ** (1 / beta))
-
-    # Determine z as an additional normal random number
-    z = np.random.standard_normal((pop.num_agents, pop.num_dimensions))
-
-    # Move each agent using levy random displacements
-    pop.positions += scale * z * levy_random * \
-        (pop.positions - np.tile(pop.global_best_position,
-                                 (pop.num_agents, 1)))
-
-    # Check constraints
-    if pop.is_constrained:
-        pop._check_simple_constraints()
-
-
-def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56,
-                  version="constriction"):
-    """
-    Performs a swarm movement by using the inertial or constriction
-    dynamics from Particle Swarm Optimisation (PSO).
-
-    Parameters
-    ----------
-    pop : population
-        It is a population object.
-    factor : float, optional
-        Inertial or Kappa factor, depending of which PSO version is set.
-        The default is 1.0.
-    self_conf : float, optional
-        Self confidence factor. The default is 2.4.
-    swarm_conf : float, optional
-        Swarm confidence factor. The default is 2.6.
-    version : str, optional
-        Version of the Particle Swarm Optimisation strategy. Currently, it
-        can be 'constriction' or 'inertial'. The default is "constriction".
-
-    Returns
-    -------
-    None.
-
-    """
-    # Check the scale and beta value
-    _check_parameter(factor)
-    _check_parameter(self_conf, (0.0, 10.0))
-    _check_parameter(swarm_conf, (0.0, 10.0))
-
-    # Determine random numbers
-    r_1 = self_conf * np.random.rand(pop.num_agents, pop.num_dimensions)
-    r_2 = swarm_conf * np.random.rand(pop.num_agents, pop.num_dimensions)
-
-    # Choose the PSO version = 'inertial' or 'constriction'
-    if version == "intertial":
-        # Find new velocities
-        pop.velocities = factor * pop.velocities + r_1 * (
-            pop.particular_best_positions - pop.positions) + \
-            r_2 * (np.tile(pop.global_best_position, (pop.num_agents, 1)) -
-                   pop.positions)
-    elif version == "constriction":
-        # Find the constriction factor chi using phi
-        phi = self_conf + swarm_conf
-        if phi > 4:
-            chi = 2 * factor / np.abs(2 - phi - np.sqrt(phi ** 2 - 4 * phi))
-        else:
-            chi = np.sqrt(factor)
-        
-        # Find new velocities
-        pop.velocities = chi * (pop.velocities + r_1 * (
-            pop.particular_best_positions - pop.positions) +
-            r_2 * (np.tile(pop.global_best_position, (pop.num_agents, 1)) -
-                   pop.positions))
-    else:
-        OperatorsError('Invalid swarm_dynamic version')
-
-    # Move each agent using velocity's information
-    pop.positions += pop.velocities
-
-    # Check constraints
-    if pop.is_constrained:
-        pop._check_simple_constraints()
-
-
-# Before: mutation_de
-def differential_mutation(pop, expression="current-to-best", num_rands=1,
-                          factor=1.0):
-    """
-    Mutates the population positions using Differential Evolution (DE)
-
-    Parameters
-    ----------
-    pop : population
-        It is a population object.
-    expression : str, optional
-        Type of DE mutation. Available mutations: "rand", "best",
-        "current", "current-to-best", "rand-to-best",
-        "rand-to-bestandcurrent". The default is "current-to-best".
-    num_rands : int, optional
-        DESCRIPTION. The default is 1.
-    factor : float, optional
-        DESCRIPTION. The default is 1.0.
-
-    Returns
-    -------
-    None.
-
-    """
-    # Check the scale and beta value
-    _check_parameter(num_rands, (1, 10), int)
-    _check_parameter(factor, (0.0, 2.0))
-
-    # Create mutants using the expression provided in scheme
-    if expression == "rand":
-        mutant = pop.positions[np.random.permutation(pop.num_agents), :]
-
-    elif expression == "best":
-        mutant = np.tile(pop.global_best_position, (pop.num_agents, 1))
-
-    elif expression == "current":
-        mutant = pop.positions
-
-    elif expression == "current-to-best":
-        mutant = pop.positions + factor * \
-            (np.tile(pop.global_best_position,
-                     (pop.num_agents, 1)) -
-             pop.positions[np.random.permutation(pop.num_agents), :])
-
-    elif expression == "rand-to-best":
-        mutant = pop.positions[np.random.permutation(pop.num_agents), :] + \
-            factor * (np.tile(pop.global_best_position, (pop.num_agents, 1)) -
-                      pop.positions[np.random.permutation(pop.num_agents), :])
-
-    elif expression == "rand-to-best-and-current":
-        mutant = pop.positions[np.random.permutation(
-            pop.num_agents), :] + factor * (np.tile(
-                pop.global_best_position, (pop.num_agents, 1)) -
-                pop.positions[np.random.permutation(
-                    pop.num_agents), :] + pop.positions[
-                        np.random.permutation(
-                            pop.num_agents), :] - pop.positions)
-    else:
-        mutant = []
-        raise pop.__PopulationError('Invalid DE mutation scheme!')
-
-    # Add random parts according to num_rands
-    if num_rands >= 0:
-        for _ in range(num_rands):
-            mutant += factor * (pop.positions[np.random.permutation(
-                pop.num_agents), :] - pop.positions[
-                    np.random.permutation(pop.num_agents), :])
-    else:
-        raise pop.__PopulationError('Invalid DE mutation scheme!')
-
-    # Replace mutant population in the current one
-    pop.positions = mutant
-
-    # Check constraints
-    if pop.is_constrained:
-        pop._check_simple_constraints()
-
-
-def differential_crossover(pop, crossover_rate=0.2, version="exponential"):
-    """
-    Performs either the binomial or exponential crossover procedure from
-    Differential Evolution (DE).
-
-    Parameters
-    ----------
-    pop : population
-        It is a population object.
-    crossover_rate : float, optional
-        Probability factor to perform the crossover. The default is 0.5.
-    version : str, optional
-        Crossover version. It can be 'binomial' or 'exponential'.
-        The default is "binomial".
-
-    Returns
-    -------
-    None.
-
-    """
-    # Check the scale and beta value
-    _check_parameter(crossover_rate)
-
-    # Binomial versio
-    if version == "binomial":
-        # Define indices
-        indices = np.tile(np.arange(pop.num_dimensions), (pop.num_agents, 1))
-
-        # Permute indices per dimension
-        rand_indices = np.vectorize(np.random.permutation,
-                                    signature='(n)->(n)')(indices)
-
-        # Calculate the NOT condition (because positions already updated!)
-        condition = np.logical_not((indices == rand_indices) | (
-            np.random.rand(pop.num_agents, pop.num_dimensions) <=
-            crossover_rate))
-
-        # Reverse the ones to their previous positions
-        pop.positions[condition] = pop.previous_positions[condition]
-    #
-    # Exponential version
-    elif version == "exponential":
-        # Perform the exponential crossover procedure
-        for agent in range(pop.num_agents):
-            for dim in range(pop.num_dimensions):
-                # Initialise L and choose a random index n
-                exp_var = 0
-                n = np.random.randint(pop.num_dimensions)
-                while True:
-                    # Increase L and check the exponential crossover condition
-                    exp_var += 1
-                    if np.logical_not((np.random.rand() < crossover_rate) and
-                                      (exp_var < pop.num_dimensions)):
-                        break
-
-                # Perform the crossover if the following condition is met
-                if dim not in [(n + x) % pop.num_dimensions for x in
-                               range(exp_var)]:
-                    pop.positions[agent, dim] = pop.previous_positions[
-                        agent, dim]
-    #
-    # Invalid version
-    else:
-        OperatorsError('Invalid differential_crossover version')
-
-    # Check constraints
-    if pop.is_constrained:
-        pop._check_simple_constraints()
-
-
-def local_random_walk(pop, probability=0.75, scale=1.0):
-    """
-    Performs the local random walk from Cuckoo Search (CS)
-
-    Parameters
-    ----------
-    pop : population
-        It is a population object.
-    probability : float, optional
-        It is the probability of discovering an alien egg (change an
-        agent's position). The default is 0.75.
-    scale : float, optional
-        It is the step scale between [0.0, 1.0]. The default is 1.0.
-
-    Returns
-    -------
-    None.
-
-    """
-    # Check the scale and beta value
-    _check_parameter(probability)
-    _check_parameter(scale)
-
-    # Determine random numbers
-    r_1 = np.random.rand(pop.num_agents, pop.num_dimensions)
-    r_2 = np.random.rand(pop.num_agents, pop.num_dimensions)
-
-    # Move positions with a displacement due permutations and probabilities
-    pop.positions += scale * r_1 * (pop.positions[
-        np.random.permutation(pop.num_agents), :] - pop.positions[
-            np.random.permutation(pop.num_agents), :]) * np.heaviside(
-                r_2 - probability, 0.0)
-
-    # Check constraints
-    if pop.is_constrained:
-        pop._check_simple_constraints()
-
-
-def spiral_dynamic(pop, radius=0.9, angle=22.5, sigma=0.1):
-    """
-    Performs the deterministic or stochastic spiral dynamic movement
-
-    Parameters
-    ----------
-    pop : population
-        It is a population object.
-    radius : float, optional
-        It is the convergence rate. The default is 0.9.
-    angle : float, optional
-        Rotation angle (in degrees). The default is 22.5 (degrees).
-    sigma : float, optional
-        Variation of random radii. The default is 0.1.
-        Note: sigma equals 0.0 corresponds to the Deterministic Spiral.
-
-    Returns
-    -------
-    None.
-
-    """
-    # Check the scale and beta value
-    _check_parameter(radius)
-    _check_parameter(angle, (0.0, 360.0))
-    _check_parameter(sigma)
-
-    # Determine the rotation matrix
-    rotation_matrix = _get_rotation_matrix(pop.num_dimensions,
-                                           np.deg2rad(angle))
-
-    for agent in range(pop.num_agents):
-        random_radii = np.random.uniform(radius - sigma, radius + sigma,
-                                         pop.num_dimensions)
-        # If random radii need to be constrained to [0, 1]:
-        pop.positions[agent, :] = pop.global_best_position + random_radii * \
-            np.matmul(rotation_matrix, (
-                pop.positions[agent, :] - pop.global_best_position))
-
-    # Check constraints
-    if pop.is_constrained:
-        pop._check_simple_constraints()
-
-
-# Before: firefly
-def firefly_dynamic(pop, epsilon="uniform", alpha=0.1,
-                    beta=1.0, gamma=100.0):
-    """
-    Performs movements accordint to the Firefly algorithm (FA)
-
-    Parameters
-    ----------
-    pop : population
-        It is a population object.
-    epsilon : str, optional
-        Type of random number. Possible options: 'gaussian', 'uniform'.
-        The default is "uniform".
-    alpha : TYPE, optional
-        DESCRIPTION. The default is 0.8.
-    beta : TYPE, optional
-        DESCRIPTION. The default is 1.0.
-    gamma : TYPE, optional
-        DESCRIPTION. The default is 1.0.
-
-    Returns
-    -------
-    None.
-
-    """
-    # Check the alpha, beta, and gamma value
-    _check_parameter(alpha)
-    _check_parameter(beta)
-    _check_parameter(gamma, (0.0, 10000.0))
-
-    # Determine epsilon values
-    if epsilon == "gaussian":
-        epsilon_value = np.random.standard_normal(
-            (pop.num_agents, pop.num_dimensions))
-
-    elif epsilon == "uniform":
-        epsilon_value = np.random.uniform(
-            -0.5, 0.5, (pop.num_agents, pop.num_dimensions))
-    else:
-        epsilon_value = []
-        raise pop.__PopulationError(
-            "Epsilon is not valid: 'uniform' or 'gaussian'")
-
-    # Initialise delta or difference between two positions
-    difference_positions = np.zeros((pop.num_agents, pop.num_dimensions))
-
-    for agent in range(pop.num_agents):
-        # Select indices in order to avoid division by zero
-        indices = (np.arange(pop.num_agents) != agent)
-
-        # Determine all vectorial distances with respect to agent
-        delta = pop.positions[indices, :] - np.tile(
-            pop.positions[agent, :], (pop.num_agents - 1, 1))
-
-        # Determine differences between lights
-        delta_lights = np.tile(
-            (pop.fitness[indices] - np.tile(
-                pop.fitness[agent], (1, pop.num_agents-1))).transpose(),
-            (1, pop.num_dimensions))
-
-        # Find the total attraction for each agent
-        difference_positions[agent, :] = np.sum(
-            np.heaviside(-delta_lights, 0.0) * delta *
-            np.exp(-gamma * np.tile(np.linalg.norm(delta, 2, 1).reshape(
-                pop.num_agents - 1, 1), (1, pop.num_dimensions)) ** 2), 0)
-
-    # Move fireflies according to their attractions
-    pop.positions += alpha * epsilon_value + beta * difference_positions
-
-    # Check constraints
-    if pop.is_constrained:
-        pop._check_simple_constraints()
-
-
-# Before: central_force
 def central_force_dynamic(pop, gravity=0.001, alpha=0.01, beta=1.5, dt=1.0):
     """
     Central Force Optimisation (CFO)
@@ -564,7 +65,7 @@ def central_force_dynamic(pop, gravity=0.001, alpha=0.01, beta=1.5, dt=1.0):
 
         # Find the quotient part    ! -> - delta_masses (cz minimisation)
         quotient = np.heaviside(-delta_masses, 0.0) * (
-            np.abs(delta_masses) ** alpha) / (distances ** beta)
+            np.abs(delta_masses) ** alpha) / (distances ** beta + 1e-23)
 
         # Determine the acceleration for each agent
         acceleration[agent, :] = gravity * np.sum(
@@ -578,73 +79,226 @@ def central_force_dynamic(pop, gravity=0.001, alpha=0.01, beta=1.5, dt=1.0):
         pop._check_simple_constraints()
 
 
-def gravitational_search(pop, gravity=1.0, alpha=0.02):
+# def differential_crossover(pop, crossover_rate=0.2, version="binomial"):
+#     """
+#     Performs either the binomial or exponential crossover procedure from
+#     Differential Evolution (DE).
+
+#     Parameters
+#     ----------
+#     pop : population
+#         It is a population object.
+#     crossover_rate : float, optional
+#         Probability factor to perform the crossover. The default is 0.5.
+#     version : str, optional
+#         Crossover version. It can be 'binomial' or 'exponential'.
+#         The default is "binomial".
+
+#     Returns
+#     -------
+#     None.
+
+#     """
+#     # Check the scale and beta value
+#     _check_parameter(crossover_rate)
+
+#     # Binomial version
+#     if version == "binomial":
+#         # Define indices
+#         indices = np.tile(np.arange(pop.num_dimensions), (pop.num_agents, 1))
+
+#         # Permute indices per dimension
+#         rand_indices = np.vectorize(np.random.permutation,
+#                                     signature='(n)->(n)')(indices)
+
+#         # Calculate the NOT condition (because positions already updated!)
+#         condition = np.logical_not((indices == rand_indices) | (
+#             np.random.rand(pop.num_agents, pop.num_dimensions) <=
+#             crossover_rate))
+
+#         # Reverse the ones to their previous positions
+#         pop.positions[condition] = pop.previous_positions[condition]
+#     #
+#     # Exponential version
+#     elif version == "exponential":
+#         # Perform the exponential crossover procedure
+#         for agent in range(pop.num_agents):
+#             for dim in range(pop.num_dimensions):
+#                 # Initialise L and choose a random index n
+#                 exp_var = 0
+#                 n = np.random.randint(pop.num_dimensions)
+#                 while True:
+#                     # Increase L and check the exponential crossover condition
+#                     exp_var += 1
+#                     if np.logical_not((np.random.rand() < crossover_rate) and
+#                                       (exp_var < pop.num_dimensions)):
+#                         break
+
+#                 # Perform the crossover if the following condition is met
+#                 if dim not in [(n + x) % pop.num_dimensions for x in
+#                                range(exp_var)]:
+#                     pop.positions[agent, dim] = pop.previous_positions[
+#                         agent, dim]
+#     #
+#     # Invalid version
+#     else:
+#         raise OperatorsError('Invalid differential_crossover version')
+
+#     # Check constraints
+#     if pop.is_constrained:
+#         pop._check_simple_constraints()
+
+
+def differential_mutation(pop, expression="current-to-best", num_rands=1,
+                          factor=1.0):
     """
-    Gravitational Search Algorithm (GSA) simplified
+    Mutates the population positions using Differential Evolution (DE)
 
     Parameters
     ----------
     pop : population
         It is a population object.
-    gravity : float, optional
-        It is the initial gravitational value. The default is 1.0.
-    alpha : float, optional
-        It is the gravitational damping ratio. The default is 0.5.
+    expression : str, optional
+        Type of DE mutation. Available mutations: "rand", "best",
+        "current", "current-to-best", "rand-to-best",
+        "rand-to-bestandcurrent". The default is "current-to-best".
+    num_rands : int, optional
+        DESCRIPTION. The default is 1.
+    factor : float, optional
+        DESCRIPTION. The default is 1.0.
 
     Returns
     -------
     None.
 
     """
-    # Check the gravity, alpha, and epsilon value
-    _check_parameter(gravity)
-    _check_parameter(alpha)
+    # Check the scale and beta value
+    _check_parameter(num_rands, (1, 10), int)
+    _check_parameter(factor, (0.0, 3.0))
 
-    # Initialise acceleration
-    acceleration = np.zeros((pop.num_agents, pop.num_dimensions))
+    # Create mutants using the expression provided in scheme
+    if expression == "rand":
+        mutant = pop.positions[np.random.permutation(pop.num_agents), :]
 
-    # Determine the gravitational constant
-    gravitation = gravity * np.exp(- alpha * pop.iteration)
+    elif expression == "best":
+        mutant = np.tile(pop.global_best_position, (pop.num_agents, 1))
 
-    # Determine mass for each agent
-    raw_masses = (pop.fitness - np.tile(
-        pop.current_worst_fitness, (1, pop.num_agents)))
-    masses = (raw_masses / np.sum(raw_masses)).reshape(pop.num_agents)
+    elif expression == "current":
+        mutant = pop.positions
 
-    for agent in range(pop.num_agents):
-        # Select indices in order to avoid division by zero
-        indices = (np.arange(pop.num_agents) != agent)
+    elif expression == "current-to-best":
+        mutant = pop.positions + factor * \
+            (np.tile(pop.global_best_position,
+                     (pop.num_agents, 1)) -
+             pop.positions[np.random.permutation(pop.num_agents), :])
 
-        # Determine all vectorial distances with respect to agent
-        delta_positions = pop.positions[indices, :] - np.tile(
-            pop.positions[agent, :], (pop.num_agents - 1, 1))
+    elif expression == "rand-to-best":
+        mutant = pop.positions[np.random.permutation(pop.num_agents), :] + \
+            factor * (np.tile(pop.global_best_position, (pop.num_agents, 1)) -
+                      pop.positions[np.random.permutation(pop.num_agents), :])
 
-        quotient = masses[indices] / (
-            np.linalg.norm(delta_positions, 2, 1) + 1e-23)
+    elif expression == "rand-to-best-and-current":
+        mutant = pop.positions[np.random.permutation(
+            pop.num_agents), :] + factor * (np.tile(
+                pop.global_best_position, (pop.num_agents, 1)) -
+                pop.positions[np.random.permutation(
+                    pop.num_agents), :] + pop.positions[
+                        np.random.permutation(
+                            pop.num_agents), :] - pop.positions)
+    else:
+        mutant = []
+        raise OperatorsError('Invalid DE mutation scheme!')
 
-        # Force interaction
-        force_interaction = gravitation * np.tile(
-            quotient.reshape(pop.num_agents - 1, 1),
-            (1, pop.num_dimensions)) * delta_positions
+    # Add random parts according to num_rands
+    if num_rands >= 0:
+        for _ in range(num_rands):
+            mutant += factor * (pop.positions[np.random.permutation(
+                pop.num_agents), :] - pop.positions[
+                    np.random.permutation(pop.num_agents), :])
+    else:
+        raise OperatorsError('Invalid DE mutation scheme!')
 
-        # Acceleration
-        acceleration[agent, :] = np.sum(np.random.rand(
-            pop.num_agents - 1, pop.num_dimensions) *
-            force_interaction, 0)
-
-    # Update velocities
-    pop.velocities = acceleration + np.random.rand(
-        pop.num_agents, pop.num_dimensions) * pop.velocities
-
-    # Update positions
-    pop.positions += pop.velocities
+    # Replace mutant population in the current one
+    pop.positions = mutant
 
     # Check constraints
     if pop.is_constrained:
         pop._check_simple_constraints()
 
 
-# Before: ga_crossover
+def firefly_dynamic(pop, epsilon="uniform", alpha=0.1,
+                    beta=1.0, gamma=100.0):
+    """
+    Performs movements accordint to the Firefly algorithm (FA)
+
+    Parameters
+    ----------
+    pop : population
+        It is a population object.
+    epsilon : str, optional
+        Type of random number. Possible options: 'gaussian', 'uniform'.
+        The default is "uniform".
+    alpha : TYPE, optional
+        DESCRIPTION. The default is 0.8.
+    beta : TYPE, optional
+        DESCRIPTION. The default is 1.0.
+    gamma : TYPE, optional
+        DESCRIPTION. The default is 1.0.
+
+    Returns
+    -------
+    None.
+
+    """
+    # Check the alpha, beta, and gamma value
+    _check_parameter(alpha)
+    _check_parameter(beta)
+    _check_parameter(gamma, (0.0, 10000.0))
+
+    # Determine epsilon values
+    if epsilon == "gaussian":
+        epsilon_value = np.random.standard_normal(
+            (pop.num_agents, pop.num_dimensions))
+
+    elif epsilon == "uniform":
+        epsilon_value = np.random.uniform(
+            -0.5, 0.5, (pop.num_agents, pop.num_dimensions))
+    else:
+        epsilon_value = []
+        raise OperatorsError(
+            "Epsilon is not valid: 'uniform' or 'gaussian'")
+
+    # Initialise delta or difference between two positions
+    difference_positions = np.zeros((pop.num_agents, pop.num_dimensions))
+
+    for agent in range(pop.num_agents):
+        # Select indices in order to avoid division by zero
+        indices = (np.arange(pop.num_agents) != agent)
+
+        # Determine all vectorial distances with respect to agent
+        delta = pop.positions[indices, :] - np.tile(
+            pop.positions[agent, :], (pop.num_agents - 1, 1))
+
+        # Determine differences between lights
+        delta_lights = np.tile(
+            (pop.fitness[indices] - np.tile(
+                pop.fitness[agent], (1, pop.num_agents-1))).transpose(),
+            (1, pop.num_dimensions))
+
+        # Find the total attraction for each agent
+        difference_positions[agent, :] = np.sum(
+            np.heaviside(-delta_lights, 0.0) * delta *
+            np.exp(-gamma * np.tile(np.linalg.norm(delta, 2, 1).reshape(
+                pop.num_agents - 1, 1), (1, pop.num_dimensions)) ** 2), 0)
+
+    # Move fireflies according to their attractions
+    pop.positions += alpha * epsilon_value + beta * difference_positions
+
+    # Check constraints
+    if pop.is_constrained:
+        pop._check_simple_constraints()
+
+
 def genetic_crossover(pop, pairing="rank", crossover="blend",
                       mating_pool_factor=0.4):
     """
@@ -708,7 +362,8 @@ def genetic_crossover(pop, pairing="rank", crossover="blend",
                 np.arange(pop.num_agents), mating_pool_indices)])
 
         # Determine the related probabilities
-        probabilities = np.abs(normalised_cost / np.sum(normalised_cost))
+        probabilities = np.abs(normalised_cost /
+                               (np.sum(normalised_cost) + 1e-23))
 
         # Perform the roulette wheel selection and return couples
         couple_indices_ = np.searchsorted(
@@ -791,7 +446,7 @@ def genetic_crossover(pop, pairing="rank", crossover="blend",
     #
     # No pairing procedure recognised
     else:
-        pop.__PopulationError("Invalid pairing method")
+        raise OperatorsError("Invalid pairing method")
 
     # Identify offspring indices
     offspring_indices = np.setdiff1d(
@@ -896,13 +551,12 @@ def genetic_crossover(pop, pairing="rank", crossover="blend",
     #
     # No crossover method recognised
     else:
-        pop.__PopulationError("Invalid pairing method")
+        raise OperatorsError("Invalid pairing method")
 
     # Store offspring positions in the current population
     pop.positions[offspring_indices, :] = offsprings
 
 
-# Before: ga_mutation
 def genetic_mutation(pop, elite_rate=0.1, mutation_rate=0.25,
                      distribution="uniform", sigma=1.0):
     """
@@ -969,6 +623,349 @@ def genetic_mutation(pop, elite_rate=0.1, mutation_rate=0.25,
 
         # Store mutants
         pop.positions[rows.flatten(), columns.flatten()] = mutants
+
+
+def gravitational_search(pop, gravity=1.0, alpha=0.02):
+    """
+    Gravitational Search Algorithm (GSA) simplified
+
+    Parameters
+    ----------
+    pop : population
+        It is a population object.
+    gravity : float, optional
+        It is the initial gravitational value. The default is 1.0.
+    alpha : float, optional
+        It is the gravitational damping ratio. The default is 0.5.
+
+    Returns
+    -------
+    None.
+
+    """
+    # Check the gravity, alpha, and epsilon value
+    _check_parameter(gravity)
+    _check_parameter(alpha)
+
+    # Initialise acceleration
+    acceleration = np.zeros((pop.num_agents, pop.num_dimensions))
+
+    # Determine the gravitational constant
+    gravitation = gravity * np.exp(- alpha * pop.iteration)
+
+    # Determine mass for each agent
+    raw_masses = (pop.fitness - np.tile(
+        pop.current_worst_fitness, (1, pop.num_agents)))
+    masses = (raw_masses / (
+        np.sum(raw_masses) + 1e-23)).reshape(pop.num_agents)
+
+    for agent in range(pop.num_agents):
+        # Select indices in order to avoid division by zero
+        indices = (np.arange(pop.num_agents) != agent)
+
+        # Determine all vectorial distances with respect to agent
+        delta_positions = pop.positions[indices, :] - np.tile(
+            pop.positions[agent, :], (pop.num_agents - 1, 1))
+
+        quotient = masses[indices] / (
+            np.linalg.norm(delta_positions, 2, 1) + 1e-23)
+
+        # Force interaction
+        force_interaction = gravitation * np.tile(
+            quotient.reshape(pop.num_agents - 1, 1),
+            (1, pop.num_dimensions)) * delta_positions
+
+        # Acceleration
+        acceleration[agent, :] = np.sum(np.random.rand(
+            pop.num_agents - 1, pop.num_dimensions) *
+            force_interaction, 0)
+
+    # Update velocities
+    pop.velocities = acceleration + np.random.rand(
+        pop.num_agents, pop.num_dimensions) * pop.velocities
+
+    # Update positions
+    pop.positions += pop.velocities
+
+    # Check constraints
+    if pop.is_constrained:
+        pop._check_simple_constraints()
+
+
+def levy_flight(pop, scale=1.0, beta=1.5):
+    """
+    Perform a Lévy flight by using the Mantegna's algorithm.
+
+    Parameters
+    ----------
+    pop : population
+        It is a population object.
+    scale : float, optional
+        It is the step scale between [0.0, 1.0]. The default is 1.0.
+    beta : float, optional
+        It is the distribution parameter between [1.0, 3.0]. The default
+        is 1.5.
+
+    Returns
+    -------
+    None.
+
+    """
+    # Check the scale and beta value
+    _check_parameter(scale)
+    _check_parameter(beta, (1.0, 3.0))
+
+    # Calculate x's std dev (Mantegna's algorithm)
+    sigma = ((np.math.gamma(1 + beta) * np.sin(np.pi * beta / 2)) /
+             (np.math.gamma((1 + beta) / 2) * beta *
+              (2 ** ((beta - 1) / 2)))) ** (1 / beta)
+
+    # Determine x and y using normal distributions with sigma_y = 1
+    x = sigma * np.random.standard_normal((pop.num_agents,
+                                           pop.num_dimensions))
+    y = np.abs(np.random.standard_normal((pop.num_agents,
+                                          pop.num_dimensions)))
+
+    # Calculate the random number with levy stable distribution
+    levy_random = x / (y ** (1 / beta))
+
+    # Determine z as an additional normal random number
+    z = np.random.standard_normal((pop.num_agents, pop.num_dimensions))
+
+    # Move each agent using levy random displacements
+    pop.positions += scale * z * levy_random * \
+        (pop.positions - np.tile(pop.global_best_position,
+                                 (pop.num_agents, 1)))
+
+    # Check constraints
+    if pop.is_constrained:
+        pop._check_simple_constraints()
+
+
+def local_random_walk(pop, probability=0.75, scale=1.0):
+    """
+    Performs the local random walk from Cuckoo Search (CS)
+
+    Parameters
+    ----------
+    pop : population
+        It is a population object.
+    probability : float, optional
+        It is the probability of discovering an alien egg (change an
+        agent's position). The default is 0.75.
+    scale : float, optional
+        It is the step scale between [0.0, 1.0]. The default is 1.0.
+
+    Returns
+    -------
+    None.
+
+    """
+    # Check the scale and beta value
+    _check_parameter(probability)
+    _check_parameter(scale)
+
+    # Determine random numbers
+    r_1 = np.random.rand(pop.num_agents, pop.num_dimensions)
+    r_2 = np.random.rand(pop.num_agents, pop.num_dimensions)
+
+    # Move positions with a displacement due permutations and probabilities
+    pop.positions += scale * r_1 * (pop.positions[
+        np.random.permutation(pop.num_agents), :] - pop.positions[
+            np.random.permutation(pop.num_agents), :]) * np.heaviside(
+                r_2 - probability, 0.0)
+
+    # Check constraints
+    if pop.is_constrained:
+        pop._check_simple_constraints()
+
+
+def random_sample(pop):
+    """
+    Performs a random sampling using a uniform distribution in [-1, 1].
+
+    Parameters
+    ----------
+    pop : population
+        It is a population object.
+
+    Returns
+    -------
+    None.
+
+    """
+    # Create random positions using random numbers between -1 and 1
+    pop.positions = np.random.uniform(
+        -1, 1, (pop.num_agents, pop.num_dimensions))
+
+    # Check constraints
+    if pop.is_constrained:
+        pop._check_simple_constraints()
+
+
+def random_search(pop, scale=0.01):
+    """
+    Performs a random walk using a uniform distribution in [-1, 1].
+
+    Parameters
+    ----------
+    pop : population
+        It is a population object.
+    scale : float, optional
+        It is the step scale between [0.0, 1.0]. The default is 0.01.
+
+    Returns
+    -------
+    None.
+
+    """
+    # Check the scale value
+    _check_parameter(scale)
+
+    # Move each agent using uniform random displacements
+    pop.positions += scale * \
+        np.random.uniform(-1, 1, (pop.num_agents, pop.num_dimensions))
+
+    # Check constraints
+    if pop.is_constrained:
+        pop._check_simple_constraints()
+
+
+def rayleigh_flight(pop, scale=0.01):
+    """
+    Perform a Rayleigh flight using a normal standard distribution.
+
+    Parameters
+    ----------
+    pop : population
+        It is a population object.
+    scale : float, optional
+        It is the step scale between [0.0, 1.0]. The default is 0.01.
+
+    Returns
+    -------
+    None.
+
+    """
+    # Check the scale value
+    _check_parameter(scale)
+
+    # Move each agent using gaussian random displacements
+    pop.positions += scale * \
+        np.random.standard_normal((pop.num_agents, pop.num_dimensions))
+
+    # Check constraints
+    if pop.is_constrained:
+        pop._check_simple_constraints()
+
+
+def spiral_dynamic(pop, radius=0.9, angle=22.5, sigma=0.1):
+    """
+    Performs the deterministic or stochastic spiral dynamic movement
+
+    Parameters
+    ----------
+    pop : population
+        It is a population object.
+    radius : float, optional
+        It is the convergence rate. The default is 0.9.
+    angle : float, optional
+        Rotation angle (in degrees). The default is 22.5 (degrees).
+    sigma : float, optional
+        Variation of random radii. The default is 0.1.
+        Note: sigma equals 0.0 corresponds to the Deterministic Spiral.
+
+    Returns
+    -------
+    None.
+
+    """
+    # Check the scale and beta value
+    _check_parameter(radius)
+    _check_parameter(angle, (0.0, 360.0))
+    _check_parameter(sigma)
+
+    # Determine the rotation matrix
+    rotation_matrix = _get_rotation_matrix(pop.num_dimensions,
+                                           np.deg2rad(angle))
+
+    for agent in range(pop.num_agents):
+        random_radii = np.random.uniform(radius - sigma, radius + sigma,
+                                         pop.num_dimensions)
+        # If random radii need to be constrained to [0, 1]:
+        pop.positions[agent, :] = pop.global_best_position + random_radii * \
+            np.matmul(rotation_matrix, (
+                pop.positions[agent, :] - pop.global_best_position))
+
+    # Check constraints
+    if pop.is_constrained:
+        pop._check_simple_constraints()
+
+
+def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56,
+                  version="constriction"):
+    """
+    Performs a swarm movement by using the inertial or constriction
+    dynamics from Particle Swarm Optimisation (PSO).
+
+    Parameters
+    ----------
+    pop : population
+        It is a population object.
+    factor : float, optional
+        Inertial or Kappa factor, depending of which PSO version is set.
+        The default is 1.0.
+    self_conf : float, optional
+        Self confidence factor. The default is 2.4.
+    swarm_conf : float, optional
+        Swarm confidence factor. The default is 2.6.
+    version : str, optional
+        Version of the Particle Swarm Optimisation strategy. Currently, it
+        can be 'constriction' or 'inertial'. The default is "constriction".
+
+    Returns
+    -------
+    None.
+
+    """
+    # Check the scale and beta value
+    _check_parameter(factor)
+    _check_parameter(self_conf, (0.0, 10.0))
+    _check_parameter(swarm_conf, (0.0, 10.0))
+
+    # Determine random numbers
+    r_1 = self_conf * np.random.rand(pop.num_agents, pop.num_dimensions)
+    r_2 = swarm_conf * np.random.rand(pop.num_agents, pop.num_dimensions)
+
+    # Choose the PSO version = 'inertial' or 'constriction'
+    if version == "inertial":
+        # Find new velocities
+        pop.velocities = factor * pop.velocities + r_1 * (
+            pop.particular_best_positions - pop.positions) + \
+            r_2 * (np.tile(pop.global_best_position, (pop.num_agents, 1)) -
+                   pop.positions)
+    elif version == "constriction":
+        # Find the constriction factor chi using phi
+        phi = self_conf + swarm_conf
+        if phi > 4:
+            chi = 2 * factor / np.abs(2 - phi - np.sqrt(phi ** 2 - 4 * phi))
+        else:
+            chi = np.sqrt(factor)
+
+        # Find new velocities
+        pop.velocities = chi * (pop.velocities + r_1 * (
+            pop.particular_best_positions - pop.positions) +
+            r_2 * (np.tile(pop.global_best_position, (pop.num_agents, 1)) -
+                   pop.positions))
+    else:
+        raise OperatorsError('Invalid swarm_dynamic version')
+
+    # Move each agent using velocity's information
+    pop.positions += pop.velocities
+
+    # Check constraints
+    if pop.is_constrained:
+        pop._check_simple_constraints()
 
 
 def _get_rotation_matrix(dimensions, angle=0.39269908169872414):
@@ -1088,102 +1085,98 @@ def _obtain_operators(num_vals=5):
     """
     return [
         (
-            "local_random_walk",
+            "central_force_dynamic",
             dict(
-                probability=np.linspace(0.0, 1.0, num_vals),
-                scale=np.linspace(0.0, 1.0, num_vals)),
-            "greedy"),
-        (
-            "random_search",
-            dict(
-                scale=np.linspace(0.0, 1.0, num_vals)),
-            "greedy"),
-        (
-            "random_sample",
-            dict(),
-            "greedy"),
-        (
-            "rayleigh_flight",
-            dict(
-                scale=np.linspace(0.0, 1.0, num_vals)),
-            "greedy"),
-        (
-            "levy_flight",
-            dict(
-                scale=np.linspace(0.0, 1.0, num_vals),
-                beta=[1.5]),
-            "greedy"),
+                gravity=np.linspace(0.0, 0.01, num_vals),
+                alpha=np.linspace(0.0, 0.01, num_vals),
+                beta=np.linspace(1.25, 1.75, num_vals),
+                dt=[1.0]),
+            "all"),
+        # (
+        #    'differential_crossover',
+        #    dict(
+        #        crossover_rate=np.linspace(0.0, 1.0, num_vals),
+        #        version=["binomial", "exponential"]),
+        #    "greedy"),
         (
             "differential_mutation",
             dict(
                 expression=["rand", "best", "current", "current-to-best",
                             "rand-to-best", "rand-to-best-and-current"],
                 num_rands=[1, 2, 3],
-                factor=np.linspace(0.0, 2.0, num_vals)),
-            "greedy"),
-        (
-            'differential_crossover',
-            dict(
-                crossover_rate=np.linspace(0.0, 1.0, num_vals),
-                version=["binomial", "exponential"]),
+                factor=np.linspace(0.5, 2.5, num_vals)),
             "greedy"),
         (
             "firefly_dynamic",
             dict(
                 epsilon=["uniform", "gaussian"],
-                alpha=np.linspace(0.0, 1.0, num_vals),
+                alpha=np.linspace(0.0, 0.5, num_vals),
                 beta=[1.0],
-                gamma=np.linspace(1.0, 100.0, num_vals)),
+                gamma=np.linspace(10.0, 990.0, num_vals)),
             "greedy"),
         (
-            "swarm_dynamic",
+            "genetic_crossover",
             dict(
-                factor=np.linspace(0.0, 1.0, num_vals),
-                self_conf=np.linspace(0.0, 5.0, num_vals),
-                swarm_conf=np.linspace(0.0, 5.0, num_vals),
-                version=["inertial", "constriction"]),
+                pairing=["even-odd", "rank", "cost", "random",
+                         "tournament_2_100", "tournament_3_100"],
+                crossover=["single", "two", "uniform", "blend",
+                           "linear_0.5_0.5"],
+                mating_pool_factor=np.linspace(0.1, 0.9, num_vals)),
+            "all"),
+        (
+            "genetic_mutation",
+            dict(
+                elite_rate=np.linspace(0.0, 0.9, num_vals),
+                mutation_rate=np.linspace(0.1, 0.9, num_vals),
+                distribution=["uniform", "gaussian"],
+                sigma=[1.0]),
             "all"),
         (
             "gravitational_search",
             dict(
                 gravity=np.linspace(0.0, 1.0, num_vals),
-                alpha=np.linspace(0.0, 1.0, num_vals)),
+                alpha=np.linspace(0.0, 0.04, num_vals)),
             "all"),
         (
-            "central_force_dynamic",
+            "levy_flight",
             dict(
-                gravity=np.linspace(0.0, 1.0, num_vals),
-                alpha=np.linspace(0.0, 1.0, num_vals),
-                beta=np.linspace(0.0, 3.0, num_vals),
-                dt=[1.0]),
-            "all"),
+                scale=np.linspace(0.1, 0.9, num_vals),
+                beta=np.linspace(1.25, 1.75, num_vals)),
+            "greedy"),
+        (
+            "local_random_walk",
+            dict(
+                probability=np.linspace(0.1, 0.9, num_vals),
+                scale=np.linspace(0.1, 0.9, num_vals)),
+            "greedy"),
+        (
+            "random_sample",
+            dict(),
+            "greedy"),
+        (
+            "random_search",
+            dict(
+                scale=np.linspace(0.1, 0.9, num_vals)),
+            "greedy"),
+        (
+            "rayleigh_flight",
+            dict(
+                scale=np.linspace(0.1, 0.9, num_vals)),
+            "greedy"),
         (
             "spiral_dynamic",
             dict(
-                radius=np.linspace(0.0, 1.0, num_vals),
-                angle=np.linspace(0.0, 180.0, num_vals),
+                radius=np.linspace(0.001, 0.99, num_vals),
+                angle=np.linspace(1.0, 179.0, num_vals),
                 sigma=np.linspace(0.0, 0.5, num_vals)),
             "all"),
         (
-            "genetic_mutation",
+            "swarm_dynamic",
             dict(
-                elite_rate=np.linspace(0.0, 1.0, num_vals),
-                mutation_rate=np.linspace(0.0, 1.0, num_vals),
-                distribution=["uniform", "gaussian"],
-                sigma=np.linspace(0.0, 1.0, num_vals)),
-            "all"),
-        (
-            "genetic_crossover",
-            dict(
-                pairing=["even-odd", "rank", "cost", "random",
-                         "tournament_2_100", "tournament_2_75",
-                         "tournament_2_50", "tournament_3_100",
-                         "tournament_3_75", "tournament_3_50"],
-                crossover=["single", "two", "uniform", "blend",
-                           "linear_0.5_0.5", "linear_1.5_0.5",
-                           "linear_0.5_1.5", "linear_1.5_1.5",
-                           "linear_-0.5_0.5", "linear_0.5_-0.5"],
-                mating_pool_factor=np.linspace(0.0, 1.0, num_vals)),
+                factor=np.linspace(0.1, 1.0, num_vals),
+                self_conf=np.linspace(1.1, 4.1, num_vals),
+                swarm_conf=np.linspace(1.1, 4.1, num_vals),
+                version=["inertial", "constriction"]),
             "all")
         ]
 
@@ -1226,7 +1219,7 @@ def _build_operators(heuristics=_obtain_operators(),
             par_values = list(parameters.values())
 
             # Find the number of values for each parameter
-            par_num_values = [np.np.size(x) for x in par_values]
+            par_num_values = [np.size(x) for x in par_values]
 
             # Determine the number of combinations
             num_combinations = np.prod(par_num_values)

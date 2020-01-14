@@ -6,40 +6,50 @@ Created on Mon Sep 30 13:42:15 2019
 """
 
 import hyperheuristic as HH
-# import numpy as np
+from metaheuristic import Operators
+#from metaheuristic import Population
+import numpy as np
 import benchmark_func as bf
 # import matplotlib.pyplot as plt
 
+# %% Problems definition
 
-# %% Problem definition
-num_dimensions = 2
-
-problem = bf.Sphere(num_dimensions)
-# problem = bf.Rosenbrock(num_dimensions)
-# problem = bf.Ackley(num_dimensions)
-# problem = bf.Griewank(num_dimensions)
-
+dimensions = [2]  #, 10, 30]
+functions = ['Sphere']  #, 'Ackley', 'Rosenbrock', 'Griewank']
+divider = 1.0
 is_constrained = True
 
-# Find the problem function : objective function to minimise
-def problem_function(x):
-    return problem.get_func_val(x)
-
-# Define the problem domain
-boundaries = (problem.min_search_range/10, problem.max_search_range/10)
-
-# %% Initialise the hyperheuristic procedure
-
-heuristics_collection = 'test_collection.txt'
-# heuristics_collection = 'single_test.txt'
-
-problem_info = HH.set_problem(problem_function, boundaries, True)
-
-hh = HH.Hyperheuristic(heuristics_collection, problem_info, {
+# %% Hyperheuristic conditions
+hh_parameters = {
     'cardinality': 2,
     'num_agents': 30,
     'num_iterations': 100,
-    'num_replicas': 10,
-    'num_steps': 100})
+    'num_replicas': 100,
+    'num_steps': 100
+    }
 
-hh.run()
+# %% Generate the search operator collection (once)
+# Operators._build_operators()  # <- uncomment
+
+heuristics_collection = 'operators_collection.txt'  # full
+# heuristics_collection = 'single_test.txt'  # just 1
+
+# %% Find a metaheuristic for each problem
+
+for num_dimensions in dimensions:
+    for function_string in functions:
+        print(f"{function_string}, {num_dimensions}D:")
+        problem = eval(f"bf.{function_string}({num_dimensions})")
+        function = lambda x: problem.get_func_val(x)
+
+        # HH.set_problem(problem_function, boundaries, True)
+        Problem = HH.set_problem(
+            function,
+            (problem.min_search_range/divider,
+             problem.max_search_range/divider),
+            is_constrained
+            )
+
+        hh = HH.Hyperheuristic(heuristics_collection, Problem, hh_parameters)
+
+        hh.run()

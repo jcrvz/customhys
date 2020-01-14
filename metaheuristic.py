@@ -7,12 +7,15 @@ Created on Thu Sep 26 16:56:01 2019
 
 import numpy as np
 from population import Population
-import operators as op
+import operators as Operators
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
+__all__ = ['Metaheuristic', 'Population', 'Operators']
 
 # Read all available operators
-__operators__ = op.__all__  # [x[0] for x in op._obtain_operators(1)]
+__operators__ = Operators.__all__
+# __operators__ = [x[0] for x in Operators._obtain_operators(1)]
 __selectors__ = ['greedy', 'probabilistic', 'metropolis', 'all', 'none']
 
 
@@ -51,7 +54,7 @@ class Metaheuristic():
                               problem['is_constrained'])
 
         # Check and read the search_operators
-        self.operators, self.selectors = op._process_operators(
+        self.operators, self.selectors = Operators._process_operators(
             search_operators)
 
         # Define the maximum number of iterations
@@ -104,6 +107,13 @@ class Metaheuristic():
 
         # Start optimisaton procedure
         for iteration in range(1, self.num_iterations + 1):
+            # tqdm(range(1, self.num_iterations + 1),
+            #                   desc='MH', position = 0, leave = True,
+            #                   postfix={
+            #                       'fitness': self.pop.global_best_fitness},
+            #                   bar_format="{l_bar}{bar}| " +
+            #                   "[{n_fmt}/{total_fmt}" + "{postfix}]"):
+
             # Update the current iteration
             self.pop.iteration = iteration
 
@@ -113,7 +123,8 @@ class Metaheuristic():
                 operator_name, operator_params = operator.split('(')
 
                 # Apply an operator
-                exec("op." + operator_name + "(self.pop," + operator_params)
+                exec("Operators." + operator_name + "(self.pop," +
+                     operator_params)
 
                 # Evaluate fitness values
                 self.pop.evaluate_fitness(self.problem_function)
@@ -131,7 +142,7 @@ class Metaheuristic():
             self._update_historicals()
 
             # Verbose (if so) some information
-            self._verbose("{}\nStag. counter: {}, pop. radious: {}".format(
+            self._verbose("{}\nStag. counter: {}, pop. radius: {}".format(
                 iteration, self.historical['stagnation'][-1],
                 self.historical['radius'][-1]))
             self._verbose(self.pop.get_state())

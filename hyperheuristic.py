@@ -5,18 +5,24 @@ Created on Thu Jan  9 15:36:43 2020
 @author: Jorge Mario Cruz-Duarte (jcrvz.github.io)
 """
 import numpy as np
-import scipy.stats as st
+# import scipy.stats as st
+import scipy as sp
 from metaheuristic import Metaheuristic
+# from metaheuristic import Population
+# from metaheuristic import Operators
 from datetime import datetime
 import json
 from os.path import exists as _check_path
 from os import makedirs as _create_path
+from tqdm import tqdm
 
+sp.np.seterr(divide='ignore', invalid='ignore')
+# np.seterr(divide='ignore', invalid='ignore')
 
 class Hyperheuristic():
     def __init__(self, heuristic_space, problem, parameters={
             'cardinality': 2, 'num_iterations': 100, 'num_agents': 30,
-            'num_replicas': 100, 'num_steps':100}):
+            'num_replicas': 100, 'num_steps': 100}):
         # Read the heuristic space
         if isinstance(heuristic_space, list):
             self.heuristic_space = heuristic_space
@@ -49,8 +55,8 @@ class Hyperheuristic():
         encoded_solution : list
             The sequence of indices that correspond to the search operators.
         historicals : dict
-            A dictionary of information from each iteration. Its keys are:
-            'iteration', 'encoded_solution', 'solution', 'performances', and
+            A dictionary of information from each step. Its keys are:
+            'step', 'encoded_solution', 'solution', 'performances', and
             'details'.
             This later field, 'details', is also a dictionary which contains
             information about each replica carried out with the metaheuristic.
@@ -75,9 +81,17 @@ class Hyperheuristic():
 
         # Save this historical register
         _save_iteration(0, historicals)
+        
+        print('{} - perf: {}, sol: {}'.format(
+            0, performance, encoded_solution))
 
         # Perform the random search
-        for iteration in range(self.parameters['num_steps']):
+        for step in range(1, self.parameters['num_steps'] + 1):
+            # tqdm(range(1, self.parameters['num_steps'] + 1),
+            #                   desc='HH', position = 0, leave = True,
+            #                   postfix = {'performance': performance},
+            #                   bar_format="{l_bar}{bar}| " +
+            #                   "[{n_fmt}/{total_fmt}" + "{postfix}]"):
 
             # Select randomly a candidate solution
             encoded_candidate_solution = np.random.randint(
@@ -95,16 +109,19 @@ class Hyperheuristic():
                 solution = candidate_solution
                 performance = candidate_performance
                 details = candidate_details
+                
+                print('{} - perf: {}, sol: {}'.format(
+                    step, performance, encoded_solution))
 
                 # Update historicals (only if improves)
-                # historicals['iteration'].append(iteration)
+                # historicals['step'].append(step)
                 # historicals['encoded_solution'].append(encoded_solution)
                 # historicals['solution'].append(solution)
                 # historicals['performance'].append(performance)
                 # historicals['details'].append(candidate_details)
 
                 # Save this historical register
-                _save_iteration(iteration, {
+                _save_iteration(step, {
                     'encoded_solution': encoded_solution,
                     'solution': solution,
                     'performance': performance,
@@ -124,7 +141,15 @@ class Hyperheuristic():
         position_data = list()
 
         # Run the metaheuristic several times
-        for rep in range(self.parameters['num_replicas']):
+        for rep in range(1, self.parameters['num_replicas'] + 1):
+            # tqdm(range(1, self.parameters['num_replicas'] + 1),
+            #                   desc='--MH',
+            #                   position = 0, leave = True,
+            #                   postfix = {'fitness': 
+            #                              fitness_data[-1] if 
+            #                              len(fitness_data) != 0 else '?'},
+            #                   bar_format="{l_bar}{bar}| " +
+            #                   "[{n_fmt}/{total_fmt}" + "{postfix}]"):
             # Run this metaheuristic
             mh.run()
 
@@ -146,17 +171,17 @@ class Hyperheuristic():
     @staticmethod
     def get_performance(statistics):
         # Score function using the statistics from fitness values
-        # perf = statistics['Avg']  # Option 1
+        perf = statistics['Med']  # Option 1
         # perf = statistics['Avg'] + statistics['Std']  # Option 2
         # perf = statistics['Med'] + statistics['IQR']  # Option 3
-        perf = statistics['Avg'] + statistics['Std'] + \
-            statistics['Med'] + statistics['IQR']
+        # perf = statistics['Avg'] + statistics['Std'] + \
+        # statistics['Med'] + statistics['IQR']
         return perf
 
     @staticmethod
     def get_statistics(raw_data):
         # Get descriptive statistics
-        dst = st.describe(raw_data)
+        dst = sp.stats.describe(raw_data)
 
         # Store statistics
         return dict(nob=dst.nobs,
@@ -166,9 +191,9 @@ class Hyperheuristic():
                     Std=np.std(raw_data),
                     Skw=dst.skewness,
                     Kur=dst.kurtosis,
-                    IQR=st.iqr(raw_data),
+                    IQR=sp.stats.iqr(raw_data),
                     Med=np.median(raw_data),
-                    MAD=st.median_absolute_deviation(raw_data))
+                    MAD=sp.stats.median_absolute_deviation(raw_data))
 
 
 def _save_iteration(iteration_number, variable_to_save):
@@ -182,9 +207,9 @@ def _save_iteration(iteration_number, variable_to_save):
     if not _check_path(folder_name):
         _create_path(folder_name)
 
-    # Create a new file for this iteration
+    # Create a new file for this step
     with open(folder_name + f"/{iteration_number}-" + now.strftime(
-            "%H_%M_%S"), 'w') as json_file:
+            "%H_%M_%S") + ".json", 'w') as json_file:
         json.dump(variable_to_save, json_file, cls=NumpyEncoder)
 
 

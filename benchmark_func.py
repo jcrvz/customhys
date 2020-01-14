@@ -522,11 +522,12 @@ class Griewank(OptimalBasic):
         self.func_name = 'Griewank'
 
     def get_func_val(self, variables):
-        tmp1 = 0
-        tmp2 = 1
-        for i in range(self.variable_num):
-            tmp1 += np.power(variables[i],2)
-            tmp2 = tmp2*np.cos(variables[i]/np.sqrt(i+1))
+        tmp1 = np.sum(variables[:self.variable_num] ** 2)
+        tmp2 = np.prod(np.cos(variables[:self.variable_num] /
+                              np.sqrt(np.arange(self.variable_num) + 1)))
+        # for i in range(self.variable_num):
+        # tmp1 += np.power(variables[i],2)
+        # tmp2 = tmp2*np.cos(variables[i]/np.sqrt(i+1))
         return tmp1/4000-tmp2
 
 ##### Class Michalewicz function #####

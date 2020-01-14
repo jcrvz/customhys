@@ -13,8 +13,8 @@ import metaheuristic
 
 #%% Problem definition
 num_dimensions = 2
-num_agents = 50
-num_iterations = 100
+num_agents = 30
+num_iterations = 1000
 
 problem = bf.Sphere(num_dimensions)
 #problem = bf.Rosenbrock(num_dimensions)
@@ -31,7 +31,11 @@ boundaries = (0.01*problem.min_search_range, 0.01*problem.max_search_range)
 
 #%% Build the simple heuristic collection (if so)
 
-search_operators = [('swarm_dynamic', {'factor': 1.0, 'self_conf': 2.54, 'swarm_conf': 2.56, 'version': 'constriction'}, 'all')]
+search_operators = [('swarm_dynamic', {'factor': 0.6, 'self_conf': 1.52, 'swarm_conf': 1.58, 'version': 'inertial'}, 'all')]
 mh = metaheuristic.Metaheuristic({
     'function': problem_function, 'boundaries': boundaries,
     'is_constrained': True}, search_operators, num_agents, num_iterations)
+
+mh.run()
+
+mh.show_performance
