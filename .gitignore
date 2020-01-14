@@ -123,3 +123,6 @@ dmypy.json
 .pyre/
 *.xml
 *.iml
+
+raw_data
+raw_data/*
