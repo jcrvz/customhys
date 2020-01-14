@@ -16,7 +16,7 @@ from os.path import exists as _check_path
 from os import makedirs as _create_path
 from tqdm import tqdm
 
-sp.np.seterr(divide='ignore', invalid='ignore')
+# sp.np.seterr(divide='ignore', invalid='ignore')
 # np.seterr(divide='ignore', invalid='ignore')
 
 class Hyperheuristic():
