@@ -14,7 +14,7 @@ from datetime import datetime
 import json
 from os.path import exists as _check_path
 from os import makedirs as _create_path
-from tqdm import tqdm
+# from tqdm import tqdm
 
 # sp.np.seterr(divide='ignore', invalid='ignore')
 # np.seterr(divide='ignore', invalid='ignore')
@@ -22,7 +22,8 @@ from tqdm import tqdm
 class Hyperheuristic():
     def __init__(self, heuristic_space, problem, parameters={
             'cardinality': 2, 'num_iterations': 100, 'num_agents': 30,
-            'num_replicas': 100, 'num_steps': 100}):
+            'num_replicas': 100, 'num_steps': 100},
+            file_label=''):
         # Read the heuristic space
         if isinstance(heuristic_space, list):
             self.heuristic_space = heuristic_space
@@ -39,6 +40,7 @@ class Hyperheuristic():
 
         # Initialise other parameters
         self.parameters = parameters
+        self.file_label = file_label
 
     def run(self):
         """
@@ -80,7 +82,7 @@ class Hyperheuristic():
             details=[details])
 
         # Save this historical register
-        _save_iteration(0, historicals)
+        _save_iteration(0, historicals, self.file_label)
         
         print('{} - perf: {}, sol: {}'.format(
             0, performance, encoded_solution))
@@ -92,6 +94,7 @@ class Hyperheuristic():
             #                   postfix = {'performance': performance},
             #                   bar_format="{l_bar}{bar}| " +
             #                   "[{n_fmt}/{total_fmt}" + "{postfix}]"):
+            # chg = 'Nope'
 
             # Select randomly a candidate solution
             encoded_candidate_solution = np.random.randint(
@@ -110,9 +113,8 @@ class Hyperheuristic():
                 performance = candidate_performance
                 details = candidate_details
                 
-                print('{} - perf: {}, sol: {}'.format(
-                    step, performance, encoded_solution))
-
+                # chg = 'Yup'
+                
                 # Update historicals (only if improves)
                 # historicals['step'].append(step)
                 # historicals['encoded_solution'].append(encoded_solution)
@@ -125,7 +127,11 @@ class Hyperheuristic():
                     'encoded_solution': encoded_solution,
                     'solution': solution,
                     'performance': performance,
-                    'details': details})
+                    'details': details},
+                    self.file_label)
+
+                print('{} - perf: {}, sol: {}'.format(
+                    step, performance, encoded_solution))
 
         return solution, performance, encoded_solution, historicals
 
@@ -134,16 +140,14 @@ class Hyperheuristic():
         historical_data = list()
         fitness_data = list()
         position_data = list()
-
+        
         # Run the metaheuristic several times
-        for rep in tqdm(range(1, self.parameters['num_replicas'] + 1),
-                        desc='--MH',
-                        position = 0, leave = True,
-                        postfix = {'fitness':
-                                   fitness_data[-1] if
-                                   len(fitness_data) != 0 else '?'},
-                            bar_format="{l_bar}{bar}| " +
-                            "[{n_fmt}/{total_fmt}" + "{postfix}]"):
+        for rep in range(1, self.parameters['num_replicas'] + 1):
+            # tqdm(,                        desc='--MH',
+            #             position = 0, leave = True,
+            #             postfix = {'fitness': '{temp_fitness}'},
+            #                 bar_format="{l_bar}{bar}| " +
+            #                 "[{n_fmt}/{total_fmt}" + "{postfix}]"):
             
             # Call the metaheuristic
             mh = Metaheuristic(self.problem, search_operators,
@@ -160,6 +164,8 @@ class Hyperheuristic():
             _temporal_position, _temporal_fitness = mh.get_solution()
             fitness_data.append(_temporal_fitness)
             position_data.append(_temporal_position)
+            
+            # print('-- MH: {}, fitness={}'.format(rep, _temporal_fitness))
 
         # Determine a performance metric once finish the repetitions
         fitness_stats = self.get_statistics(fitness_data)
@@ -196,12 +202,13 @@ class Hyperheuristic():
                     MAD=st.median_absolute_deviation(raw_data))
 
 
-def _save_iteration(iteration_number, variable_to_save):
+def _save_iteration(iteration_number, variable_to_save, prefix=''):
     # Get the current date
     now = datetime.now()
 
     # Define the folder name
-    folder_name = "raw_data/" + now.strftime("%m_%d_%Y")
+    sep = '-' if (prefix != '') else ''
+    folder_name = "raw_data/" + prefix + sep + now.strftime("%m_%d_%Y")
 
     # Check if this path exists
     if not _check_path(folder_name):
