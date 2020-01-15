@@ -10,8 +10,8 @@ from itertools import combinations as _get_combinations
 
 __all__ = ['local_random_walk', 'random_search', 'random_sample',
            'rayleigh_flight', 'levy_flight', 'differential_mutation',
-           'differential_crossover', 'firefly_dynamic', 'swarm_dynamic',
-           'gravitational_search', 'central_force_dynamic', 'spiral_dynamic',
+           'firefly_dynamic', 'swarm_dynamic', 'gravitational_search',
+           'central_force_dynamic', 'spiral_dynamic',
            'genetic_mutation', 'genetic_crossover']
 
 
