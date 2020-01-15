@@ -5,8 +5,8 @@ Created on Thu Jan  9 15:36:43 2020
 @author: Jorge Mario Cruz-Duarte (jcrvz.github.io)
 """
 import numpy as np
-# import scipy.stats as st
-import scipy as sp
+import scipy.stats as st
+# import scipy as sp
 from metaheuristic import Metaheuristic
 # from metaheuristic import Population
 # from metaheuristic import Operators
@@ -130,26 +130,26 @@ class Hyperheuristic():
         return solution, performance, encoded_solution, historicals
 
     def evaluate_metaheuristic(self, search_operators):
-        # Call the metaheuristic
-        mh = Metaheuristic(self.problem, search_operators,
-                           self.parameters['num_agents'],
-                           self.parameters['num_steps'])
-
         # Initialise the historical registers
         historical_data = list()
         fitness_data = list()
         position_data = list()
 
         # Run the metaheuristic several times
-        for rep in range(1, self.parameters['num_replicas'] + 1):
-            # tqdm(range(1, self.parameters['num_replicas'] + 1),
-            #                   desc='--MH',
-            #                   position = 0, leave = True,
-            #                   postfix = {'fitness': 
-            #                              fitness_data[-1] if 
-            #                              len(fitness_data) != 0 else '?'},
-            #                   bar_format="{l_bar}{bar}| " +
-            #                   "[{n_fmt}/{total_fmt}" + "{postfix}]"):
+        for rep in tqdm(range(1, self.parameters['num_replicas'] + 1),
+                        desc='--MH',
+                        position = 0, leave = True,
+                        postfix = {'fitness':
+                                   fitness_data[-1] if
+                                   len(fitness_data) != 0 else '?'},
+                            bar_format="{l_bar}{bar}| " +
+                            "[{n_fmt}/{total_fmt}" + "{postfix}]"):
+            
+            # Call the metaheuristic
+            mh = Metaheuristic(self.problem, search_operators,
+                               self.parameters['num_agents'],
+                               self.parameters['num_steps'])
+
             # Run this metaheuristic
             mh.run()
 
@@ -181,7 +181,7 @@ class Hyperheuristic():
     @staticmethod
     def get_statistics(raw_data):
         # Get descriptive statistics
-        dst = sp.stats.describe(raw_data)
+        dst = st.describe(raw_data)
 
         # Store statistics
         return dict(nob=dst.nobs,
@@ -191,9 +191,9 @@ class Hyperheuristic():
                     Std=np.std(raw_data),
                     Skw=dst.skewness,
                     Kur=dst.kurtosis,
-                    IQR=sp.stats.iqr(raw_data),
+                    IQR=st.iqr(raw_data),
                     Med=np.median(raw_data),
-                    MAD=sp.stats.median_absolute_deviation(raw_data))
+                    MAD=st.median_absolute_deviation(raw_data))
 
 
 def _save_iteration(iteration_number, variable_to_save):
