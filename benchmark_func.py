@@ -528,7 +528,7 @@ class Griewank(OptimalBasic):
         # for i in range(self.variable_num):
         # tmp1 += np.power(variables[i],2)
         # tmp2 = tmp2*np.cos(variables[i]/np.sqrt(i+1))
-        return tmp1/4000-tmp2
+        return (tmp1/4000 - tmp2 + 1)
 
 ##### Class Michalewicz function #####
 class Michalewicz(OptimalBasic):

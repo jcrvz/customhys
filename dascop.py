@@ -24,8 +24,8 @@ hh_parameters = {
     'cardinality': 2,
     'num_agents': 30,
     'num_iterations': 100,
-    'num_replicas': 100,
-    'num_steps': 100
+    'num_replicas': 50,
+    'num_steps': 30
     }
 
 # %% Generate the search operator collection (once)

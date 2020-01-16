@@ -76,10 +76,10 @@ class Hyperheuristic():
 
         # Initialise historical register
         historicals = dict(
-            encoded_solution=[encoded_solution],
-            solution=[solution],
-            performances=[performance],
-            details=[details])
+            encoded_solution=encoded_solution,
+            solution=solution,
+            performance=performance,
+            details=details)
 
         # Save this historical register
         _save_iteration(0, historicals, self.file_label)
@@ -152,7 +152,7 @@ class Hyperheuristic():
             # Call the metaheuristic
             mh = Metaheuristic(self.problem, search_operators,
                                self.parameters['num_agents'],
-                               self.parameters['num_steps'])
+                               self.parameters['num_iterations'])
 
             # Run this metaheuristic
             mh.run()
