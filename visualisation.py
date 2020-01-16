@@ -17,9 +17,6 @@ import seaborn as sns
 
 def read_data_files(main_folder_name='raw_data/'):
     # Define the basic data structure
-    empty_data_structure = {'iteration': list(), 'time': list(),
-                            'encoded_solution': list(), 'solution': list(),
-                            'performance': list(), 'details': list()}
     data = {'problem': list(), 'dimensions': list(), 'results': list()}
     
     # Get subfolder names: problem name & dimensions
@@ -41,6 +38,11 @@ def read_data_files(main_folder_name='raw_data/'):
         iteration_file_names = sorted(iteration_file_names, 
                                       key=lambda x: int(x.split('-')[0]))
         
+        # Initialise iteration data with same field as files
+        iteration_data = {'iteration': list(), 'time': list(),
+                          'encoded_solution': list(), 'solution': list(),
+                          'performance': list(), 'details': list()}
+        
         # Walk on subfolder's files
         for iteration_file in tqdm(iteration_file_names,
                                    desc='{} {}'.format(
@@ -54,16 +56,12 @@ def read_data_files(main_folder_name='raw_data/'):
                                           '%H_%M_%S.json%m_%d_%Y')
             if (iteration == 0):
                 initial_time = date_time
-                absolute_time = 0
-                
-                # Initialise iteration data with same field as files
-                iteration_data = empty_data_structure
+                absolute_time = 0                
             else:
                 absolute_time = (date_time - initial_time).total_seconds()
             
             # Read json file
-            with open(temporal_full_path + '/' + iteration_file,
-                      'r') as json_file:
+            with open(temporal_full_path + '/' + iteration_file, 'r') as json_file:
                 temporal_data = json.load(json_file)
             
             # Store information in the correspoding variables
