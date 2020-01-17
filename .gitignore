@@ -124,6 +124,7 @@ dmypy.json
 *.xml
 *.iml
 
-raw_data
-
-raw_data/*
+images/
+*.eps
+raw_data_/
+*.json

@@ -19,10 +19,11 @@ from os import makedirs as _create_path
 # sp.np.seterr(divide='ignore', invalid='ignore')
 # np.seterr(divide='ignore', invalid='ignore')
 
+
 class Hyperheuristic():
     def __init__(self, heuristic_space, problem, parameters={
             'cardinality': 2, 'num_iterations': 100, 'num_agents': 30,
-            'num_replicas': 100, 'num_steps': 100},
+            'num_replicas': 100, 'num_steps': 10, 'num_trials': 10},
             file_label=''):
         # Read the heuristic space
         if isinstance(heuristic_space, list):
@@ -83,52 +84,41 @@ class Hyperheuristic():
 
         # Save this historical register
         _save_iteration(0, historicals, self.file_label)
-        
+
         print('{} - perf: {}, sol: {}'.format(
             0, performance, encoded_solution))
 
         # Perform the random search
-        for step in range(1, self.parameters['num_steps'] + 1):
-            # tqdm(range(1, self.parameters['num_steps'] + 1),
-            #                   desc='HH', position = 0, leave = True,
-            #                   postfix = {'performance': performance},
-            #                   bar_format="{l_bar}{bar}| " +
-            #                   "[{n_fmt}/{total_fmt}" + "{postfix}]"):
-            # chg = 'Nope'
+        for step in range(1, self.parameters['num_steps']):
+            # Start trials
+            for trial in range(self.parameters['num_trials']):
 
-            # Select randomly a candidate solution
-            encoded_candidate_solution = np.random.randint(
-                0, self.num_operators, self.parameters['cardinality'])
-            candidate_solution = [self.heuristic_space[index] for index in
-                                  encoded_candidate_solution]
+                # Select randomly a candidate solution
+                encoded_candidate_solution = np.random.randint(
+                    0, self.num_operators, self.parameters['cardinality'])
+                candidate_solution = [self.heuristic_space[index]
+                                      for index in
+                                      encoded_candidate_solution]
 
-            # Evaluate this candidate solution
-            candidate_performance, candidate_details =\
-                self.evaluate_metaheuristic(candidate_solution)
+                # Evaluate this candidate solution
+                candidate_performance, candidate_details =\
+                    self.evaluate_metaheuristic(candidate_solution)
 
-            # Check improvement (greedy selection)
-            if candidate_performance < performance:
-                encoded_solution = encoded_candidate_solution
-                solution = candidate_solution
-                performance = candidate_performance
-                details = candidate_details
-                
-                # chg = 'Yup'
-                
-                # Update historicals (only if improves)
-                # historicals['step'].append(step)
-                # historicals['encoded_solution'].append(encoded_solution)
-                # historicals['solution'].append(solution)
-                # historicals['performance'].append(performance)
-                # historicals['details'].append(candidate_details)
+                # Check improvement (greedy selection)
+                if candidate_performance <= performance:
+                    encoded_solution = encoded_candidate_solution
+                    solution = candidate_solution
+                    performance = candidate_performance
+                    details = candidate_details
 
-                # Save this historical register
-                _save_iteration(step, {
-                    'encoded_solution': encoded_solution,
-                    'solution': solution,
-                    'performance': performance,
-                    'details': details},
-                    self.file_label)
+                    # Save this historical register and break
+                    _save_iteration(step, {
+                        'encoded_solution': encoded_solution,
+                        'solution': solution,
+                        'performance': performance,
+                        'details': details},
+                        self.file_label)
+                    break
 
                 print('{} - perf: {}, sol: {}'.format(
                     step, performance, encoded_solution))
@@ -140,7 +130,7 @@ class Hyperheuristic():
         historical_data = list()
         fitness_data = list()
         position_data = list()
-        
+
         # Run the metaheuristic several times
         for rep in range(1, self.parameters['num_replicas'] + 1):
             # tqdm(,                        desc='--MH',
@@ -148,7 +138,7 @@ class Hyperheuristic():
             #             postfix = {'fitness': '{temp_fitness}'},
             #                 bar_format="{l_bar}{bar}| " +
             #                 "[{n_fmt}/{total_fmt}" + "{postfix}]"):
-            
+
             # Call the metaheuristic
             mh = Metaheuristic(self.problem, search_operators,
                                self.parameters['num_agents'],
@@ -164,7 +154,7 @@ class Hyperheuristic():
             _temporal_position, _temporal_fitness = mh.get_solution()
             fitness_data.append(_temporal_fitness)
             position_data.append(_temporal_position)
-            
+
             # print('-- MH: {}, fitness={}'.format(rep, _temporal_fitness))
 
         # Determine a performance metric once finish the repetitions
@@ -177,9 +167,9 @@ class Hyperheuristic():
     @staticmethod
     def get_performance(statistics):
         # Score function using the statistics from fitness values
-        perf = statistics['Med']  # Option 1
+        # perf = statistics['Med']  # Option 1
         # perf = statistics['Avg'] + statistics['Std']  # Option 2
-        # perf = statistics['Med'] + statistics['IQR']  # Option 3
+        perf = statistics['Med'] + statistics['IQR']  # Option 3
         # perf = statistics['Avg'] + statistics['Std'] + \
         # statistics['Med'] + statistics['IQR']
         return perf
@@ -230,6 +220,7 @@ class HyperheuristicError(Exception):
     Simple HyperheuristicError to manage exceptions.
     """
     pass
+
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
