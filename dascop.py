@@ -15,7 +15,7 @@ import benchmark_func as bf
 # %% Problems definition
 
 dimensions = [2, 10, 30]
-functions = ['Sphere', 'Ackley', 'Rosenbrock', 'Griewank']
+functions = ['Rosenbrock', 'Griewank']  # 'Sphere', 'Ackley', 
 divider = 1.0
 is_constrained = True
 
@@ -26,7 +26,7 @@ hh_parameters = {
     'num_iterations': 100,
     'num_replicas': 100,
     'num_steps': 5,
-    'num_trials': 30
+    'num_trials': 50
     }
 
 # %% Generate the search operator collection (once)
@@ -39,8 +39,8 @@ heuristics_collection = 'operators_collection.txt'  # full
 
 for num_dimensions in dimensions:
     for function_string in functions:
-        label = f"{function_string}-{num_dimensions}D" 
-        
+        label = f"{function_string}-{num_dimensions}D"
+
         problem = eval(f"bf.{function_string}({num_dimensions})")
         function = lambda x: problem.get_func_val(x)
 

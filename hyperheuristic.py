@@ -85,8 +85,8 @@ class Hyperheuristic():
         # Save this historical register
         _save_iteration(0, historicals, self.file_label)
 
-        print('{} - perf: {}, sol: {}'.format(
-            0, performance, encoded_solution))
+        print('{} - perf: {}, sol: {}'.format(0, performance,
+                                              encoded_solution))
 
         # Perform the random search
         for step in range(1, self.parameters['num_steps']):
@@ -105,7 +105,7 @@ class Hyperheuristic():
                     self.evaluate_metaheuristic(candidate_solution)
 
                 # Check improvement (greedy selection)
-                if candidate_performance <= performance:
+                if candidate_performance < performance:
                     encoded_solution = encoded_candidate_solution
                     solution = candidate_solution
                     performance = candidate_performance
@@ -120,8 +120,13 @@ class Hyperheuristic():
                         self.file_label)
                     break
 
-                print('{} - perf: {}, sol: {}'.format(
-                    step, performance, encoded_solution))
+            print('{} - perf: {}, sol: {}'.format(step, performance,
+                                                  encoded_solution))
+
+            # When zero performance is reached
+            if (performance == 0.0):
+                # Goodbye
+                break
 
         return solution, performance, encoded_solution, historicals
 
