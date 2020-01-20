@@ -126,5 +126,6 @@ dmypy.json
 
 images/
 *.eps
-raw_data_/
+raw_data*
+raw_data*/
 *.json

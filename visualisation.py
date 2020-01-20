@@ -15,7 +15,7 @@ from matplotlib import rcParams, cycler
 import numpy as np
 
 folder_name = 'images/'
-
+is_saving = False
 
 # %% READ RAW DATA FILES
 def read_data_files(main_folder_name='raw_data/'):
@@ -125,8 +125,9 @@ for problem_id in range(len(data_frame['problem'])):
 
     file_name = '{}-{}D'.format(data_frame['problem'][problem_id],
                                 data_frame['dimensions'][problem_id])
-    plt.savefig(folder_name + 'vp' + file_name + '.eps',
-                format='eps', dpi=1000)
+    if is_saving:
+        plt.savefig(folder_name + 'vp' + file_name + '.eps',
+                    format='eps', dpi=1000)
     plt.show()
 
 # %% PLOT FITNESS PER REPLICA (DETAILS)
@@ -165,6 +166,7 @@ for problem_id in range(len(data_frame['problem'])):
 
     file_name = '{}-{}D'.format(data_frame['problem'][problem_id],
                                 data_frame['dimensions'][problem_id])
-    plt.savefig(folder_name + 'it' + file_name + '.eps',
-                format='eps', dpi=1000)
+    if is_saving:
+        plt.savefig(folder_name + 'it' + file_name + '.eps',
+                    format='eps', dpi=1000)
     plt.show()
