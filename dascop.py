@@ -12,16 +12,17 @@ import numpy as np
 import benchmark_func as bf
 # import matplotlib.pyplot as plt
 
+
 # %% Problems definition
 
-dimensions = [2, 10, 30]
-functions = ['Rosenbrock', 'Griewank']  # 'Sphere', 'Ackley', 
+dimensions = [30]  # , 10, 30]
+functions = ['Griewank']  # ,'Ackley', 'Rosenbrock', ]  #  'Sphere',
 divider = 1.0
 is_constrained = True
 
 # %% Hyperheuristic conditions
 hh_parameters = {
-    'cardinality': 2,
+    'cardinality': 3,
     'num_agents': 30,
     'num_iterations': 100,
     'num_replicas': 100,
@@ -40,6 +41,7 @@ heuristics_collection = 'operators_collection.txt'  # full
 for num_dimensions in dimensions:
     for function_string in functions:
         label = f"{function_string}-{num_dimensions}D"
+        print('... ' + label + ':')
 
         problem = eval(f"bf.{function_string}({num_dimensions})")
         function = lambda x: problem.get_func_val(x)
