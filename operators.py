@@ -199,12 +199,11 @@ def differential_mutation(pop, expression="current-to-best", num_rands=1,
 
     elif expression == "rand-to-best-and-current":
         mutant = pop.positions[np.random.permutation(
-            pop.num_agents), :] + factor * (np.tile(
-                pop.global_best_position, (pop.num_agents, 1)) -
-                pop.positions[np.random.permutation(
-                    pop.num_agents), :] + pop.positions[
-                        np.random.permutation(
-                            pop.num_agents), :] - pop.positions)
+            pop.num_agents), :] + factor * (
+                np.tile(pop.global_best_position, (pop.num_agents, 1)) -
+                pop.positions[np.random.permutation(pop.num_agents), :] +
+                pop.positions[np.random.permutation(pop.num_agents), :] -
+                pop.positions)
     else:
         mutant = []
         raise OperatorsError('Invalid DE mutation scheme!')
@@ -513,7 +512,7 @@ def genetic_crossover(pop, pairing="rank", crossover="blend",
     #
     # Uniform Crossover
     elif crossover == "uniform":
-        # Crossover condition mask (only for two points)
+        # Crossover condition mask (only for uniform crossover)
         crossover_mask = np.random.rand(
             parent_indices.shape[1], pop.num_dimensions) < 0.5
 
