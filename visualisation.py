@@ -116,7 +116,7 @@ is_saving = True
 
 # Special adjustments
 plt.rc('text', usetex=True)
-plt.rc('font', family='serif')
+plt.rc('font', family='serif', size=18)
 
 # Set of problems and dimensions stored
 ylims = {'Sphere': (-0.1, 4.1), 'Griewank': (-0.05, 1.05),
@@ -124,7 +124,7 @@ ylims = {'Sphere': (-0.1, 4.1), 'Griewank': (-0.05, 1.05),
 
 # Fitness evolution per replica
 for problem_str in problems:
-    plt.figure(figsize=[4, 3], dpi=333)
+    plt.figure(figsize=[3, 4], dpi=333)
     plt.ion()
 
     y_data = []
@@ -151,7 +151,7 @@ for problem_str in problems:
         vp.set_edgecolor('#3B1255')
         vp.set_facecolor('#9675AB')
         vp.set_linewidth(1.0)
-        vp.set_alpha(0.75)
+        vp.set_alpha(1.0)
 
     plt.xticks(range(len(y_data)), dimensions)
     plt.ylim(ylims[problem_str])
@@ -160,20 +160,21 @@ for problem_str in problems:
     plt.ylabel(r'Fitness, $\log(f(x) + 1)$')
     plt.xlabel(r'Dimensions')
 
-    plt.title(r'' + 'Cardinality: ' + cardinality, loc='left')
+    plt.title(r'' + 'Cardinality: ' + cardinality, loc='center')
 
     plt.ioff()
-    plt.legend([Line2D([0], [0], color='#AC4C3D', lw=3),
-                Line2D([0], [0], color='#285C6B', lw=3)],
-               ['Mean', 'Median'], frameon=False,
-               bbox_to_anchor=(0, 1.02, 1, 0.2), loc="lower right",
-               borderaxespad=0, ncol=2)
-
+    if cardinality == '1':
+        plt.legend([Line2D([0], [0], color='#AC4C3D', lw=3),
+                    Line2D([0], [0], color='#285C6B', lw=3)],
+                   ['Mean', 'Median'], frameon=False,
+                   loc="upper left", borderaxespad=0, ncol=1)
+    # bbox_to_anchor=(0, 0.9, 1, 0.2),
     file_name = '{}'.format(problem_str)
     plt.tight_layout()
     if is_saving:
         plt.savefig(folder_name + 'vp' + file_name + '.eps',
                     format='eps', dpi=1000)
+        print(file_name + ' Saved!')
     plt.show()
 
 # %% PLOT FITNESS PER STEP
