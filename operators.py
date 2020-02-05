@@ -741,7 +741,8 @@ def levy_flight(pop, scale=1.0, beta=1.5):
         pop._check_simple_constraints()
 
 
-def local_random_walk(pop, probability=0.75, scale=1.0):
+def local_random_walk(pop, probability=0.75, scale=1.0,
+                      distribution="uniform"):
     """
     Performs the local random walk from Cuckoo Search (CS)
 
@@ -765,7 +766,10 @@ def local_random_walk(pop, probability=0.75, scale=1.0):
     _check_parameter(scale)
 
     # Determine random numbers
-    r_1 = np.random.rand(pop.num_agents, pop.num_dimensions)
+    if distribution == "uniform":
+        r_1 = np.random.rand(pop.num_agents, pop.num_dimensions)
+    elif distribution == "gaussian":
+        r_1 = np.random.randn(pop.num_agents, pop.num_dimensions)
     r_2 = np.random.rand(pop.num_agents, pop.num_dimensions)
 
     # Move positions with a displacement due permutations and probabilities
@@ -802,7 +806,7 @@ def random_sample(pop):
         pop._check_simple_constraints()
 
 
-def random_search(pop, scale=0.01):
+def random_search(pop, scale=0.01, distribution="uniform"):
     """
     Performs a random walk using a uniform distribution in [-1, 1].
 
@@ -812,6 +816,9 @@ def random_search(pop, scale=0.01):
         It is a population object.
     scale : float, optional
         It is the step scale between [0.0, 1.0]. The default is 0.01.
+    distribution: string, optional
+        It is the distribution used to perform the random search. The default
+        is "uniform".
 
     Returns
     -------
@@ -820,38 +827,32 @@ def random_search(pop, scale=0.01):
     """
     # Check the scale value
     _check_parameter(scale)
+
+    # Determine the random step
+    if distribution == "uniform":
+        random_step = np.random.uniform(-1, 1, (pop.num_agents,
+                                                pop.num_dimensions))
+    elif distribution == "gaussian":
+        random_step = np.random.standard_normal((pop.num_agents,
+                                                 pop.num_dimensions))
+    elif distribution == "levy":
+        beta = 1.5  # Levy stable
+        # Calculate x's std dev (Mantegna's algorithm)
+        sigma = ((np.math.gamma(1 + beta) * np.sin(np.pi * beta / 2)) /
+                 (np.math.gamma((1 + beta) / 2) * beta *
+                  (2 ** ((beta - 1) / 2)))) ** (1 / beta)
+
+        # Determine x and y using normal distributions with sigma_y = 1
+        x = sigma * np.random.standard_normal((pop.num_agents,
+                                               pop.num_dimensions))
+        y = np.abs(np.random.standard_normal((pop.num_agents,
+                                              pop.num_dimensions)))
+
+        # Calculate the random number with levy stable distribution
+        random_step = x / (y ** (1 / beta))
 
     # Move each agent using uniform random displacements
-    pop.positions += scale * \
-        np.random.uniform(-1, 1, (pop.num_agents, pop.num_dimensions))
-
-    # Check constraints
-    if pop.is_constrained:
-        pop._check_simple_constraints()
-
-
-def rayleigh_flight(pop, scale=0.01):
-    """
-    Perform a Rayleigh flight using a normal standard distribution.
-
-    Parameters
-    ----------
-    pop : population
-        It is a population object.
-    scale : float, optional
-        It is the step scale between [0.0, 1.0]. The default is 0.01.
-
-    Returns
-    -------
-    None.
-
-    """
-    # Check the scale value
-    _check_parameter(scale)
-
-    # Move each agent using gaussian random displacements
-    pop.positions += scale * \
-        np.random.standard_normal((pop.num_agents, pop.num_dimensions))
+    pop.positions += scale * random_step
 
     # Check constraints
     if pop.is_constrained:
@@ -965,6 +966,9 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56,
     # Check constraints
     if pop.is_constrained:
         pop._check_simple_constraints()
+
+# TODO: FINISH IT!
+# def _random_levy(beta=1.5, d0=1, d1=0):
 
 
 def _get_rotation_matrix(dimensions, angle=0.39269908169872414):
@@ -1146,7 +1150,8 @@ def _obtain_operators(num_vals=5):
             "local_random_walk",
             dict(
                 probability=np.linspace(0.1, 0.9, num_vals),
-                scale=np.linspace(0.1, 0.9, num_vals)),
+                scale=np.linspace(0.1, 0.9, num_vals),
+                distribution=["uniform", "gaussian"]),
             "greedy"),
         (
             "random_sample",
@@ -1155,12 +1160,8 @@ def _obtain_operators(num_vals=5):
         (
             "random_search",
             dict(
-                scale=np.linspace(0.1, 0.9, num_vals)),
-            "greedy"),
-        (
-            "rayleigh_flight",
-            dict(
-                scale=np.linspace(0.1, 0.9, num_vals)),
+                scale=np.linspace(0.1, 0.9, num_vals),
+                distribution=["uniform", "gaussian", "levy"]),
             "greedy"),
         (
             "spiral_dynamic",
