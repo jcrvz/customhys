@@ -9,7 +9,7 @@ import numpy as np
 from population import Population
 import operators as Operators
 import matplotlib.pyplot as plt
-from tqdm import tqdm
+# from tqdm import tqdm
 
 __all__ = ['Metaheuristic', 'Population', 'Operators']
 

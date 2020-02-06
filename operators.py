@@ -9,7 +9,7 @@ import numpy as np
 from itertools import combinations as _get_combinations
 
 __all__ = ['local_random_walk', 'random_search', 'random_sample',
-           'rayleigh_flight', 'levy_flight', 'differential_mutation',
+           'random_flight', 'differential_mutation',
            'firefly_dynamic', 'swarm_dynamic', 'gravitational_search',
            'central_force_dynamic', 'spiral_dynamic',
            'genetic_mutation', 'genetic_crossover']
@@ -128,7 +128,7 @@ def central_force_dynamic(pop, gravity=0.001, alpha=0.01, beta=1.5, dt=1.0):
 #                 exp_var = 0
 #                 n = np.random.randint(pop.num_dimensions)
 #                 while True:
-#                     # Increase L and check the exponential crossover condition
+#                     # Increase L and check the exponential CR condition
 #                     exp_var += 1
 #                     if np.logical_not((np.random.rand() < crossover_rate) and
 #                                       (exp_var < pop.num_dimensions)):
@@ -225,8 +225,8 @@ def differential_mutation(pop, expression="current-to-best", num_rands=1,
         pop._check_simple_constraints()
 
 
-def firefly_dynamic(pop, epsilon="uniform", alpha=0.1,
-                    beta=1.0, gamma=100.0):
+def firefly_dynamic(pop, alpha=0.1, beta=1.0, gamma=100.0,
+                    distribution="uniform"):
     """
     Performs movements accordint to the Firefly algorithm (FA)
 
@@ -234,16 +234,15 @@ def firefly_dynamic(pop, epsilon="uniform", alpha=0.1,
     ----------
     pop : population
         It is a population object.
-    epsilon : str, optional
+    alpha : TYPE, optional
+        Scale of the random value. The default is 0.8.
+    beta : TYPE, optional
+        Scale of Firefly contribution. The default is 1.0.
+    gamma : TYPE, optional
+        Light damping parameters. The default is 1.0.
+    distribution : str, optional
         Type of random number. Possible options: 'gaussian', 'uniform'.
         The default is "uniform".
-    alpha : TYPE, optional
-        DESCRIPTION. The default is 0.8.
-    beta : TYPE, optional
-        DESCRIPTION. The default is 1.0.
-    gamma : TYPE, optional
-        DESCRIPTION. The default is 1.0.
-
     Returns
     -------
     None.
@@ -255,13 +254,16 @@ def firefly_dynamic(pop, epsilon="uniform", alpha=0.1,
     _check_parameter(gamma, (0.0, 10000.0))
 
     # Determine epsilon values
-    if epsilon == "gaussian":
+    if distribution == "gaussian":
         epsilon_value = np.random.standard_normal(
             (pop.num_agents, pop.num_dimensions))
 
-    elif epsilon == "uniform":
+    elif distribution == "uniform":
         epsilon_value = np.random.uniform(
             -0.5, 0.5, (pop.num_agents, pop.num_dimensions))
+    elif distribution == "levy":
+        epsilon_value = _random_levy(
+            1.5, (pop.num_agents, pop.num_dimensions))
     else:
         epsilon_value = []
         raise OperatorsError(
@@ -452,11 +454,24 @@ def genetic_crossover(pop, pairing="rank", crossover="blend",
         np.arange(pop.num_agents), mating_pool_indices, True)
 
     # Prepare crossover variables
-    if len(crossover) > 7:  # if crossover = 'linear_0.5_0.5', for example
-        crossover, coeff1, coeff2 = crossover.split("_")
-        coefficients = [float(coeff1), float(coeff2)]
-    else:  # dummy (it must not be used)
-        coefficients = [np.nan, np.nan]
+    try:
+        if len(crossover) > 7:  # if crossover = 'linear_0.5_0.5', for example
+            cr_split = crossover.split("_")
+            if len(cr_split) == 1:
+                crossover = cr_split
+                coeff1 = coeff2 = 0.5
+            elif len(cr_split) == 2:
+                crossover = cr_split[0]
+                coeff1 = coeff2 = cr_split[1]
+            else:
+                crossover = cr_split[0]
+                coeff1 = cr_split[1]
+                coeff2 = cr_split[2]
+            coefficients = [float(coeff1), float(coeff2)]
+        else:  # dummy (it must not be used)
+            coefficients = [np.nan, np.nan]
+    except:
+        raise OperatorsError('Something is wrong with crossover')
 
     # Perform crossover and assign to population
     parent_indices = couple_indices.astype(np.int64)
@@ -482,7 +497,6 @@ def genetic_crossover(pop, pairing="rank", crossover="blend",
         offsprings[crossover_mask] = father_position[crossover_mask]
     #
     # Two-Point Crossover
-    # OPTIMIZE It can be extended to multiple points
     elif crossover == "two":
         # Find raw points
         raw_points = np.sort(np.random.randint(
@@ -498,9 +512,7 @@ def genetic_crossover(pop, pairing="rank", crossover="blend",
                                (parent_indices.shape[1], 1))
 
         # Crossover condition mask (only for two points)
-        crossover_mask = ((dummy_matrix <= points[0]) |
-                          (dummy_matrix > points[1]))
-        # OPTIMIZE : crossover_mask = points[1] < dummy_matrix <= points[0]
+        crossover_mask = points[1] < dummy_matrix <= points[0]
 
         # Get father and mother
         father_position = pop.positions[parent_indices[0, :], :]
@@ -556,8 +568,8 @@ def genetic_crossover(pop, pairing="rank", crossover="blend",
     pop.positions[offspring_indices, :] = offsprings
 
 
-def genetic_mutation(pop, elite_rate=0.1, mutation_rate=0.25,
-                     distribution="uniform", sigma=1.0):
+def genetic_mutation(pop, scale=1.0, elite_rate=0.1, mutation_rate=0.25,
+                     distribution="uniform"):
     """
     Mutation mechanism from Genetic Algorithm (GA)
 
@@ -565,6 +577,8 @@ def genetic_mutation(pop, elite_rate=0.1, mutation_rate=0.25,
     ----------
     pop : population
         It is a population object.
+    scale : float, optional
+        It is the scale factor of the mutations. The default is 1.0.
     elite_rate : float, optional
         It is the proportion of population to preserve.
         The default is 0.0 (no elite agent).
@@ -575,8 +589,6 @@ def genetic_mutation(pop, elite_rate=0.1, mutation_rate=0.25,
         It indicates the random distribution that power the mutation.
         There are only two distribution available: 'uniform' and 'gaussian'.
         The default is 'uniform'.
-    sigma : float, optional
-        It is the scale factor of the mutations. The default is 1.0.
 
     Returns
     -------
@@ -586,7 +598,7 @@ def genetic_mutation(pop, elite_rate=0.1, mutation_rate=0.25,
     # Check the elite_rate, mutation_rate, and sigma value
     _check_parameter(elite_rate)
     _check_parameter(mutation_rate)
-    _check_parameter(sigma)
+    _check_parameter(scale)
 
     # Calculate the number of elite agents
     num_elite = int(np.ceil(pop.num_agents * elite_rate))
@@ -614,14 +626,20 @@ def genetic_mutation(pop, elite_rate=0.1, mutation_rate=0.25,
 
         # Perform mutation according to the random distribution
         if distribution == "uniform":
-            mutants = sigma * np.random.uniform(-1, 1, num_mutations ** 2)
+            mutants = np.random.uniform(-1, 1, num_mutations ** 2)
 
         elif distribution == "gaussian":
             # Normal with mu = 0 and sigma = parameter
-            mutants = sigma * np.random.standard_normal(num_mutations ** 2)
+            mutants = np.random.standard_normal(num_mutations ** 2)
+
+        elif distribution == "levy":
+            mutants = _random_levy(1.5, num_mutations ** 2)
+
+        else:
+            raise OperatorsError('Invalid distribution!')
 
         # Store mutants
-        pop.positions[rows.flatten(), columns.flatten()] = mutants
+        pop.positions[rows.flatten(), columns.flatten()] = scale * mutants
 
 
 def gravitational_search(pop, gravity=1.0, alpha=0.02):
@@ -691,7 +709,7 @@ def gravitational_search(pop, gravity=1.0, alpha=0.02):
         pop._check_simple_constraints()
 
 
-def levy_flight(pop, scale=1.0, beta=1.5):
+def random_flight(pop, scale=1.0, distribution="levy", beta=1.5):
     """
     Perform a Lévy flight by using the Mantegna's algorithm.
 
@@ -701,9 +719,12 @@ def levy_flight(pop, scale=1.0, beta=1.5):
         It is a population object.
     scale : float, optional
         It is the step scale between [0.0, 1.0]. The default is 1.0.
+    distribution: str, optional
+        It is the distribution to draw the random samples. The default is
+        "levy".
     beta : float, optional
-        It is the distribution parameter between [1.0, 3.0]. The default
-        is 1.5.
+        It is the distribution parameter between [1.0, 3.0]. This paramenter
+        only has sense when distribution="levy". The default is 1.5.
 
     Returns
     -------
@@ -714,25 +735,26 @@ def levy_flight(pop, scale=1.0, beta=1.5):
     _check_parameter(scale)
     _check_parameter(beta, (1.0, 3.0))
 
-    # Calculate x's std dev (Mantegna's algorithm)
-    sigma = ((np.math.gamma(1 + beta) * np.sin(np.pi * beta / 2)) /
-             (np.math.gamma((1 + beta) / 2) * beta *
-              (2 ** ((beta - 1) / 2)))) ** (1 / beta)
+    # Get random samples
+    if distribution == "uniform":
+        random_samples = np.random.uniform(
+            size=(pop.num_agents, pop.num_dimensions))
 
-    # Determine x and y using normal distributions with sigma_y = 1
-    x = sigma * np.random.standard_normal((pop.num_agents,
-                                           pop.num_dimensions))
-    y = np.abs(np.random.standard_normal((pop.num_agents,
-                                          pop.num_dimensions)))
+    elif distribution == "gaussian":
+        # Normal with mu = 0 and sigma = parameter
+        random_samples = np.random.standard_normal(
+            (pop.num_agents, pop.num_dimensions))
 
-    # Calculate the random number with levy stable distribution
-    levy_random = x / (y ** (1 / beta))
+    elif distribution == "levy":
+        # Calculate the random number with levy stable distribution
+        random_samples = _random_levy(
+            beta, size=(pop.num_agents, pop.num_dimensions))
 
-    # Determine z as an additional normal random number
-    z = np.random.standard_normal((pop.num_agents, pop.num_dimensions))
+    else:
+        raise OperatorsError('Invalid distribution!')
 
     # Move each agent using levy random displacements
-    pop.positions += scale * z * levy_random * \
+    pop.positions += scale * random_samples * \
         (pop.positions - np.tile(pop.global_best_position,
                                  (pop.num_agents, 1)))
 
@@ -770,6 +792,10 @@ def local_random_walk(pop, probability=0.75, scale=1.0,
         r_1 = np.random.rand(pop.num_agents, pop.num_dimensions)
     elif distribution == "gaussian":
         r_1 = np.random.randn(pop.num_agents, pop.num_dimensions)
+    elif distribution == "levy":
+        r_1 = _random_levy(size=(pop.num_agents, pop.num_dimensions))
+    else:
+        raise OperatorsError('Invalid distribution!')
     r_2 = np.random.rand(pop.num_agents, pop.num_dimensions)
 
     # Move positions with a displacement due permutations and probabilities
@@ -836,20 +862,9 @@ def random_search(pop, scale=0.01, distribution="uniform"):
         random_step = np.random.standard_normal((pop.num_agents,
                                                  pop.num_dimensions))
     elif distribution == "levy":
-        beta = 1.5  # Levy stable
-        # Calculate x's std dev (Mantegna's algorithm)
-        sigma = ((np.math.gamma(1 + beta) * np.sin(np.pi * beta / 2)) /
-                 (np.math.gamma((1 + beta) / 2) * beta *
-                  (2 ** ((beta - 1) / 2)))) ** (1 / beta)
-
-        # Determine x and y using normal distributions with sigma_y = 1
-        x = sigma * np.random.standard_normal((pop.num_agents,
-                                               pop.num_dimensions))
-        y = np.abs(np.random.standard_normal((pop.num_agents,
-                                              pop.num_dimensions)))
-
-        # Calculate the random number with levy stable distribution
-        random_step = x / (y ** (1 / beta))
+        random_step = _random_levy(size=(pop.num_agents, pop.num_dimensions))
+    else:
+        raise OperatorsError('Invalid distribution!')
 
     # Move each agent using uniform random displacements
     pop.positions += scale * random_step
@@ -903,7 +918,7 @@ def spiral_dynamic(pop, radius=0.9, angle=22.5, sigma=0.1):
 
 
 def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56,
-                  version="constriction"):
+                  version="constriction", distribution="uniform"):
     """
     Performs a swarm movement by using the inertial or constriction
     dynamics from Particle Swarm Optimisation (PSO).
@@ -922,6 +937,8 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56,
     version : str, optional
         Version of the Particle Swarm Optimisation strategy. Currently, it
         can be 'constriction' or 'inertial'. The default is "constriction".
+    distribution : str, optional
+        Distribution to draw the random numbers
 
     Returns
     -------
@@ -934,16 +951,26 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56,
     _check_parameter(swarm_conf, (0.0, 10.0))
 
     # Determine random numbers
-    r_1 = self_conf * np.random.rand(pop.num_agents, pop.num_dimensions)
-    r_2 = swarm_conf * np.random.rand(pop.num_agents, pop.num_dimensions)
+    if distribution == "uniform":
+        r_1 = np.random.rand(pop.num_agents, pop.num_dimensions)
+        r_2 = np.random.rand(pop.num_agents, pop.num_dimensions)
+    elif distribution == "gaussian":
+        r_1 = np.random.randn(pop.num_agents, pop.num_dimensions)
+        r_2 = np.random.randn(pop.num_agents, pop.num_dimensions)
+    elif distribution == "levy":
+        r_1 = _random_levy(size=(pop.num_agents, pop.num_dimensions))
+        r_2 = _random_levy(size=(pop.num_agents, pop.num_dimensions))
+    else:
+        raise OperatorsError('Invalid distribution!')
 
     # Choose the PSO version = 'inertial' or 'constriction'
     if version == "inertial":
         # Find new velocities
-        pop.velocities = factor * pop.velocities + r_1 * (
+        pop.velocities = factor * pop.velocities + r_1 * self_conf * (
             pop.particular_best_positions - pop.positions) + \
-            r_2 * (np.tile(pop.global_best_position, (pop.num_agents, 1)) -
-                   pop.positions)
+            r_2 * swarm_conf * (
+                np.tile(pop.global_best_position, (pop.num_agents, 1)) -
+                pop.positions)
     elif version == "constriction":
         # Find the constriction factor chi using phi
         phi = self_conf + swarm_conf
@@ -953,10 +980,10 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56,
             chi = np.sqrt(factor)
 
         # Find new velocities
-        pop.velocities = chi * (pop.velocities + r_1 * (
+        pop.velocities = chi * (pop.velocities + r_1 * self_conf * (
             pop.particular_best_positions - pop.positions) +
-            r_2 * (np.tile(pop.global_best_position, (pop.num_agents, 1)) -
-                   pop.positions))
+            r_2 * swarm_conf * (np.tile(pop.global_best_position, (
+                pop.num_agents, 1)) - pop.positions))
     else:
         raise OperatorsError('Invalid swarm_dynamic version')
 
@@ -967,8 +994,36 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56,
     if pop.is_constrained:
         pop._check_simple_constraints()
 
-# TODO: FINISH IT!
-# def _random_levy(beta=1.5, d0=1, d1=0):
+
+def _random_levy(beta=1.5, size=1):
+    """
+    Draw a random number or array using the Levy stable distribution via
+    the Mantegna's algorithm
+
+    Parameters
+    ----------
+    beta : float, optional
+        Levy distribution parameter. The default is 1.5.
+    size : dimensions, optional
+        Size can be a tuple with all the dimensions. The default is 1.
+
+    Returns
+    -------
+    levy_random_number: numpy.array
+
+    """
+    # Calculate x's std dev (Mantegna's algorithm)
+    sigma = ((np.math.gamma(1 + beta) * np.sin(np.pi * beta / 2)) /
+             (np.math.gamma((1 + beta) / 2) * beta *
+              (2 ** ((beta - 1) / 2)))) ** (1 / beta)
+
+    # Determine x and y using normal distributions with sigma_y = 1
+    x = sigma * np.random.standard_normal(size)
+    y = np.abs(np.random.standard_normal(size))
+    z = np.random.standard_normal(size)
+
+    # Calculate the random number with levy stable distribution
+    return z * x / (y ** (1 / beta))
 
 
 def _get_rotation_matrix(dimensions, angle=0.39269908169872414):
@@ -1090,15 +1145,15 @@ def _obtain_operators(num_vals=5):
         (
             "central_force_dynamic",
             dict(
-                gravity=np.linspace(0.0, 0.01, num_vals),
-                alpha=np.linspace(0.0, 0.01, num_vals),
-                beta=np.linspace(1.25, 1.75, num_vals),
+                gravity=[*np.linspace(0.0, 0.01, num_vals)],
+                alpha=[*np.linspace(0.0, 0.01, num_vals)],
+                beta=[*np.linspace(1.25, 1.75, num_vals)],
                 dt=[1.0]),
-            "all"),
+            ["all", "greedy", "metropolis", "probabilistic"]),
         # (
         #    'differential_crossover',
         #    dict(
-        #        crossover_rate=np.linspace(0.0, 1.0, num_vals),
+        #        crossover_rate=[*np.linspace(0.0, 1.0, num_vals)],
         #        version=["binomial", "exponential"]),
         #    "greedy"),
         (
@@ -1107,16 +1162,16 @@ def _obtain_operators(num_vals=5):
                 expression=["rand", "best", "current", "current-to-best",
                             "rand-to-best", "rand-to-best-and-current"],
                 num_rands=[1, 2, 3],
-                factor=np.linspace(0.5, 2.5, num_vals)),
-            "greedy"),
+                factor=[*np.linspace(0.5, 2.5, num_vals)]),
+            ["all", "greedy", "metropolis", "probabilistic"]),
         (
             "firefly_dynamic",
             dict(
-                epsilon=["uniform", "gaussian"],
-                alpha=np.linspace(0.0, 0.5, num_vals),
+                epsilon=["uniform", "gaussian", "levy"],
+                alpha=[*np.linspace(0.0, 0.5, num_vals)],
                 beta=[1.0],
-                gamma=np.linspace(10.0, 990.0, num_vals)),
-            "greedy"),
+                gamma=[*np.linspace(10.0, 990.0, num_vals)]),
+            ["all", "greedy", "metropolis", "probabilistic"]),
         (
             "genetic_crossover",
             dict(
@@ -1124,60 +1179,68 @@ def _obtain_operators(num_vals=5):
                          "tournament_2_100", "tournament_3_100"],
                 crossover=["single", "two", "uniform", "blend",
                            "linear_0.5_0.5"],
-                mating_pool_factor=np.linspace(0.1, 0.9, num_vals)),
-            "all"),
+                mating_pool_factor=[*np.linspace(0.1, 0.9, num_vals)]),
+            ["all", "greedy", "metropolis", "probabilistic"]),
         (
             "genetic_mutation",
             dict(
-                elite_rate=np.linspace(0.0, 0.9, num_vals),
-                mutation_rate=np.linspace(0.1, 0.9, num_vals),
-                distribution=["uniform", "gaussian"],
-                sigma=[1.0]),
-            "all"),
+                scale=[*np.linspace(0.0, 0.9, num_vals)],
+                elite_rate=[*np.linspace(0.0, 0.9, num_vals)],
+                mutation_rate=[*np.linspace(0.1, 0.9, num_vals)],
+                distribution=["uniform", "gaussian", "levy"]),
+            ["all", "greedy", "metropolis", "probabilistic"]),
         (
             "gravitational_search",
             dict(
-                gravity=np.linspace(0.0, 1.0, num_vals),
-                alpha=np.linspace(0.0, 0.04, num_vals)),
-            "all"),
+                gravity=[*np.linspace(0.0, 1.0, num_vals)],
+                alpha=[*np.linspace(0.0, 0.04, num_vals)]),
+            ["all", "greedy", "metropolis", "probabilistic"]),
         (
-            "levy_flight",
+            "random_flight",
             dict(
-                scale=np.linspace(0.1, 0.9, num_vals),
-                beta=np.linspace(1.25, 1.75, num_vals)),
-            "greedy"),
+                scale=[*np.linspace(0.1, 0.9, num_vals)],
+                distribution=["levy"],
+                beta=[*np.linspace(1.25, 1.75, num_vals)]),
+            ["all", "greedy", "metropolis", "probabilistic"]),
+        (
+            "random_flight",
+            dict(
+                scale=[*np.linspace(0.1, 0.9, num_vals)],
+                distribution=["uniform", "gaussian"]),
+            ["all", "greedy", "metropolis", "probabilistic"]),
         (
             "local_random_walk",
             dict(
-                probability=np.linspace(0.1, 0.9, num_vals),
-                scale=np.linspace(0.1, 0.9, num_vals),
-                distribution=["uniform", "gaussian"]),
-            "greedy"),
+                probability=[*np.linspace(0.1, 0.9, num_vals)],
+                scale=[*np.linspace(0.1, 0.9, num_vals)],
+                distribution=["uniform", "gaussian", "levy"]),
+            ["all", "greedy", "metropolis", "probabilistic"]),
         (
             "random_sample",
             dict(),
-            "greedy"),
+            ["all", "greedy", "metropolis", "probabilistic"]),
         (
             "random_search",
             dict(
-                scale=np.linspace(0.1, 0.9, num_vals),
+                scale=[*np.linspace(0.1, 0.9, num_vals)],
                 distribution=["uniform", "gaussian", "levy"]),
-            "greedy"),
+            ["all", "greedy", "metropolis", "probabilistic"]),
         (
             "spiral_dynamic",
             dict(
-                radius=np.linspace(0.001, 0.99, num_vals),
-                angle=np.linspace(1.0, 179.0, num_vals),
-                sigma=np.linspace(0.0, 0.5, num_vals)),
-            "all"),
+                radius=[*np.linspace(0.001, 0.99, num_vals)],
+                angle=[*np.linspace(1.0, 179.0, num_vals)],
+                sigma=[*np.linspace(0.0, 0.5, num_vals)]),
+            ["all", "greedy", "metropolis", "probabilistic"]),
         (
             "swarm_dynamic",
             dict(
-                factor=np.linspace(0.1, 1.0, num_vals),
-                self_conf=np.linspace(1.1, 4.1, num_vals),
-                swarm_conf=np.linspace(1.1, 4.1, num_vals),
-                version=["inertial", "constriction"]),
-            "all")
+                factor=[*np.linspace(0.1, 1.0, num_vals)],
+                self_conf=[*np.linspace(1.1, 4.1, num_vals)],
+                swarm_conf=[*np.linspace(1.1, 4.1, num_vals)],
+                version=["inertial", "constriction"],
+                distribution=["uniform", "gaussian", "levy"]),
+            ["all", "greedy", "metropolis", "probabilistic"])
         ]
 
 
@@ -1207,12 +1270,13 @@ def _build_operators(heuristics=_obtain_operators(),
     file = open(file_name + '.txt', 'w')
 
     # For each simple heuristic, read their parameters and values
-    for operator, parameters, selector in heuristics:
+    for operator, parameters, selectors in heuristics:
         # Update the total classes counter
         total_counters[0] += 1
 
         # Read the number of parameters and how many values have each one
         num_parameters = len(parameters)
+        num_selectors = len(selectors)
         if num_parameters > 0:
             # Read the name and possible values of parameters
             par_names = list(parameters.keys())
@@ -1222,7 +1286,7 @@ def _build_operators(heuristics=_obtain_operators(),
             par_num_values = [np.size(x) for x in par_values]
 
             # Determine the number of combinations
-            num_combinations = np.prod(par_num_values)
+            num_combinations = np.prod(par_num_values) * num_selectors
 
             # Create the table of all possible combinations (index/parameter)
             indices = [x.flatten() for x in np.meshgrid(
@@ -1231,14 +1295,18 @@ def _build_operators(heuristics=_obtain_operators(),
             # For each combination, create a single dictionary which
             # corresponds to a simple search operator
             for combi in range(num_combinations):
-                list_tuples = [(par_names[k],
-                                par_values[k][indices[k][combi]])
-                               for k in range(num_parameters)]
+                list_tuples = [
+                    (par_names[k], par_values[k][indices[k][combi]])
+                    for k in range(num_parameters)]
                 simple_par_combination = dict(list_tuples)
+                for selector in selectors:
+                    file.write("('{}', {}, '{}')\n".format(
+                        operator, simple_par_combination, selector))
+        elif num_parameters == 0:
+            num_combinations = num_selectors
+            for selector in selectors:
                 file.write("('{}', {}, '{}')\n".format(
-                    operator, simple_par_combination, selector))
-        else:
-            num_combinations = 0
+                    operator, '{}', selector))
 
         # Update the total combination counter
         total_counters[1] += num_combinations
@@ -1304,3 +1372,7 @@ def _process_operators(simple_heuristics):
 
     # Return two lists of executable operators and selectors
     return executable_operators, selectors
+
+
+if __name__ == '__main__':
+    _build_operators(file_name="automated_operators_test")
