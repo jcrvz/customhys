@@ -1286,7 +1286,7 @@ def _build_operators(heuristics=_obtain_operators(),
             par_num_values = [np.size(x) for x in par_values]
 
             # Determine the number of combinations
-            num_combinations = np.prod(par_num_values) * num_selectors
+            num_combinations = np.prod(par_num_values)
 
             # Create the table of all possible combinations (index/parameter)
             indices = [x.flatten() for x in np.meshgrid(
@@ -1309,7 +1309,7 @@ def _build_operators(heuristics=_obtain_operators(),
                     operator, '{}', selector))
 
         # Update the total combination counter
-        total_counters[1] += num_combinations
+        total_counters[1] += num_combinations * num_selectors
 
         print(f"{operator}: parameters={num_parameters}, " +
               f"combinations:{num_combinations}")
