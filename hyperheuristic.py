@@ -29,11 +29,12 @@ class Hyperheuristic():
         if isinstance(heuristic_space, list):
             self.heuristic_space = heuristic_space
         elif isinstance(heuristic_space, str):
-            with open(heuristic_space, 'r') as operators_file:
+            with open('collections/' + heuristic_space,
+                      'r') as operators_file:
                 self.heuristic_space = [
                     eval(line.rstrip('\n')) for line in operators_file]
         else:
-            HyperheuristicError("Invalid heuristic_space")
+            raise HyperheuristicError("Invalid heuristic_space")
 
         # Read the heuristic space (mandatory)
         self.problem = problem
@@ -203,7 +204,7 @@ def _save_iteration(iteration_number, variable_to_save, prefix=''):
 
     # Define the folder name
     sep = '-' if (prefix != '') else ''
-    folder_name = "raw_data/" + prefix + sep + now.strftime("%m_%d_%Y")
+    folder_name = "data_files/raw/" + prefix + sep + now.strftime("%m_%d_%Y")
 
     # Check if this path exists
     if not _check_path(folder_name):

@@ -1267,7 +1267,7 @@ def _build_operators(heuristics=_obtain_operators(),
     total_counters = [0, 0]
 
     # Initialise the collection of simple heuristics
-    file = open(file_name + '.txt', 'w')
+    file = open('collections/' + file_name + '.txt', 'w')
 
     # For each simple heuristic, read their parameters and values
     for operator, parameters, selectors in heuristics:
@@ -1375,4 +1375,4 @@ def _process_operators(simple_heuristics):
 
 
 if __name__ == '__main__':
-    _build_operators(file_name="automated_operators_test")
+    _build_operators(file_name="automatic")
