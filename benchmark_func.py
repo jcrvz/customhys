@@ -72,7 +72,7 @@ class OptimalBasic:
                 z.append(self.get_func_val(np.array(tmp)))
             Z.append(z)
         Z = np.array(Z)
-        fig = plt.figure(figsize=[9, 6], dpi=333)
+        fig = plt.figure(figsize=[3, 2], dpi=333)
         ls = LightSource(azdeg=90, altdeg=45)
         rgb = ls.shade(Z, plt.cm.coolwarm)
         ax = fig.gca(projection='3d')
@@ -82,6 +82,7 @@ class OptimalBasic:
         ax.set_ylabel('y')
         ax.set_zlabel('f(x, y)')
         ax.set_title(self.func_name)
+        plt.tight_layout()
         plt.show()
 
     def save_fig(self):
