@@ -6,10 +6,17 @@ contain N-dimensional functions.
 
 All these functions are based and revisited on the following research papers
 and web sites:
-- Momin Jamil and Xin-She Yang, A literature survey of benchmark functions for global optimization problems, Int. Journal of Mathematical Modelling and Numerical Optimisation}, Vol. 4, No. 2, pp. 150–194 (2013), arXiv:1308.4008
-- Mazhar Ansari Ardeh, https://github.com/mazhar-ansari-ardeh, http://benchmarkfcns.xyz
-- Sonja Surjanovic and Derek Bingham, Simon Fraser University, https://www.sfu.ca/~ssurjano/optimization.html
-- Ali R. Al-Roomi (2015). Unconstrained Single-Objective Benchmark Functions Repository [https://www.al-roomi.org/benchmarks/unconstrained]. Halifax, Nova Scotia, Canada: Dalhousie University, Electrical and Computer Engineering.
+- Momin Jamil and Xin-She Yang, A literature survey of benchmark functions for
+    global optimization problems, Int. Journal of Mathematical Modelling and
+    Numerical Optimisation}, Vol. 4, No. 2, pp. 150–194 (2013), arXiv:1308.4008
+- Mazhar Ansari Ardeh, https://github.com/mazhar-ansari-ardeh,
+    http://benchmarkfcns.xyz
+- Sonja Surjanovic and Derek Bingham, Simon Fraser University,
+    https://www.sfu.ca/~ssurjano/optimization.html
+- Ali R. Al-Roomi (2015). Unconstrained Single-Objective Benchmark Functions
+    Repository [https://www.al-roomi.org/benchmarks/unconstrained]. Halifax,
+    Nova Scotia, Canada: Dalhousie University, Electrical and Computer
+    Engineering.
 
 @authors:   Jorge Mario Cruz-Duarte (jcrvz.github.io) and
             Keita Tomochika (github.com/keit0222)
