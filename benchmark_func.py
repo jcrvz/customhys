@@ -1,5 +1,19 @@
+# -*- coding: utf-8 -*-
+"""
+This model is an upgraded version of the Keita Tomochika's module in
+https://github.com/keit0222/optimization-evaluation. The current module only
+contain N-dimensional functions.
 
-# coding: utf-8
+All these functions are based and revisited on the following research papers
+and web sites:
+- Momin Jamil and Xin-She Yang, A literature survey of benchmark functions for global optimization problems, Int. Journal of Mathematical Modelling and Numerical Optimisation}, Vol. 4, No. 2, pp. 150–194 (2013), arXiv:1308.4008
+- Mazhar Ansari Ardeh, https://github.com/mazhar-ansari-ardeh, http://benchmarkfcns.xyz
+- Sonja Surjanovic and Derek Bingham, Simon Fraser University, https://www.sfu.ca/~ssurjano/optimization.html
+- Ali R. Al-Roomi (2015). Unconstrained Single-Objective Benchmark Functions Repository [https://www.al-roomi.org/benchmarks/unconstrained]. Halifax, Nova Scotia, Canada: Dalhousie University, Electrical and Computer Engineering.
+
+@authors:   Jorge Mario Cruz-Duarte (jcrvz.github.io) and
+            Keita Tomochika (github.com/keit0222)
+"""
 
 # import sys
 import os
@@ -8,15 +22,15 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.colors import LightSource
 
-__all__ = ['Ackley1', 'Ackley4', 'Alpine1', 'Alpine2', 'Brown',
+__all__ = ['Ackley1', 'Ackley4', 'Alpine1', 'Alpine2', 'Brown', 'Giunta',
            'ChungReynolds', 'Csendes', 'Deb1', 'Deb3', 'DixonPrice',
-           'EggHolder', 'Ellipsoid', 'Exp', 'Griewank', 'HyperEllipsoid',
+           'EggHolder', 'Ellipsoid', 'Exponential', 'Griewank', 'HyperEllipsoid',
            'KTablet', 'Michalewicz', 'Mishra1', 'Mishra11', 'Mishra2',
            'Mishra7', 'Pathological', 'Perm', 'Pinter', 'PowellSum', 'Qing',
-           'Quartic', 'Quintic', 'Rana', 'Rastrigin', 'Rosenbrock',
+           'Quartic', 'Quintic', 'Rana', 'Rastrigin', 'Rosenbrock', 'Brent',
            'RotatedHyperEllipsoid', 'Salomon', 'Sargan', 'SchafferN1',
            'SchafferN2', 'SchafferN4', 'SchafferN6', 'Schubert', 'Periodic',
-           'Schubert3', 'Schubert4', 'SchumerSteiglitz', 'Schwefel',
+           'Schubert3', 'Schubert4', 'SchumerSteiglitz', 'Schwefel', 'NeedleEye',
            'Schwefel12', 'Schwefel204', 'Schwefel220', 'Schwefel221',
            'Schwefel222', 'Schwefel223', 'Schwefel225', 'Schwefel226',
            'Sphere', 'Step', 'Step2', 'Step3', 'StepInt', 'StrechedVSineWave',
@@ -38,10 +52,10 @@ class OptimalBasic:
                          'Separable': True,
                          'Scalable': True,
                          'Multimodal': True}
-        self.plot_place = 0.25
+        self.plot_object = None
         self.func_name = ''
         self.save_dir = os.path.dirname(os.path.abspath(__file__)) +\
-            '\\function_plots\\'
+            '/function_plots/'
         if not os.path.isdir(self.save_dir):
             os.mkdir(self.save_dir)
 
@@ -57,7 +71,7 @@ class OptimalBasic:
     def get_func_val(self, variables):
         return -1
 
-    def plot(self, samples=100):
+    def plot(self, samples=50, resolution=65):
         x = np.linspace(self.min_search_range[0], self.max_search_range[0],
                         samples)
         y = np.linspace(self.min_search_range[1], self.max_search_range[1],
@@ -72,9 +86,9 @@ class OptimalBasic:
                 z.append(self.get_func_val(np.array(tmp)))
             Z.append(z)
         Z = np.array(Z)
-        fig = plt.figure(figsize=[3, 2], dpi=333)
+        fig = plt.figure(figsize=[3, 2], dpi=resolution)
         ls = LightSource(azdeg=90, altdeg=45)
-        rgb = ls.shade(Z, plt.cm.coolwarm)
+        rgb = ls.shade(Z, plt.cm.jet)
         ax = fig.gca(projection='3d')
         ax.plot_surface(X, Y, Z, rstride=1, cstride=1, linewidth=0,
                         antialiased=False, facecolors=rgb)
@@ -84,26 +98,19 @@ class OptimalBasic:
         ax.set_title(self.func_name)
         plt.tight_layout()
         plt.show()
+        self.plot_object = fig
 
-    def save_fig(self):
-        x = np.arange(self.min_search_range[0], self.max_search_range[0],
-                      self.plot_place, dtype=np.float32)
-        y = np.arange(self.min_search_range[1], self.max_search_range[1],
-                      self.plot_place, dtype=np.float32)
-        X, Y = np.meshgrid(x, y)
-        Z = []
-        for xy_list in zip(X, Y):
-            z = []
-            for xy_input in zip(xy_list[0], xy_list[1]):
-                tmp = list(xy_input)
-                tmp.extend(list(self.optimal_solution[2:self.variable_num]))
-                z.append(self.get_func_val(np.array(tmp)))
-            Z.append(z)
-        Z = np.array(Z)
-        fig = plt.figure()
-        ax = Axes3D(fig)
-        ax.plot_wireframe(X, Y, Z)
-        plt.savefig(self.save_dir + self.func_name + '.png')
+    # Quick show
+    @property
+    def show(self):
+        self.plot()
+        self.plot_object = None
+
+    # TODO: Improve function to generate better images
+    def save_fig(self, samples=100, resolution=333):
+        if self.plot_object is None:
+            self.plot(samples, resolution)
+        self.plot_object.savefig(self.save_dir + self.func_name + '.png')
         plt.close()
 
 # %% Optimization benchmark function group
@@ -214,6 +221,27 @@ class Brown(OptimalBasic):
         xi = np.square(variables[:-1])
         xi1 = np.square(variables[1:])
         return np.sum(np.power(xi, xi1 + 1) + np.power(xi1, xi + 1))
+
+
+# Class Brent function
+class Brent(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([0.]*self.variable_num)
+        self.min_search_range = np.array([-20.]*self.variable_num)
+        self.optimal_solution = np.array([10.]*self.variable_num)
+        self.global_optimum_solution = np.exp(-self.variable_num * 100.)
+        self.func_name = 'Brent'
+        self.features = {'Continuous': True,
+                         'Differentiable': True,
+                         'Separable': False,
+                         'Scalable': True,
+                         'Multimodal': False,
+                         'Convex': True}
+
+    def get_func_val(self, variables):
+        return np.sum(np.square(variables + 10.)) + np.exp(
+            -np.sum(np.square(variables)))
 
 
 # 34 - Class Chung Reynolds function
@@ -330,7 +358,6 @@ class EggHolder(OptimalBasic):
         self.min_search_range = np.array([-512.]*self.variable_num)
         self.optimal_solution = np.array([512., 404.2319])
         self.global_optimum_solution = -959.6407
-        self.plot_place = 5
         self.func_name = 'Egg Holder'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -348,14 +375,13 @@ class EggHolder(OptimalBasic):
 
 
 # 54 - Class Exponential function
-class Exp(OptimalBasic):
+class Exponential(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([1.]*self.variable_num)
         self.min_search_range = np.array([-1.]*self.variable_num)
         self.optimal_solution = np.array([0]*self.variable_num)
         self.global_optimum_solution = 1
-        self.plot_place = 5
         self.func_name = 'Exponential'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -367,6 +393,27 @@ class Exp(OptimalBasic):
     def get_func_val(self, variables):
         return -np.exp(-0.5 * np.sum(np.square(variables)))
 
+# Class Giunta function
+class Giunta(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([1.]*self.variable_num)
+        self.min_search_range = np.array([-1.]*self.variable_num)
+        self.optimal_solution = np.array([0.4673200277395354]*self.variable_num)
+        self.global_optimum_solution = 0.06447042053690566
+        self.func_name = 'Giunta'
+        self.features = {'Continuous': True,
+                         'Differentiable': True,
+                         'Separable': False,
+                         'Scalable': True,
+                         'Multimodal': False,
+                         'Convex': False}
+
+    def get_func_val(self, variables):
+        return 0.6 + np.sum(
+            np.square(np.sin(1. - (16./15.)*variables)) - (1./50.) * np.sin(
+                4. - (64./15.)*variables) - np.sin(
+                    1. - (16./15.) * variables))
 
 # 59 - Class Griewank function
 class Griewank(OptimalBasic):
@@ -376,7 +423,6 @@ class Griewank(OptimalBasic):
         self.min_search_range = np.array([-100.]*self.variable_num)
         self.optimal_solution = np.array([0.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 10.
         self.func_name = 'Griewank'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -397,7 +443,6 @@ class HappyCat(OptimalBasic):
         self.min_search_range = np.array([-100.]*self.variable_num)
         self.optimal_solution = np.array([-1.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 10.
         self.func_name = 'Happy Cat'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -421,7 +466,6 @@ class Mishra1(OptimalBasic):
         self.min_search_range = np.array([0.]*self.variable_num)
         self.optimal_solution = np.array([1.]*self.variable_num)
         self.global_optimum_solution = 2.
-        self.plot_place = 10.
         self.func_name = 'Mishra 1'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -443,7 +487,6 @@ class Mishra2(OptimalBasic):
         self.min_search_range = np.array([0.]*self.variable_num)
         self.optimal_solution = np.array([1.]*self.variable_num)
         self.global_optimum_solution = 2.
-        self.plot_place = 10.
         self.func_name = 'Mishra 2'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -467,7 +510,6 @@ class Mishra7(OptimalBasic):
         self.optimal_solution = np.array([np.power(np.math.factorial(
             self.variable_num), 1/self.variable_num)] * self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 10.
         self.func_name = 'Mishra 7'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -489,7 +531,6 @@ class Mishra11(OptimalBasic):
         self.min_search_range = np.array([0.]*self.variable_num)
         self.optimal_solution = np.array([np.nan] * self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 10.
         self.func_name = 'Mishra 11'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -503,6 +544,27 @@ class Mishra11(OptimalBasic):
                          np.power(np.prod(np.abs(variables)),
                                   1/self.variable_num))
 
+# Class Needle-Eye function
+class NeedleEye(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([10.]*self.variable_num)
+        self.min_search_range = np.array([-10.]*self.variable_num)
+        self.optimal_solution = np.array([0.] * self.variable_num)
+        self.global_optimum_solution = 1.
+        self.func_name = 'Needle-Eye'
+        self.features = {'Continuous': False,
+                         'Differentiable': False,
+                         'Separable': False,
+                         'Scalable': True,
+                         'Multimodal': True,
+                         'Convex': False}
+
+    def get_func_val(self, variables, eye=0.0001):
+        x = np.abs(variables)
+        t = np.heaviside(x - eye, 1.)
+        return 1. if np.all(x >= eye) else np.sum((100. + x) * t)
+
 
 # 87 - Class Pathological function
 class Pathological(OptimalBasic):
@@ -512,7 +574,6 @@ class Pathological(OptimalBasic):
         self.min_search_range = np.array([-100.]*self.variable_num)
         self.optimal_solution = np.array([0] * self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 10.
         self.func_name = 'Pathological'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -537,7 +598,6 @@ class Pinter(OptimalBasic):
         self.min_search_range = np.array([-10.]*self.variable_num)
         self.optimal_solution = np.array([0] * self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 10.
         self.func_name = 'Pinter'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -564,7 +624,6 @@ class Periodic(OptimalBasic):
         self.min_search_range = np.array([-10.]*self.variable_num)
         self.optimal_solution = np.array([0] * self.variable_num)
         self.global_optimum_solution = 0.9
-        self.plot_place = 10.
         self.func_name = 'Periodic'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -586,7 +645,6 @@ class PowellSum(OptimalBasic):
         self.min_search_range = np.array([-1.]*self.variable_num)
         self.optimal_solution = np.array([0.] * self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 10.
         self.func_name = 'Powel Sum'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -607,9 +665,8 @@ class Qing(OptimalBasic):
         self.max_search_range = np.array([500.]*self.variable_num)
         self.min_search_range = np.array([-500.]*self.variable_num)
         self.optimal_solution = np.array(np.sqrt(np.arange(
-            self.variable_num) + 1))
+        self.variable_num) + 1))
         self.global_optimum_solution = 0.
-        self.plot_place = 10.
         self.func_name = 'Powel Sum'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -631,7 +688,6 @@ class Quartic(OptimalBasic):
         self.min_search_range = np.array([-1.28]*self.variable_num)
         self.optimal_solution = np.array([0]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 10.
         self.func_name = 'Quartic'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -653,7 +709,6 @@ class Quintic(OptimalBasic):
         self.min_search_range = np.array([-10.]*self.variable_num)
         self.optimal_solution = np.array([-1]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 10.
         self.func_name = 'Quintic'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -676,7 +731,6 @@ class Rana(OptimalBasic):
         self.min_search_range = np.array([-500.000001]*self.variable_num)
         self.optimal_solution = np.array([-500.]*self.variable_num)
         self.global_optimum_solution = -511.70430*self.variable_num+511.68714
-        self.plot_place = 10.
         self.func_name = 'Rana'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -742,7 +796,6 @@ class Rosenbrock(OptimalBasic):
         self.min_search_range = np.array([-30.]*self.variable_num)
         self.optimal_solution = np.array([1.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 0.25
         self.func_name = 'Rosenbrock'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -763,7 +816,6 @@ class Salomon(OptimalBasic):
         self.min_search_range = np.array([-100.]*self.variable_num)
         self.optimal_solution = np.array([0.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 0.25
         self.func_name = 'Salomon'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -784,7 +836,6 @@ class Sargan(OptimalBasic):
         self.min_search_range = np.array([-100.]*self.variable_num)
         self.optimal_solution = np.array([0.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 0.25
         self.func_name = 'Sargan'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -806,7 +857,6 @@ class SchumerSteiglitz(OptimalBasic):
         self.min_search_range = np.array([-100.]*self.variable_num)
         self.optimal_solution = np.array([0.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 0.25
         self.func_name = 'Schumer-Steiglitz'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -826,7 +876,6 @@ class Schwefel(OptimalBasic):
         self.min_search_range = np.array([-100.]*self.variable_num)
         self.optimal_solution = np.array([0.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 0.25
         self.func_name = 'Schwefel'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -846,7 +895,6 @@ class Schwefel12(OptimalBasic):
         self.min_search_range = np.array([-100.]*self.variable_num)
         self.optimal_solution = np.array([0.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 0.25
         self.func_name = 'Schwefel 1.2'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -867,7 +915,6 @@ class Schwefel204(OptimalBasic):
         self.min_search_range = np.array([0.]*self.variable_num)
         self.optimal_solution = np.array([1.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 0.25
         self.func_name = 'Schwefel 2.04'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -888,7 +935,6 @@ class Schwefel220(OptimalBasic):
         self.min_search_range = np.array([-100.]*self.variable_num)
         self.optimal_solution = np.array([0.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 0.25
         self.func_name = 'Schwefel 2.20'
         self.features = {'Continuous': True,
                          'Differentiable': False,
@@ -908,7 +954,6 @@ class Schwefel221(OptimalBasic):
         self.min_search_range = np.array([-100.]*self.variable_num)
         self.optimal_solution = np.array([0.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 0.25
         self.func_name = 'Schwefel 2.21'
         self.features = {'Continuous': True,
                          'Differentiable': False,
@@ -928,7 +973,6 @@ class Schwefel222(OptimalBasic):
         self.min_search_range = np.array([-100.]*self.variable_num)
         self.optimal_solution = np.array([0.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 0.25
         self.func_name = 'Schwefel 2.22'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -948,7 +992,6 @@ class Schwefel223(OptimalBasic):
         self.min_search_range = np.array([-10.]*self.variable_num)
         self.optimal_solution = np.array([0.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 0.25
         self.func_name = 'Schwefel 2.23'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -968,7 +1011,6 @@ class Schwefel225(OptimalBasic):
         self.min_search_range = np.array([0.]*self.variable_num)
         self.optimal_solution = np.array([1.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 0.25
         self.func_name = 'Schwefel 2.25'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -990,7 +1032,6 @@ class Schwefel226(OptimalBasic):
         self.optimal_solution = np.array([np.square(np.pi * 1.5)] *
                                          self.variable_num)
         self.global_optimum_solution = -418.983
-        self.plot_place = 0.25
         self.func_name = 'Schwefel 2.26'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -1011,7 +1052,6 @@ class Schubert(OptimalBasic):
         self.min_search_range = np.array([-10.]*self.variable_num)
         self.optimal_solution = np.array([np.nan]*self.variable_num)
         self.global_optimum_solution = -186.7309
-        self.plot_place = 0.25
         self.func_name = 'Schubert'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -1033,7 +1073,6 @@ class Schubert3(OptimalBasic):
         self.min_search_range = np.array([-10.]*self.variable_num)
         self.optimal_solution = np.array([np.nan]*self.variable_num)
         self.global_optimum_solution = -29.6733337
-        self.plot_place = 0.25
         self.func_name = 'Schubert 3'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -1056,7 +1095,6 @@ class Schubert4(OptimalBasic):
         self.min_search_range = np.array([-10.]*self.variable_num)
         self.optimal_solution = np.array([np.nan]*self.variable_num)
         self.global_optimum_solution = -25.740858
-        self.plot_place = 0.25
         self.func_name = 'Schubert 4'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -1079,7 +1117,6 @@ class SchafferN6(OptimalBasic):
         self.min_search_range = np.array([-100.]*self.variable_num)
         self.optimal_solution = np.array([0.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 0.25
         self.func_name = 'Schaffer N6'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -1102,7 +1139,6 @@ class SchafferN1(OptimalBasic):
         self.min_search_range = np.array([-100.]*self.variable_num)
         self.optimal_solution = np.array([0.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 0.25
         self.func_name = 'Schaffer N1'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -1125,7 +1161,6 @@ class SchafferN2(OptimalBasic):
         self.min_search_range = np.array([-100.]*self.variable_num)
         self.optimal_solution = np.array([0.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 0.25
         self.func_name = 'Schaffer N2'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -1147,7 +1182,6 @@ class SchafferN4(OptimalBasic):
         self.min_search_range = np.array([-100.]*self.variable_num)
         self.optimal_solution = np.array([0.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 0.25
         self.func_name = 'Schaffer N4'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -1170,7 +1204,6 @@ class Sphere(OptimalBasic):
         self.min_search_range = np.array([-100.]*self.variable_num)
         self.optimal_solution = np.array([0.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 10
         self.func_name = 'Sphere'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -1190,7 +1223,6 @@ class Step(OptimalBasic):
         self.min_search_range = np.array([-100.]*self.variable_num)
         self.optimal_solution = np.array([0.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 10
         self.func_name = 'Step'
         self.features = {'Continuous': True,
                          'Differentiable': False,
@@ -1210,7 +1242,6 @@ class Step2(OptimalBasic):
         self.min_search_range = np.array([-100.]*self.variable_num)
         self.optimal_solution = np.array([0.5]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 10
         self.func_name = 'Step 2'
         self.features = {'Continuous': True,
                          'Differentiable': False,
@@ -1230,7 +1261,6 @@ class Step3(OptimalBasic):
         self.min_search_range = np.array([-100.]*self.variable_num)
         self.optimal_solution = np.array([0.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 10
         self.func_name = 'Step 3'
         self.features = {'Continuous': True,
                          'Differentiable': False,
@@ -1250,7 +1280,6 @@ class StepInt(OptimalBasic):
         self.min_search_range = np.array([-5.12]*self.variable_num)
         self.optimal_solution = np.array([0.]*self.variable_num)
         self.global_optimum_solution = 25 - 6 * self.variable_num
-        self.plot_place = 10
         self.func_name = 'Step Int'
         self.features = {'Continuous': True,
                          'Differentiable': False,
@@ -1270,7 +1299,6 @@ class StrechedVSineWave(OptimalBasic):
         self.min_search_range = np.array([-10.]*self.variable_num)
         self.optimal_solution = np.array([0.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 10
         self.func_name = 'Streched V Sine Wave'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -1294,7 +1322,6 @@ class SumSquares(OptimalBasic):
         self.min_search_range = np.array([-10.]*self.variable_num)
         self.optimal_solution = np.array([0.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 10
         self.func_name = 'Sum Squares'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -1319,7 +1346,6 @@ class Trid6(OptimalBasic):
                                              1, self.variable_num + 1)))
         self.global_optimum_solution = -self.variable_num * (
             self.variable_num + 4) * (self.variable_num - 1)/6
-        self.plot_place = 10
         self.func_name = 'Trid 6'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -1342,7 +1368,6 @@ class Trid10(OptimalBasic):
                                          (self.variable_num + 1 - np.arange(
                                              1, self.variable_num + 1)))
         self.global_optimum_solution = -200.
-        self.plot_place = 10
         self.func_name = 'Trid 10'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -1363,7 +1388,6 @@ class Trigonometric1(OptimalBasic):
         self.min_search_range = np.array([0.] * self.variable_num)
         self.optimal_solution = np.array([0.] * self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 10
         self.func_name = 'Trigonometric 1'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -1387,7 +1411,6 @@ class Trigonometric2(OptimalBasic):
         self.min_search_range = np.array([0.] * self.variable_num)
         self.optimal_solution = np.array([0.9] * self.variable_num)
         self.global_optimum_solution = 1.
-        self.plot_place = 10
         self.func_name = 'Trigonometric 2'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -1409,7 +1432,6 @@ class WWavy(OptimalBasic):
         self.min_search_range = np.array([-np.pi] * self.variable_num)
         self.optimal_solution = np.array([0.] * self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 10
         self.func_name = 'W / Wavy'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -1430,7 +1452,6 @@ class Weierstrass(OptimalBasic):
         self.min_search_range = np.array([-0.5] * self.variable_num)
         self.optimal_solution = np.array([0.] * self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 10
         self.func_name = 'Weierstrass'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -1454,7 +1475,6 @@ class Whitley(OptimalBasic):
         self.min_search_range = np.array([-10.24] * self.variable_num)
         self.optimal_solution = np.array([1.] * self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 10
         self.func_name = 'Whitley'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -1559,7 +1579,6 @@ class Zakharov(OptimalBasic):
         self.min_search_range = np.array([-5.]*self.variable_num)
         self.optimal_solution = np.array([0.]*self.variable_num)
         self.global_optimum_solution = 0.
-        self.plot_place = 10.
         self.func_name = 'Zakharov'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -1661,7 +1680,6 @@ class Michalewicz(OptimalBasic):
         self.min_search_range = np.array([0.]*self.variable_num)
         self.optimal_solution = np.array([2.20319, 1.57049])
         self.global_optimum_solution = -1.8013  # In case of variable_num == 2
-        self.plot_place = 0.1
         self.func_name = 'Michalewicz'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -1703,7 +1721,6 @@ class Perm(OptimalBasic):
         self.min_search_range = np.array([-1.]*self.variable_num)
         self.optimal_solution = 1/np.arange(1, self.variable_num + 1)
         self.global_optimum_solution = 0.
-        self.plot_place = 0.1
         self.func_name = 'Perm'
         self.features = {'Continuous': True,
                          'Differentiable': True,
