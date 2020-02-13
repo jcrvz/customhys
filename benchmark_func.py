@@ -23,7 +23,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.colors import LightSource
 
 __all__ = ['Ackley1', 'Ackley4', 'Alpine1', 'Alpine2', 'Brown', 'Giunta',
-           'ChungReynolds', 'Csendes', 'Deb1', 'Deb3', 'DixonPrice',
+           'ChungReynolds', 'Csendes', 'Deb1', 'Deb3', 'DixonPrice','DropWave',
            'EggHolder', 'Ellipsoid', 'Exponential', 'Griewank', 'HyperEllipsoid',
            'KTablet', 'Michalewicz', 'Mishra1', 'Mishra11', 'Mishra2',
            'Mishra7', 'Pathological', 'Perm', 'Pinter', 'PowellSum', 'Qing',
@@ -350,6 +350,27 @@ class DixonPrice(OptimalBasic):
             for i in range(1, self.variable_num)])
 
 
+
+# Class Drop-Wave function
+class DropWave(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([5.12]*self.variable_num)
+        self.min_search_range = np.array([-5.12]*self.variable_num)
+        self.optimal_solution = np.array([0.]*self.variable_num)
+        self.global_optimum_solution = -1.
+        self.func_name = 'Drop Wave'
+        self.features = {'Continuous': True,
+                         'Differentiable': True,
+                         'Separable': False,
+                         'Scalable': True,
+                         'Multimodal': False,
+                         'Convex': False}
+
+    def get_func_val(self, variables):
+        return -(1. + np.cos(12. * np.linalg.norm(variables))) / (
+            0.5 * np.sum(np.square(variables)) + 2.)
+
 # 53 - Class Egg Holder function
 class EggHolder(OptimalBasic):
     def __init__(self, variable_num):
@@ -563,7 +584,7 @@ class NeedleEye(OptimalBasic):
     def get_func_val(self, variables, eye=0.0001):
         x = np.abs(variables)
         t = np.heaviside(x - eye, 1.)
-        return 1. if np.all(x >= eye) else np.sum((100. + x) * t)
+        return 1. if np.all(x < eye) else np.sum((100. + x) * t)
 
 
 # 87 - Class Pathological function
