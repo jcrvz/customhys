@@ -90,7 +90,13 @@ def test_set1():
 
     # Find a metaheuristic for each problem
     for num_dimensions in dimensions:
-        for function_string in functions:
+        print('Dim: {}/{}'.format(
+            num_dimensions-1, len(dimensions)-1), end=' ')
+        for func_id in range(len(functions)):
+            function_string = functions[func_id]
+
+            print('Func: {}/{}'.format(func_id + 1, len(functions)))
+
             # Message to print and to store in folders
             label = f"{function_string}-{num_dimensions}D"
             print('... ' + label + ':')
