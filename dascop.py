@@ -90,22 +90,22 @@ def test_set1():
 
     heuristics_collection = 'automatic.txt'
 
-    print('-' * 10)
+    # print('-' * 10)
     # Find a metaheuristic for each problem
     for num_dimensions in dimensions:
-        print('Dim: {}/{},'.format(
-            num_dimensions-1, len(dimensions)-1), end=' ')
-        for func_id in range(len(functions)):
-            function_string = functions[func_id]
+        # print('Dim: {}/{},'.format(
+        #     num_dimensions-1, len(dimensions)-1), end=' ')
+        for function_string in functions:  #range(len(functions)):
+            # function_string = functions[func_id]
 
-            print('Func: {}/{}...'.format(func_id + 1, len(functions)))
+            # print('Func: {}/{}...'.format(func_id + 1, len(functions)))
 
             # Message to print and to store in folders
-            label = f"{function_string}-{num_dimensions}D"
-            print('... ' + label + ':')
+            label = "{}-{}D".format(function_string, num_dimensions)
+            # print('... ' + label + ':')
 
             # Format the problem
-            problem = eval(f"bf.{function_string}({num_dimensions})")
+            problem = eval("bf.{}({})".format(function_string, num_dimensions))
 
             # HH.set_problem(problem_function, boundaries, True)
             Problem = HH.set_problem(
