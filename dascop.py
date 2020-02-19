@@ -157,11 +157,11 @@ def test_set2():
         def evaluate_function(function_string):
             # function_string = functions[func_id]
 
-            # print('Func: {}/{}...'.format(func_id + 1, len(functions)))
+            print('Func: {}/{}...'.format(func_id + 1, len(functions)))
 
             # Message to print and to store in folders
             label = "{}-{}D".format(function_string, num_dimensions)
-            # print('... ' + label + ':')
+            print('... ' + label + ':')
 
             # Format the problem
             problem = eval("bf.{}({})".format(function_string, num_dimensions))
