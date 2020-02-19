@@ -12,49 +12,107 @@ import numpy as np
 import benchmark_func as bf
 # import matplotlib.pyplot as plt
 
+# %% Test set used for A Primary Study on Hyper-Heuristics to Customise
+#      Metaheuristics for Continuous Optimisation, submitted to CEC'20.
+def test_set0():
+    # Problems definition
+    dimensions = [2 , 10, 30]
+    functions = ['Griewank','Ackley', 'Rosenbrock', 'Sphere']
+    divider = 1.0
+    is_constrained = True
 
-# %% Problems definition
+    # Hyperheuristic conditions (it only works with 1st dascop)
+    hh_parameters = {
+        'cardinality': 3,
+        'num_agents': 30,
+        'num_iterations': 100,
+        'num_replicas': 100,
+        'num_steps': 5,
+        'num_trials': 50
+        }
 
-dimensions = [30]  # , 10, 30]
-functions = ['Griewank']  # ,'Ackley', 'Rosenbrock', ]  #  'Sphere',
-divider = 1.0
-is_constrained = True
+    # Generate the search operator collection (once)
+    # Operators._build_operators()  # <- uncomment
 
-# %% Hyperheuristic conditions
-hh_parameters = {
-    'cardinality': 3,
-    'num_agents': 30,
-    'num_iterations': 100,
-    'num_replicas': 100,
-    'num_steps': 5,
-    'num_trials': 50
-    }
+    heuristics_collection = 'operators_collection.txt'  # full
+    # heuristics_collection = 'single_test.txt'  # just 1
 
-# %% Generate the search operator collection (once)
-# Operators._build_operators()  # <- uncomment
+    # Find a metaheuristic for each problem
+    for num_dimensions in dimensions:
+        for function_string in functions:
+            # Message to print
+            label = f"{function_string}-{num_dimensions}D"
+            print('... ' + label + ':')
 
-heuristics_collection = 'operators_collection.txt'  # full
-# heuristics_collection = 'single_test.txt'  # just 1
+            # Format the problem
+            problem = eval(f"bf.{function_string}({num_dimensions})")
+            function = lambda x: problem.get_func_val(x)
+            # HH.set_problem(problem_function, boundaries, True)
+            Problem = HH.set_problem(
+                function,
+                (problem.min_search_range/divider,
+                 problem.max_search_range/divider),
+                is_constrained
+                )
 
-# %% Find a metaheuristic for each problem
+            # Call the hyperheuristic object
+            hh = HH.Hyperheuristic(heuristics_collection, Problem,
+                                   hh_parameters, label)
 
-for num_dimensions in dimensions:
-    for function_string in functions:
-        label = f"{function_string}-{num_dimensions}D"
-        print('... ' + label + ':')
+            # Run the HH:Random Search
+            hh.run()
 
-        problem = eval(f"bf.{function_string}({num_dimensions})")
-        function = lambda x: problem.get_func_val(x)
+# %% Test set used for evaluate all the search operators in the collection
+def test_set1():
+    # Problems definition
+    dimensions = range(2, 30 + 1)
+    functions = bf.__all__
+    divider = 1.0
+    is_constrained = True
 
-        # HH.set_problem(problem_function, boundaries, True)
-        Problem = HH.set_problem(
-            function,
-            (problem.min_search_range/divider,
-             problem.max_search_range/divider),
-            is_constrained
-            )
+    # Hyperheuristic conditions (it only works with 1st dascop)
+    hh_parameters = {
+        'cardinality': 1,
+        'num_agents': 30,
+        'num_iterations': 100,
+        'num_replicas': 100,    # Not used
+        'num_trials': 100,      # Not used
+        'max_temperature': 100, # Not used
+        'min_temperature': 0.1, # Not used
+        'cooling_rate': 0.05,   # Not used
+        }
 
-        hh = HH.Hyperheuristic(heuristics_collection, Problem, hh_parameters,
-                               label)
+    # Generate the search operator collection (once)
+    Operators._build_operators(
+        Operators._obtain_operators(num_vals=11), file_name="automatic")
 
-        hh.run()
+    heuristics_collection = 'automatic.txt'
+
+    # Find a metaheuristic for each problem
+    for num_dimensions in dimensions:
+        for function_string in functions:
+            # Message to print and to store in folders
+            label = f"{function_string}-{num_dimensions}D"
+            print('... ' + label + ':')
+
+            # Format the problem
+            problem = eval(f"bf.{function_string}({num_dimensions})")
+
+            # HH.set_problem(problem_function, boundaries, True)
+            Problem = HH.set_problem(
+                lambda x: problem.get_function_value(x),
+                (problem.min_search_range/divider,
+                 problem.max_search_range/divider),
+                is_constrained
+                )
+
+            # Call the hyperheuristic object
+            hh = HH.Hyperheuristic(heuristics_collection, Problem,
+                                   hh_parameters, label)
+
+            # Run the HH:Random Search
+            hh.brute_force()
+
+# %% Autorun
+if __name__ == '__main__':
+    test_set1()

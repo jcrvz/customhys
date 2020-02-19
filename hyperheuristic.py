@@ -176,11 +176,6 @@ class Hyperheuristic():
 
         # Run the metaheuristic several times
         for rep in range(1, self.parameters['num_replicas'] + 1):
-            # tqdm(,                        desc='--MH',
-            #             position = 0, leave = True,
-            #             postfix = {'fitness': '{temp_fitness}'},
-            #                 bar_format="{l_bar}{bar}| " +
-            #                 "[{n_fmt}/{total_fmt}" + "{postfix}]"):
 
             # Call the metaheuristic
             mh = Metaheuristic(self.problem, search_operators,
@@ -206,6 +201,25 @@ class Hyperheuristic():
         return self.get_performance(fitness_stats), dict(
             historical=historical_data, fitness=fitness_data,
             positions=position_data, statistics=fitness_stats)
+
+    def brute_force(self):
+        # Apply all the search operators in the collection as 1-size MHs
+        for operator_id in range(self.num_operators):
+            # Read the corresponding operator
+            operator = [self.heuristic_space[operator_id]]
+
+            # Evaluate it within the metaheuristic structure
+            operator_performance, operator_details = \
+                self.evaluate_metaheuristic(operator)
+
+            # Save information
+            _save_iteration(operator_id, {
+                'encoded_solution': operator,
+                'performance': operator_performance,
+                'details': operator_details},
+                            self.file_label)
+
+            print('{}/{} - perf: {}'.format(operator_id, self.num_operators, operator_performance))
 
     @staticmethod
     def get_performance(statistics):
