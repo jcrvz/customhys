@@ -129,4 +129,4 @@ images/
 raw_data*
 raw_data*/
 *.json
-automated_operators_test.txt
+collections/
