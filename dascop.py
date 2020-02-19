@@ -10,6 +10,7 @@ from metaheuristic import Operators
 #from metaheuristic import Population
 import numpy as np
 import benchmark_func as bf
+from numba import jit
 # import matplotlib.pyplot as plt
 
 # %% Test set used for A Primary Study on Hyper-Heuristics to Customise
@@ -63,6 +64,7 @@ def test_set0():
             hh.run()
 
 # %% Test set used for evaluate all the search operators in the collection
+@jit(nopython=True, parallel=True)
 def test_set1():
     # Problems definition
     dimensions = range(2, 30 + 1)
@@ -88,14 +90,15 @@ def test_set1():
 
     heuristics_collection = 'automatic.txt'
 
+    print('-' * 10)
     # Find a metaheuristic for each problem
     for num_dimensions in dimensions:
-        print('Dim: {}/{}'.format(
+        print('Dim: {}/{},'.format(
             num_dimensions-1, len(dimensions)-1), end=' ')
         for func_id in range(len(functions)):
             function_string = functions[func_id]
 
-            print('Func: {}/{}'.format(func_id + 1, len(functions)))
+            print('Func: {}/{}...'.format(func_id + 1, len(functions)))
 
             # Message to print and to store in folders
             label = f"{function_string}-{num_dimensions}D"

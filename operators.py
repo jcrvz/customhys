@@ -6,6 +6,7 @@ Created on Tue Jan  7 14:54:31 2020
 """
 
 import numpy as np
+import os
 from itertools import combinations as _get_combinations
 
 __all__ = ['local_random_walk', 'random_search', 'random_sample',
@@ -1266,6 +1267,10 @@ def _build_operators(heuristics, file_name="operators_collection"):
     """
     # Counters: [classes, methods]
     total_counters = [0, 0]
+
+    # Check if collections exists
+    if not os.path.isdir('collections'):
+        os.mkdir('collections')
 
     # Initialise the collection of simple heuristics
     file = open('collections/' + file_name + '.txt', 'w')
