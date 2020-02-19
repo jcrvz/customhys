@@ -18,6 +18,9 @@ __all__ = ['local_random_walk', 'random_search', 'random_sample',
 # -------------------------------------------------------------------------
 #    PERTURBATORS
 # -------------------------------------------------------------------------
+from numpy.core._multiarray_umath import ndarray
+
+
 def central_force_dynamic(pop, gravity=0.001, alpha=0.01, beta=1.5, dt=1.0):
     """
     Central Force Optimisation (CFO)
@@ -1052,7 +1055,7 @@ def _get_rotation_matrix(dimensions, angle=0.39269908169872414):
     # Initialise the rotation matrix
     rotation_matrix = np.eye(dimensions)
 
-    # Find the combinations without repetions
+    # Find the combinations without repetitions
     planes = list(_get_combinations(range(dimensions), 2))
 
     # Create the rotation matrix
@@ -1064,11 +1067,8 @@ def _get_rotation_matrix(dimensions, angle=0.39269908169872414):
         rotation_plane = np.eye(dimensions)
 
         # Assign corresponding values
-        rotation_plane[x, y] = np.cos(angle)
-        rotation_plane[y, y] = np.cos(angle)
-        rotation_plane[x, y] = -np.sin(angle)
-        rotation_plane[y, x] = np.sin(angle)
-
+        rotation_plane[[x, x, y, y], [x, y, x, y]] = [np.cos(angle), -np.sin(angle),
+                                                      np.sin(angle), np.cos(angle)]
         rotation_matrix = np.matmul(rotation_matrix, rotation_plane)
 
     return rotation_matrix
@@ -1118,7 +1118,7 @@ class OperatorsError(Exception):
 # GENERATOR OF SEARCH OPERATORS
 # ---------------------------------------------------------------------------
 
-def _obtain_operators(num_vals=5):
+def _obtain_operators(num_vals=11):
     """
     Generate a list of all the available search operators with a given
     number of values for each parameter (if so).
@@ -1142,13 +1142,15 @@ def _obtain_operators(num_vals=5):
                                "name_of_the_selector")
     """
     return [
+        # First line for the initial search operator
+        ("random_search", dict(scale=[1.0], distribution=["uniform"]), ["greedy"]),
         (
             "central_force_dynamic",
             dict(
                 gravity=[*np.linspace(0.0, 0.01, num_vals)],
                 alpha=[*np.linspace(0.0, 0.01, num_vals)],
-                beta=[*np.linspace(1.25, 1.75, num_vals)],
-                dt=[1.0]),
+                beta=[*np.linspace(1.00, 2.00, num_vals)],
+                dt=[*np.linspace(0.0, 2.0, num_vals)]),
             ["all", "greedy", "metropolis", "probabilistic"]),
         # (
         #    'differential_crossover',
@@ -1162,15 +1164,15 @@ def _obtain_operators(num_vals=5):
                 expression=["rand", "best", "current", "current-to-best",
                             "rand-to-best", "rand-to-best-and-current"],
                 num_rands=[1, 2, 3],
-                factor=[*np.linspace(0.5, 2.5, num_vals)]),
+                factor=[*np.linspace(0.0, 2.5, num_vals)]),
             ["all", "greedy", "metropolis", "probabilistic"]),
         (
             "firefly_dynamic",
             dict(
                 epsilon=["uniform", "gaussian", "levy"],
                 alpha=[*np.linspace(0.0, 0.5, num_vals)],
-                beta=[1.0],
-                gamma=[*np.linspace(10.0, 990.0, num_vals)]),
+                beta=[*np.linspace(0.01, 1.0, num_vals)],
+                gamma=[*np.linspace(1.0, 1000.0, num_vals)]),
             ["all", "greedy", "metropolis", "probabilistic"]),
         (
             "genetic_crossover",
@@ -1179,14 +1181,14 @@ def _obtain_operators(num_vals=5):
                          "tournament_2_100", "tournament_3_100"],
                 crossover=["single", "two", "uniform", "blend",
                            "linear_0.5_0.5"],
-                mating_pool_factor=[*np.linspace(0.1, 0.9, num_vals)]),
+                mating_pool_factor=[*np.linspace(0.01, 0.99, num_vals)]),
             ["all", "greedy", "metropolis", "probabilistic"]),
         (
             "genetic_mutation",
             dict(
-                scale=[*np.linspace(0.0, 0.9, num_vals)],
+                scale=[*np.linspace(0.01, 1.0, num_vals)],
                 elite_rate=[*np.linspace(0.0, 0.9, num_vals)],
-                mutation_rate=[*np.linspace(0.1, 0.9, num_vals)],
+                mutation_rate=[*np.linspace(0.01, 0.9, num_vals)],
                 distribution=["uniform", "gaussian", "levy"]),
             ["all", "greedy", "metropolis", "probabilistic"]),
         (
@@ -1196,23 +1198,23 @@ def _obtain_operators(num_vals=5):
                 alpha=[*np.linspace(0.0, 0.04, num_vals)]),
             ["all", "greedy", "metropolis", "probabilistic"]),
         (
-            "random_flight",
+            "random_flight",  # Particular case for Levy flight
             dict(
-                scale=[*np.linspace(0.1, 0.9, num_vals)],
+                scale=[*np.linspace(0.01, 1.0, num_vals)],
                 distribution=["levy"],
-                beta=[*np.linspace(1.25, 1.75, num_vals)]),
+                beta=[*np.linspace(1.00, 2.00, num_vals)]),
             ["all", "greedy", "metropolis", "probabilistic"]),
         (
             "random_flight",
             dict(
-                scale=[*np.linspace(0.1, 0.9, num_vals)],
+                scale=[*np.linspace(0.01, 1.0, num_vals)],
                 distribution=["uniform", "gaussian"]),
             ["all", "greedy", "metropolis", "probabilistic"]),
         (
             "local_random_walk",
             dict(
-                probability=[*np.linspace(0.1, 0.9, num_vals)],
-                scale=[*np.linspace(0.1, 0.9, num_vals)],
+                probability=[*np.linspace(0.01, 0.99, num_vals)],
+                scale=[*np.linspace(0.01, 1.0, num_vals)],
                 distribution=["uniform", "gaussian", "levy"]),
             ["all", "greedy", "metropolis", "probabilistic"]),
         (
@@ -1222,30 +1224,29 @@ def _obtain_operators(num_vals=5):
         (
             "random_search",
             dict(
-                scale=[*np.linspace(0.1, 0.9, num_vals)],
+                scale=[*np.linspace(0.01, 1.0, num_vals)],
                 distribution=["uniform", "gaussian", "levy"]),
             ["all", "greedy", "metropolis", "probabilistic"]),
         (
             "spiral_dynamic",
             dict(
-                radius=[*np.linspace(0.001, 0.99, num_vals)],
-                angle=[*np.linspace(1.0, 179.0, num_vals)],
+                radius=[*np.linspace(0.001, 0.999, num_vals)],
+                angle=[*np.linspace(0.0, 180.0, num_vals)],
                 sigma=[*np.linspace(0.0, 0.5, num_vals)]),
             ["all", "greedy", "metropolis", "probabilistic"]),
         (
             "swarm_dynamic",
             dict(
-                factor=[*np.linspace(0.1, 1.0, num_vals)],
-                self_conf=[*np.linspace(1.1, 4.1, num_vals)],
-                swarm_conf=[*np.linspace(1.1, 4.1, num_vals)],
+                factor=[*np.linspace(0.01, 1.0, num_vals)],
+                self_conf=[*np.linspace(0.01, 4.99, num_vals)],
+                swarm_conf=[*np.linspace(0.01, 4.99, num_vals)],
                 version=["inertial", "constriction"],
                 distribution=["uniform", "gaussian", "levy"]),
             ["all", "greedy", "metropolis", "probabilistic"])
         ]
 
 
-def _build_operators(heuristics=_obtain_operators(),
-                     file_name="operators_collection"):
+def _build_operators(heuristics, file_name="operators_collection"):
     """
     Create a text file containing all possible combinations of parameter
     values for each search operator.
@@ -1277,6 +1278,7 @@ def _build_operators(heuristics=_obtain_operators(),
         # Read the number of parameters and how many values have each one
         num_parameters = len(parameters)
         num_selectors = len(selectors)
+        num_combinations: int = 0
         if num_parameters > 0:
             # Read the name and possible values of parameters
             par_names = list(parameters.keys())
@@ -1286,7 +1288,7 @@ def _build_operators(heuristics=_obtain_operators(),
             par_num_values = [np.size(x) for x in par_values]
 
             # Determine the number of combinations
-            num_combinations = np.prod(par_num_values)
+            num_combinations = int(np.prod(par_num_values))
 
             # Create the table of all possible combinations (index/parameter)
             indices = [x.flatten() for x in np.meshgrid(
@@ -1375,4 +1377,4 @@ def _process_operators(simple_heuristics):
 
 
 if __name__ == '__main__':
-    _build_operators(file_name="automatic")
+    _build_operators(_obtain_operators(), file_name="automatic")

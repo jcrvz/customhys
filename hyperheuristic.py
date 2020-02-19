@@ -21,10 +21,7 @@ from os import makedirs as _create_path
 
 
 class Hyperheuristic():
-    def __init__(self, heuristic_space, problem, parameters={
-            'cardinality': 2, 'num_iterations': 100, 'num_agents': 30,
-            'num_replicas': 100, 'num_steps': 10, 'num_trials': 10},
-            file_label=''):
+    def __init__(self, heuristic_space, problem, parameters=None, file_label=''):
         # Read the heuristic space
         if isinstance(heuristic_space, list):
             self.heuristic_space = heuristic_space
@@ -36,6 +33,17 @@ class Hyperheuristic():
         else:
             raise HyperheuristicError("Invalid heuristic_space")
 
+        # Assign default values
+        if parameters is None:
+            parameters = dict(cardinality=2,        # Search operators in MHs,  lvl:0
+                              num_iterations=100,   # Iterations a MH performs, lvl:0
+                              num_agents=30,        # Agents in population,     lvl:0
+                              num_replicas=100,     # Replicas per each MH,     lvl:1
+                              num_trials=100,       # Trials per HH step,       lvl:2
+                              max_temperature=1e8,  # Initial temperature (SA), lvl:2
+                              min_temperature=1e-8,  # Threshold temp. (SA),    lvl:2
+                              cooling_rate=0.05)    # Cooling rate (SA),        lvl:2
+
         # Read the heuristic space (mandatory)
         self.problem = problem
         self.num_operators = len(self.heuristic_space)
@@ -44,9 +52,22 @@ class Hyperheuristic():
         self.parameters = parameters
         self.file_label = file_label
 
+        # Read cardinality
+        if isinstance(parameters['cardinality'], int):
+            # Fixed cardinality
+            self.cardinality_boundaries = [parameters['cardinality']] * 2
+        elif isinstance(parameters['cardinality'], list):
+            # Variable cardinality
+            if len(parameters['cardinality']) == 1:
+                self.cardinality_boundaries = [1, parameters['cardinality'][0]]
+            elif len(parameters['cardinality']) == 2:
+                self.cardinality_boundaries = parameters['cardinality'].sort()
+            else:
+                raise HyperheuristicError('Invalid cardinality!')
+
     def run(self):
         """
-        Run Random Search (integer version) to find the best metaheuristic.
+        Run Simulated Annealing to find the best metaheuristic.
         Each meatheuristic is run 'num_replicas' times to obtain statistics
         and thus its performance.
 
@@ -68,9 +89,11 @@ class Hyperheuristic():
             has performed), 'fitness', 'positions', and 'statistics'.
 
         """
-        # Create the initial solution
-        encoded_solution = np.random.randint(
-            0, self.num_operators, self.parameters['cardinality'])
+        # Create the initial solution (it is fixed to be always Random Search)
+        # It is 0 because operators._build_operators put random search as the
+        # first operator.
+        cardinality = 1
+        encoded_solution = [0]
         solution = [self.heuristic_space[index] for index in encoded_solution]
 
         # Evaluate this solution
@@ -86,49 +109,63 @@ class Hyperheuristic():
         # Save this historical register
         _save_iteration(0, historicals, self.file_label)
 
-        print('{} - perf: {}, sol: {}'.format(0, performance,
-                                              encoded_solution))
+        # Initialise the temperature and step counter
+        temperature = self.parameters['max_temperature']
+        step = 0
 
-        # Perform the random search
-        for step in range(1, self.parameters['num_steps']):
+        # Print the first status update
+        print('{} - perf: {}, sol: {}'.format(step, performance, encoded_solution))
+
+        # Perform the annealing simulation
+        while temperature > self.parameters['min_temperature']:
             # Start trials
             for trial in range(self.parameters['num_trials']):
 
-                # Select randomly a candidate solution
-                encoded_candidate_solution = np.random.randint(
-                    0, self.num_operators, self.parameters['cardinality'])
+                # Generate a neighbour cardinality
+                cardinality += np.random.randint(-1, 1)
+                if cardinality < self.cardinality_boundaries[0]:
+                    cardinality = self.cardinality_boundaries[0]
+                elif cardinality > self.cardinality_boundaries[1]:
+                    cardinality = self.cardinality_boundaries[1]
+
+                # Generate a neighbour solution
+                encoded_candidate_solution = np.random.randint(0, self.num_operators, cardinality)
                 candidate_solution = [self.heuristic_space[index]
-                                      for index in
-                                      encoded_candidate_solution]
+                                      for index in encoded_candidate_solution]
 
                 # Evaluate this candidate solution
                 candidate_performance, candidate_details =\
                     self.evaluate_metaheuristic(candidate_solution)
 
-                # Check improvement (greedy selection)
-                if candidate_performance < performance:
+                # Determine the energy (performance) change
+                delta_energy = candidate_performance - performance
+
+                # Check improvement (Metropolis criterion)
+                if (delta_energy < 0) or (np.random.rand() < np.exp(-delta_energy/temperature)):
                     encoded_solution = encoded_candidate_solution
                     solution = candidate_solution
                     performance = candidate_performance
                     details = candidate_details
 
                     # Save this historical register and break
+                    step += 1
                     _save_iteration(step, {
                         'encoded_solution': encoded_solution,
                         'solution': solution,
                         'performance': performance,
                         'details': details},
                         self.file_label)
-                    break
 
-            print('{} - perf: {}, sol: {}'.format(step, performance,
-                                                  encoded_solution))
+                    print('{} - perf: {}, sol: {}'.format(step, performance, encoded_solution))
 
-            # When zero performance is reached
-            if (performance == 0.0):
-                # Goodbye
-                break
+                    # When zero performance is reached end the simulation
+                    if performance == 0.0:
+                        return solution, performance, encoded_solution, historicals
 
+            # Update temperature
+            temperature *= 1 - self.parameters['cooling_rate']
+
+        # Return the best solution found and its details
         return solution, performance, encoded_solution, historicals
 
     def evaluate_metaheuristic(self, search_operators):

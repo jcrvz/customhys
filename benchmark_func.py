@@ -33,23 +33,22 @@ import mpl_toolkits.mplot3d
 from matplotlib.colors import LightSource
 # from functools import wraps
 
-__all__ = ['Ackley1', 'Ackley4', 'Alpine1', 'Alpine2', 'Brown', 'Giunta',
-           'ChungReynolds', 'Csendes', 'Deb1', 'Deb3', 'DixonPrice', 'DropWave',
-           'EggHolder', 'Ellipsoid', 'Exponential', 'Griewank', 'HyperEllipsoid',
-           'KTablet', 'Michalewicz', 'Mishra1', 'Mishra11', 'Mishra2', 'Qing',
-           'Mishra7', 'Pathological', 'Perm', 'Pinter', 'PowellSum', 'Brent',
-           'Quartic', 'Quintic', 'Rana', 'Rastrigin', 'Rosenbrock', 'Stochastic',
-           'RotatedHyperEllipsoid', 'Salomon', 'SchafferN1', 'SecondMinima',
-           'SchafferN2', 'SchafferN4', 'SchafferN6', 'Schubert', 'Periodic',
-           'Schubert3', 'Schubert4', 'SchumerSteiglitz', 'Schwefel', 'NeedleEye',
-           'Schwefel12', 'Schwefel204', 'Schwefel220', 'Schwefel221',
-           'Schwefel222', 'Schwefel223', 'Schwefel225', 'Schwefel226', 'Sargan',
-           'Sphere', 'Step', 'Step2', 'Step3', 'StepInt', 'StrechedVSineWave',
-           'StyblinskiTang', 'SumSquares', 'Trid10', 'Trid6', 'Trigonometric1',
-           'Trigonometric2', 'WWavy', 'Weierstrass', 'Whitley', 'XinSheYang1',
-           'XinSheYang2', 'XinSheYang3', 'XinSheYang4', 'Zakharov', 'HappyCat',
-           'ExpandedFiveUnevenPeakTrap', 'ExpandedEqualMinima',
-           'ExpandedDecreasingMinima', 'ModifiedVincent']
+__all__ = ['Ackley1', 'Ackley4', 'Alpine1', 'Alpine2', 'Brent', 'Brown', 'ChungReynolds',
+           'Csendes', 'Deb1', 'Deb3', 'DixonPrice', 'DropWave', 'EggHolder', 'Ellipsoid',
+           'ExpandedDecreasingMinima', 'ExpandedEqualMinima', 'ExpandedFiveUnevenPeakTrap',
+           'Exponential', 'Giunta', 'Griewank', 'HappyCat', 'HyperEllipsoid', 'KTablet',
+           'Michalewicz', 'Mishra1', 'Mishra11', 'Mishra2', 'Mishra7', 'ModifiedVincent',
+           'NeedleEye', 'Pathological', 'Periodic', 'Perm', 'Pinter', 'PowellSum',
+           'Qing', 'Quartic', 'Quintic', 'Rana', 'Rastrigin', 'Rosenbrock',
+           'RotatedHyperEllipsoid', 'Salomon', 'Sargan', 'SchafferN1', 'SchafferN2',
+           'SchafferN4', 'SchafferN6', 'Schubert', 'Schubert3', 'Schubert4',
+           'SchumerSteiglitz', 'Schwefel', 'Schwefel12', 'Schwefel204', 'Schwefel220',
+           'Schwefel221', 'Schwefel222', 'Schwefel223', 'Schwefel225', 'Schwefel226',
+           'SecondMinima', 'Sphere', 'Step', 'Step2', 'Step3', 'StepInt', 'Stochastic',
+           'StrechedVSineWave', 'StyblinskiTang', 'SumSquares', 'Trid10', 'Trid6',
+           'Trigonometric1', 'Trigonometric2', 'WWavy', 'Weierstrass', 'Whitley',
+           'XinSheYang1', 'XinSheYang2', 'XinSheYang3', 'XinSheYang4', 'Zakharov']
+
 
 
 # %% Basic function class
@@ -1676,7 +1675,7 @@ class Trigonometric2(OptimalBasic):
                 variables - 0.9))) + np.square(variables - 0.9))
 
 
-# 165 - Class W / Wavy function
+# 165 - Class W-Wavy function
 class WWavy(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
@@ -1684,7 +1683,7 @@ class WWavy(OptimalBasic):
         self.min_search_range = np.array([-np.pi] * self.variable_num)
         self.optimal_solution = np.array([0.] * self.variable_num)
         self.global_optimum_solution = 0.
-        self.func_name = 'W / Wavy'
+        self.func_name = 'W-Wavy'
         self.features = {'Continuous': True,
                          'Differentiable': True,
                          'Separable': True,
@@ -2027,8 +2026,3 @@ class Perm(OptimalBasic):
         return np.sum(np.square(np.sum((j.T + beta) * (
                 np.power(x, j) - np.power(1 / j.T, j)), 0)))
 
-
-# %%
-if __name__ == '__main__':
-    q = Sphere(2)
-    q.plot()
