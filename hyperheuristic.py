@@ -219,9 +219,9 @@ class Hyperheuristic():
                 'details': operator_details},
                             self.file_label)
 
-            print('{}/{} - perf: {}'.format(operator_id + 1,
-                                            self.num_operators,
-                                            operator_performance))
+            # print('{}/{} - perf: {}'.format(operator_id + 1,
+            #                                 self.num_operators,
+            #                                 operator_performance))
 
     @staticmethod
     def get_performance(statistics):

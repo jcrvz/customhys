@@ -10,7 +10,7 @@ from metaheuristic import Operators
 #from metaheuristic import Population
 import numpy as np
 import benchmark_func as bf
-# import matplotlib.pyplot as plt
+import multiprocessing
 
 # %% Test set used for A Primary Study on Hyper-Heuristics to Customise
 #      Metaheuristics for Continuous Optimisation, submitted to CEC'20.
@@ -65,7 +65,7 @@ def test_set0():
 # %% Test set used for evaluate all the search operators in the collection
 def test_set1():
     # Problems definition
-    dimensions = [2, *range(5,50+1,5)]
+    dimensions = [2, *range(5, 50+1, 5)]
     functions = bf.__all__
     divider = 1.0
     is_constrained = True
@@ -120,6 +120,69 @@ def test_set1():
             # Run the HH:Random Search
             hh.brute_force()
 
+# %% Parallel try of test_set1()
+def test_set1p(num_dimensions):
+    # Problems definition
+    functions = bf.__all__
+    divider = 1.0
+    is_constrained = True
+
+    # Hyperheuristic conditions (it only works with 1st dascop)
+    hh_parameters = {
+        'cardinality': 1,
+        'num_agents': 30,
+        'num_iterations': 100,
+        'num_replicas': 30,
+        'num_trials': 100,       # Not used
+        'max_temperature': 100,  # Not used
+        'min_temperature': 0.1,  # Not used
+        'cooling_rate': 0.05,    # Not used
+        }
+
+    # print('-' * 10)
+    # Find a metaheuristic for each problem
+    # for num_dimensions in dimensions:
+        # print('Dim: {}/{},'.format(
+        #     num_dimensions-1, len(dimensions)), end=' ')
+    for func_id in range(len(functions)):
+        function_string = functions[func_id]
+
+        # print('Func: {}/{}...'.format(func_id + 1, len(functions)))
+
+        # Message to print and to store in folders
+        label = "{}-{}D".format(function_string, num_dimensions)
+        # print('... ' + label + ':')
+
+        # Format the problem
+        problem = eval("bf.{}({})".format(function_string, num_dimensions))
+
+        # HH.set_problem(problem_function, boundaries, True)
+        problem_to_solve = HH.set_problem(
+            lambda x: problem.get_function_value(x),
+            (problem.min_search_range/divider,
+             problem.max_search_range/divider),
+            is_constrained
+            )
+
+        # Call the hyperheuristic object
+        hh = HH.Hyperheuristic('automatic.txt', problem_to_solve,
+                               hh_parameters, label)
+
+        # Run the HH:Random Search
+        hh.brute_force()
+
+        print(label + "done!")
+
 # %% Autorun
 if __name__ == '__main__':
-    test_set1()
+    # Generate the search operator collection (once)
+    Operators._build_operators(Operators._obtain_operators(num_vals=3),
+                               file_name="automatic")
+
+    dimensions = [2, *range(5, 50 + 1, 5)]
+
+    # Run it in parallel
+    pool = multiprocessing.Pool(2)
+    pool.map_async(test_set1p, dimensions)
+    # pool.join()
+    # pool.close()
