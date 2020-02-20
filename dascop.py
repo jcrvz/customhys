@@ -85,23 +85,23 @@ def test_set1():
 
     # Generate the search operator collection (once)
     Operators._build_operators(
-        Operators._obtain_operators(num_vals=11), file_name="automatic")
+        Operators._obtain_operators(num_vals=7), file_name="automatic")
 
     heuristics_collection = 'automatic.txt'
 
-    # print('-' * 10)
+    print('-' * 10)
     # Find a metaheuristic for each problem
     for num_dimensions in dimensions:
-        # print('Dim: {}/{},'.format(
-        #     num_dimensions-1, len(dimensions)-1), end=' ')
+        print('Dim: {}/{},'.format(
+            num_dimensions-1, len(dimensions)-1), end=' ')
         for func_id in range(len(functions)):
             function_string = functions[func_id]
 
-            # print('Func: {}/{}...'.format(func_id + 1, len(functions)))
+            print('Func: {}/{}...'.format(func_id + 1, len(functions)))
 
             # Message to print and to store in folders
             label = "{}-{}D".format(function_string, num_dimensions)
-            # print('... ' + label + ':')
+            print('... ' + label + ':')
 
             # Format the problem
             problem = eval("bf.{}({})".format(function_string, num_dimensions))
@@ -186,4 +186,4 @@ def test_set2():
 
 # %% Autorun
 if __name__ == '__main__':
-    test_set2()
+    test_set1()
