@@ -65,7 +65,7 @@ def test_set0():
 # %% Test set used for evaluate all the search operators in the collection
 def test_set1():
     # Problems definition
-    dimensions = range(2, 30 + 1)
+    dimensions = [2, *range(5,50+1,5)]
     functions = bf.__all__
     divider = 1.0
     is_constrained = True
