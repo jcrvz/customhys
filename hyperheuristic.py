@@ -193,7 +193,7 @@ class Hyperheuristic():
             fitness_data.append(_temporal_fitness)
             position_data.append(_temporal_position)
 
-            print('-- MH: {}, fitness={}'.format(rep, _temporal_fitness))
+            # print('-- MH: {}, fitness={}'.format(rep, _temporal_fitness))
 
         # Determine a performance metric once finish the repetitions
         fitness_stats = self.get_statistics(fitness_data)
