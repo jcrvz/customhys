@@ -186,4 +186,4 @@ def test_set2():
 
 # %% Autorun
 if __name__ == '__main__':
-    test_set1()
+    test_set2()
