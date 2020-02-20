@@ -2,13 +2,26 @@
 
 This project aims to develop an approach based on, but not limited to, Data Science and Optimisation for solving continuous optimisation problems. As a final product, engineers and academicians can dispose of a framework for generating and/or selecting tailored metaheuristics these problems, closely related to practical engineering problems.
 
-## Outline
+## Publications
+
+[1] [Cruz-Duarte, J.M., Amaya, I., Ortiz-Bayliss, J.C., Connat-Pablos, S.E., and Terashima-Marín, H., A Primary Study on Hyper-Heuristics to Customise Metaheuristics for Continuous Optimisation. Submitted to CEC'2020.](./docfiles/SearchOperators_CEC.pdf)
+
+## Tasks
+
+- [x] Collect metaheuristics and extract their search operators (SOs).
+- [x] Collect benchmark functions (BFs) for continuous optimisation.
+- [x] Build the optimisation framework.
+- [x] Test this framework with the chosen SOs and BFs as a primary study.
+
+
+
+- [ ] Test the search operators collection generating a 1-cardinality metaheuristic for each one
+
+- [ ] this is an incomplete item
 
 
 
 
-Therefore, let HH be a technique that solves
-![img](http://latex.codecogs.com/svg.latex?%28%5Cmathbf%7Bh%7D_%2A%3B%5Cvec%7Bx%7D_%2A%29+%3D+%5Cunderset%7B%5Cmathbf%7Bh%7D%5Cin%5Cmathfrak%7BH%7D%5En%2C%5Cvec%7Bx%7D%5Cin%5Cmathfrak%7BX%7D%7D%7B%5Carg%5Cmax%7D%5C%7BF%28%5Cmathbf%7Bh%7D%7C%5Cmathfrak%7BX%7D%29%5C%7D.)
 
 ### Prerequisites
 
