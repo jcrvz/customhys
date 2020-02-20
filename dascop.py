@@ -75,7 +75,7 @@ def test_set1():
         'cardinality': 1,
         'num_agents': 30,
         'num_iterations': 100,
-        'num_replicas': 30,
+        'num_replicas': 10,
         'num_trials': 100,       # Not used
         'max_temperature': 100,  # Not used
         'min_temperature': 0.1,  # Not used
