@@ -1077,44 +1077,44 @@ def _get_rotation_matrix(dimensions, angle=0.39269908169872414):
     return rotation_matrix
 
 
-def # _check_parameter(par_value, interval=(0.0, 1.0),
-                     par_type=float):
-    """
-    Check if a parameter or variable is into an interval.
+# def _check_parameter(par_value, interval=(0.0, 1.0),
+#                      par_type=float):
+#     """
+#     Check if a parameter or variable is into an interval.
+#
+#     Parameters
+#     ----------
+#     parameter: str
+#         Variable's name to check.
+#     interval : tuple, optional
+#         A tuple corresponding to the interval. The default is (0.0, 1.0).
+#     par_type : type, optional
+#         The parameter's type is also checked. The default is float.
+#
+#     Raises
+#     ------
+#     PopulationError if the parameter does not pass the check.
+#
+#     Returns
+#     -------
+#     None.
+#
+#     """
+#     # Prepare some variables to perfom the checking
+#     assert isinstance(par_value, par_type)
+#
+#     # Check if the parameter value is into the interval
+#     if not interval[0] <= par_value <= interval[1]:
+#         raise OperatorsError(
+#             "Invalid value! {} is not in [{}, {}]".format(
+#                 par_value, interval[0], interval[1]))
 
-    Parameters
-    ----------
-    parameter: str
-        Variable's name to check.
-    interval : tuple, optional
-        A tuple corresponding to the interval. The default is (0.0, 1.0).
-    par_type : type, optional
-        The parameter's type is also checked. The default is float.
 
-    Raises
-    ------
-    PopulationError if the parameter does not pass the check.
-
-    Returns
-    -------
-    None.
-
-    """
-    # Prepare some variables to perfom the checking
-    assert isinstance(par_value, par_type)
-
-    # Check if the parameter value is into the interval
-    if not interval[0] <= par_value <= interval[1]:
-        raise OperatorsError(
-            "Invalid value! {} is not in [{}, {}]".format(
-                par_value, interval[0], interval[1]))
-
-
-class OperatorsError(Exception):
-    """
-    Simple OperatorError to manage exceptions.
-    """
-    pass
+# class OperatorsError(Exception):
+#     """
+#     Simple OperatorError to manage exceptions.
+#     """
+#     pass
 
 
 # ---------------------------------------------------------------------------
