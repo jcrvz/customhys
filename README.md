@@ -8,7 +8,7 @@ This project aims to develop an approach based on, but not limited to, Data Scie
 
 
 Therefore, let HH be a technique that solves
-$$(\mathbf{h}_*;\vec{x}_*) = \underset{\mathbf{h}\in\mathfrak{H}^n,\vec{x}\in\mathfrak{X}}{\arg\max}\{F(\mathbf{h}|\mathfrak{X})\}.$$
+![img](http://latex.codecogs.com/svg.latex?%28%5Cmathbf%7Bh%7D_%2A%3B%5Cvec%7Bx%7D_%2A%29+%3D+%5Cunderset%7B%5Cmathbf%7Bh%7D%5Cin%5Cmathfrak%7BH%7D%5En%2C%5Cvec%7Bx%7D%5Cin%5Cmathfrak%7BX%7D%7D%7B%5Carg%5Cmax%7D%5C%7BF%28%5Cmathbf%7Bh%7D%7C%5Cmathfrak%7BX%7D%29%5C%7D.)
 
 ### Prerequisites
 
