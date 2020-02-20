@@ -8,7 +8,7 @@ Created on Tue Jan  7 14:54:31 2020
 import numpy as np
 import os
 from itertools import combinations as _get_combinations
-from numba import jit
+# from numba import jit
 
 __all__ = ['local_random_walk', 'random_search', 'random_sample',
            'random_flight', 'differential_mutation',
@@ -837,7 +837,6 @@ def random_sample(pop):
         pop._check_simple_constraints()
 
 
-@jit(nopython=True, parallel=True)
 def random_search(pop, scale=0.01, distribution="uniform"):
     """
     Performs a random walk using a uniform distribution in [-1, 1].

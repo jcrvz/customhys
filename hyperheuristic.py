@@ -114,7 +114,7 @@ class Hyperheuristic():
         step = 0
 
         # Print the first status update
-        # print('{} - perf: {}, sol: {}'.format(step, performance, encoded_solution))
+        print('{} - perf: {}, sol: {}'.format(step, performance, encoded_solution))
 
         # Perform the annealing simulation
         while temperature > self.parameters['min_temperature']:
@@ -156,7 +156,7 @@ class Hyperheuristic():
                         'details': details},
                         self.file_label)
 
-                    # print('{} - perf: {}, sol: {}'.format(step, performance, encoded_solution))
+                    print('{} - perf: {}, sol: {}'.format(step, performance, encoded_solution))
 
                     # When zero performance is reached end the simulation
                     if performance == 0.0:
@@ -193,7 +193,7 @@ class Hyperheuristic():
             fitness_data.append(_temporal_fitness)
             position_data.append(_temporal_position)
 
-            # print('-- MH: {}, fitness={}'.format(rep, _temporal_fitness))
+            print('-- MH: {}, fitness={}'.format(rep, _temporal_fitness))
 
         # Determine a performance metric once finish the repetitions
         fitness_stats = self.get_statistics(fitness_data)
@@ -219,9 +219,9 @@ class Hyperheuristic():
                 'details': operator_details},
                             self.file_label)
 
-            # print('{}/{} - perf: {}'.format(operator_id + 1,
-            #                                 self.num_operators,
-            #                                 operator_performance))
+            print('{}/{} - perf: {}'.format(operator_id + 1,
+                                            self.num_operators,
+                                            operator_performance))
 
     @staticmethod
     def get_performance(statistics):
