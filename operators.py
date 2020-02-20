@@ -344,21 +344,21 @@ def genetic_crossover(pop, pairing="rank", crossover="blend",
     # Mating pool size
     num_mates = int(np.round(mating_pool_factor * pop.num_agents))
 
+    # Get parents (at least a couple per offspring)
+    if len(pairing) > 10:  # if pairing = 'tournament_2_100', for example
+        pairing, tournament_size, tournament_probability = \
+            pairing.split("_")
+        tournament_size = int(tournament_size)
+        if num_mates < tournament_size:
+            num_mates = tournament_size
+    else:  # dummy (it must not be used)
+        tournament_size, tournament_probability = '3', '100'
+
     # Number of offsprings (or couples)
     num_couples = pop.num_agents - num_mates
 
     # Get the mating pool using the natural selection
     mating_pool_indices = np.argsort(pop.fitness)[:num_mates]
-
-    # Get parents (at least a couple per offspring)
-    if len(pairing) > 10:  # if pairing = 'tournament_2_100', for example
-        pairing, tournament_size, tournament_probability = \
-            pairing.split("_")
-    else:  # dummy (it must not be used)
-        tournament_size, tournament_probability = '3', '100'
-
-    # Perform the pairing procedure
-    tournament_size = int(tournament_size)
     #
     # Roulette Wheel (Cost Weighting) Selection
     if pairing == "cost":
@@ -395,7 +395,7 @@ def genetic_crossover(pop, pairing="rank", crossover="blend",
     # Tournament pairing
     elif pairing == "tournament":
         # Calculate probabilities
-        probability = float(tournament_probability)/100
+        probability = float(tournament_probability)/100.
         probabilities = probability * (
             (1 - probability) ** np.arange(tournament_size))
 
@@ -429,26 +429,26 @@ def genetic_crossover(pop, pairing="rank", crossover="blend",
             mating_pool_indices.size, size=(2, num_couples))]
     #
     # Even-and-Odd pairing
-    elif pairing == "even-odd":
-        # Check if the num of mates is even
-        mating_pool_size = mating_pool_indices.size - \
-            (mating_pool_indices.size % 2)
-        half_size = mating_pool_size // 2
-
-        # Dummy indices according to the mating pool size
-        remaining = num_couples - half_size
-        if remaining > 0:
-            dummy_indices = np.tile(
-                np.reshape(np.arange(mating_pool_size),
-                           (-1, 2)).transpose(),
-                (1, int(np.ceil(num_couples / half_size))))
-        else:
-            dummy_indices = np.reshape(np.arange(mating_pool_size),
-                                       (-1, 2)).transpose()
-
-        # Return couple_indices
-        couple_indices = mating_pool_indices[
-            dummy_indices[:, :num_couples]]
+    # elif pairing == "even-odd":
+    #     # Check if the num of mates is even
+    #     mating_pool_size = mating_pool_indices.size - \
+    #         (mating_pool_indices.size % 2)
+    #     half_size = mating_pool_size // 2
+    #
+    #     # Dummy indices according to the mating pool size
+    #     remaining = num_couples - half_size
+    #     if remaining > 0:
+    #         dummy_indices = np.tile(
+    #             np.reshape(np.arange(mating_pool_size),
+    #                        (-1, 2)).transpose(),
+    #             (1, int(np.ceil(num_couples / half_size))))
+    #     else:
+    #         dummy_indices = np.reshape(np.arange(mating_pool_size),
+    #                                    (-1, 2)).transpose()
+    #
+    #     # Return couple_indices
+    #     couple_indices = mating_pool_indices[
+    #         dummy_indices[:, :num_couples]]
     #
     # No pairing procedure recognised
     # else:
@@ -517,7 +517,8 @@ def genetic_crossover(pop, pairing="rank", crossover="blend",
                                (parent_indices.shape[1], 1))
 
         # Crossover condition mask (only for two points)
-        crossover_mask = points[1] < dummy_matrix <= points[0]
+        crossover_mask = ((dummy_matrix <= points[0]) |
+                          (dummy_matrix > points[1]))
 
         # Get father and mother
         father_position = pop.positions[parent_indices[0, :], :]
@@ -1179,18 +1180,20 @@ def _obtain_operators(num_vals=11):
         (
             "genetic_crossover",
             dict(
-                pairing=["even-odd", "rank", "cost", "random",
-                         "tournament_2_100", "tournament_3_100"],
+                pairing=["rank", "cost", "random", "tournament_2_100",
+                         "tournament_2_75", "tournament_2_50",
+                         "tournament_3_100", "tournament_3_75",
+                         "tournament_3_50"],
                 crossover=["single", "two", "uniform", "blend",
                            "linear_0.5_0.5"],
-                mating_pool_factor=[*np.linspace(0.01, 0.99, num_vals)]),
+                mating_pool_factor=[*np.linspace(0.1, 0.9, num_vals)]),
             ["all", "greedy", "metropolis", "probabilistic"]),
         (
             "genetic_mutation",
             dict(
                 scale=[*np.linspace(0.01, 1.0, num_vals)],
                 elite_rate=[*np.linspace(0.0, 0.9, num_vals)],
-                mutation_rate=[*np.linspace(0.01, 0.9, num_vals)],
+                mutation_rate=[*np.linspace(0.1, 0.9, num_vals)],
                 distribution=["uniform", "gaussian", "levy"]),
             ["all", "greedy", "metropolis", "probabilistic"]),
         (
@@ -1383,4 +1386,4 @@ def _process_operators(simple_heuristics):
 
 
 if __name__ == '__main__':
-    _build_operators(_obtain_operators(), file_name="automatic")
+    _build_operators(_obtain_operators(num_vals=5), file_name="automatic")

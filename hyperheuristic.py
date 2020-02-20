@@ -204,7 +204,7 @@ class Hyperheuristic():
 
     def brute_force(self):
         # Apply all the search operators in the collection as 1-size MHs
-        for operator_id in range(self.num_operators):
+        for operator_id in range(4541, self.num_operators):
             # Read the corresponding operator
             operator = [self.heuristic_space[operator_id]]
 

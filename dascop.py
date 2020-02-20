@@ -65,7 +65,7 @@ def test_set0():
 # %% Test set used for evaluate all the search operators in the collection
 def test_set1():
     # Problems definition
-    dimensions = [2]  # range(2, 30 + 1)
+    dimensions = range(2, 30 + 1)
     functions = bf.__all__
     divider = 1.0
     is_constrained = True
@@ -73,9 +73,9 @@ def test_set1():
     # Hyperheuristic conditions (it only works with 1st dascop)
     hh_parameters = {
         'cardinality': 1,
-        'num_agents': 10,
-        'num_iterations': 10,
-        'num_replicas': 2,
+        'num_agents': 30,
+        'num_iterations': 100,
+        'num_replicas': 30,
         'num_trials': 100,       # Not used
         'max_temperature': 100,  # Not used
         'min_temperature': 0.1,  # Not used
@@ -92,7 +92,7 @@ def test_set1():
     # Find a metaheuristic for each problem
     for num_dimensions in dimensions:
         print('Dim: {}/{},'.format(
-            num_dimensions-1, len(dimensions)-1), end=' ')
+            num_dimensions-1, len(dimensions)), end=' ')
         for func_id in range(len(functions)):
             function_string = functions[func_id]
 
