@@ -8,11 +8,7 @@ This project aims to develop an approach based on, but not limited to, Data Scie
 
 
 Therefore, let HH be a technique that solves
-\[(\mathbf{h}_*;\vec{x}_*) = \underset{\mathbf{h}\in\mathfrak{H}^n,\vec{x}\in\mathfrak{X}}{\arg\max}\{F(\mathbf{h}|\mathfrak{X})\}.\]
-In other words, a HH searches for the optimal heuristic configuration
-\(\mathbf{h}_*\) that produces the optimal solution \(\vec{x}_*\) with
-the maximal performance \(F(\mathbf{h}_*|\mathfrak{X})\).
-
+$$(\mathbf{h}_*;\vec{x}_*) = \underset{\mathbf{h}\in\mathfrak{H}^n,\vec{x}\in\mathfrak{X}}{\arg\max}\{F(\mathbf{h}|\mathfrak{X})\}.$$
 
 ### Prerequisites
 
