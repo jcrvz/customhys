@@ -182,7 +182,7 @@ if __name__ == '__main__':
     dimensions = [2, *range(5, 50 + 1, 5)]
 
     # Run it in parallel
-    pool = multiprocessing.Pool(2)
-    pool.map_async(test_set1p, dimensions)
-    # pool.join()
-    # pool.close()
+    pool = multiprocessing.Pool()
+    pool.map(test_set1p, dimensions)
+    pool.join()
+    pool.close()
