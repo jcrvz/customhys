@@ -84,7 +84,7 @@ def test_set1():
 
     # Generate the search operator collection (once)
     Operators._build_operators(
-        Operators._obtain_operators(num_vals=5), file_name="automatic")
+        Operators._obtain_operators(num_vals=3), file_name="automatic")
 
     heuristics_collection = 'automatic.txt'
 
