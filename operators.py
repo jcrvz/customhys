@@ -209,9 +209,9 @@ def differential_mutation(pop, expression="current-to-best", num_rands=1,
                 pop.positions[np.random.permutation(pop.num_agents), :] +
                 pop.positions[np.random.permutation(pop.num_agents), :] -
                 pop.positions)
-    else:
-        mutant = []
-        raise OperatorsError('Invalid DE mutation scheme!')
+    # else:
+    #     mutant = []
+    #     raise OperatorsError('Invalid DE mutation scheme!')
 
     # Add random parts according to num_rands
     if num_rands >= 0:
@@ -219,8 +219,8 @@ def differential_mutation(pop, expression="current-to-best", num_rands=1,
             mutant += factor * (pop.positions[np.random.permutation(
                 pop.num_agents), :] - pop.positions[
                     np.random.permutation(pop.num_agents), :])
-    else:
-        raise OperatorsError('Invalid DE mutation scheme!')
+    # else:
+    #     raise OperatorsError('Invalid DE mutation scheme!')
 
     # Replace mutant population in the current one
     pop.positions = mutant
@@ -269,10 +269,10 @@ def firefly_dynamic(pop, alpha=0.1, beta=1.0, gamma=100.0,
     elif distribution == "levy":
         epsilon_value = _random_levy(
             1.5, (pop.num_agents, pop.num_dimensions))
-    else:
-        epsilon_value = []
-        raise OperatorsError(
-            "Epsilon is not valid: 'uniform' or 'gaussian'")
+    # else:
+    #     epsilon_value = []
+    #     raise OperatorsError(
+    #         "Epsilon is not valid: 'uniform' or 'gaussian'")
 
     # Initialise delta or difference between two positions
     difference_positions = np.zeros((pop.num_agents, pop.num_dimensions))
@@ -451,32 +451,32 @@ def genetic_crossover(pop, pairing="rank", crossover="blend",
             dummy_indices[:, :num_couples]]
     #
     # No pairing procedure recognised
-    else:
-        raise OperatorsError("Invalid pairing method")
+    # else:
+    #     raise OperatorsError("Invalid pairing method")
 
     # Identify offspring indices
     offspring_indices = np.setdiff1d(
         np.arange(pop.num_agents), mating_pool_indices, True)
 
     # Prepare crossover variables
-    try:
-        if len(crossover) > 7:  # if crossover = 'linear_0.5_0.5', for example
-            cr_split = crossover.split("_")
-            if len(cr_split) == 1:
-                crossover = cr_split
-                coeff1 = coeff2 = 0.5
-            elif len(cr_split) == 2:
-                crossover = cr_split[0]
-                coeff1 = coeff2 = cr_split[1]
-            else:
-                crossover = cr_split[0]
-                coeff1 = cr_split[1]
-                coeff2 = cr_split[2]
-            coefficients = [float(coeff1), float(coeff2)]
-        else:  # dummy (it must not be used)
-            coefficients = [np.nan, np.nan]
-    except:
-        raise OperatorsError('Something is wrong with crossover')
+    # try:
+    if len(crossover) > 7:  # if crossover = 'linear_0.5_0.5', for example
+        cr_split = crossover.split("_")
+        if len(cr_split) == 1:
+            crossover = cr_split
+            coeff1 = coeff2 = 0.5
+        elif len(cr_split) == 2:
+            crossover = cr_split[0]
+            coeff1 = coeff2 = cr_split[1]
+        else:
+            crossover = cr_split[0]
+            coeff1 = cr_split[1]
+            coeff2 = cr_split[2]
+        coefficients = [float(coeff1), float(coeff2)]
+    else:  # dummy (it must not be used)
+        coefficients = [np.nan, np.nan]
+    # except:
+    #     raise OperatorsError('Something is wrong with crossover')
 
     # Perform crossover and assign to population
     parent_indices = couple_indices.astype(np.int64)
@@ -566,8 +566,8 @@ def genetic_crossover(pop, pairing="rank", crossover="blend",
             coefficients[1] * mother_position
     #
     # No crossover method recognised
-    else:
-        raise OperatorsError("Invalid pairing method")
+    # else:
+    #     raise OperatorsError("Invalid pairing method")
 
     # Store offspring positions in the current population
     pop.positions[offspring_indices, :] = offsprings
@@ -640,8 +640,8 @@ def genetic_mutation(pop, scale=1.0, elite_rate=0.1, mutation_rate=0.25,
         elif distribution == "levy":
             mutants = _random_levy(1.5, num_mutations ** 2)
 
-        else:
-            raise OperatorsError('Invalid distribution!')
+        # else:
+        #     raise OperatorsError('Invalid distribution!')
 
         # Store mutants
         pop.positions[rows.flatten(), columns.flatten()] = scale * mutants
@@ -755,8 +755,8 @@ def random_flight(pop, scale=1.0, distribution="levy", beta=1.5):
         random_samples = _random_levy(
             beta, size=(pop.num_agents, pop.num_dimensions))
 
-    else:
-        raise OperatorsError('Invalid distribution!')
+    # else:
+    #     raise OperatorsError('Invalid distribution!')
 
     # Move each agent using levy random displacements
     pop.positions += scale * random_samples * \
@@ -799,8 +799,8 @@ def local_random_walk(pop, probability=0.75, scale=1.0,
         r_1 = np.random.randn(pop.num_agents, pop.num_dimensions)
     elif distribution == "levy":
         r_1 = _random_levy(size=(pop.num_agents, pop.num_dimensions))
-    else:
-        raise OperatorsError('Invalid distribution!')
+    # else:
+    #     raise OperatorsError('Invalid distribution!')
     r_2 = np.random.rand(pop.num_agents, pop.num_dimensions)
 
     # Move positions with a displacement due permutations and probabilities
@@ -869,8 +869,8 @@ def random_search(pop, scale=0.01, distribution="uniform"):
                                                  pop.num_dimensions))
     elif distribution == "levy":
         random_step = _random_levy(size=(pop.num_agents, pop.num_dimensions))
-    else:
-        raise OperatorsError('Invalid distribution!')
+    # else:
+    #     raise OperatorsError('Invalid distribution!')
 
     # Move each agent using uniform random displacements
     pop.positions += scale * random_step
@@ -966,8 +966,8 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56,
     elif distribution == "levy":
         r_1 = _random_levy(size=(pop.num_agents, pop.num_dimensions))
         r_2 = _random_levy(size=(pop.num_agents, pop.num_dimensions))
-    else:
-        raise OperatorsError('Invalid distribution!')
+    # else:
+    #     raise OperatorsError('Invalid distribution!')
 
     # Choose the PSO version = 'inertial' or 'constriction'
     if version == "inertial":
@@ -990,8 +990,8 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56,
             pop.particular_best_positions - pop.positions) +
             r_2 * swarm_conf * (np.tile(pop.global_best_position, (
                 pop.num_agents, 1)) - pop.positions))
-    else:
-        raise OperatorsError('Invalid swarm_dynamic version')
+    # else:
+    #     raise OperatorsError('Invalid swarm_dynamic version')
 
     # Move each agent using velocity's information
     pop.positions += pop.velocities
