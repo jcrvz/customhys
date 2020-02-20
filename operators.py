@@ -1171,7 +1171,7 @@ def _obtain_operators(num_vals=11):
         (
             "firefly_dynamic",
             dict(
-                epsilon=["uniform", "gaussian", "levy"],
+                distribution=["uniform", "gaussian", "levy"],
                 alpha=[*np.linspace(0.0, 0.5, num_vals)],
                 beta=[*np.linspace(0.01, 1.0, num_vals)],
                 gamma=[*np.linspace(1.0, 1000.0, num_vals)]),
