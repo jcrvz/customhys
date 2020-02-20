@@ -46,10 +46,10 @@ def central_force_dynamic(pop, gravity=0.001, alpha=0.01, beta=1.5, dt=1.0):
 
     """
     # Check the gravity, alpha, beta, and dt value
-    _check_parameter(alpha)
-    _check_parameter(beta, (1.0, 3.0))
-    _check_parameter(dt, (0.0, 10.0))
-    _check_parameter(gravity)
+    # _check_parameter(alpha)
+    # _check_parameter(beta, (1.0, 3.0))
+    # _check_parameter(dt, (0.0, 10.0))
+    # _check_parameter(gravity)
 
     # Initialise acceleration
     acceleration = np.zeros((pop.num_agents, pop.num_dimensions))
@@ -105,7 +105,7 @@ def central_force_dynamic(pop, gravity=0.001, alpha=0.01, beta=1.5, dt=1.0):
 
 #     """
 #     # Check the scale and beta value
-#     _check_parameter(crossover_rate)
+#     # _check_parameter(crossover_rate)
 
 #     # Binomial version
 #     if version == "binomial":
@@ -178,8 +178,8 @@ def differential_mutation(pop, expression="current-to-best", num_rands=1,
 
     """
     # Check the scale and beta value
-    _check_parameter(num_rands, (1, 10), int)
-    _check_parameter(factor, (0.0, 3.0))
+    # _check_parameter(num_rands, (1, 10), int)
+    # _check_parameter(factor, (0.0, 3.0))
 
     # Create mutants using the expression provided in scheme
     if expression == "rand":
@@ -254,9 +254,9 @@ def firefly_dynamic(pop, alpha=0.1, beta=1.0, gamma=100.0,
 
     """
     # Check the alpha, beta, and gamma value
-    _check_parameter(alpha)
-    _check_parameter(beta)
-    _check_parameter(gamma, (0.0, 10000.0))
+    # _check_parameter(alpha)
+    # _check_parameter(beta)
+    # _check_parameter(gamma, (0.0, 10000.0))
 
     # Determine epsilon values
     if distribution == "gaussian":
@@ -339,7 +339,7 @@ def genetic_crossover(pop, pairing="rank", crossover="blend",
 
     """
     # Check the mating_pool_factor value
-    _check_parameter(mating_pool_factor)
+    # _check_parameter(mating_pool_factor)
 
     # Mating pool size
     num_mates = int(np.round(mating_pool_factor * pop.num_agents))
@@ -601,9 +601,9 @@ def genetic_mutation(pop, scale=1.0, elite_rate=0.1, mutation_rate=0.25,
 
     """
     # Check the elite_rate, mutation_rate, and sigma value
-    _check_parameter(elite_rate)
-    _check_parameter(mutation_rate)
-    _check_parameter(scale)
+    # _check_parameter(elite_rate)
+    # _check_parameter(mutation_rate)
+    # _check_parameter(scale)
 
     # Calculate the number of elite agents
     num_elite = int(np.ceil(pop.num_agents * elite_rate))
@@ -666,8 +666,8 @@ def gravitational_search(pop, gravity=1.0, alpha=0.02):
 
     """
     # Check the gravity, alpha, and epsilon value
-    _check_parameter(gravity)
-    _check_parameter(alpha)
+    # _check_parameter(gravity)
+    # _check_parameter(alpha)
 
     # Initialise acceleration
     acceleration = np.zeros((pop.num_agents, pop.num_dimensions))
@@ -737,8 +737,8 @@ def random_flight(pop, scale=1.0, distribution="levy", beta=1.5):
 
     """
     # Check the scale and beta value
-    _check_parameter(scale)
-    _check_parameter(beta, (1.0, 3.0))
+    # _check_parameter(scale)
+    # _check_parameter(beta, (1.0, 3.0))
 
     # Get random samples
     if distribution == "uniform":
@@ -789,8 +789,8 @@ def local_random_walk(pop, probability=0.75, scale=1.0,
 
     """
     # Check the scale and beta value
-    _check_parameter(probability)
-    _check_parameter(scale)
+    # _check_parameter(probability)
+    # _check_parameter(scale)
 
     # Determine random numbers
     if distribution == "uniform":
@@ -858,7 +858,7 @@ def random_search(pop, scale=0.01, distribution="uniform"):
 
     """
     # Check the scale value
-    _check_parameter(scale)
+    # _check_parameter(scale)
 
     # Determine the random step
     if distribution == "uniform":
@@ -902,9 +902,9 @@ def spiral_dynamic(pop, radius=0.9, angle=22.5, sigma=0.1):
 
     """
     # Check the scale and beta value
-    _check_parameter(radius)
-    _check_parameter(angle, (0.0, 360.0))
-    _check_parameter(sigma)
+    # _check_parameter(radius)
+    # _check_parameter(angle, (0.0, 360.0))
+    # _check_parameter(sigma)
 
     # Determine the rotation matrix
     rotation_matrix = _get_rotation_matrix(pop.num_dimensions,
@@ -952,9 +952,9 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56,
 
     """
     # Check the scale and beta value
-    _check_parameter(factor)
-    _check_parameter(self_conf, (0.0, 10.0))
-    _check_parameter(swarm_conf, (0.0, 10.0))
+    # _check_parameter(factor)
+    # _check_parameter(self_conf, (0.0, 10.0))
+    # _check_parameter(swarm_conf, (0.0, 10.0))
 
     # Determine random numbers
     if distribution == "uniform":
@@ -1052,8 +1052,8 @@ def _get_rotation_matrix(dimensions, angle=0.39269908169872414):
 
     """
     # Check the dimensions and angle value
-    _check_parameter(dimensions, (2, np.inf), int)
-    _check_parameter(angle, (0.0, 2*np.pi))
+    # _check_parameter(dimensions, (2, np.inf), int)
+    # _check_parameter(angle, (0.0, 2*np.pi))
 
     # Initialise the rotation matrix
     rotation_matrix = np.eye(dimensions)
@@ -1077,7 +1077,7 @@ def _get_rotation_matrix(dimensions, angle=0.39269908169872414):
     return rotation_matrix
 
 
-def _check_parameter(par_value, interval=(0.0, 1.0),
+def # _check_parameter(par_value, interval=(0.0, 1.0),
                      par_type=float):
     """
     Check if a parameter or variable is into an interval.
