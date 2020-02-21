@@ -230,7 +230,7 @@ def differential_mutation(pop, expression="current-to-best", num_rands=1,
         pop._check_simple_constraints()
 
 
-def firefly_dynamic(pop, alpha=0.1, beta=1.0, gamma=100.0,
+def firefly_dynamic(pop, alpha=1.0, beta=1.0, gamma=100.0,
                     distribution="uniform"):
     """
     Performs movements accordint to the Firefly algorithm (FA)
@@ -1386,4 +1386,4 @@ def _process_operators(simple_heuristics):
 
 
 if __name__ == '__main__':
-    _build_operators(_obtain_operators(num_vals=5), file_name="automatic")
+    _build_operators(_obtain_operators(num_vals=11), file_name="automatic")

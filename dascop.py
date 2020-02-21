@@ -165,7 +165,7 @@ def test_set1p(num_dimensions):
             )
 
         # Call the hyperheuristic object
-        hh = HH.Hyperheuristic('automatic.txt', problem_to_solve,
+        hh = HH.Hyperheuristic('default.txt', problem_to_solve,
                                hh_parameters, label)
 
         # Run the HH:Random Search
@@ -175,11 +175,7 @@ def test_set1p(num_dimensions):
 
 # %% Autorun
 if __name__ == '__main__':
-    # Generate the search operator collection (once)
-    Operators._build_operators(Operators._obtain_operators(num_vals=3),
-                               file_name="automatic")
-
-    dimensions = [2, *range(5, 50 + 1, 5)]
+    dimensions = [2, 5, *range(10, 50 + 1, 10)]
 
     # Run it in parallel
     pool = multiprocessing.Pool()
