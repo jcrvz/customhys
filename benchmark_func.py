@@ -365,7 +365,7 @@ class Deb3(OptimalBasic):
 
     def get_func_val(self, variables, *args):
         return np.sum(np.power(np.sin(5. * np.pi * (
-                np.power(variables, 3 / 4) - 0.05)), 6.)) / (-self.variable_num)
+                np.power(variables, 3. / 4.) - 0.05)), 6.)) / (-self.variable_num)
 
 
 # 48 - Class Dixon & Price function

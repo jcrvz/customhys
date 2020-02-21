@@ -171,7 +171,7 @@ def test_set1p(num_dimensions):
         # Run the HH:Random Search
         hh.brute_force()
 
-        print(label + "done!")
+        print(label + " done!")
 
 # %% Autorun
 if __name__ == '__main__':
