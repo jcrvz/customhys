@@ -3,10 +3,13 @@ Created on Sat Feb 22, 2020
 
 @author: jcrvz (jcrvz.github.io)
 """
+import os
+from subprocess import call
+
 
 def printmsk(var, level=1, name=None):
     """
-    Print the type skeleton of a variable with nested variables.
+    Print the meta-skeleton of a variable with nested variables.
 
     :param var: any, variable to inspect.
     :param level: int (optional), level of the variable to inspect. Default: 1.
@@ -70,3 +73,33 @@ def printmsk(var, level=1, name=None):
                     printmsk(var[id], level + 1, str(id))
     else:
         print("{}".format(parent_type) + "}")
+
+
+def listfind(values, val):
+    return [i for i in range(0, len(values)) if values[i] == val]
+
+
+def revise_results(main_folder='data_files/raw/'):
+    raw_folders = [element for element in os.listdir(main_folder)
+                   if not element.startswith('.')]
+    folders_with_date = sorted(raw_folders, key=lambda x: x.split('D-')[0])
+    folders_without_date = [x.split('D-')[0] for x in folders_with_date]
+
+    # Look for repeated folder names without date
+    for folder_name in list(set(folders_without_date)):
+        indices = listfind(folders_without_date, folder_name)
+        if len(indices) > 1:
+            # Merge this folders into the first occurrence
+            destination_folder = main_folder + folders_with_date[indices[0]]
+            for index in indices[1:]:
+                # Copy all content to the first folder
+                call(['cp', '-a', main_folder + folders_with_date[index] + '/',
+                      destination_folder])  # Linux
+                # Rename the copied folder with prefix '_to_delete_'
+                call(['mv', main_folder + folders_with_date[index],
+                      main_folder + ".to_delete-" + folders_with_date[index]])
+                print("Merged '{}' into '{}'!".format(
+                    folders_with_date[index], folders_with_date[indices[0]]))
+
+if __name__ == '__main__':
+    revise_results()

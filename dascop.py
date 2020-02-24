@@ -123,7 +123,7 @@ def test_set1():
 # %% Parallel try of test_set1()
 def test_set1p(num_dimensions):
     # Problems definition
-    functions = bf.__all__[82]
+    functions = bf.__all__  # [82]
     divider = 1.0
     is_constrained = True
 
@@ -182,5 +182,5 @@ if __name__ == '__main__':
     # Run it in parallel
     pool = multiprocessing.Pool()
     pool.map(test_set1p, dimensions)
-    pool.join()
-    pool.close()
+    # pool.join()
+    # pool.close()
