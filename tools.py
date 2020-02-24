@@ -93,7 +93,7 @@ def revise_results(main_folder='data_files/raw/'):
             destination_folder = main_folder + folders_with_date[indices[0]]
             for index in indices[1:]:
                 # Copy all content to the first folder
-                call(['cp', '-a', main_folder + folders_with_date[index] + '/',
+                call(['cp', '-a', main_folder + folders_with_date[index] + '/*',
                       destination_folder])  # Linux
                 # Rename the copied folder with prefix '_to_delete_'
                 call(['mv', main_folder + folders_with_date[index],
@@ -103,3 +103,15 @@ def revise_results(main_folder='data_files/raw/'):
 
 if __name__ == '__main__':
     revise_results()
+
+# .to_delete-HyperEllipsoid-50D-02_22_2020
+# .to_delete-Mishra7-40D-02_22_2020
+# .to_delete-Perm-30D-02_22_2020
+# .to_delete-Rastrigin-20D-02_22_2020
+# .to_delete-Schubert-10D-02_22_2020
+# .to_delete-Schwefel-5D-02_22_2020
+# .to_delete-Schwefel221-2D-02_22_2020
+# .to_delete-Schwefel223-50D-02_23_2020
+# .to_delete-WWavy-40D-02_23_2020
+# .to_delete-Zakharov-2D-02_24_2020
+
