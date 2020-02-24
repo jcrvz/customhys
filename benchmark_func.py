@@ -1838,7 +1838,7 @@ class Zakharov(OptimalBasic):
                          'Multimodal': True}
 
     def get_func_val(self, variables, *args):
-        ixi = np.arange(1, self.variable_num) * variables
+        ixi = np.arange(1, self.variable_num + 1) * variables
         return np.sum(np.square(variables)) + np.square(0.5 * np.sum(ixi)) + \
             np.power(0.5 * np.sum(ixi), 4)
 
