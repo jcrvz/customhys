@@ -144,6 +144,8 @@ def test_set1p(num_dimensions):
     # for num_dimensions in dimensions:
         # print('Dim: {}/{},'.format(
         #     num_dimensions-1, len(dimensions)), end=' ')
+    if isinstance(functions, str):
+        functions = [functions]
     for func_id in range(len(functions)):
         function_string = functions[func_id]
 
