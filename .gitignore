@@ -129,3 +129,5 @@ images/
 raw_data*
 raw_data*/
 *.json
+.DS_Store
+*.png
