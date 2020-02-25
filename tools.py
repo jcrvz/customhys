@@ -4,8 +4,10 @@ Created on Sat Feb 22, 2020
 @author: jcrvz (jcrvz.github.io)
 """
 import os
+import json
 from subprocess import call
-
+from hyperheuristic import NumpyEncoder
+from tqdm import tqdm
 
 def printmsk(var, level=1, name=None):
     """
@@ -76,10 +78,24 @@ def printmsk(var, level=1, name=None):
 
 
 def listfind(values, val):
+    """
+    Find indices of a list corresponding to a value.
+
+    :param values: list, a list to analyse.
+    :param val: any, element to find in the list.
+    :return: a list of indices.
+    """
     return [i for i in range(0, len(values)) if values[i] == val]
 
 
 def revise_results(main_folder='data_files/raw/'):
+    """
+    Revise a folder with subfolders, and check if there are subfolder repeated,
+    in name, to merge.
+
+    :param main_folder: root to analyse
+    :return: None
+    """
     raw_folders = [element for element in os.listdir(main_folder)
                    if not element.startswith('.')]
     folders_with_date = sorted(raw_folders, key=lambda x: x.split('D-')[0])
@@ -101,8 +117,75 @@ def revise_results(main_folder='data_files/raw/'):
                 print("Merged '{}' into '{}'!".format(
                     folders_with_date[index], folders_with_date[indices[0]]))
 
+
+def preprocess_bruteforce_files(main_folder='data_files/raw/'):
+    # Get folders and exclude hidden ones
+    raw_folders = [element for element in os.listdir(main_folder)
+                   if not element.startswith('.')]
+
+    # Sort subfolder names by problem name & dimensions
+    subfolder_names = sorted(raw_folders,
+                             key=lambda x: int(x.split('-')[1].strip('D')))
+
+    # Define the basic data structure
+    data = {'problem': list(), 'dimensions': list(), 'results': list()}
+
+    for subfolder in subfolder_names:
+        # Extract the problem name and the number of dimensions
+        problem_name, dimensions, date_str = subfolder.split('-')
+
+        # Store information about this subfolder
+        data['problem'].append(problem_name)
+        data['dimensions'].append(int(dimensions[:-1]))
+
+        # Read all the iterations files contained in this subfolder
+        temporal_full_path = os.path.join(main_folder, subfolder)
+
+        # Iteration (in this case, operator) file names
+        raw_file_names = [element for element in os.listdir(
+            temporal_full_path) if not element.startswith('.')]
+
+        # Sort the list of files based on their iterations
+        file_names = sorted(raw_file_names, key=lambda x: int(x.split('-')[0]))
+
+        # Initialise iteration data with same field as files
+        # details only contains fitness values and positions
+        # file_data = {'operator_id': list(), 'performance': list(),
+        #                   'fitness': list(), 'positions': list()}
+        file_data = {'operator_id': list(), 'performance': list(),
+                     'statistics': list()}
+
+        # Walk on subfolders' files
+        for file_name in tqdm(file_names,
+            desc='{} {}'.format(problem_name, dimensions)):
+
+            # Extract the iteration number and time
+            operator_id = int(file_name.split('-')[0])
+
+            # Read json file
+            with open(temporal_full_path + '/' + file_name, 'r') as json_file:
+                temporal_data = json.load(json_file)
+
+            # Store information in the correspoding variables
+            file_data['operator_id'].append(operator_id)
+            file_data['performance'].append(temporal_data['performance'])
+            # file_data['fitness'].append(temporal_data['details']['fitness'])
+            # file_data['positions'].append(temporal_data['details']['positions'])
+            file_data['statistics'].append(temporal_data['details']['statistics'])
+
+        # Store results in the main data frame
+        data['results'].append(file_data)
+
+    # Save pre-processed data
+    with open(main_folder.split('/')[0] + "/brute-force-data.json", 'w') as json_file:
+        json.dump(data, json_file, cls=NumpyEncoder)
+
+    # Return only the data variable
+    return data
+
+
 if __name__ == '__main__':
-    revise_results()
+    processed_data = preprocess_bruteforce_files()
 
 # .to_delete-HyperEllipsoid-50D-02_22_2020
 # .to_delete-Mishra7-40D-02_22_2020

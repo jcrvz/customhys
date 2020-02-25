@@ -214,7 +214,7 @@ class Hyperheuristic():
 
             # Save information
             _save_iteration(operator_id, {
-                'encoded_solution': operator,
+                'encoded_solution': operator,  # Mistake:  it must be the operator_id
                 'performance': operator_performance,
                 'details': operator_details},
                             self.file_label)
