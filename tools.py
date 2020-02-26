@@ -58,14 +58,14 @@ def printmsk(var, level=1, name=None):
     var_name = "" if name is None else name + " = "
     print('|  ' * (level - 1) + '|-- ' + var_name + "{", end="")
 
-    if hasattr(var, '__len__') and (not isinstance(var, str)):
+    if hasattr(var, '__len__') and not (parent_type in ['str', 'ndarray']):
         print("{}: {}".format(parent_type, len(var)) + "}")
 
         # If is it a dictionary
-        if isinstance(var, dict):
+        if parent_type == 'dict':
             for key, val in var.items():
                 printmsk(val, level + 1, key)
-        elif isinstance(var, (list, tuple)):
+        elif parent_type in ['list', 'tuple']:
             # Get a sample: first 10 elements (if the list is too long)
             if len(var) > 10:
                 var = var[:10]
@@ -78,7 +78,11 @@ def printmsk(var, level=1, name=None):
                 for id in range(len(var)):
                     printmsk(var[id], level + 1, str(id))
     else:
-        print("{}".format(parent_type) + "}")
+        if parent_type == 'ndarray':
+            dimensions = " x ".join([str(x) for x in var.shape])
+            print("{}: {}".format(parent_type, dimensions) + "}")
+        else:
+            print("{}".format(parent_type) + "}")
 
 
 def listfind(values, val):
