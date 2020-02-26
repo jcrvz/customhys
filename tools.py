@@ -66,6 +66,10 @@ def printmsk(var, level=1, name=None):
             for key, val in var.items():
                 printmsk(val, level + 1, key)
         elif isinstance(var, (list, tuple)):
+            # Get a sample: first 10 elements (if the list is too long)
+            if len(var) > 10:
+                var = var[:10]
+
             # If all the elements has same type, then show an example
             if len(set([val.__class__.__name__ for val in var])) == 1:
                 printmsk(var[0], level + 1, "0")

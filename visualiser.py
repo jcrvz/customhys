@@ -2,84 +2,26 @@
 
 
 import os
-from datetime import datetime
 import json
-from tqdm import tqdm
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib import rcParams, cycler
+import mpl_toolkits.mplot3d
 import numpy as np
+from tools import *
+
 
 # READ RAW DATA FILES
-def read_data_files(main_folder_name='data_files/raw/'):
-    # Define the basic data structure
-    data = {'problem': list(), 'dimensions': list(), 'results': list()}
-
-    # Get subfolder names: problem name & dimensions
-    problem_list = os.listdir(main_folder_name)
-    if '.DS_Store' in problem_list:
-        problem_list.remove('.DS_Store')
-    subfolder_names = sorted(problem_list,
-                             key=lambda x: int(x.split('-')[1].strip('D')))
-
-    for subfolder in [subfolder_names[0]]:
-        # Extract the problem name and the number of dimensions
-        problem_name, dimensions, date_str = subfolder.split('-')
-
-        # Store information about this subfolder
-        data['problem'].append(problem_name)
-        data['dimensions'].append(int(dimensions[:-1]))
-
-        # Read all the iterations files contained in this subfolder
-        temporal_full_path = os.path.join(main_folder_name, subfolder)
-        iteration_file_names = os.listdir(temporal_full_path)
-
-        # Sort the list of files based on their iterations
-        iteration_file_names = sorted(iteration_file_names,
-                                      key=lambda x: int(x.split('-')[0]))
-
-        # Initialise iteration data with same field as files
-        iteration_data = {'iteration': list(), 'time': list(),
-                          'encoded_solution': list(), 'solution': list(),
-                          'performance': list(), 'details': list()}
-
-        # Walk on subfolder's files
-        for iteration_file in tqdm(iteration_file_names,
-                                   desc='{} {}'.format(
-                                       problem_name, dimensions)):
-            # Extract the iteration number and time
-            iteration_str, time_str = iteration_file.split('-')
-            iteration = int(iteration_str)
-
-            # Determine the absolute times (in seconds)
-            date_time = datetime.strptime(time_str + date_str,
-                                          '%H_%M_%S.json%m_%d_%Y')
-            if (iteration == 0):
-                initial_time = date_time
-                absolute_time = 0
-            else:
-                absolute_time = (date_time - initial_time).total_seconds()
-
-            # Read json file
-            with open(temporal_full_path + '/' + iteration_file, 'r'
-                      ) as json_file:
-                temporal_data = json.load(json_file)
-
-            # Store information in the correspoding variables
-            iteration_data['iteration'].append(iteration)
-            iteration_data['time'].append(absolute_time)
-            for key in temporal_data.keys():
-                iteration_data[key].append(temporal_data[key])
-
-        # Store results in the main data frame
-        data['results'].append(iteration_data)
+def read_data_file(data_file='data_files/brute-force-data.json'):
+    with open(data_file, 'r') as json_file:
+        data = json.load(json_file)
 
     # Return only the data variable
     return data
 
 
 # Read the data files
-data_frame = read_data_files()
+data_frame = read_data_file()
 
 # %%
 folder_name = 'data_files/images/'
@@ -88,9 +30,10 @@ if not os.path.isdir(folder_name):
 
 problems = list(set(data_frame['problem']))
 dimensions = list(set(data_frame['dimensions']))
+operators = list(set(data_frame['results'][0]['operator_id']))
 
-# %% Plot metaheuristic per problem
-
+# Show the variable tree
+printmsk(data_frame)
 
 # %% PLOT FITNESS PER CARD/DIMENSION
 is_saving = False
@@ -98,6 +41,45 @@ is_saving = False
 # Special adjustments
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif', size=18)
+
+# Initialise variables
+empty_dict = dict(Min=list(), Med=list(), Avg=list(), Std=list(),
+                  Max=list(), IQR=list(), MAD=list())
+stats = empty_dict.copy()
+
+# Plot a figure per dimension
+for dimension in dimensions:
+    # Find indices corresponding to such a dimension
+    dim_indices = listfind(data_frame['dimensions'], dimension)
+
+    # Get temporal stat dictionary
+    temp_stats = empty_dict.copy()
+
+    # Get fitness statistical values and stored them in 'arrays'
+    for dim_index in dim_indices:
+        for op_index in range(len(operators)):
+            current_stats = data_frame['results'][dim_index][
+                    'statistics'][op_index]
+            for key in temp_stats.keys():
+                temp_stats[key].append(current_stats[key])
+
+    # Store temporal stat dictionary into the stats dictionary
+    for key, val in temp_stats.items():
+        stats[key].append([*val])
+
+    matrix_z = np.array(stats)
+
+    fig = plt.figure(figsize=[3, 4], dpi=333)
+    plt.ion()
+
+    ls = LightSource(azdeg=90, altdeg=45)
+    rgb = ls.shade(matrix_z, plt.cm.jet)
+
+    ax = fig.gca(projection='3d')
+    ax.plot_surface(matrix_x, matrix_y, matrix_z, rstride=1, cstride=1, linewidth=0,
+                    antialiased=False, facecolors=rgb)
+
+# %%
 
 # Fitness evolution per replica
 for problem_str in problems:
@@ -109,14 +91,13 @@ for problem_str in problems:
         for problem_id in range(len(data_frame['problem'])):
             if ((data_frame['problem'][problem_id] == problem_str) and
                     (data_frame['dimensions'][problem_id] == dimension)):
-
                 result = data_frame['results'][problem_id]
 
                 y_data.append(np.log10(np.array(
                     result['details'][-1]['fitness']) + 1.0))
 
     violin_parts = plt.violinplot(y_data, range(len(y_data)),
-        showmeans=True, showmedians=True, showextrema=False)
+                                  showmeans=True, showmedians=True, showextrema=False)
 
     violin_parts['cmeans'].set_edgecolor('#AC4C3D')  # Rojo
     violin_parts['cmeans'].set_linewidth(1.5)
