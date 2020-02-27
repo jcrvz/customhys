@@ -10,10 +10,8 @@ import os
 from itertools import combinations as _get_combinations
 # from numba import jit
 
-__all__ = ['local_random_walk', 'random_search', 'random_sample',
-           'random_flight', 'differential_mutation',
-           'firefly_dynamic', 'swarm_dynamic', 'gravitational_search',
-           'central_force_dynamic', 'spiral_dynamic',
+__all__ = ['local_random_walk', 'random_search', 'random_sample', 'random_flight', 'differential_mutation',
+           'firefly_dynamic', 'swarm_dynamic', 'gravitational_search', 'central_force_dynamic', 'spiral_dynamic',
            'genetic_mutation', 'genetic_crossover']
 
 
@@ -27,22 +25,18 @@ def central_force_dynamic(pop, gravity=0.001, alpha=0.01, beta=1.5, dt=1.0):
     """
     Central Force Optimisation (CFO)
 
-    Parameters
-    ----------
-    pop : population
+    :param pop: population
         It is a population object.
-    gravity : float, optional
+    :param gravity : float, optional
         It is the gravitational constant. The default is 1.0.
-    alpha : float, optional
+    :param alpha : float, optional
         It is the power mass factor. The default is 0.5.
-    beta : float, optional
+    :param beta : float, optional
         It is the power distance factor. The default is 1.5.
-    dt : float, optional
+    :param dt : float, optional
         It is the time interval between steps. The default is 1.0.
 
-    Returns
-    -------
-    None.
+    :return : None.
 
     """
     # Check the gravity, alpha, beta, and dt value
@@ -78,10 +72,6 @@ def central_force_dynamic(pop, gravity=0.001, alpha=0.01, beta=1.5, dt=1.0):
                                       (1, pop.num_dimensions)), 0)
 
     pop.positions += 0.5 * acceleration * (dt ** 2)
-
-    # Check constraints
-    if pop.is_constrained:
-        pop._check_simple_constraints()
 
 
 # def differential_crossover(pop, crossover_rate=0.2, version="binomial"):
@@ -149,32 +139,24 @@ def central_force_dynamic(pop, gravity=0.001, alpha=0.01, beta=1.5, dt=1.0):
 #     else:
 #         raise OperatorsError('Invalid differential_crossover version')
 
-#     # Check constraints
-#     if pop.is_constrained:
-#         pop._check_simple_constraints()
-
 
 def differential_mutation(pop, expression="current-to-best", num_rands=1,
                           factor=1.0):
     """
     Mutates the population positions using Differential Evolution (DE)
 
-    Parameters
-    ----------
-    pop : population
+    :param pop : population
         It is a population object.
-    expression : str, optional
+    :param expression : str, optional
         Type of DE mutation. Available mutations: "rand", "best",
         "current", "current-to-best", "rand-to-best",
         "rand-to-bestandcurrent". The default is "current-to-best".
-    num_rands : int, optional
-        DESCRIPTION. The default is 1.
-    factor : float, optional
+    :param num_rands : int, optional
+        DESCRIPTION. The default is 1.:param
+    :param factor : float, optional
         DESCRIPTION. The default is 1.0.
 
-    Returns
-    -------
-    None.
+    :return: None.
 
     """
     # Check the scale and beta value
@@ -192,42 +174,30 @@ def differential_mutation(pop, expression="current-to-best", num_rands=1,
         mutant = pop.positions
 
     elif expression == "current-to-best":
-        mutant = pop.positions + factor * \
-            (np.tile(pop.global_best_position,
-                     (pop.num_agents, 1)) -
-             pop.positions[np.random.permutation(pop.num_agents), :])
+        mutant = pop.positions + factor * (np.tile(pop.global_best_position, (pop.num_agents, 1)) -
+                                           pop.positions[np.random.permutation(pop.num_agents), :])
 
     elif expression == "rand-to-best":
-        mutant = pop.positions[np.random.permutation(pop.num_agents), :] + \
-            factor * (np.tile(pop.global_best_position, (pop.num_agents, 1)) -
-                      pop.positions[np.random.permutation(pop.num_agents), :])
+        mutant = pop.positions[np.random.permutation(pop.num_agents), :] + factor * (np.tile(
+            pop.global_best_position, (pop.num_agents, 1)) - pop.positions[np.random.permutation(pop.num_agents), :])
 
     elif expression == "rand-to-best-and-current":
-        mutant = pop.positions[np.random.permutation(
-            pop.num_agents), :] + factor * (
-                np.tile(pop.global_best_position, (pop.num_agents, 1)) -
-                pop.positions[np.random.permutation(pop.num_agents), :] +
-                pop.positions[np.random.permutation(pop.num_agents), :] -
-                pop.positions)
-    # else:
-    #     mutant = []
-    #     raise OperatorsError('Invalid DE mutation scheme!')
+        mutant = pop.positions[np.random.permutation(pop.num_agents), :] + factor * (np.tile(
+            pop.global_best_position, (pop.num_agents, 1)) - pop.positions[np.random.permutation(pop.num_agents), :] +
+                pop.positions[np.random.permutation(pop.num_agents), :] - pop.positions)
+    else:
+        raise OperatorsError('Invalid DE mutation scheme!')
 
     # Add random parts according to num_rands
     if num_rands >= 0:
         for _ in range(num_rands):
-            mutant += factor * (pop.positions[np.random.permutation(
-                pop.num_agents), :] - pop.positions[
-                    np.random.permutation(pop.num_agents), :])
-    # else:
-    #     raise OperatorsError('Invalid DE mutation scheme!')
+            mutant += factor * (pop.positions[np.random.permutation(pop.num_agents), :] -
+                                pop.positions[np.random.permutation(pop.num_agents), :])
+    else:
+        raise OperatorsError('Invalid DE mutation scheme!')
 
     # Replace mutant population in the current one
     pop.positions = mutant
-
-    # Check constraints
-    if pop.is_constrained:
-        pop._check_simple_constraints()
 
 
 def firefly_dynamic(pop, alpha=1.0, beta=1.0, gamma=100.0,
@@ -237,20 +207,18 @@ def firefly_dynamic(pop, alpha=1.0, beta=1.0, gamma=100.0,
 
     Parameters
     ----------
-    pop : population
+    :param pop : population
         It is a population object.
-    alpha : TYPE, optional
+    :param alpha : TYPE, optional
         Scale of the random value. The default is 0.8.
-    beta : TYPE, optional
+    :param beta : TYPE, optional
         Scale of Firefly contribution. The default is 1.0.
-    gamma : TYPE, optional
+    :param gamma : TYPE, optional
         Light damping parameters. The default is 1.0.
-    distribution : str, optional
+    :param distribution : str, optional
         Type of random number. Possible options: 'gaussian', 'uniform'.
         The default is "uniform".
-    Returns
-    -------
-    None.
+    :return: None.
 
     """
     # Check the alpha, beta, and gamma value
@@ -269,10 +237,9 @@ def firefly_dynamic(pop, alpha=1.0, beta=1.0, gamma=100.0,
     elif distribution == "levy":
         epsilon_value = _random_levy(
             1.5, (pop.num_agents, pop.num_dimensions))
-    # else:
-    #     epsilon_value = []
-    #     raise OperatorsError(
-    #         "Epsilon is not valid: 'uniform' or 'gaussian'")
+    else:
+        raise OperatorsError(
+            "Epsilon is not valid: 'uniform' or 'gaussian'")
 
     # Initialise delta or difference between two positions
     difference_positions = np.zeros((pop.num_agents, pop.num_dimensions))
@@ -300,10 +267,6 @@ def firefly_dynamic(pop, alpha=1.0, beta=1.0, gamma=100.0,
     # Move fireflies according to their attractions
     pop.positions += alpha * epsilon_value + beta * difference_positions
 
-    # Check constraints
-    if pop.is_constrained:
-        pop._check_simple_constraints()
-
 
 def genetic_crossover(pop, pairing="rank", crossover="blend",
                       mating_pool_factor=0.4):
@@ -312,9 +275,9 @@ def genetic_crossover(pop, pairing="rank", crossover="blend",
 
     Parameters
     ----------
-    pop : population
+    :param pop : population
         It is a population object.
-    pairing : str, optional
+    :param pairing : str, optional
         It indicates which pairing scheme to employ. Pairing scheme
         available are: 'cost' (Roulette Wheel or Cost Weighting), 'rank'
         (Rank Weighting), 'tournament', 'random', and 'even-odd'.
@@ -322,20 +285,18 @@ def genetic_crossover(pop, pairing="rank", crossover="blend",
         'tournament_{ts}_{tp}', {ts} and {tp}. Writing only 'tournament' is
         similar to specify 'tournament_3_100'.
         The default is 'cost'.
-    crossover : str, optional
+    :param crossover : str, optional
         It indicates which crossover scheme to employ. Crossover scheme
-        availale are: 'single', 'two', 'uniform', 'blend', and 'linear'.
+        available are: 'single', 'two', 'uniform', 'blend', and 'linear'.
         Likewise 'tournament' pairing, coefficients of 'linear' are enconded
         such as 'linear_{coeff1}_{coeff2}' where the offspring is determined
         as follows: offspring = coeff1 * father + coeff2 * mother.
         The default is 'single'.
-    mating_pool_factor : float, optional
+    :param mating_pool_factor : float, optional
         It indicates the proportion of population to disregard.
         The default is 0.1.
 
-    Returns
-    -------
-    None.
+    :return: None.
 
     """
     # Check the mating_pool_factor value
@@ -451,8 +412,8 @@ def genetic_crossover(pop, pairing="rank", crossover="blend",
     #         dummy_indices[:, :num_couples]]
     #
     # No pairing procedure recognised
-    # else:
-    #     raise OperatorsError("Invalid pairing method")
+    else:
+        raise OperatorsError("Invalid pairing method")
 
     # Identify offspring indices
     offspring_indices = np.setdiff1d(
@@ -565,10 +526,10 @@ def genetic_crossover(pop, pairing="rank", crossover="blend",
         # Determine offsprings with father and mother positions
         offsprings = coefficients[0] * father_position +\
             coefficients[1] * mother_position
-    #
+
     # No crossover method recognised
-    # else:
-    #     raise OperatorsError("Invalid pairing method")
+    else:
+        raise OperatorsError("Invalid pairing method")
 
     # Store offspring positions in the current population
     pop.positions[offspring_indices, :] = offsprings
@@ -579,27 +540,21 @@ def genetic_mutation(pop, scale=1.0, elite_rate=0.1, mutation_rate=0.25,
     """
     Mutation mechanism from Genetic Algorithm (GA)
 
-    Parameters
-    ----------
-    pop : population
+    :param pop : population
         It is a population object.
-    scale : float, optional
+    :param scale : float, optional
         It is the scale factor of the mutations. The default is 1.0.
-    elite_rate : float, optional
+    :param elite_rate : float, optional
         It is the proportion of population to preserve.
         The default is 0.0 (no elite agent).
-    mutation_rate : float, optional
+    :param mutation_rate : float, optional
         It is the proportion of population to mutate.
         The default is 0.2.
-    distribution : str, optional
+    :param distribution : str, optional
         It indicates the random distribution that power the mutation.
         There are only two distribution available: 'uniform' and 'gaussian'.
         The default is 'uniform'.
-
-    Returns
-    -------
-    None.
-
+    :return: None.
     """
     # Check the elite_rate, mutation_rate, and sigma value
     # _check_parameter(elite_rate)
@@ -610,7 +565,7 @@ def genetic_mutation(pop, scale=1.0, elite_rate=0.1, mutation_rate=0.25,
     num_elite = int(np.ceil(pop.num_agents * elite_rate))
 
     # If num_elite equals num_agents then do nothing, or ...
-    if (num_elite < pop.num_agents):
+    if num_elite < pop.num_agents:
         # Number of mutations to perform
         num_mutations = int(np.round(pop.num_agents * pop.num_dimensions
                                      * mutation_rate))
@@ -641,8 +596,8 @@ def genetic_mutation(pop, scale=1.0, elite_rate=0.1, mutation_rate=0.25,
         elif distribution == "levy":
             mutants = _random_levy(1.5, num_mutations ** 2)
 
-        # else:
-        #     raise OperatorsError('Invalid distribution!')
+        else:
+            raise OperatorsError('Invalid distribution!')
 
         # Store mutants
         pop.positions[rows.flatten(), columns.flatten()] = scale * mutants
@@ -652,19 +607,14 @@ def gravitational_search(pop, gravity=1.0, alpha=0.02):
     """
     Gravitational Search Algorithm (GSA) simplified
 
-    Parameters
-    ----------
-    pop : population
+    :param pop : population
         It is a population object.
-    gravity : float, optional
+    :param gravity : float, optional
         It is the initial gravitational value. The default is 1.0.
-    alpha : float, optional
+    :param alpha : float, optional
         It is the gravitational damping ratio. The default is 0.5.
 
-    Returns
-    -------
-    None.
-
+    :return: None.
     """
     # Check the gravity, alpha, and epsilon value
     # _check_parameter(gravity)
@@ -710,31 +660,22 @@ def gravitational_search(pop, gravity=1.0, alpha=0.02):
     # Update positions
     pop.positions += pop.velocities
 
-    # Check constraints
-    if pop.is_constrained:
-        pop._check_simple_constraints()
-
 
 def random_flight(pop, scale=1.0, distribution="levy", beta=1.5):
     """
     Perform a Lévy flight by using the Mantegna's algorithm.
 
-    Parameters
-    ----------
-    pop : population
+    :param pop : population
         It is a population object.
-    scale : float, optional
+    :param scale : float, optional
         It is the step scale between [0.0, 1.0]. The default is 1.0.
-    distribution: str, optional
+    :param distribution: str, optional
         It is the distribution to draw the random samples. The default is
         "levy".
-    beta : float, optional
+    :param beta : float, optional
         It is the distribution parameter between [1.0, 3.0]. This paramenter
         only has sense when distribution="levy". The default is 1.5.
-
-    Returns
-    -------
-    None.
+    :return: None.
 
     """
     # Check the scale and beta value
@@ -756,17 +697,13 @@ def random_flight(pop, scale=1.0, distribution="levy", beta=1.5):
         random_samples = _random_levy(
             beta, size=(pop.num_agents, pop.num_dimensions))
 
-    # else:
-    #     raise OperatorsError('Invalid distribution!')
+    else:
+        raise OperatorsError('Invalid distribution!')
 
     # Move each agent using levy random displacements
     pop.positions += scale * random_samples * \
         (pop.positions - np.tile(pop.global_best_position,
                                  (pop.num_agents, 1)))
-
-    # Check constraints
-    if pop.is_constrained:
-        pop._check_simple_constraints()
 
 
 def local_random_walk(pop, probability=0.75, scale=1.0,
@@ -774,20 +711,18 @@ def local_random_walk(pop, probability=0.75, scale=1.0,
     """
     Performs the local random walk from Cuckoo Search (CS)
 
-    Parameters
-    ----------
-    pop : population
+    :param pop: population
         It is a population object.
-    probability : float, optional
+    :param probability: float, optional
         It is the probability of discovering an alien egg (change an
         agent's position). The default is 0.75.
-    scale : float, optional
+    :param scale: float, optional
         It is the step scale between [0.0, 1.0]. The default is 1.0.
+    :param distribution: str, optional
+        It is the random distribution used to sample the stochastic
+        variable. The default value is 'uniform.
 
-    Returns
-    -------
-    None.
-
+    :return : None.
     """
     # Check the scale and beta value
     # _check_parameter(probability)
@@ -800,8 +735,8 @@ def local_random_walk(pop, probability=0.75, scale=1.0,
         r_1 = np.random.randn(pop.num_agents, pop.num_dimensions)
     elif distribution == "levy":
         r_1 = _random_levy(size=(pop.num_agents, pop.num_dimensions))
-    # else:
-    #     raise OperatorsError('Invalid distribution!')
+    else:
+        raise OperatorsError('Invalid distribution!')
     r_2 = np.random.rand(pop.num_agents, pop.num_dimensions)
 
     # Move positions with a displacement due permutations and probabilities
@@ -810,51 +745,35 @@ def local_random_walk(pop, probability=0.75, scale=1.0,
             np.random.permutation(pop.num_agents), :]) * np.heaviside(
                 r_2 - probability, 0.0)
 
-    # Check constraints
-    if pop.is_constrained:
-        pop._check_simple_constraints()
-
 
 def random_sample(pop):
     """
     Performs a random sampling using a uniform distribution in [-1, 1].
 
-    Parameters
-    ----------
-    pop : population
+    :param: pop : population
         It is a population object.
 
-    Returns
-    -------
-    None.
+    :return: None.
 
     """
     # Create random positions using random numbers between -1 and 1
     pop.positions = np.random.uniform(
         -1, 1, (pop.num_agents, pop.num_dimensions))
 
-    # Check constraints
-    if pop.is_constrained:
-        pop._check_simple_constraints()
-
 
 def random_search(pop, scale=0.01, distribution="uniform"):
     """
     Performs a random walk using a uniform distribution in [-1, 1].
 
-    Parameters
-    ----------
-    pop : population
+    :param pop : population
         It is a population object.
-    scale : float, optional
+    :param scale : float, optional
         It is the step scale between [0.0, 1.0]. The default is 0.01.
-    distribution: string, optional
+    :param distribution: string, optional
         It is the distribution used to perform the random search. The default
         is "uniform".
 
-    Returns
-    -------
-    None.
+    :return: None.
 
     """
     # Check the scale value
@@ -869,37 +788,28 @@ def random_search(pop, scale=0.01, distribution="uniform"):
                                                  pop.num_dimensions))
     elif distribution == "levy":
         random_step = _random_levy(size=(pop.num_agents, pop.num_dimensions))
-    # else:
-    #     raise OperatorsError('Invalid distribution!')
+    else:
+        raise OperatorsError('Invalid distribution!')
 
     # Move each agent using uniform random displacements
     pop.positions += scale * random_step
-
-    # Check constraints
-    if pop.is_constrained:
-        pop._check_simple_constraints()
 
 
 def spiral_dynamic(pop, radius=0.9, angle=22.5, sigma=0.1):
     """
     Performs the deterministic or stochastic spiral dynamic movement
 
-    Parameters
-    ----------
-    pop : population
+    :param pop : population
         It is a population object.
-    radius : float, optional
+    :param radius : float, optional
         It is the convergence rate. The default is 0.9.
-    angle : float, optional
+    :param angle : float, optional
         Rotation angle (in degrees). The default is 22.5 (degrees).
-    sigma : float, optional
+    :param sigma : float, optional
         Variation of random radii. The default is 0.1.
         Note: sigma equals 0.0 corresponds to the Deterministic Spiral.
 
-    Returns
-    -------
-    None.
-
+    :return: None.
     """
     # Check the scale and beta value
     # _check_parameter(radius)
@@ -918,10 +828,6 @@ def spiral_dynamic(pop, radius=0.9, angle=22.5, sigma=0.1):
             np.matmul(rotation_matrix, (
                 pop.positions[agent, :] - pop.global_best_position))
 
-    # Check constraints
-    if pop.is_constrained:
-        pop._check_simple_constraints()
-
 
 def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56,
                   version="constriction", distribution="uniform"):
@@ -929,27 +835,22 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56,
     Performs a swarm movement by using the inertial or constriction
     dynamics from Particle Swarm Optimisation (PSO).
 
-    Parameters
-    ----------
-    pop : population
+    :param pop : population
         It is a population object.
-    factor : float, optional
+    :param factor : float, optional
         Inertial or Kappa factor, depending of which PSO version is set.
         The default is 1.0.
-    self_conf : float, optional
+    :param self_conf : float, optional
         Self confidence factor. The default is 2.4.
-    swarm_conf : float, optional
+    :param swarm_conf : float, optional
         Swarm confidence factor. The default is 2.6.
-    version : str, optional
+    :param version : str, optional
         Version of the Particle Swarm Optimisation strategy. Currently, it
         can be 'constriction' or 'inertial'. The default is "constriction".
-    distribution : str, optional
+    :param distribution : str, optional
         Distribution to draw the random numbers
 
-    Returns
-    -------
-    None.
-
+    :return: None.
     """
     # Check the scale and beta value
     # _check_parameter(factor)
@@ -966,8 +867,8 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56,
     elif distribution == "levy":
         r_1 = _random_levy(size=(pop.num_agents, pop.num_dimensions))
         r_2 = _random_levy(size=(pop.num_agents, pop.num_dimensions))
-    # else:
-    #     raise OperatorsError('Invalid distribution!')
+    else:
+        raise OperatorsError('Invalid distribution!')
 
     # Choose the PSO version = 'inertial' or 'constriction'
     if version == "inertial":
@@ -990,15 +891,11 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56,
             pop.particular_best_positions - pop.positions) +
             r_2 * swarm_conf * (np.tile(pop.global_best_position, (
                 pop.num_agents, 1)) - pop.positions))
-    # else:
-    #     raise OperatorsError('Invalid swarm_dynamic version')
+    else:
+        raise OperatorsError('Invalid swarm_dynamic version')
 
     # Move each agent using velocity's information
     pop.positions += pop.velocities
-
-    # Check constraints
-    if pop.is_constrained:
-        pop._check_simple_constraints()
 
 
 def _random_levy(beta=1.5, size=1):
@@ -1006,17 +903,12 @@ def _random_levy(beta=1.5, size=1):
     Draw a random number or array using the Levy stable distribution via
     the Mantegna's algorithm
 
-    Parameters
-    ----------
-    beta : float, optional
+    :param beta : float, optional
         Levy distribution parameter. The default is 1.5.
-    size : dimensions, optional
+    :param size : dimensions, optional
         Size can be a tuple with all the dimensions. The default is 1.
 
-    Returns
-    -------
-    levy_random_number: numpy.array
-
+    :return: levy_random_number - numpy.array
     """
     # Calculate x's std dev (Mantegna's algorithm)
     sigma = ((np.math.gamma(1 + beta) * np.sin(np.pi * beta / 2)) /
@@ -1034,20 +926,15 @@ def _random_levy(beta=1.5, size=1):
 
 def _get_rotation_matrix(dimensions, angle=0.39269908169872414):
     """
-    Determine the rotation matrix by multiplying all the rotation matrices for
-    each combination of 2D planes.
+    Determine the rotation matrix by multiplying all the rotation matrices for each combination of 2D planes.
 
-    Parameters
-    ----------
-    dimensions : int
+    :param dimensions : int
         Number of dimensions. Only positive integers greater than one.
-    angle : float, optional
+    :param angle : float, optional
         Rotation angle. Only positive values.
         The default is 0.39269908169872414.
 
-    Returns
-    -------
-    rotation_matrix : ndarray
+    :return : rotation_matrix - ndarray
         Rotation matrix to use over the population positions.
 
     """
@@ -1126,18 +1013,11 @@ def _obtain_operators(num_vals=11):
     Generate a list of all the available search operators with a given
     number of values for each parameter (if so).
 
-    Parameters
-    ----------
-    num_vals : int, optional
+    :param num_vals : int, optional
         Number of values to generate per each numerical paramenter in
         a search operator. The default is 5.
 
-    Returns
-    -------
-    list
-        A list of all the available search operators. Each element of this
-        list has the following structure:
-
+    :return: list - A list of all the available search operators. Each element of this list has the following structure:
             search_operator = ("name_of_the_operator",
                                dict(parameter1=[value1, value2, ...],
                                     parameter2=[value2, value2, ...],
@@ -1253,20 +1133,15 @@ def _obtain_operators(num_vals=11):
 
 def _build_operators(heuristics, file_name="operators_collection"):
     """
-    Create a text file containing all possible combinations of parameter
-    values for each search operator.
+    Create a text file containing all possible combinations of parameter values for each search operator.
 
-    Parameters
-    ----------
-    heuristics : list, optional
+    :param heuristics : list, optional
         A list of available search operators. The default is
         _get_search_operators().
-    file_name : str, optional
+    :param file_name : str, optional
         Customise the file name. The default is 'operators_collection'
 
-    Returns
-    -------
-    None.
+    :return: None.
 
     """
     # Counters: [classes, methods]
@@ -1332,21 +1207,15 @@ def _build_operators(heuristics, file_name="operators_collection"):
 
 def _process_operators(simple_heuristics):
     """
-    Decode the list of operators or heuristics and deliver two lists, one
-    with ready-to-execute strings of operators and another with strings of
-    their associated selectors.
+    Decode the list of operators or heuristics and deliver two lists, one with ready-to-execute strings of operators
+    and another with strings of their associated selectors.
 
-    Parameters
-    ----------
-    simple_heuristics : list
+    :param simple_heuristics : list
         A list of all the search operators to use.
 
-    Returns
-    -------
-    executable_operators : list
-        A list of ready-to-execute string of search operators.
-    selectors : list
-        A list of strings of the selectors associated to operators.
+    :returns (executable_operators, selectors): executable_operators is a list of ready-to-execute string of search
+    operators, and selectors is list of strings of the selectors associated to operators.
+
     """
     # Initialise the list of callable operators (simple heuristics)
     executable_operators = []

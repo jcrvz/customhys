@@ -250,6 +250,10 @@ class Population():
         # Read problem, it must be a callable function
         assert callable(problem_function)
 
+        # Check simple constraints before evaluate
+        if self.is_constrained:
+            self._check_simple_constraints()
+
         # Evaluate each agent in this function
         for agent in range(self.num_agents):
             self.fitness[agent] = problem_function(
@@ -295,19 +299,23 @@ class Population():
         None.
 
         """
+        # Check if there are nans values
+        if np.any(np.isnan(variables)):
+            np.nan_to_num(variables, copy=False, nan=1.0, posinf=1.0, neginf=-1.0)
+
         # Check if agents are beyond lower boundaries
-        low_check = self.positions < -1.
-        if low_check.any():
+        low_check = np.less(self.positions, -1.0)
+        if np.any(low_check):
             # Fix them
-            self.positions[low_check] = -1.
-            self.velocities[low_check] = 0.
+            self.positions[low_check] = -1.0
+            self.velocities[low_check] = 0.0
 
         # Check if agents are beyond upper boundaries
-        upp_check = self.positions > 1.
-        if upp_check.any():
+        upp_check = np.greater(self.positions, 1.0)
+        if np.any(upp_check):
             # Fix them
-            self.positions[upp_check] = 1.
-            self.velocities[upp_check] = 0.
+            self.positions[upp_check] = 1.0
+            self.velocities[upp_check] = 0.0
 
     def _rescale_back(self, position):
         """

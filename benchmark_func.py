@@ -226,8 +226,8 @@ class Alpine1(OptimalBasic):
 class Alpine2(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
-        self.max_search_range = np.array([10] * self.variable_num)
-        self.min_search_range = np.array([0] * self.variable_num)
+        self.max_search_range = np.array([10.] * self.variable_num)
+        self.min_search_range = np.array([0.] * self.variable_num)
         self.optimal_solution = np.array([7.917] * self.variable_num)
         self.global_optimum_solution = 2.808 ** self.variable_num
         self.func_name = 'Alpine 2'
@@ -246,8 +246,8 @@ class Alpine2(OptimalBasic):
 class Brown(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
-        self.max_search_range = np.array([4] * self.variable_num)
-        self.min_search_range = np.array([-1] * self.variable_num)
+        self.max_search_range = np.array([4.] * self.variable_num)
+        self.min_search_range = np.array([-1.] * self.variable_num)
         self.optimal_solution = np.array([0] * self.variable_num)
         self.global_optimum_solution = 0
         self.func_name = 'Brown'
@@ -289,10 +289,10 @@ class Brent(OptimalBasic):
 class ChungReynolds(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
-        self.max_search_range = np.array([100] * self.variable_num)
-        self.min_search_range = np.array([-100] * self.variable_num)
-        self.optimal_solution = np.array([0] * self.variable_num)
-        self.global_optimum_solution = 0
+        self.max_search_range = np.array([100.] * self.variable_num)
+        self.min_search_range = np.array([-100.] * self.variable_num)
+        self.optimal_solution = np.array([0.] * self.variable_num)
+        self.global_optimum_solution = 0.
         self.func_name = 'Chung Reynolds'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -309,10 +309,10 @@ class ChungReynolds(OptimalBasic):
 class Csendes(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
-        self.max_search_range = np.array([1] * self.variable_num)
-        self.min_search_range = np.array([-1] * self.variable_num)
-        self.optimal_solution = np.array([0] * self.variable_num)
-        self.global_optimum_solution = 0
+        self.max_search_range = np.array([1.] * self.variable_num)
+        self.min_search_range = np.array([-1.] * self.variable_num)
+        self.optimal_solution = np.array([0.] * self.variable_num)
+        self.global_optimum_solution = 0.
         self.func_name = 'Csendes'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -329,10 +329,10 @@ class Csendes(OptimalBasic):
 class Deb1(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
-        self.max_search_range = np.array([1] * self.variable_num)
-        self.min_search_range = np.array([-1] * self.variable_num)
+        self.max_search_range = np.array([1.] * self.variable_num)
+        self.min_search_range = np.array([-1.] * self.variable_num)
         self.optimal_solution = np.array([-0.1] * self.variable_num)
-        self.global_optimum_solution = -1
+        self.global_optimum_solution = -1.
         self.func_name = 'Deb 1'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -701,11 +701,11 @@ class HappyCat(OptimalBasic):
                          'Multimodal': False,
                          'Convex': False}
 
-    def get_func_val(self, variables, alpha=1 / 8, *args):
+    def get_func_val(self, variables, alpha=1/8, *args):
         x1 = np.sum(variables)
         x2 = np.sum(np.square(variables))
-        return np.power(x2 - self.variable_num, 2. * alpha) + (x2 / 2 + x1) / (
-            self.variable_num) + 1 / 2
+        return np.power(np.square(x2 - self.variable_num), alpha) + (0.5 * x2 + x1) / (
+            self.variable_num) + 0.5
 
 
 # 74 - Class Mishra 1 function
@@ -948,8 +948,7 @@ class Quartic(OptimalBasic):
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
-        return np.sum(np.power(variables, 4) * (np.arange(
-            self.variable_num) + 1))
+        return np.sum(np.power(variables, 4) * (np.arange(self.variable_num) + 1))
 
 
 # 101 - Class Quintic function
@@ -969,9 +968,8 @@ class Quintic(OptimalBasic):
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
-        return np.sum(np.abs(np.power(variables, 5) - 3 * np.power(
-            variables, 4) + 4 * np.power(variables, 3) + 2 * np.power(
-            variables, 2) - 10 * variables - 4))
+        return np.sum(np.abs(np.power(variables, 5) - 3 * np.power(variables, 4) + 4 * np.power(variables, 3) +
+                             2 * np.power(variables, 2) - 10 * variables - 4))
 
 
 # 102 - Class Rana function
@@ -1558,10 +1556,8 @@ class StrechedVSineWave(OptimalBasic):
                          'Multimodal': False}
 
     def get_func_val(self, variables, *args):
-        f10 = np.power(np.square(variables[:-1]) +
-                       np.square(variables[1:]), 0.10)
-        f25 = np.power(np.square(variables[:-1]) +
-                       np.square(variables[1:]), 0.25)
+        f10 = np.power(np.square(variables[:-1]) + np.square(variables[1:]), 0.10)
+        f25 = np.power(np.square(variables[:-1]) + np.square(variables[1:]), 0.25)
         return np.sum(f25 * (np.square(np.sin(f10)) + 0.1))
 
 
@@ -1713,8 +1709,7 @@ class Weierstrass(OptimalBasic):
     def get_func_val(self, variables, kmax=20, a=0.5, b=3., *args):
         x = np.outer(variables + 0.5, np.ones(kmax + 1))
         k = np.outer(np.ones(self.variable_num), np.arange(kmax + 1))
-        return np.sum(np.sum(np.power(a, k) * np.cos(
-            2. * np.pi * np.power(b, k) * x), 1) - self.variable_num * np.sum(
+        return np.sum(np.sum(np.power(a, k) * np.cos(2. * np.pi * np.power(b, k) * x), 1) - self.variable_num * np.sum(
             np.power(a, k) * np.cos(np.pi * np.power(b, k)), 1))
 
 
@@ -1755,9 +1750,8 @@ class XinSheYang1(OptimalBasic):
                          'Multimodal': False}
 
     def get_func_val(self, variables, *args):
-        return np.sum(np.random.rand(self.variable_num) *
-                      np.power(np.abs(variables), np.arange(
-                          1, self.variable_num + 1)))
+        return np.sum(np.random.rand(self.variable_num) * np.power(np.abs(variables),
+                                                                   np.arange(1, self.variable_num + 1)))
 
 
 # 170 - Class Xin-She Yang 2 function
@@ -1796,9 +1790,8 @@ class XinSheYang3(OptimalBasic):
                          'Multimodal': False}
 
     def get_func_val(self, variables, m=5, beta=15, *args):
-        return np.exp(-np.sum(np.power(variables / beta, 2. * m))) - \
-            2. * np.exp(-np.sum(np.square(variables))) * \
-            np.prod(np.square(np.cos(variables)))
+        return np.exp(-np.sum(np.power(variables / beta, 2. * m))) - 2. * np.exp(-np.sum(np.square(variables))) * \
+               np.prod(np.square(np.cos(variables)))
 
 
 # 172 - Class Xin-She Yang 4 function
@@ -1839,8 +1832,7 @@ class Zakharov(OptimalBasic):
 
     def get_func_val(self, variables, *args):
         ixi = np.arange(1, self.variable_num + 1) * variables
-        return np.sum(np.square(variables)) + np.square(0.5 * np.sum(ixi)) + \
-            np.power(0.5 * np.sum(ixi), 4)
+        return np.sum(np.square(variables)) + np.square(0.5 * np.sum(ixi)) + np.power(0.5 * np.sum(ixi), 4)
 
 
 # Class Second-Minima function
@@ -1859,8 +1851,7 @@ class SecondMinima(OptimalBasic):
                          'Multimodal': True}
 
     def get_func_val(self, variables, *args):
-        return np.sum(np.power(variables, 4.) - 16. * np.square(variables) +
-                      5. * variables)
+        return np.sum(np.power(variables, 4.) - 16. * np.square(variables) + 5. * variables)
 
 
 # Class Styblinski-Tang function
@@ -1879,8 +1870,7 @@ class StyblinskiTang(OptimalBasic):
                          'Multimodal': True}
 
     def get_func_val(self, variables, *args):
-        return 0.5 * np.sum(np.power(variables, 4) - 16. *
-                            np.square(variables) + 5. * variables)
+        return 0.5 * np.sum(np.power(variables, 4) - 16. * np.square(variables) + 5. * variables)
 
 
 # Class Stochastic function
@@ -1919,8 +1909,7 @@ class Ellipsoid(OptimalBasic):
                          'Multimodal': False}
 
     def get_func_val(self, variables, *args):
-        return np.sum(np.square(np.power(10, np.arange(
-            self.variable_num) / (self.variable_num - 1)) * variables))
+        return np.sum(np.square(np.power(10, np.arange(self.variable_num) / (self.variable_num - 1)) * variables))
 
 
 # Class Hyper-Ellipsoid function
@@ -1979,9 +1968,8 @@ class Michalewicz(OptimalBasic):
                          'Multimodal': True}
 
     def get_func_val(self, variables, m=10.):
-        return -np.sum(np.sin(variables) * np.power(np.sin(
-            np.arange(1, self.variable_num + 1) * np.square(variables) / np.pi),
-            2 * m))
+        return -np.sum(np.sin(variables) * np.power(np.sin(np.arange(1, self.variable_num + 1) *
+                                                           np.square(variables) / np.pi), 2. * m))
 
 
 # Class K-Tablet function
@@ -2021,8 +2009,6 @@ class Perm(OptimalBasic):
 
     def get_func_val(self, variables, beta=1.):
         x = np.outer(variables, np.ones(self.variable_num))
-        j = np.outer(np.ones(self.variable_num), np.arange(
-            self.variable_num) + 1)
-        return np.sum(np.square(np.sum((j.T + beta) * (
-                np.power(x, j) - np.power(1 / j.T, j)), 0)))
+        inds = np.outer(np.ones(self.variable_num), np.arange(self.variable_num) + 1)
+        return np.sum(np.square(np.sum((inds.T + beta) * (np.power(x, inds) - np.power(1 / inds.T, inds)), 0)))
 
