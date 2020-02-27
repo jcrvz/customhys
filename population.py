@@ -300,8 +300,8 @@ class Population():
 
         """
         # Check if there are nans values
-        if np.any(np.isnan(variables)):
-            np.nan_to_num(variables, copy=False, nan=1.0, posinf=1.0, neginf=-1.0)
+        if np.any(np.isnan(self.positions)):
+            np.nan_to_num(self.positions, copy=False, nan=1.0, posinf=1.0, neginf=-1.0)
 
         # Check if agents are beyond lower boundaries
         low_check = np.less(self.positions, -1.0)
