@@ -226,14 +226,12 @@ class Metaheuristic():
         # Update population centroid and radius
         current_centroid = np.array(self.pop.positions).mean(0)
         self.historical['centroid'].append(current_centroid)
-        self.historical['radius'].append(np.linalg.norm(
-            self.pop.positions - np.tile(current_centroid,
-                                         (self.num_agents, 1)), 2, 1).max())
+        self.historical['radius'].append(np.linalg.norm(self.pop.positions - np.tile(
+            current_centroid, (self.num_agents, 1)), 2, 1).max())
 
         # Update stagnation
         if (self.pop.iteration > 0) and (
-                float(self.historical['fitness'][-1]) ==
-                float(self.historical['fitness'][-2])):
+                float(self.historical['fitness'][-1]) == float(self.historical['fitness'][-2])):
             instantaneous_stagnation = self.historical['stagnation'][-1] + 1
         else:
             instantaneous_stagnation = 0

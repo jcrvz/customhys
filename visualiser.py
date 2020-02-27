@@ -12,7 +12,7 @@ from tools import *
 from scipy.stats import rankdata
 import seaborn as sns
 import pandas as pd
-sns.set()
+sns.set(font_scale = 0.5)
 
 # READ RAW DATA FILES
 def read_data_file(data_file='data_files/brute-force-data.json'):
@@ -31,7 +31,10 @@ folder_name = 'data_files/images/'
 if not os.path.isdir(folder_name):
     os.mkdir(folder_name)
 
-problems = list(set(data_frame['problem']))
+
+# problems = list(set(data_frame['problem']))
+problems = [data_frame['problem'][index] for index in sorted(
+    np.unique(data_frame['problem'], return_index=True)[1])]
 operators = (data_frame['results'][0]['operator_id'])
 dimensions = sorted(list(set(data_frame['dimensions'])))
 
@@ -43,7 +46,7 @@ is_saving = False
 
 # Special adjustments
 plt.rc('text', usetex=True)
-plt.rc('font', family='serif', size=18)
+plt.rc('font', family='serif', size=6)
 
 # Initialise variables
 # Min=list(), Med=list(), Avg=list(), Std=list(),
@@ -71,11 +74,11 @@ for dimension in dimensions:
     stats = pd.DataFrame(temporal_array, index=problems, columns=operators)
 
     # Printing section
-    fig = plt.figure(dpi=333)
+    fig = plt.figure(figsize=(11, 8.5), dpi=333)
 
     # ax = fig.gca(projection='3d')
     # ax.plot_surface(operator_matrix, problem_matrix, stats[key])
-    ax = sns.heatmap(stats, vmin=1, vmax=100)
+    ax = sns.heatmap(stats, cbar=False, cmap=plt.cm.gray)  # , vmin=1, vmax=5)
     # fig.tight_layout()
     plt.title("Dim: {}".format(dimension))
     plt.show()

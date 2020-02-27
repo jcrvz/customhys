@@ -70,7 +70,7 @@ def test_set1():
     divider = 1.0
     is_constrained = True
 
-    # Hyperheuristic conditions (it only works with 1st dascop)
+    # Hyperheuristic conditions
     hh_parameters = {
         'cardinality': 1,
         'num_agents': 30,
@@ -124,11 +124,11 @@ def test_set1():
 # %% Parallel try of test_set1()
 def test_set1p(num_dimensions):
     # Problems definition
-    functions = bf.__all__[20]  # [82]
+    functions = bf.__all__  # [82] [20]
     divider = 1.0
     is_constrained = True
 
-    # Hyperheuristic conditions (it only works with 1st dascop)
+    # Hyperheuristic conditions
     hh_parameters = {
         'cardinality': 1,
         'num_agents': 30,
@@ -180,20 +180,20 @@ def test_set1p(num_dimensions):
 # %% Parallel try of test_set1()
 def test_set2p(num_dimensions):
     # Problems definition
-    functions = bf.__all__  # [82]
+    functions = bf.__all__  # all
     divider = 1.0
     is_constrained = True
 
-    # Hyperheuristic conditions (it only works with 1st dascop)
+    # Hyperheuristic conditions
     hh_parameters = {
         'cardinality': 1,
         'num_agents': 30,
         'num_iterations': 100,
         'num_replicas': 30,
-        'num_trials': 100,       # Not used
-        'max_temperature': 100,  # Not used
-        'min_temperature': 0.1,  # Not used
-        'cooling_rate': 0.05,    # Not used
+        'num_trials': 100,
+        'max_temperature': 100,
+        'min_temperature': 0.1,
+        'cooling_rate': 0.05,
         }
 
     # print('-' * 10)

@@ -26,10 +26,8 @@ class Hyperheuristic():
         if isinstance(heuristic_space, list):
             self.heuristic_space = heuristic_space
         elif isinstance(heuristic_space, str):
-            with open('collections/' + heuristic_space,
-                      'r') as operators_file:
-                self.heuristic_space = [
-                    eval(line.rstrip('\n')) for line in operators_file]
+            with open('collections/' + heuristic_space, 'r') as operators_file:
+                self.heuristic_space = [eval(line.rstrip('\n')) for line in operators_file]
         else:
             raise HyperheuristicError("Invalid heuristic_space")
 
@@ -130,8 +128,7 @@ class Hyperheuristic():
 
                 # Generate a neighbour solution
                 encoded_candidate_solution = np.random.randint(0, self.num_operators, cardinality)
-                candidate_solution = [self.heuristic_space[index]
-                                      for index in encoded_candidate_solution]
+                candidate_solution = [self.heuristic_space[index] for index in encoded_candidate_solution]
 
                 # Evaluate this candidate solution
                 candidate_performance, candidate_details =\
@@ -143,9 +140,9 @@ class Hyperheuristic():
                 # Check improvement (Metropolis criterion)
                 if (delta_energy < 0) or (np.random.rand() < np.exp(-delta_energy/temperature)):
                     encoded_solution = encoded_candidate_solution
-                    solution = candidate_solution
+                    solution = candidate_solution.copy()
                     performance = candidate_performance
-                    details = candidate_details
+                    details = candidate_details.copy()
 
                     # Save this historical register and break
                     step += 1
