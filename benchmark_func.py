@@ -63,7 +63,8 @@ class OptimalBasic:
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
         self.plot_object = None
         self.func_name = ''
         self.save_dir = "{0}/function_plots/".format(os.path.dirname(os.path.abspath(__file__)))
@@ -74,6 +75,29 @@ class OptimalBasic:
         self.__offset_function = 0.0
         self.__noise_type = 'uniform'
         self.__noise_level = 0.0
+
+    def get_features(self, fmt="latex", wrd="Yes"):
+        def translate_conditional(value):
+            if wrd == "Yes":
+                words = ["Yes", "No"]
+            elif wrd == "1":
+                words = ["1", "0"]
+            elif wrd == "X":
+                words = ["X", " "]
+            else:
+                words = [1, 0]
+            return words[0] if value else words[1]
+
+        # Get the list of features as strings
+        features = [translate_conditional(val) for val in self.features.values()]
+
+        # Return the list according to the format specified
+        if fmt == 'latex':
+            return " & ".join(features)
+        elif fmt == 'string':
+            return " ".join(features)
+        else:
+            return sum(features)
 
     def set_offset_domain(self, value):
         self.__offset_domain = value
@@ -1050,7 +1074,8 @@ class Rosenbrock(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(100. * np.square(variables[1:] - np.square(
@@ -1070,7 +1095,8 @@ class Salomon(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return 1 - np.cos(2 * np.pi * np.sqrt(np.sum(np.square(variables)))) + \
@@ -1090,7 +1116,8 @@ class Sargan(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return self.variable_num * np.sum(np.square(variables) + 0.4 * np.sum(
@@ -1111,7 +1138,8 @@ class SchumerSteiglitz(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.power(variables, 4))
@@ -1130,7 +1158,8 @@ class Schwefel(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, alpha=0.5):
         return np.power(np.sum(np.square(variables)), alpha)
@@ -1149,7 +1178,8 @@ class Schwefel12(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.square(np.sum(np.tril(np.outer(
@@ -1169,7 +1199,8 @@ class Schwefel204(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': False,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.square(variables - 1) + np.square(
@@ -1189,7 +1220,8 @@ class Schwefel220(OptimalBasic):
                          'Differentiable': False,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return -np.sum(np.abs(variables))
@@ -1208,7 +1240,8 @@ class Schwefel221(OptimalBasic):
                          'Differentiable': False,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.max(np.abs(variables))
@@ -1227,7 +1260,8 @@ class Schwefel222(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.abs(variables)) + np.prod(np.abs(variables))
@@ -1246,7 +1280,8 @@ class Schwefel223(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.power(variables, 10))
@@ -1265,7 +1300,8 @@ class Schwefel225(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': False,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.square(variables[1:] - 1) + np.square(
@@ -1286,7 +1322,8 @@ class Schwefel226(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(variables * np.sin(np.abs(variables))) / (
@@ -1306,7 +1343,8 @@ class Schubert(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': False,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         j = np.arange(1, 6)
@@ -1327,7 +1365,8 @@ class Schubert3(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': False,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         j = np.arange(1, 6)
@@ -1349,7 +1388,8 @@ class Schubert4(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': False,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         j = np.arange(1, 6)
@@ -1371,7 +1411,8 @@ class SchafferN6(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': False,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return 0.5 * (self.variable_num - 1) + np.sum((np.square(
@@ -1393,7 +1434,8 @@ class SchafferN1(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': False,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return 0.5 * (self.variable_num - 1) + np.sum((np.square(
@@ -1415,7 +1457,8 @@ class SchafferN2(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': False,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return 0.5 * (self.variable_num - 1) + np.sum((np.square(np.sin(
@@ -1436,7 +1479,8 @@ class SchafferN4(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': False,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return 0.5 * (self.variable_num - 1) + np.sum((np.square(np.sin(
@@ -1458,7 +1502,8 @@ class Sphere(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.square(variables))
@@ -1477,7 +1522,8 @@ class Step(OptimalBasic):
                          'Differentiable': False,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.floor(np.abs(variables)))
@@ -1496,7 +1542,8 @@ class Step2(OptimalBasic):
                          'Differentiable': False,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.square(np.floor(variables + 0.5)))
@@ -1515,7 +1562,8 @@ class Step3(OptimalBasic):
                          'Differentiable': False,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.floor(np.square(variables)))
@@ -1534,7 +1582,8 @@ class StepInt(OptimalBasic):
                          'Differentiable': False,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.floor(variables)) + 25
@@ -1553,7 +1602,8 @@ class StrechedVSineWave(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': False,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         f10 = np.power(np.square(variables[:-1]) + np.square(variables[1:]), 0.10)
@@ -1574,7 +1624,8 @@ class SumSquares(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.arange(1, self.variable_num + 1) * np.square(variables))
@@ -1598,7 +1649,8 @@ class Trid6(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': False,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.square(variables - 1)) - np.sum(
@@ -1620,7 +1672,8 @@ class Trid10(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': False,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.square(variables - 1)) - np.sum(
@@ -1640,7 +1693,8 @@ class Trigonometric1(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         x = np.outer(variables, np.ones(self.variable_num))
@@ -1663,7 +1717,8 @@ class Trigonometric2(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return 1 + np.sum(8. * np.square(np.sin(7. * np.square(
@@ -1684,7 +1739,8 @@ class WWavy(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, k=10, *args):
         return 1 - np.sum(np.cos(k * variables) * np.exp(-0.5 * np.exp(
@@ -1704,7 +1760,8 @@ class Weierstrass(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, kmax=20, a=0.5, b=3., *args):
         x = np.outer(variables + 0.5, np.ones(kmax + 1))
@@ -1726,7 +1783,8 @@ class Whitley(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         x = np.outer(variables, np.ones(self.variable_num))
@@ -1747,7 +1805,8 @@ class XinSheYang1(OptimalBasic):
                          'Differentiable': False,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.random.rand(self.variable_num) * np.power(np.abs(variables),
@@ -1767,7 +1826,8 @@ class XinSheYang2(OptimalBasic):
                          'Differentiable': False,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.abs(variables)) * np.exp(-np.sum(
@@ -1787,7 +1847,8 @@ class XinSheYang3(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, m=5, beta=15, *args):
         return np.exp(-np.sum(np.power(variables / beta, 2. * m))) - 2. * np.exp(-np.sum(np.square(variables))) * \
@@ -1807,7 +1868,8 @@ class XinSheYang4(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return (np.sum(np.square(np.sin(variables))) - np.exp(-np.sum(
@@ -1828,7 +1890,8 @@ class Zakharov(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         ixi = np.arange(1, self.variable_num + 1) * variables
@@ -1848,7 +1911,8 @@ class SecondMinima(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.power(variables, 4.) - 16. * np.square(variables) + 5. * variables)
@@ -1867,7 +1931,8 @@ class StyblinskiTang(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return 0.5 * np.sum(np.power(variables, 4) - 16. * np.square(variables) + 5. * variables)
@@ -1886,7 +1951,8 @@ class Stochastic(OptimalBasic):
                          'Differentiable': False,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.random.rand(self.variable_num) * abs(
@@ -1906,7 +1972,8 @@ class Ellipsoid(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.square(np.power(10, np.arange(self.variable_num) / (self.variable_num - 1)) * variables))
@@ -1925,7 +1992,8 @@ class HyperEllipsoid(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.arange(1, self.variable_num + 1) *
@@ -1945,7 +2013,8 @@ class RotatedHyperEllipsoid(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.tril(np.outer(np.ones(self.variable_num),
@@ -1965,7 +2034,8 @@ class Michalewicz(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True}
+                         'Multimodal': True,
+                         'Convex': False}
 
     def get_func_val(self, variables, m=10.):
         return -np.sum(np.sin(variables) * np.power(np.sin(np.arange(1, self.variable_num + 1) *
@@ -1985,7 +2055,8 @@ class KTablet(OptimalBasic):
                          'Differentiable': False,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         k = int(self.variable_num / 4)
@@ -2005,10 +2076,32 @@ class Perm(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False}
+                         'Multimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, beta=1.):
         x = np.outer(variables, np.ones(self.variable_num))
         inds = np.outer(np.ones(self.variable_num), np.arange(self.variable_num) + 1)
         return np.sum(np.square(np.sum((inds.T + beta) * (np.power(x, inds) - np.power(1 / inds.T, inds)), 0)))
 
+
+# List all available functions
+def list_functions():
+    # Print first line
+    print("Id. & Function Name & Continuous & Differentiable & Separable & Scalable & Multimodal & Convex \\\\")
+
+    feature_list = list()
+    for ii in range(len(__all__)):
+        function_name = __all__[ii]
+        funct = eval("{}(2)".format(function_name))
+
+        feature_str = funct.get_features("latex", "X")
+        weight = funct.get_features(None, None)
+
+        feature_list.append([weight, ii + 1, funct.func_name, feature_str])
+
+    # Sort list according to the weight values
+    # feature_list = sorted(feature_list, key=lambda x: x[0])
+
+    for x in feature_list:
+        print("{} & {} & {} \\\\".format(*x[1:]))
