@@ -63,8 +63,8 @@ class OptimalBasic:
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': True,
-                         'Convex': False}
+                         'Unimodal': True,
+                         'Convex': True}
         self.plot_object = None
         self.func_name = ''
         self.save_dir = "{0}/function_plots/".format(os.path.dirname(os.path.abspath(__file__)))
@@ -185,16 +185,16 @@ class OptimalBasic:
 class Ackley1(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
-        self.max_search_range = np.array([35] * self.variable_num)
-        self.min_search_range = np.array([-35] * self.variable_num)
-        self.optimal_solution = np.array([0] * self.variable_num)
-        self.global_optimum_solution = 0
+        self.max_search_range = np.array([35.] * self.variable_num)
+        self.min_search_range = np.array([-35.] * self.variable_num)
+        self.optimal_solution = np.array([0.] * self.variable_num)
+        self.global_optimum_solution = 0.
         self.func_name = 'Ackley 1'
         self.features = {'Continuous': True,
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, a=20., b=0.2, c=2. * np.pi):
@@ -216,7 +216,7 @@ class Ackley4(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -239,7 +239,7 @@ class Alpine1(OptimalBasic):
                          'Differentiable': False,
                          'Separable': True,
                          'Scalable': False,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -259,7 +259,7 @@ class Alpine2(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -279,7 +279,7 @@ class Brown(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False,
+                         'Unimodal': True,
                          'Convex': True}
 
     def get_func_val(self, variables, *args):
@@ -300,8 +300,8 @@ class Brent(OptimalBasic):
         self.features = {'Continuous': True,
                          'Differentiable': True,
                          'Separable': False,
-                         'Scalable': True,
-                         'Multimodal': False,
+                         'Scalable': False,
+                         'Unimodal': True,
                          'Convex': True}
 
     def get_func_val(self, variables, *args):
@@ -309,7 +309,7 @@ class Brent(OptimalBasic):
             -np.sum(np.square(variables)))
 
 
-# 34 - Class Chung Reynolds function
+# 34 - Class Chung Reynolds function [Al-Roomi2015]
 class ChungReynolds(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
@@ -322,8 +322,8 @@ class ChungReynolds(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False,
-                         'Convex': False}
+                         'Unimodal': True,
+                         'Convex': True}
 
     def get_func_val(self, variables, *args):
         return np.square(np.sum(np.square(variables)))
@@ -342,11 +342,31 @@ class Csendes(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': True,
+                         'Unimodal': False,
+                         'Convex': True}
+
+    def get_func_val(self, variables, *args):
+        return np.sum(np.power(variables, 6.) * (2. + np.sin(1 / variables)))
+
+
+# 38 - Class Cosine Mixture function
+class CosineMixture(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([1.] * self.variable_num)
+        self.min_search_range = np.array([-1.] * self.variable_num)
+        self.optimal_solution = np.array([0.] * self.variable_num)
+        self.global_optimum_solution = 0.1 * self.variable_num
+        self.func_name = 'Cosine Mixture'
+        self.features = {'Continuous': False,
+                         'Differentiable': False,
+                         'Separable': True,
+                         'Scalable': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
-        return np.square(np.sum(np.square(variables)))
+        return -0.1 * np.sum(np.cos(5. * np.pi * variables)) - np.sum(np.square(variables))
 
 
 # 43 - Class Deb 1 function
@@ -362,7 +382,7 @@ class Deb1(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -374,8 +394,8 @@ class Deb1(OptimalBasic):
 class Deb3(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
-        self.max_search_range = np.array([1] * self.variable_num)
-        self.min_search_range = np.array([0] * self.variable_num)
+        self.max_search_range = np.array([1.] * self.variable_num)
+        self.min_search_range = np.array([-1.] * self.variable_num)
         self.optimal_solution = np.array([np.power(1 / 10 + 0.05, 4 / 3)] *
                                          self.variable_num)
         self.global_optimum_solution = -1
@@ -384,7 +404,7 @@ class Deb3(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -396,8 +416,8 @@ class Deb3(OptimalBasic):
 class DixonPrice(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
-        self.max_search_range = np.array([10] * self.variable_num)
-        self.min_search_range = np.array([-10] * self.variable_num)
+        self.max_search_range = np.array([10.] * self.variable_num)
+        self.min_search_range = np.array([-10.] * self.variable_num)
         self.optimal_solution = np.power(2., np.power(
             2., - np.arange(self.variable_num)) - 1)
         self.global_optimum_solution = 0
@@ -406,8 +426,8 @@ class DixonPrice(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False,
-                         'Convex': False}
+                         'Unimodal': True,
+                         'Convex': True}
 
     def get_func_val(self, variables, *args):
         return np.square(variables[0] - 1) + np.sum([
@@ -415,7 +435,7 @@ class DixonPrice(OptimalBasic):
             for i in range(1, self.variable_num)])
 
 
-# Class Drop-Wave function
+# Class Drop-Wave function [http://benchmarkfcns.xyz/benchmarkfcns/dropwavefcn.html]
 class DropWave(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
@@ -428,7 +448,7 @@ class DropWave(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -449,7 +469,7 @@ class EggHolder(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -460,21 +480,21 @@ class EggHolder(OptimalBasic):
                 np.abs(xi - xi1 - 47.))))
 
 
-# Class Expanded Two-Peak Trap function
+# Class Expanded Two-Peak Trap function [Qu2016]
 class ExpandedTwoPeakTrap(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
         self.min_search_range = np.array([-100.] * self.variable_num)
-        self.optimal_solution = np.array([0] * self.variable_num)
-        self.global_optimum_solution = 0
+        self.optimal_solution = np.array([0.] * self.variable_num)
+        self.global_optimum_solution = 0.
         self.func_name = 'Expanded Two-Peak Trap'
         self.features = {'Continuous': False,
                          'Differentiable': False,
-                         'Separable': False,
+                         'Separable': True,
                          'Scalable': True,
-                         'Multimodal': True,
-                         'Convex': True}
+                         'Unimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         def get_cases(y):
@@ -491,7 +511,7 @@ class ExpandedTwoPeakTrap(OptimalBasic):
             self.variable_num
 
 
-# Class Expanded Five-Uneven-Peak Trap function
+# Class Expanded Five-Uneven-Peak Trap function [Qu2016]
 class ExpandedFiveUnevenPeakTrap(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
@@ -502,10 +522,10 @@ class ExpandedFiveUnevenPeakTrap(OptimalBasic):
         self.func_name = 'Expanded Five-Uneven-Peak Trap'
         self.features = {'Continuous': False,
                          'Differentiable': False,
-                         'Separable': False,
+                         'Separable': True,
                          'Scalable': True,
-                         'Multimodal': True,
-                         'Convex': True}
+                         'Unimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         def get_cases(x):
@@ -533,7 +553,7 @@ class ExpandedFiveUnevenPeakTrap(OptimalBasic):
         return np.sum(np.vectorize(get_cases)(variables)) + 200. * self.variable_num
 
 
-# Class Expanded Equal Minima function
+# Class Expanded Equal Minima function [Qu2016]
 class ExpandedEqualMinima(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
@@ -546,8 +566,8 @@ class ExpandedEqualMinima(OptimalBasic):
                          'Differentiable': False,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True,
-                         'Convex': True}
+                         'Unimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         def get_cases(y):
@@ -560,7 +580,7 @@ class ExpandedEqualMinima(OptimalBasic):
             self.variable_num
 
 
-# Class Expanded Decreasing Minima function
+# Class Expanded Decreasing Minima function [Qu2016]
 class ExpandedDecreasingMinima(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
@@ -573,8 +593,8 @@ class ExpandedDecreasingMinima(OptimalBasic):
                          'Differentiable': False,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True,
-                         'Convex': True}
+                         'Unimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         def get_cases(y):
@@ -588,7 +608,7 @@ class ExpandedDecreasingMinima(OptimalBasic):
             self.variable_num
 
 
-# Class Expanded Uneven Minima function
+# Class Expanded Uneven Minima function [Qu2016]
 class ExpandedUnevenMinima(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
@@ -601,8 +621,8 @@ class ExpandedUnevenMinima(OptimalBasic):
                          'Differentiable': False,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True,
-                         'Convex': True}
+                         'Unimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         def get_cases(y):
@@ -616,7 +636,7 @@ class ExpandedUnevenMinima(OptimalBasic):
             self.variable_num
 
 
-# Class Modified Vincent function
+# Class Modified Vincent function [Qu2016]
 class ModifiedVincent(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
@@ -629,8 +649,8 @@ class ModifiedVincent(OptimalBasic):
                          'Differentiable': False,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True,
-                         'Convex': True}
+                         'Unimodal': False,
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         def get_cases(y):
@@ -651,14 +671,14 @@ class Exponential(OptimalBasic):
         super().__init__(variable_num)
         self.max_search_range = np.array([1.] * self.variable_num)
         self.min_search_range = np.array([-1.] * self.variable_num)
-        self.optimal_solution = np.array([0] * self.variable_num)
-        self.global_optimum_solution = 1
+        self.optimal_solution = np.array([0.] * self.variable_num)
+        self.global_optimum_solution = 1.
         self.func_name = 'Exponential'
         self.features = {'Continuous': True,
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False,
+                         'Unimodal': False,
                          'Convex': True}
 
     def get_func_val(self, variables, *args):
@@ -676,16 +696,15 @@ class Giunta(OptimalBasic):
         self.func_name = 'Giunta'
         self.features = {'Continuous': True,
                          'Differentiable': True,
-                         'Separable': False,
+                         'Separable': True,
                          'Scalable': True,
-                         'Multimodal': False,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
-        return 0.6 + np.sum(
-            np.square(np.sin(1. - (16. / 15.) * variables)) - (1. / 50.) * np.sin(
-                4. - (64. / 15.) * variables) - np.sin(
-                1. - (16. / 15.) * variables))
+        return 0.6 + np.sum(np.square(np.sin(1. - (16. / 15.) * variables)) - (1. / 50.)
+                            * np.sin(4. - (64. / 15.) * variables)
+                            - np.sin(1. - (16. / 15.) * variables))
 
 
 # 59 - Class Griewank function
@@ -701,7 +720,7 @@ class Griewank(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -709,7 +728,7 @@ class Griewank(OptimalBasic):
             variables / np.sqrt(np.arange(self.variable_num) + 1))) + 1
 
 
-# Class Happy Cat function
+# Class Happy Cat function [http://benchmarkfcns.xyz/benchmarkfcns/happycatfcn.html]
 class HappyCat(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
@@ -722,7 +741,7 @@ class HappyCat(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, alpha=1/8, *args):
@@ -745,7 +764,7 @@ class Mishra1(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -766,7 +785,7 @@ class Mishra2(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -782,14 +801,14 @@ class Mishra7(OptimalBasic):
         self.max_search_range = np.array([10.] * self.variable_num)
         self.min_search_range = np.array([-10.] * self.variable_num)
         self.optimal_solution = np.array([np.power(np.math.factorial(
-            self.variable_num), 1 / self.variable_num)] * self.variable_num)
+            self.variable_num), 1. / self.variable_num)] * self.variable_num)
         self.global_optimum_solution = 0.
         self.func_name = 'Mishra 7'
         self.features = {'Continuous': True,
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': False,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -810,7 +829,7 @@ class Mishra11(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': False,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -819,7 +838,7 @@ class Mishra11(OptimalBasic):
                                   1 / self.variable_num))
 
 
-# Class Needle-Eye function
+# Class Needle-Eye function [Al-Roomi2015]
 class NeedleEye(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
@@ -832,7 +851,7 @@ class NeedleEye(OptimalBasic):
                          'Differentiable': False,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, eye=0.0001, *args):
@@ -854,7 +873,7 @@ class Pathological(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': False,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -871,14 +890,14 @@ class Pinter(OptimalBasic):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
         self.min_search_range = np.array([-10.] * self.variable_num)
-        self.optimal_solution = np.array([0] * self.variable_num)
+        self.optimal_solution = np.array([0.] * self.variable_num)
         self.global_optimum_solution = 0.
         self.func_name = 'Pinter'
         self.features = {'Continuous': True,
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -902,9 +921,9 @@ class Periodic(OptimalBasic):
         self.func_name = 'Periodic'
         self.features = {'Continuous': True,
                          'Differentiable': True,
-                         'Separable': True,
+                         'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -925,8 +944,8 @@ class PowellSum(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': False,
-                         'Convex': False}
+                         'Unimodal': True,
+                         'Convex': True}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.power(np.abs(variables), np.arange(
@@ -940,14 +959,14 @@ class Qing(OptimalBasic):
         self.max_search_range = np.array([500.] * self.variable_num)
         self.min_search_range = np.array([-500.] * self.variable_num)
         self.optimal_solution = np.array(np.sqrt(np.arange(
-            self.variable_num) + 1))
+            self.variable_num) + 1.))
         self.global_optimum_solution = 0.
         self.func_name = 'Powel Sum'
         self.features = {'Continuous': True,
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -968,7 +987,7 @@ class Quartic(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -981,19 +1000,20 @@ class Quintic(OptimalBasic):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
         self.min_search_range = np.array([-10.] * self.variable_num)
-        self.optimal_solution = np.array([-1] * self.variable_num)
+        self.optimal_solution = np.array([-1.] * self.variable_num)
         self.global_optimum_solution = 0.
         self.func_name = 'Quintic'
         self.features = {'Continuous': True,
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': False,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
-        return np.sum(np.abs(np.power(variables, 5) - 3 * np.power(variables, 4) + 4 * np.power(variables, 3) +
-                             2 * np.power(variables, 2) - 10 * variables - 4))
+        return np.sum(np.abs(np.power(variables, 5) - 3 * np.power(variables, 4)
+                             + 4 * np.power(variables, 3)
+                             + 2 * np.power(variables, 2) - 10 * variables - 4))
 
 
 # 102 - Class Rana function
@@ -1009,14 +1029,14 @@ class Rana(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
         t1 = np.sqrt(np.abs(variables[1:] + variables[:-1] + 1))
         t2 = np.sqrt(np.abs(variables[1:] - variables[:-1] + 1))
-        return np.sum((variables[1:] + 1) * np.cos(t1) * np.sin(t1) +
-                      variables[:-1] * np.cos(t1) * np.sin(t2))
+        return np.sum((variables[1:] + 1) * np.cos(t1) * np.sin(t1)
+                      + variables[:-1] * np.cos(t1) * np.sin(t2))
 
 
 # Class Rastrigin function
@@ -1030,9 +1050,9 @@ class Rastrigin(OptimalBasic):
         self.func_name = 'Rastrigin'
         self.features = {'Continuous': True,
                          'Differentiable': True,
-                         'Separable': False,
+                         'Separable': True,
                          'Scalable': True,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -1054,7 +1074,7 @@ class Ridge(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True,
+                         'Unimodal': True,
                          'Convex': False}
 
     def get_func_val(self, variables, d=2., alpha=0.1):
@@ -1074,7 +1094,7 @@ class Rosenbrock(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': False,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -1095,7 +1115,7 @@ class Salomon(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -1116,7 +1136,7 @@ class Sargan(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -1124,6 +1144,7 @@ class Sargan(OptimalBasic):
             np.multiply(1 - np.identity(self.variable_num), np.outer(
                 variables, variables)), 0))
 
+# <---- here i am
 
 # 117 - Class Schumer-Steiglitz function
 class SchumerSteiglitz(OptimalBasic):
