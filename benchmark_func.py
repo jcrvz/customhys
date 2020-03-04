@@ -837,7 +837,7 @@ class Mishra7(OptimalBasic):
             self.variable_num))
 
 
-# 84 - Class Mishra 11 function
+# 84 - Class Mishra 11 function (Arithmetic Mean - Geometric Mean Equality)
 class Mishra11(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
@@ -856,7 +856,7 @@ class Mishra11(OptimalBasic):
     def get_func_val(self, variables, *args):
         return np.square(np.sum(np.abs(variables)) / self.variable_num -
                          np.power(np.prod(np.abs(variables)),
-                                  1 / self.variable_num))
+                                  1. / self.variable_num))
 
 
 # Class Needle-Eye function [Al-Roomi2015]
@@ -949,7 +949,7 @@ class Periodic(OptimalBasic):
 
     def get_func_val(self, variables, *args):
         return 1 + np.sum(np.square(np.sin(variables))) - 0.1 * np.exp(
-            np.sum(np.square(variables)))
+            -np.sum(np.square(variables)))
 
 
 # 93 - Class Powell Sum function
@@ -2141,26 +2141,6 @@ class Perm02(OptimalBasic):
                 np.power(x, inds) - np.power(1 / inds.T, inds)), 0)))
 
 
-# Class Yao Liu 04 function [http://infinity77.net/global_optimization/test_functions_nd_Y.html#go_benchmark.YaoLiu04]
-class YaoLiu04(OptimalBasic):
-    def __init__(self, variable_num):
-        super().__init__(variable_num)
-        self.max_search_range = np.array([10.] * self.variable_num)
-        self.min_search_range = np.array([-10.] * self.variable_num)
-        self.optimal_solution = np.array([0.] * self.variable_num)
-        self.global_optimum_solution = 0.
-        self.func_name = 'Yao-Liu 04'
-        self.features = {'Continuous': True,
-                         'Differentiable': False,
-                         'Separable': False,
-                         'Scalable': True,
-                         'Unimodal': False,
-                         'Convex': False}
-
-    def get_func_val(self, variables, *args):
-        return np.max(np.abs(variables))
-
-
 # Class Yao Liu 09 function [http://infinity77.net/global_optimization/test_functions_nd_Y.html#go_benchmark.YaoLiu04]
 class YaoLiu09(OptimalBasic):
     def __init__(self, variable_num):
@@ -2224,6 +2204,158 @@ class Levy(OptimalBasic):
             w[-1] - 1.) * (1. + np.square(np.sin(2. * np.pi * w[-1])))
         return f0 + np.sum(np.square(w[:-1] - 1.) * (1. + 10. * np.square(np.sin(
             np.pi * w[:-1] + 1.))))
+
+
+# Class Price 01 function
+class Price01(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([500.] * self.variable_num)
+        self.min_search_range = np.array([-500.] * self.variable_num)
+        self.optimal_solution = np.array([5.] * self.variable_num)
+        self.global_optimum_solution = 0.
+        self.func_name = 'Price 01'
+        self.features = {'Continuous': True,
+                         'Differentiable': False,
+                         'Separable': True,
+                         'Scalable': True,
+                         'Unimodal': False,
+                         'Convex': False}
+
+    def get_func_val(self, variables, *args):
+        return np.sum(np.square(np.abs(variables) - 5.))
+
+
+# Class Bohachevsky function [http://infinity77.net/global_optimization/test_functions_nd_B.html#go_benchmark
+# .Bohachevsky]
+class Bohachevsky(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([15.] * self.variable_num)
+        self.min_search_range = np.array([-15.] * self.variable_num)
+        self.optimal_solution = np.array([0.] * self.variable_num)
+        self.global_optimum_solution = 0.
+        self.func_name = 'Bohachevsky'
+        self.features = {'Continuous': True,
+                         'Differentiable': True,
+                         'Separable': True,
+                         'Scalable': True,
+                         'Unimodal': False,
+                         'Convex': False}
+
+    def get_func_val(self, variables, *args):
+        x = variables[:-1]
+        y = variables[1:]
+        return np.sum(np.square(x) + 2. * np.square(y) - 0.3 * np.cos(3. * np.pi * x)
+                      - 0.4 * np.cos(4. * np.pi * y) + 0.7)
+
+
+# Class Bohachevsky function [http://infinity77.net/global_optimization/test_functions_nd_C.html#go_benchmark
+# .CarromTable]
+class CarromTable(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([10.] * self.variable_num)
+        self.min_search_range = np.array([-10.] * self.variable_num)
+        self.optimal_solution = np.array([9.646157266348881] * self.variable_num)
+        self.global_optimum_solution = -24.15681551650653
+        self.func_name = 'Carrom Table'
+        self.features = {'Continuous': True,
+                         'Differentiable': False,
+                         'Separable': False,
+                         'Scalable': True,
+                         'Unimodal': False,
+                         'Convex': False}
+
+    def get_func_val(self, variables, *args):
+        return - (1. / 30.) * np.exp(2. * np.abs(1. - np.linalg.norm(variables) / np.pi)) *\
+               np.prod(np.square(np.cos(variables)))
+
+
+# Class CrownedCross function [http://infinity77.net/global_optimization/test_functions_nd_C.html#go_benchmark
+# .CrownedCross]
+class CrownedCross(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([10.] * self.variable_num)
+        self.min_search_range = np.array([-10.] * self.variable_num)
+        self.optimal_solution = np.array([0.] * self.variable_num)
+        self.global_optimum_solution = 0.0001
+        self.func_name = 'Crowned Cross'
+        self.features = {'Continuous': True,
+                         'Differentiable': False,
+                         'Separable': False,
+                         'Scalable': True,
+                         'Unimodal': False,
+                         'Convex': False}
+
+    def get_func_val(self, variables, *args):
+        return 0.0001 * np.power(np.abs(np.exp(np.abs(100. - np.linalg.norm(
+            variables) / np.pi)) * np.prod(np.sin(variables))) + 1., 0.1)
+
+
+# Class CrossInTray function [http://infinity77.net/global_optimization/test_functions_nd_C.html#go_benchmark
+# .CrownedCross]
+class CrossInTray(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([15.] * self.variable_num)
+        self.min_search_range = np.array([-15.] * self.variable_num)
+        self.optimal_solution = np.array([1.349406608602084] * self.variable_num)
+        self.global_optimum_solution = -2.062611870822739
+        self.func_name = 'Cross-in-Tray'
+        self.features = {'Continuous': True,
+                         'Differentiable': False,
+                         'Separable': False,
+                         'Scalable': True,
+                         'Unimodal': False,
+                         'Convex': False}
+
+    def get_func_val(self, variables, *args):
+        return -0.0001 * np.power(np.abs(np.exp(np.abs(100. - np.linalg.norm(
+            variables) / np.pi)) * np.prod(np.sin(variables))) + 1., 0.1)
+
+
+# Class Cigar function [http://infinity77.net/global_optimization/test_functions_nd_C.html#go_benchmark.CarromTable]
+class Cigar(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([100.] * self.variable_num)
+        self.min_search_range = np.array([-100.] * self.variable_num)
+        self.optimal_solution = np.array([0.] * self.variable_num)
+        self.global_optimum_solution = 0.
+        self.func_name = 'Cigar'
+        self.features = {'Continuous': True,
+                         'Differentiable': True,
+                         'Separable': True,
+                         'Scalable': True,
+                         'Unimodal': False,
+                         'Convex': True}
+
+    def get_func_val(self, variables, *args):
+        return np.square(variables[0]) + 1.e6 * np.sum(np.square(variables[1:]))
+
+
+# Class Deflected Corrugated Spring function [al-roomi]
+class DeflectedCorrugatedSpring(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([10.] * self.variable_num)  # 2 alpha
+        self.min_search_range = np.array([0.] * self.variable_num)
+        self.optimal_solution = np.array([5.] * self.variable_num)  # alpha
+        self.global_optimum_solution = -1.
+        self.func_name = 'Deflected Corrugated Spring'
+        self.features = {'Continuous': True,
+                         'Differentiable': True,
+                         'Separable': False,
+                         'Scalable': True,
+                         'Unimodal': False,
+                         'Convex': False}
+
+    def get_func_val(self, variables, alpha=5., k=5.):
+        x = np.square(variables - alpha)
+        return 0.1 * np.sum(x) - np.cos(k * np.sqrt(np.sum(x)))
+
 
 # List all available functions
 def list_functions():
