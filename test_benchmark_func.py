@@ -2,7 +2,7 @@
 """
 Created on Tue Feb 11 09:35:32 2020
 
-@author: L03130342close
+@author: jcrvz
 """
 
 
@@ -17,4 +17,3 @@ for ii in range(len(all_functions)):
     func = eval('bf.' + function_name + '(2)')
     func.plot(samples=50, resolution=100)
     func.save_fig()
-    
