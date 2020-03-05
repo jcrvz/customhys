@@ -34,21 +34,24 @@ from matplotlib.colors import LightSource
 
 # from functools import wraps
 
-__all__ = ['Ackley1', 'Ackley4', 'Alpine1', 'Alpine2', 'Brent', 'Brown', 'ChungReynolds',
-           'CosineMixture', 'Csendes', 'Deb1', 'Deb3', 'DixonPrice', 'DropWave', 'EggHolder',
-           'Ellipsoid', 'ExpandedDecreasingMinima', 'ExpandedEqualMinima',
-           'ExpandedFiveUnevenPeakTrap', 'Exponential', 'Giunta', 'Griewank', 'HappyCat',
-           'HyperEllipsoid', 'KTablet', 'Michalewicz', 'Mishra1', 'Mishra11', 'Mishra2',
-           'Mishra7', 'ModifiedVincent', 'NeedleEye', 'Pathological', 'Periodic', 'Perm',
-           'Pinter', 'PowellSum', 'Qing', 'Quartic', 'Quintic', 'Rana', 'Rastrigin',
-           'Rosenbrock', 'RotatedHyperEllipsoid', 'Salomon', 'Sargan', 'SchafferN1',
-           'SchafferN2', 'SchafferN3', 'SchafferN4', 'SchafferN6', 'Schubert', 'Schubert3',
-           'Schubert4', 'SchumerSteiglitz', 'Schwefel', 'Schwefel12', 'Schwefel204',
-           'Schwefel220', 'Schwefel221', 'Schwefel222', 'Schwefel223', 'Schwefel225',
-           'Schwefel226', 'Sphere', 'Step', 'Step2', 'Step3', 'StepInt', 'Stochastic',
-           'StrechedVSineWave', 'StyblinskiTang', 'SumSquares', 'Trid',
-           'Trigonometric1', 'Trigonometric2', 'WWavy', 'Weierstrass', 'Whitley',
-           'XinSheYang1', 'XinSheYang2', 'XinSheYang3', 'XinSheYang4', 'Zakharov']
+__all__ = ['Ackley1', 'Ackley4', 'Alpine1', 'Alpine2', 'Bohachevsky', 'Brent', 'Brown', 'CarromTable',
+           'ChungReynolds', 'Cigar', 'CosineMixture', 'CrossInTray', 'CrossLegTable', 'CrownedCross',
+           'Csendes', 'Deb1', 'Deb3', 'DeflectedCorrugatedSpring', 'DixonPrice', 'DropWave',
+           'EggHolder', 'Ellipsoid', 'ExpandedDecreasingMinima', 'ExpandedEqualMinima',
+           'ExpandedFiveUnevenPeakTrap', 'ExpandedTwoPeakTrap', 'ExpandedUnevenMinima', 'Exponential',
+           'F2', 'Giunta', 'Griewank', 'HappyCat', 'HyperEllipsoid', 'InvertedCosineWave',
+           'JennrichSampson', 'KTablet', 'Katsuura', 'Levy', 'LunacekN01', 'LunacekN02',
+           'Michalewicz', 'Mishra1', 'Mishra11', 'Mishra2', 'Mishra7', 'ModifiedVincent', 'NeedleEye',
+           'OptimalBasic', 'Pathological', 'Periodic', 'Perm01', 'Perm02', 'Pinter', 'PowellSum',
+           'Price01', 'Qing', 'Quartic', 'Quintic', 'Rana', 'Rastrigin', 'Ridge', 'Rosenbrock',
+           'RotatedHyperEllipsoid', 'Salomon', 'Sargan', 'SchafferN1', 'SchafferN2', 'SchafferN3',
+           'SchafferN4', 'SchafferN6', 'Schubert', 'Schubert3', 'Schubert4', 'SchumerSteiglitz',
+           'Schwefel', 'Schwefel12', 'Schwefel204', 'Schwefel220', 'Schwefel221', 'Schwefel222',
+           'Schwefel223', 'Schwefel225', 'Schwefel226', 'Sphere', 'Step', 'Step2', 'Step3', 'StepInt',
+           'Stochastic', 'StrechedVSineWave', 'StyblinskiTang', 'SumSquares', 'Trid',
+           'Trigonometric1', 'Trigonometric2', 'TypeI', 'TypeII', 'Vincent', 'WWavy', 'Weierstrass',
+           'Whitley', 'XinSheYang1', 'XinSheYang2', 'XinSheYang3', 'XinSheYang4', 'YaoLiu09',
+           'Zakharov', 'ZeroSum']
 
 
 # %% Basic function class
@@ -333,20 +336,21 @@ class ChungReynolds(OptimalBasic):
 class Csendes(OptimalBasic):
     def __init__(self, variable_num):
         super().__init__(variable_num)
-        self.max_search_range = np.array([1.] * self.variable_num)
-        self.min_search_range = np.array([-1.] * self.variable_num)
+        self.max_search_range = np.array([2.] * self.variable_num)
+        self.min_search_range = np.array([-2.] * self.variable_num)
         self.optimal_solution = np.array([0.] * self.variable_num)
         self.global_optimum_solution = 0.
         self.func_name = 'Csendes'
         self.features = {'Continuous': True,
-                         'Differentiable': True,
+                         'Differentiable': False,
                          'Separable': True,
                          'Scalable': True,
                          'Unimodal': False,
                          'Convex': True}
 
     def get_func_val(self, variables, *args):
-        return np.sum(np.power(variables, 6.) * (2. + np.sin(1 / variables)))
+        return np.sum(np.power(variables, 6.) * (2. + np.sin(1 / variables))) \
+            if np.prod(variables) != 0 else 0.
 
 
 # 38 - Class Cosine Mixture function
@@ -386,8 +390,7 @@ class Deb1(OptimalBasic):
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
-        return np.sum(np.power(np.sin(5. * np.pi * variables), 6.)) / (
-            -self.variable_num)
+        return -np.sum(np.power(np.sin(5. * np.pi * variables), 6.)) / self.variable_num
 
 
 # 44 - Class Deb 3 function
@@ -576,8 +579,7 @@ class ExpandedEqualMinima(OptimalBasic):
             else:
                 return np.square(y)
 
-        return np.sum(np.vectorize(get_cases)(variables + 0.1)) + \
-               self.variable_num
+        return np.sum(np.vectorize(get_cases)(variables + 0.1)) + self.variable_num
 
 
 # Class Expanded Decreasing Minima function [Qu2016]
@@ -599,8 +601,8 @@ class ExpandedDecreasingMinima(OptimalBasic):
     def get_func_val(self, variables, *args):
         def get_cases(y):
             if 0. <= y < 1.:
-                return -np.exp(-2. * np.log(2.) * np.square((y - 0.1) / 0.8)
-                               ) * np.power(np.sin(5. * np.pi * y), 6.)
+                return -np.exp(-2. * np.log(2.) * np.square((y - 0.1) / 0.8)) * np.power(np.sin(
+                    5. * np.pi * y), 6.)
             else:
                 return np.square(y)
 
@@ -627,8 +629,7 @@ class ExpandedUnevenMinima(OptimalBasic):
     def get_func_val(self, variables, *args):
         def get_cases(y):
             if 0. <= y < 1.:
-                return -np.power(np.sin(5. * np.pi * (
-                        np.power(y, 3 / 4) - 0.05)), 6.)
+                return -np.power(np.sin(5. * np.pi * (np.power(y, 3 / 4) - 0.05)), 6.)
             else:
                 return np.square(y)
 
@@ -2425,26 +2426,6 @@ class JennrichSampson(OptimalBasic):
         return np.sum(np.square(2. + 2. * np.arange(1, d + 1) - np.sum(np.exp(i * x), 1)))
 
 
-# Class Gaussian function
-class Gaussian(OptimalBasic):
-    def __init__(self, variable_num):
-        super().__init__(variable_num)
-        self.max_search_range = np.array([100.] * self.variable_num)
-        self.min_search_range = np.array([-100.] * self.variable_num)
-        self.optimal_solution = np.array([0.] * self.variable_num)
-        self.global_optimum_solution = -100.
-        self.func_name = 'Gaussian'
-        self.features = {'Continuous': True,
-                         'Differentiable': True,
-                         'Separable': False,
-                         'Scalable': True,
-                         'Unimodal': True,
-                         'Convex': False}
-
-    def get_func_val(self, variables, a=100., b=0., c=1.):
-        return -a * np.exp(-np.sum(np.square(variables - b) / c))
-
-
 # Class Lunacek's bi-Sphere function [https://al-roomi.org/benchmarks/unconstrained/n-dimensions/228-lunacek-s-bi
 # -sphere-function]
 class LunacekN01(OptimalBasic):
@@ -2550,6 +2531,75 @@ class TypeII(OptimalBasic):
                     return y - 1. + alpha
 
         return np.power(np.sum(np.vectorize(get_cases)(variables)) / self.variable_num, beta)
+
+
+# Class F2 function [al-roomi]
+class F2(OptimalBasic):
+    l_values = [5.1, 0.5, 2.772588722239781, 0.066832364099628, 0.64]
+
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([1.] * self.variable_num)
+        self.min_search_range = np.array([0.] * self.variable_num)
+        self.optimal_solution = np.array([l_values[3]] * self.variable_num)
+        self.global_optimum_solution = -1.
+        self.func_name = 'F2'
+        self.features = {'Continuous': True,
+                         'Differentiable': True,
+                         'Separable': False,
+                         'Scalable': True,
+                         'Unimodal': False,
+                         'Convex': False}
+
+    def get_func_val(self, variables, k=6., l_vals=None):
+        if l_vals is None:
+            l_vals = l_values
+        return -np.prod(np.power(np.sin(l_vals[0] * np.pi * variables + l_vals[1]), k)
+                        * np.exp(-l_vals[2] * np.square((variables - l_vals[3]) / l_vals[4])))
+
+
+# Class Inverted Cosine-Wave function [al-roomi]
+class InvertedCosineWave(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([5.] * self.variable_num)
+        self.min_search_range = np.array([-5.] * self.variable_num)
+        self.optimal_solution = np.array([0.] * self.variable_num)
+        self.global_optimum_solution = -self.variable_num + 1.
+        self.func_name = 'Inverted Cosine-Wave'
+        self.features = {'Continuous': True,
+                         'Differentiable': True,
+                         'Separable': False,
+                         'Scalable': True,
+                         'Unimodal': False,
+                         'Convex': False}
+
+    def get_func_val(self, variables, k=6., *args):
+        x_vals = np.square(variables[:-1]) + np.square(variables[1:])\
+                 + 0.5 * variables[1:] * variables[:-1]
+        return -np.sum(np.exp(-x_vals / 8.) * np.cos(4. * np.sqrt(x_vals)))
+
+
+# Class Odd Square function [al-roomi]
+class OddSquare(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([5.] * self.variable_num)
+        self.min_search_range = np.array([-5.] * self.variable_num)
+        self.optimal_solution = np.array([0.] * self.variable_num)
+        self.global_optimum_solution = -self.variable_num + 1.
+        self.func_name = 'Odd Square'
+        self.features = {'Continuous': False,
+                         'Differentiable': False,
+                         'Separable': False,
+                         'Scalable': True,
+                         'Unimodal': False,
+                         'Convex': False}
+
+    def get_func_val(self, variables, k=6., *args):
+        x_vals = np.square(variables[:-1]) + np.square(variables[1:])\
+                 + 0.5 * variables[1:] * variables[:-1]
+        return -np.sum(np.exp(-x_vals / 8.) * np.cos(4. * np.sqrt(x_vals)))
 
 
 # List all available functions
