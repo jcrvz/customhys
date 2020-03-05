@@ -2316,6 +2316,27 @@ class CrossInTray(OptimalBasic):
             variables) / np.pi)) * np.prod(np.sin(variables))) + 1., 0.1)
 
 
+# Class CrossLegTable function [al-roomi]
+class CrossLegTable(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([10.] * self.variable_num)
+        self.min_search_range = np.array([-10.] * self.variable_num)
+        self.optimal_solution = np.array([0.] * self.variable_num)
+        self.global_optimum_solution = -1.
+        self.func_name = 'Cross-Leg Table'
+        self.features = {'Continuous': True,
+                         'Differentiable': False,
+                         'Separable': False,
+                         'Scalable': True,
+                         'Unimodal': False,
+                         'Convex': False}
+
+    def get_func_val(self, variables, *args):
+        return -1. / np.power(np.abs(np.exp(np.abs(100. - np.linalg.norm(
+            variables) / np.pi)) * np.prod(np.sin(variables))) + 1., 0.1)
+
+
 # Class Cigar function [http://infinity77.net/global_optimization/test_functions_nd_C.html#go_benchmark.CarromTable]
 class Cigar(OptimalBasic):
     def __init__(self, variable_num):
