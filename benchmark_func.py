@@ -2378,6 +2378,121 @@ class DeflectedCorrugatedSpring(OptimalBasic):
         return 0.1 * np.sum(x) - np.cos(k * np.sqrt(np.sum(x)))
 
 
+# Class Katsuura function [http://infinity77.net/global_optimization/test_functions_nd_K.html#go_benchmark.Katsuura]
+class Katsuura(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([100.] * self.variable_num)
+        self.min_search_range = np.array([0.] * self.variable_num)
+        self.optimal_solution = np.array([0.] * self.variable_num)
+        self.global_optimum_solution = 1.
+        self.func_name = 'Katsuura'
+        self.features = {'Continuous': True,
+                         'Differentiable': False,
+                         'Separable': False,
+                         'Scalable': False,
+                         'Unimodal': False,
+                         'Convex': False}
+
+    def get_func_val(self, variables, d=32):
+        two_k = np.outer(np.power(2., np.arange(1, d + 1)), np.ones(self.variable_num))
+        x = np.outer(np.ones(d), variables)
+        return np.prod(1. + np.arange(1, self.variable_num + 1)
+                       * np.sum(np.floor(two_k * x) / two_k, 0))
+
+
+# Class Jennrich-Sampson function [http://infinity77.net/global_optimization/test_functions_nd_J.html#go_benchmark
+# .JennrichSampson]
+class JennrichSampson(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([1.] * self.variable_num)
+        self.min_search_range = np.array([-1.] * self.variable_num)
+        self.optimal_solution = np.array([0.257825] * self.variable_num)
+        self.global_optimum_solution = 124.3621824
+        self.func_name = 'Jennrich-Sampson'
+        self.features = {'Continuous': True,
+                         'Differentiable': True,
+                         'Separable': False,
+                         'Scalable': True,
+                         'Unimodal': False,
+                         'Convex': False}
+
+    def get_func_val(self, variables, d=10):
+        i = np.outer(np.arange(1, d + 1), np.ones(self.variable_num))
+        x = np.outer(np.ones(d), variables)
+
+        return np.sum(np.square(2. + 2. * np.arange(1, d + 1) - np.sum(np.exp(i * x), 1)))
+
+
+# Class Gaussian function
+class Gaussian(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([100.] * self.variable_num)
+        self.min_search_range = np.array([-100.] * self.variable_num)
+        self.optimal_solution = np.array([0.] * self.variable_num)
+        self.global_optimum_solution = -100.
+        self.func_name = 'Gaussian'
+        self.features = {'Continuous': True,
+                         'Differentiable': True,
+                         'Separable': False,
+                         'Scalable': True,
+                         'Unimodal': True,
+                         'Convex': False}
+
+    def get_func_val(self, variables, a=100., b=0., c=1.):
+        return -a * np.exp(-np.sum(np.square(variables - b) / c))
+
+
+# Class Lunacek's bi-Sphere function [https://al-roomi.org/benchmarks/unconstrained/n-dimensions/228-lunacek-s-bi
+# -sphere-function]
+class LunacekN01(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([5.12] * self.variable_num)
+        self.min_search_range = np.array([-5.12] * self.variable_num)
+        self.optimal_solution = np.array([2.5] * self.variable_num)
+        self.global_optimum_solution = 0.
+        self.func_name = "Lunacek N01"
+        self.features = {'Continuous': True,
+                         'Differentiable': False,
+                         'Separable': False,
+                         'Scalable': True,
+                         'Unimodal': False,
+                         'Convex': False}
+
+    def get_func_val(self, variables, mu1=2.5, d=1.):
+        s = 1. - 1. / (2. * np.sqrt(self.variable_num + 20.) - 8.2)
+        mu2 = -np.sqrt((np.square(mu1) - d) / s)
+        return np.min([np.sum(np.square(variables - mu1)),
+                      np.sum(np.square(variables - mu2)) * s + d * self.variable_num])
+
+
+# Class Lunacek's bi-Rastrigin function [https://al-roomi.org/benchmarks/unconstrained/n-dimensions/229-lunacek-s-bi
+# -rastrigin-function]
+class LunacekN02(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([5.12] * self.variable_num)
+        self.min_search_range = np.array([-5.12] * self.variable_num)
+        self.optimal_solution = np.array([2.5] * self.variable_num)
+        self.global_optimum_solution = 0.
+        self.func_name = "Lunacek N02"
+        self.features = {'Continuous': True,
+                         'Differentiable': True,
+                         'Separable': False,
+                         'Scalable': True,
+                         'Unimodal': False,
+                         'Convex': False}
+
+    def get_func_val(self, variables, mu1=2.5, d=1.):
+        s = 1. - 1. / (2. * np.sqrt(self.variable_num + 20.) - 8.2)
+        mu2 = -np.sqrt((np.square(mu1) - d) / s)
+        return np.min([np.sum(np.square(variables - mu1)),
+                      np.sum(np.square(variables - mu2)) * s + d * self.variable_num]) + 10. * np.sum(
+            1. - np.cos(2. * np.pi * (variables - mu1)))
+
 # List all available functions
 def list_functions():
     # Print first line
