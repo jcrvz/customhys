@@ -31,6 +31,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d
 from matplotlib.colors import LightSource
+
 # from functools import wraps
 
 __all__ = ['Ackley1', 'Ackley4', 'Alpine1', 'Alpine2', 'Brent', 'Brown', 'ChungReynolds',
@@ -48,7 +49,6 @@ __all__ = ['Ackley1', 'Ackley4', 'Alpine1', 'Alpine2', 'Brent', 'Brown', 'ChungR
            'StrechedVSineWave', 'StyblinskiTang', 'SumSquares', 'Trid',
            'Trigonometric1', 'Trigonometric2', 'WWavy', 'Weierstrass', 'Whitley',
            'XinSheYang1', 'XinSheYang2', 'XinSheYang3', 'XinSheYang4', 'Zakharov']
-
 
 
 # %% Basic function class
@@ -136,7 +136,7 @@ class OptimalBasic:
         else:
             noise_value = np.random.rand()
         return self.__scale_function * self.get_func_val(variables, *args) + \
-            (self.__noise_level * noise_value) + self.__offset_function
+               (self.__noise_level * noise_value) + self.__offset_function
 
     def plot(self, samples=50, resolution=100):
         x = np.linspace(self.min_search_range[0], self.max_search_range[0],
@@ -477,7 +477,7 @@ class EggHolder(OptimalBasic):
         xi1 = variables[1:]
         return np.sum(-(xi1 + 47.) * np.sin(np.sqrt(
             np.abs(xi1 + xi / 2. + 47.))) - xi * np.sin(np.sqrt(
-                np.abs(xi - xi1 - 47.))))
+            np.abs(xi - xi1 - 47.))))
 
 
 # Class Expanded Two-Peak Trap function [Qu2016]
@@ -508,7 +508,7 @@ class ExpandedTwoPeakTrap(OptimalBasic):
                 return -200. + np.square(y - 20.)
 
         return np.sum(np.vectorize(get_cases)(variables + 20.)) + 200. * \
-            self.variable_num
+               self.variable_num
 
 
 # Class Expanded Five-Uneven-Peak Trap function [Qu2016]
@@ -577,7 +577,7 @@ class ExpandedEqualMinima(OptimalBasic):
                 return np.square(y)
 
         return np.sum(np.vectorize(get_cases)(variables + 0.1)) + \
-            self.variable_num
+               self.variable_num
 
 
 # Class Expanded Decreasing Minima function [Qu2016]
@@ -605,7 +605,7 @@ class ExpandedDecreasingMinima(OptimalBasic):
                 return np.square(y)
 
         return np.sum(np.vectorize(get_cases)(variables + 0.1)) + \
-            self.variable_num
+               self.variable_num
 
 
 # Class Expanded Uneven Minima function [Qu2016]
@@ -633,7 +633,7 @@ class ExpandedUnevenMinima(OptimalBasic):
                 return np.square(y)
 
         return np.sum(np.vectorize(get_cases)(variables + 0.079699392688696)) - \
-            self.variable_num
+               self.variable_num
 
 
 # Class Vincent function [http://infinity77.net/global_optimization/test_functions_nd_V.html#go_benchmark
@@ -683,7 +683,7 @@ class ModifiedVincent(OptimalBasic):
                 return np.square(y - 10.) - np.sin(10. * np.log(10))
 
         return np.sum(np.vectorize(get_cases)(variables + 4.1112) + 1.0) / \
-            self.variable_num
+               self.variable_num
 
 
 # 54 - Class Exponential function
@@ -765,7 +765,7 @@ class HappyCat(OptimalBasic):
                          'Unimodal': False,
                          'Convex': False}
 
-    def get_func_val(self, variables, alpha=1/8, *args):
+    def get_func_val(self, variables, alpha=1 / 8, *args):
         x1 = np.sum(variables)
         x2 = np.sum(np.square(variables))
         return np.power(np.square(x2 - self.variable_num), alpha) + (0.5 * x2 + x1) / (
@@ -924,7 +924,7 @@ class Pinter(OptimalBasic):
     def get_func_val(self, variables, *args):
         component_a = variables[:-2] * np.sin(variables[1:-1]) + np.sin(variables[2:])
         component_b = np.square(variables[:-2]) - 2 * variables[1:-1] + \
-            3 * variables[2:] - np.cos(variables[1:-1]) + 1
+                      3 * variables[2:] - np.cos(variables[1:-1]) + 1
         i = np.arange(self.variable_num) + 1
         return np.sum(i * np.square(variables)) + np.sum(
             20 * i[1:-1] * np.square(np.sin(component_a))) + np.sum(
@@ -1459,7 +1459,7 @@ class SchafferN6(OptimalBasic):
         return 0.5 * (self.variable_num - 1) + np.sum((np.square(
             np.sin(np.sqrt(np.square(variables[:-1]) + np.square(
                 variables[1:])))) - 0.5) / np.square(1 + 0.001 * (
-                    variables[:-1] + variables[1:])))
+                variables[:-1] + variables[1:])))
 
 
 # 136* - Class Schaffer N1 function [http://benchmarkfcns.xyz/benchmarkfcns/schaffern1fcn.html]
@@ -1482,7 +1482,7 @@ class SchafferN1(OptimalBasic):
         return 0.5 * (self.variable_num - 1) + np.sum((np.square(
             np.sin(np.square(np.square(variables[:-1]) + np.square(
                 variables[1:])))) - 0.5) / np.square(1 + 0.001 * (
-                    variables[:-1] + variables[1:])))
+                variables[:-1] + variables[1:])))
 
 
 # 136* - Class Schaffer N2 function [http://benchmarkfcns.xyz/benchmarkfcns/schaffern2fcn.html]
@@ -1504,7 +1504,7 @@ class SchafferN2(OptimalBasic):
     def get_func_val(self, variables, *args):
         return 0.5 * (self.variable_num - 1) + np.sum((np.square(np.sin(
             np.square(variables[:-1]) + np.square(variables[1:]))) - 0.5) /
-            np.square(1 + 0.001 * (variables[:-1] + variables[1:])))
+                                                      np.square(1 + 0.001 * (variables[:-1] + variables[1:])))
 
 
 # 136* - Class Schaffer N3 function [http://benchmarkfcns.xyz/benchmarkfcns/schaffern3fcn.html]
@@ -1759,7 +1759,7 @@ class Trigonometric2(OptimalBasic):
     def get_func_val(self, variables, *args):
         return 1 + np.sum(8. * np.square(np.sin(7. * np.square(
             variables - 0.9))) + 6. * np.square(np.sin(14. * np.square(
-                variables - 0.9))) + np.square(variables - 0.9))
+            variables - 0.9))) + np.square(variables - 0.9))
 
 
 # 165 - Class W-Wavy function
@@ -1779,7 +1779,7 @@ class WWavy(OptimalBasic):
                          'Convex': False}
 
     def get_func_val(self, variables, k=10., *args):
-        return 1 - np.sum(np.cos(k * variables) * np.exp(-0.5 * np.square(variables))) /\
+        return 1 - np.sum(np.cos(k * variables) * np.exp(-0.5 * np.square(variables))) / \
                self.variable_num
 
 
@@ -1804,7 +1804,7 @@ class Weierstrass(OptimalBasic):
         k = np.outer(np.ones(self.variable_num), np.arange(kmax + 1))
         return np.sum(np.sum(np.power(a, k) * np.cos(2. * np.pi * np.power(b, k) * x), 1)
                       - self.variable_num * np.sum(np.power(a, k) * np.cos(
-                            np.pi * np.power(b, k)), 1))
+            np.pi * np.power(b, k)), 1))
 
 
 # 167 - Class Whitley function
@@ -1887,7 +1887,7 @@ class XinSheYang3(OptimalBasic):
                          'Convex': False}
 
     def get_func_val(self, variables, m=5, beta=15, *args):
-        return np.exp(-np.sum(np.power(variables / beta, 2. * m))) - 2.\
+        return np.exp(-np.sum(np.power(variables / beta, 2. * m))) - 2. \
                * np.exp(-np.sum(np.square(variables))) \
                * np.prod(np.square(np.cos(variables)))
 
@@ -1911,7 +1911,7 @@ class XinSheYang4(OptimalBasic):
     def get_func_val(self, variables, *args):
         return (np.sum(np.square(np.sin(variables))) - np.exp(-np.sum(
             np.square(variables)))) * np.exp(-np.sum(np.square(
-                np.sin(np.abs(variables)))))
+            np.sin(np.abs(variables)))))
 
 
 # 173 - Class Zakharov function
@@ -2040,7 +2040,6 @@ class RotatedHyperEllipsoid(OptimalBasic):
 
 # Class Michalewicz function \cite{Molga2005}
 class Michalewicz(OptimalBasic):
-
     # Optimal solution for the first 100 dimensions (approximated), with m = 10
     approximated_optima = [2.2029, 1.5708, 1.2850, 1.9231, 0.9967, 2.3988, 1.8772, 0.7885,
                            1.9590, 1.2170, 1.1604, 2.1268, 0.6188, 1.5708, 1.9023, 1.2419,
@@ -2117,6 +2116,7 @@ class Perm01(OptimalBasic):
         inds = np.outer(np.ones(self.variable_num), np.arange(self.variable_num) + 1)
         return np.sum(np.square(np.sum((np.power(inds.T, inds) + beta) * (
                 np.power(x / inds.T, inds) - 1), 0)))
+
 
 # Class Perm 02 function [http://www.sfu.ca/~ssurjano/perm0db.html]
 class Perm02(OptimalBasic):
@@ -2268,7 +2268,7 @@ class CarromTable(OptimalBasic):
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
-        return - (1. / 30.) * np.exp(2. * np.abs(1. - np.linalg.norm(variables) / np.pi)) *\
+        return - (1. / 30.) * np.exp(2. * np.abs(1. - np.linalg.norm(variables) / np.pi)) * \
                np.prod(np.square(np.cos(variables)))
 
 
@@ -2466,7 +2466,7 @@ class LunacekN01(OptimalBasic):
         s = 1. - 1. / (2. * np.sqrt(self.variable_num + 20.) - 8.2)
         mu2 = -np.sqrt((np.square(mu1) - d) / s)
         return np.min([np.sum(np.square(variables - mu1)),
-                      np.sum(np.square(variables - mu2)) * s + d * self.variable_num])
+                       np.sum(np.square(variables - mu2)) * s + d * self.variable_num])
 
 
 # Class Lunacek's bi-Rastrigin function [https://al-roomi.org/benchmarks/unconstrained/n-dimensions/229-lunacek-s-bi
@@ -2490,8 +2490,67 @@ class LunacekN02(OptimalBasic):
         s = 1. - 1. / (2. * np.sqrt(self.variable_num + 20.) - 8.2)
         mu2 = -np.sqrt((np.square(mu1) - d) / s)
         return np.min([np.sum(np.square(variables - mu1)),
-                      np.sum(np.square(variables - mu2)) * s + d * self.variable_num]) + 10. * np.sum(
+                       np.sum(np.square(variables - mu2)) * s + d * self.variable_num]) + 10. * np.sum(
             1. - np.cos(2. * np.pi * (variables - mu1)))
+
+
+# Class Type-I Simple Deceptive Problem function \cite{Suzuki2002}
+class TypeI(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([1.] * self.variable_num)
+        self.min_search_range = np.array([0.] * self.variable_num)
+        self.optimal_solution = np.array([0.8] * self.variable_num)  # alpha
+        self.global_optimum_solution = 0.
+        self.func_name = "Type-I Simple Deceptive Problem"
+        self.features = {'Continuous': True,
+                         'Differentiable': False,
+                         'Separable': False,
+                         'Scalable': False,
+                         'Unimodal': False,
+                         'Convex': False}
+
+    def get_func_val(self, variables, alpha=0.8, beta=1.0):
+        def get_cases(y):
+            if 0. <= y <= alpha:
+                return alpha - y
+            else:
+                return (y - alpha) / (1. - alpha)
+
+        return np.power(np.sum(np.vectorize(get_cases)(variables)) / self.variable_num, beta)
+
+
+# Class Type-II Medium-Complex Deceptive Problem function \cite{Suzuki2002}
+class TypeII(OptimalBasic):
+    def __init__(self, variable_num):
+        super().__init__(variable_num)
+        self.max_search_range = np.array([1.] * self.variable_num)
+        self.min_search_range = np.array([0.] * self.variable_num)
+        self.optimal_solution = np.array([0.8] * self.variable_num)  # alpha and 1 - alpha
+        self.global_optimum_solution = 0.
+        self.func_name = "Type-II Medium-Complex Deceptive"
+        self.features = {'Continuous': False,
+                         'Differentiable': False,
+                         'Separable': False,
+                         'Scalable': False,
+                         'Unimodal': False,
+                         'Convex': False}
+
+    def get_func_val(self, variables, alpha=0.8, beta=1.0):
+        def get_cases(y):
+            if np.random.rand() <= 0.5:
+                if 0. <= y <= alpha:
+                    return alpha - y
+                else:
+                    return (y - alpha) / (1. - alpha)
+            else:
+                if 0. <= y <= 1. - alpha:
+                    return (1. - y - alpha) / (1. - alpha)
+                else:
+                    return y - 1. + alpha
+
+        return np.power(np.sum(np.vectorize(get_cases)(variables)) / self.variable_num, beta)
+
 
 # List all available functions
 def list_functions():
