@@ -128,12 +128,10 @@ def revise_results(main_folder='data_files/raw/'):
 
 def preprocess_bruteforce_files(main_folder='data_files/raw/'):
     # Get folders and exclude hidden ones
-    raw_folders = [element for element in os.listdir(main_folder)
-                   if not element.startswith('.')]
+    raw_folders = [element for element in os.listdir(main_folder) if not element.startswith('.')]
 
     # Sort subfolder names by problem name & dimensions
-    subfolder_names = sorted(raw_folders,
-                             key=lambda x: int(x.split('-')[1].strip('D')))
+    subfolder_names = sorted(raw_folders, key=lambda x: int(x.split('-')[1].strip('D')))
 
     # Define the basic data structure
     data = {'problem': list(), 'dimensions': list(), 'results': list()}
@@ -194,15 +192,4 @@ def preprocess_bruteforce_files(main_folder='data_files/raw/'):
 
 if __name__ == '__main__':
     processed_data = preprocess_bruteforce_files()
-
-# .to_delete-HyperEllipsoid-50D-02_22_2020
-# .to_delete-Mishra7-40D-02_22_2020
-# .to_delete-Perm-30D-02_22_2020
-# .to_delete-Rastrigin-20D-02_22_2020
-# .to_delete-Schubert-10D-02_22_2020
-# .to_delete-Schwefel-5D-02_22_2020
-# .to_delete-Schwefel221-2D-02_22_2020
-# .to_delete-Schwefel223-50D-02_23_2020
-# .to_delete-WWavy-40D-02_23_2020
-# .to_delete-Zakharov-2D-02_24_2020
 

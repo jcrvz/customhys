@@ -121,7 +121,7 @@ def test_set1():
             hh.brute_force()
 
 
-# %% Parallel try of test_set1()
+# %% Parallel of test_set1()
 def test_set1p(num_dimensions):
     # Problems definition
     functions = bf.__all__  # [82] [20]
@@ -168,8 +168,7 @@ def test_set1p(num_dimensions):
             )
 
         # Call the hyperheuristic object
-        hh = HH.Hyperheuristic('default.txt', problem_to_solve,
-                               hh_parameters, label)
+        hh = HH.Hyperheuristic('default.txt', problem_to_solve, hh_parameters, label)
 
         # Run the HH:Random Search
         hh.brute_force()
@@ -224,8 +223,7 @@ def test_set2p(num_dimensions):
             )
 
         # Call the hyperheuristic object
-        hh = HH.Hyperheuristic('default.txt', problem_to_solve,
-                               hh_parameters, label)
+        hh = HH.Hyperheuristic('default.txt', problem_to_solve, hh_parameters, label)
 
         # Run the HH:Random Search
         hh.brute_force()

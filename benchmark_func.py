@@ -31,6 +31,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d
 from matplotlib.colors import LightSource
+from matplotlib import rcParams
+
+plt.rc('text', usetex=True)
+plt.rc('font', family='serif', size=11)
 
 # from functools import wraps
 
@@ -141,11 +145,9 @@ class OptimalBasic:
         return self.__scale_function * self.get_func_val(variables, *args) + \
                (self.__noise_level * noise_value) + self.__offset_function
 
-    def plot(self, samples=50, resolution=100):
-        x = np.linspace(self.min_search_range[0], self.max_search_range[0],
-                        samples)
-        y = np.linspace(self.min_search_range[1], self.max_search_range[1],
-                        samples)
+    def plot(self, samples=55, resolution=100):
+        x = np.linspace(self.min_search_range[0], self.max_search_range[0], samples)
+        y = np.linspace(self.min_search_range[1], self.max_search_range[1], samples)
         matrix_x, matrix_y = np.meshgrid(x, y)
         matrix_z = []
         for xy_list in zip(matrix_x, matrix_y):
@@ -156,20 +158,32 @@ class OptimalBasic:
                 z.append(self.get_function_value(np.array(tmp)))
             matrix_z.append(z)
         matrix_z = np.array(matrix_z)
-        fig = plt.figure(figsize=[4, 3], dpi=resolution)
+
+        fig = plt.figure(figsize=[4, 3], dpi=resolution, facecolor='w')
         ls = LightSource(azdeg=90, altdeg=45)
         rgb = ls.shade(matrix_z, plt.cm.jet)
-        # ax = Axes3D(fig, elev=0, azim=45)
-        ax = fig.gca(projection='3d')
-        ax.plot_surface(matrix_x, matrix_y, matrix_z, rstride=1, cstride=1, linewidth=0,
-                        antialiased=False, facecolors=rgb)
-        ax.set_xlabel('x')
-        ax.set_ylabel('y')
-        ax.set_zlabel('f(x, y)')
+
+        ax = fig.gca(projection='3d', proj_type='ortho')
+        ax.plot_surface(matrix_x, matrix_y, matrix_z, rstride=1, cstride=1, linewidth=0.5,
+                        antialiased=False, facecolors=rgb)  #
+        ax.set_xlabel('$x_1$')
+        ax.set_ylabel('$x_2$')
+        ax.set_zlabel('$f(x, y)$')
+        ax.set_zlabel('$f(x, y)$')
         ax.set_title(self.func_name)
-        # plt.tight_layout()
+
+        ax.xaxis.pane.fill = False
+        ax.yaxis.pane.fill = False
+        ax.zaxis.pane.fill = False
+
+        self.plot_object = plt.gcf()
+
+        plt.grid(linewidth=1.0)
+
+        plt.gcf().subplots_adjust(left=0.05, right=0.85)
         plt.show()
-        self.plot_object = fig
+
+        return self.plot_object
 
     # TODO: Improve function to generate better images
     def save_fig(self, samples=100, resolution=333):
@@ -178,7 +192,7 @@ class OptimalBasic:
         if self.plot_object is None:
             self.plot(samples, resolution)
         self.plot_object.savefig(self.save_dir + self.func_name + '.png')
-        plt.close()
+        plt.show()
 
 
 # %% Optimization benchmark function group
@@ -2087,7 +2101,7 @@ class KTablet(OptimalBasic):
                          'Convex': True}
 
     def get_func_val(self, variables, *args):
-        k = self.variable_num // 4
+        k = int(self.variable_num // 4)
         return np.sum(variables[:k]) + np.sum(np.square(100. * variables[k:]))
 
 

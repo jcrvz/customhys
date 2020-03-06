@@ -200,6 +200,14 @@ class Hyperheuristic():
             positions=position_data, statistics=fitness_stats)
 
     def brute_force(self):
+        """
+        This method performs a brute force procedure solving all the problem via all the available search
+        operators without integrating a high-level search method.
+
+        :return: Nothing
+
+        It save results as json files.
+        """
         # Apply all the search operators in the collection as 1-size MHs
         for operator_id in range(self.num_operators):
             # Read the corresponding operator
@@ -211,9 +219,9 @@ class Hyperheuristic():
 
             # Save information
             _save_iteration(operator_id, {
-                'encoded_solution': operator,  # Mistake:  it must be the operator_id
+                'encoded_solution': operator_id,
                 'performance': operator_performance,
-                'details': operator_details},
+                'statistics': operator_details['statistics']},
                             self.file_label)
 
             # print('{}/{} - perf: {}'.format(operator_id + 1,
