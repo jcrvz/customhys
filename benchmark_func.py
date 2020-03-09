@@ -915,8 +915,7 @@ class Pathological(OptimalBasic):
         xi = variables[:-1]
         xj = variables[1:]
         return np.sum(0.5 + np.square(np.sin(np.sqrt(
-            100. * np.square(xi) + np.square(xj))) - 0.5) / (
-                              1. + 0.001 * np.power(xi - xj, 4.)))
+            100. * np.square(xi) + np.square(xj))) - 0.5) / (1. + 0.001 * np.power(xi - xj, 4.)))
 
 
 # 89 - Class Pinter function

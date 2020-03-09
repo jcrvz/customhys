@@ -177,7 +177,7 @@ def preprocess_bruteforce_files(main_folder='data_files/raw/'):
             file_data['performance'].append(temporal_data['performance'])
             # file_data['fitness'].append(temporal_data['details']['fitness'])
             # file_data['positions'].append(temporal_data['details']['positions'])
-            file_data['statistics'].append(temporal_data['details']['statistics'])
+            file_data['statistics'].append(temporal_data['statistics'])
 
         # Store results in the main data frame
         data['results'].append(file_data)
