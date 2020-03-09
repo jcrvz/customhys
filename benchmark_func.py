@@ -102,7 +102,7 @@ class OptimalBasic:
         if fmt == 'latex':
             return " & ".join(features)
         elif fmt == 'string':
-            return " ".join(features)
+            return "".join(features)
         else:
             return sum(features)
 
@@ -1761,7 +1761,7 @@ class Trigonometric2(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -1978,7 +1978,7 @@ class Stochastic(OptimalBasic):
                          'Differentiable': False,
                          'Separable': True,
                          'Scalable': True,
-                         'Multimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -2611,22 +2611,27 @@ class OddSquare(OptimalBasic):
 
 
 # List all available functions
-def list_functions():
-    # Print first line
-    print("Id. & Function Name & Continuous & Differentiable & Separable & Scalable & Multimodal & Convex \\\\")
-
-    feature_list = list()
+def list_functions(return_no_print=True):
+    feature_strings = list()
+    functions_features = dict()
     for ii in range(len(__all__)):
         function_name = __all__[ii]
         funct = eval("{}(2)".format(function_name))
 
-        feature_str = funct.get_features("latex", "X")
-        weight = funct.get_features(None, None)
+        feature_str = funct.get_features()
+        weight = funct.get_features("string", "1")
+        functions_features[function_name] = dict(**funct.features, Code=int(weight, 2))
 
-        feature_list.append([weight, ii + 1, funct.func_name, feature_str])
+        feature_strings.append([int(weight), ii + 1, funct.func_name, feature_str])
 
-    # Sort list according to the weight values
-    # feature_list = sorted(feature_list, key=lambda x: x[0])
+    if not return_no_print:
+        # Print first line
+        print("Id. & Function Name & Continuous & Differentiable & Separable & Scalable & Unimodal & Convex \\\\")
 
-    for x in feature_list:
-        print("{} & {} & {} \\\\".format(*x[1:]))
+        # Sort list according to the weight values
+        feature_strings = sorted(feature_strings, key=lambda x: x[0], reverse=True)
+
+        for x in feature_strings:
+            print("{} & {} & {} \\\\".format(*x[1:]))
+    else:
+        return functions_features
