@@ -227,7 +227,7 @@ def test_set2p(num_dimensions):
 # %% Autorun
 if __name__ == '__main__':
     # Build the collection of operators
-    Operators._build_operators(_obtain_operators(num_vals=21), file_name="test-set-21")
+    Operators._build_operators(Operators._obtain_operators(num_vals=21), file_name="test-set-21")
 
     dimensions = [2, 5, *range(10, 50 + 1, 10)]
 
