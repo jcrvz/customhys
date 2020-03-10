@@ -48,16 +48,12 @@ def test_set0():
             problem = eval(f"bf.{function_string}({num_dimensions})")
             function = lambda x: problem.get_func_val(x)
             # HH.set_problem(problem_function, boundaries, True)
-            Problem = HH.set_problem(
-                function,
-                (problem.min_search_range/divider,
-                 problem.max_search_range/divider),
-                is_constrained
-                )
+            Problem = HH.set_problem(function,
+                (problem.min_search_range/divider, problem.max_search_range/divider),
+                is_constrained)
 
             # Call the hyperheuristic object
-            hh = HH.Hyperheuristic(heuristics_collection, Problem,
-                                   hh_parameters, label)
+            hh = HH.Hyperheuristic(heuristics_collection, Problem, hh_parameters, label)
 
             # Run the HH:Random Search
             hh.run()
@@ -185,7 +181,7 @@ def test_set2p(num_dimensions):
 
     # Hyperheuristic conditions
     hh_parameters = {
-        'cardinality': 2,
+        'cardinality': 3,
         'num_agents': 30,
         'num_iterations': 100,
         'num_replicas': 30,
@@ -202,6 +198,7 @@ def test_set2p(num_dimensions):
         #     num_dimensions-1, len(dimensions)), end=' ')
     if isinstance(functions, str):
         functions = [functions]
+
     for func_id in range(len(functions)):
         function_string = functions[func_id]
 
@@ -215,23 +212,23 @@ def test_set2p(num_dimensions):
         problem = eval("bf.{}({})".format(function_string, num_dimensions))
 
         # HH.set_problem(problem_function, boundaries, True)
-        problem_to_solve = HH.set_problem(
-            lambda x: problem.get_function_value(x),
-            (problem.min_search_range/divider,
-             problem.max_search_range/divider),
-            is_constrained
-            )
+        problem_to_solve = HH.set_problem(lambda x: problem.get_function_value(x),
+            (problem.min_search_range/divider, problem.max_search_range/divider),
+            is_constrained)
 
         # Call the hyperheuristic object
-        hh = HH.Hyperheuristic('default.txt', problem_to_solve, hh_parameters, label)
+        hh = HH.Hyperheuristic('test-set-21.txt', problem_to_solve, hh_parameters, label)
 
         # Run the HH:Random Search
-        hh.brute_force()
+        hh.run()
 
         print(label + " done!")
 
 # %% Autorun
 if __name__ == '__main__':
+    # Build the collection of operators
+    Operators._build_operators(_obtain_operators(num_vals=21), file_name="test-set-21")
+
     dimensions = [2, 5, *range(10, 50 + 1, 10)]
 
     # Run it in parallel
