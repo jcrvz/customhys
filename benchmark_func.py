@@ -2622,7 +2622,7 @@ def list_functions(return_no_print=True):
         weight = funct.get_features("string", "1")
         functions_features[function_name] = dict(**funct.features, Code=int(weight, 2))
 
-        feature_strings.append([int(weight), ii + 1, funct.func_name, feature_str])
+        feature_strings.append([int(weight, 2), ii + 1, funct.func_name, feature_str])
 
     if not return_no_print:
         # Print first line

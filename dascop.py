@@ -176,7 +176,7 @@ def test_set1p(num_dimensions):
         print(label + " done!")
 
 
-# %% Parallel try of test_set1()
+# %% Parallel try of test_set2()
 def test_set2p(num_dimensions):
     # Problems definition
     functions = bf.__all__  # all
@@ -185,14 +185,14 @@ def test_set2p(num_dimensions):
 
     # Hyperheuristic conditions
     hh_parameters = {
-        'cardinality': 1,
+        'cardinality': 2,
         'num_agents': 30,
         'num_iterations': 100,
         'num_replicas': 30,
-        'num_trials': 100,
+        'num_trials': 10,
         'max_temperature': 100,
         'min_temperature': 0.1,
-        'cooling_rate': 0.05,
+        'cooling_rate': 0.5,
         }
 
     # print('-' * 10)
@@ -236,6 +236,6 @@ if __name__ == '__main__':
 
     # Run it in parallel
     pool = multiprocessing.Pool()
-    pool.map(test_set1p, dimensions)
+    pool.map(test_set2p, dimensions)
     # pool.join()
     # pool.close()
