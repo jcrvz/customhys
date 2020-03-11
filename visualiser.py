@@ -18,6 +18,13 @@ sns.set(font_scale=0.5)
 
 # Read benchmark functions and their features
 problem_features = bf.list_functions()
+
+problem_features_without_code = bf.list_functions()
+# for key in problem_features_without_code.keys():
+#     del problem_features_without_code[key]['Code']
+categorical_features = pd.DataFrame(problem_features_without_code).T
+categories =  categorical_features.groupby('Code').first()
+categories['Members'] = categorical_features.groupby('Code').count().mean(axis=1)
 # simple_problem_list = sorted([[x['Name'], x['Code']] for x in problem_features], key=lambda y: y[1])
 
 
@@ -30,11 +37,18 @@ def read_data_file(data_file='data_files/brute-force-data.json'):
     return data
 
 
+# Read heuristic space
+with open('collections/' + 'default.txt', 'r') as operators_file:
+    heuristic_space = [eval(line.rstrip('\n')) for line in operators_file]
+search_operators = [x[0].replace('_', ' ') + "-" +
+                    "-".join(["{}".format(y) for y in [*x[1].values()]]).replace('_', ' ') + "-" +
+                    x[2] for x in heuristic_space]
+
 # Read the data files
 data_frame = read_data_file()
 
 # Show the variable tree
-printmsk(data_frame)
+# printmsk(data_frame)
 
 # %%
 folder_name = 'data_files/images/'
@@ -48,7 +62,7 @@ operators = (data_frame['results'][0]['operator_id'])
 dimensions = sorted(list(set(data_frame['dimensions'])))
 
 # %% PLOT FITNESS PER CARD/DIMENSION
-is_saving = True
+is_saving = False
 
 # Special adjustments
 plt.rc('text', usetex=True)
@@ -61,8 +75,7 @@ plt.rc('font', family='serif', size=4)
 # bins = np.ceil(np.logspace(-1, 2, number_bins))
 
 # Obtain matrices for problems and operators
-operator_matrix, problem_matrix = np.meshgrid(
-    np.array(operators), np.arange(len(problems)))
+operator_matrix, problem_matrix = np.meshgrid(np.array(operators), np.arange(len(problems)))
 
 # Plot a figure per dimension
 for dimension in dimensions:
@@ -82,27 +95,41 @@ for dimension in dimensions:
             for op_index in range(len(operators))])
         temporal_array.append(ranked_data)
 
-    # bins = np.linspace(np.min(temporal_array), np.max(temporal_array), number_bins)
-    # temporal_array = np.digitize(temporal_array, bins)
-
+    # Create the data frame
     stats = pd.DataFrame(temporal_array, index=problems, columns=operators)
     stats['Group'] = pd.Series(problems_weights, index=stats.index)
-    stats = stats.sort_values(by=['Group']).drop(columns=['Group'])
-    # stats = stats.sort_values(by=['Group'])  # .drop(columns=['Group'])
+
+    # -- PART 1: PLOT THE CORRESPONDING HEATMAP --
+    # Delete the Group column
+    stats_without_category = stats.sort_values(by=['Group']).drop(columns=['Group'])
 
     # Printing section
     fig = plt.figure(figsize=(15, 10), dpi=333)
 
-    # ax = fig.gca(projection='3d')
-    # ax.plot_surface(operator_matrix, problem_matrix, stats[key])
-    ax = sns.heatmap(stats, cbar=False, cmap=plt.cm.rainbow, robust=True, xticklabels=True, yticklabels=True)  # , vmin=1, vmax=5)
-    # ax = sns.clustermap(stats, cmap=plt.cm.rainbow, cbar=False, col_cluster=True)
+    ax = sns.heatmap(stats_without_category, cbar=False, cmap=plt.cm.rainbow,
+                     robust=True, xticklabels=True, yticklabels=True)  # , vmin=1, vmax=5)
 
-
-    # fig.tight_layout()
     plt.title("Dim: {}".format(dimension))
     plt.show()
 
+    if is_saving:
+        fig.savefig(folder_name + 'heatmap-bruteforce-{}D'.format(dimension) + '.pdf',
+                    format='pdf', dpi=fig.dpi)
+
+    # -- PART 2: OBTAIN NAIVE INSIGHTS
+    grouped_stats = stats.groupby('Group').mean()
+    prop_stats = grouped_stats.div(grouped_stats.sum(axis=1), axis=0)
+
+    fig = plt.figure(figsize=(0.08*205, 0.4*8), dpi=333)
+    ax = sns.heatmap(prop_stats, cbar=False, cmap=plt.cm.rainbow,
+                     robust=True, xticklabels=True, yticklabels=True)
+    plt.title("Dim: {}".format(dimension))
+    plt.yticks(rotation=0)
+    bottom, top = ax.get_ylim()
+    ax.set_ylim(bottom + 0.5, top - 0.5)
+    plt.show()
+
+    break
     # grouped = stats.groupby(by=['Group'])
     # ncols = 1
     # nrows = int(np.ceil(grouped.ngroups / ncols))
@@ -112,9 +139,4 @@ for dimension in dimensions:
     # for (key, ax1) in zip(grouped.groups.keys(), axes.flatten()):
     #     sns.heatmap(grouped.get_group(key), cbar=False, cmap=plt.cm.rainbow, robust=True, ax=ax1)
 
-    if is_saving:
-        fig.savefig(folder_name + 'heatmap-bruteforce-{}D'.format(dimension) + '.pdf',
-                    format='pdf', dpi=fig.dpi)
-
-    # break
 

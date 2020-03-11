@@ -181,11 +181,11 @@ def test_set2p(num_dimensions):
 
     # Hyperheuristic conditions
     hh_parameters = {
-        'cardinality': 3,
+        'cardinality': 2,
         'num_agents': 30,
         'num_iterations': 100,
         'num_replicas': 30,
-        'num_trials': 10,
+        'num_steps': 10,
         'max_temperature': 100,
         'min_temperature': 0.1,
         'cooling_rate': 0.5,

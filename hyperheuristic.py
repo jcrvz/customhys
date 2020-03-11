@@ -37,9 +37,9 @@ class Hyperheuristic():
                               num_iterations=100,   # Iterations a MH performs, lvl:0
                               num_agents=30,        # Agents in population,     lvl:0
                               num_replicas=100,     # Replicas per each MH,     lvl:1
-                              num_trials=100,       # Trials per HH step,       lvl:2
+                              num_steps=100,        # Trials per HH step,       lvl:2
                               max_temperature=1e8,  # Initial temperature (SA), lvl:2
-                              min_temperature=1e-8,  # Threshold temp. (SA),    lvl:2
+                              min_temperature=1e-8, # Threshold temp. (SA),    lvl:2
                               cooling_rate=0.05)    # Cooling rate (SA),        lvl:2
 
         # Read the heuristic space (mandatory)
@@ -53,7 +53,7 @@ class Hyperheuristic():
         # Read cardinality
         if isinstance(parameters['cardinality'], int):
             # Fixed cardinality
-            self.cardinality_boundaries = [parameters['cardinality']] * 2
+            self.cardinality_boundaries = [parameters['cardinality']]
         elif isinstance(parameters['cardinality'], list):
             # Variable cardinality
             if len(parameters['cardinality']) == 1:
@@ -97,6 +97,11 @@ class Hyperheuristic():
         # Evaluate this solution
         performance, details = self.evaluate_metaheuristic(solution)
 
+        # Assign the desired cardinality (if fixed), otherwise initialise cardinality with the lower boundary
+        cardinality = self.cardinality_boundaries if len(self.cardinality_boundaries) == 1 \
+            else self.cardinality_boundaries[0]
+
+
         # Initialise historical register
         historicals = dict(
             encoded_solution=encoded_solution,
@@ -115,49 +120,49 @@ class Hyperheuristic():
         print('{} - perf: {}, sol: {}'.format(step, performance, encoded_solution))
 
         # Perform the annealing simulation
-        while temperature > self.parameters['min_temperature']:
-            # Start trials
-            for trial in range(self.parameters['num_trials']):
+        while (temperature >= self.parameters['min_temperature']) and (step <= self.parameters['num_steps']):
+            # Update step
+            step += 1
 
-                # Generate a neighbour cardinality
+            # Generate a neighbour cardinality (if so)
+            if len(self.cardinality_boundaries) != 1:
                 cardinality += np.random.randint(-1, 1)
                 if cardinality < self.cardinality_boundaries[0]:
                     cardinality = self.cardinality_boundaries[0]
-                elif cardinality > self.cardinality_boundaries[1]:
+                if cardinality > self.cardinality_boundaries[1]:
                     cardinality = self.cardinality_boundaries[1]
 
-                # Generate a neighbour solution
-                encoded_candidate_solution = np.random.randint(0, self.num_operators, cardinality)
-                candidate_solution = [self.heuristic_space[index] for index in encoded_candidate_solution]
+            # Generate a neighbour solution
+            encoded_candidate_solution = np.random.randint(0, self.num_operators, cardinality)
+            candidate_solution = [self.heuristic_space[index] for index in encoded_candidate_solution]
 
-                # Evaluate this candidate solution
-                candidate_performance, candidate_details =\
-                    self.evaluate_metaheuristic(candidate_solution)
+            # Evaluate this candidate solution
+            candidate_performance, candidate_details = self.evaluate_metaheuristic(candidate_solution)
 
-                # Determine the energy (performance) change
-                delta_energy = candidate_performance - performance
+            # Determine the energy (performance) change
+            delta_energy = candidate_performance - performance
 
-                # Check improvement (Metropolis criterion)
-                if (delta_energy < 0) or (np.random.rand() < np.exp(-delta_energy/temperature)):
-                    encoded_solution = encoded_candidate_solution
-                    solution = candidate_solution.copy()
-                    performance = candidate_performance
-                    details = candidate_details.copy()
+            # Check improvement (Metropolis criterion)
+            if (delta_energy < 0) or (np.random.rand() < np.exp(-delta_energy/temperature)):
+                encoded_solution = encoded_candidate_solution
+                solution = candidate_solution.copy()
+                performance = candidate_performance
+                details = candidate_details.copy()
 
-                    # Save this historical register and break
-                    step += 1
-                    _save_iteration(step, {
-                        'encoded_solution': encoded_solution,
-                        'solution': solution,
-                        'performance': performance,
-                        'details': details},
-                        self.file_label)
+                # Save this historical register and break
+                _save_iteration(step, {
+                    'encoded_solution': encoded_solution,
+                    'solution': solution,
+                    'performance': performance,
+                    'details': details},
+                    self.file_label)
 
-                    print('{} - perf: {}, sol: {}'.format(step, performance, encoded_solution))
+                print('{} :: Step: {}, Perf: {}, e-Sol: {}'.format(
+                    self.file_label, step, performance, encoded_solution))
 
-                    # When zero performance is reached end the simulation
-                    if performance == 0.0:
-                        return solution, performance, encoded_solution, historicals
+                # # When zero performance is reached end the simulation
+                # if performance == 0.0:
+                #     return solution, performance, encoded_solution, historicals
 
             # Update temperature
             temperature *= 1 - self.parameters['cooling_rate']

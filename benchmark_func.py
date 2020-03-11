@@ -83,7 +83,11 @@ class OptimalBasic:
         self.__noise_type = 'uniform'
         self.__noise_level = 0.0
 
-    def get_features(self, fmt="latex", wrd="Yes"):
+    def get_features(self, fmt="latex", wrd="Yes", fts=None):
+        # Default features to deliver
+        if fts is None:
+            fts = ['Continuous', 'Differentiable', 'Separable', 'Scalable', 'Unimodal', 'Convex']
+
         def translate_conditional(value):
             if wrd == "Yes":
                 words = ["Yes", "No"]
@@ -96,7 +100,7 @@ class OptimalBasic:
             return words[0] if value else words[1]
 
         # Get the list of features as strings
-        features = [translate_conditional(val) for val in self.features.values()]
+        features = [translate_conditional(self.features[key]) for key in fts]
 
         # Return the list according to the format specified
         if fmt == 'latex':
@@ -196,8 +200,6 @@ class OptimalBasic:
 
 
 # %% Optimization benchmark function group
-
-
 # 1 - Class Ackley 1 function
 class Ackley1(OptimalBasic):
     def __init__(self, variable_num):
@@ -360,7 +362,7 @@ class Csendes(OptimalBasic):
                          'Separable': True,
                          'Scalable': True,
                          'Unimodal': False,
-                         'Convex': True}
+                         'Convex': False}
 
     def get_func_val(self, variables, *args):
         return np.sum(np.power(variables, 6.) * (2. + np.sin(1 / variables))) \
@@ -713,7 +715,7 @@ class Exponential(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Unimodal': False,
+                         'Unimodal': True,
                          'Convex': True}
 
     def get_func_val(self, variables, *args):
@@ -1350,7 +1352,7 @@ class Schwefel225(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': False,
-                         'Unimodal': False,
+                         'Unimodal': True,
                          'Convex': True}
 
     def get_func_val(self, variables, *args):
@@ -1935,13 +1937,12 @@ class Zakharov(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Unimodal': False,
+                         'Unimodal': True,
                          'Convex': True}
 
     def get_func_val(self, variables, *args):
         ixi = np.arange(1, self.variable_num + 1) * variables
-        return np.sum(np.square(variables)) + np.square(0.5 * np.sum(ixi))\
-               + np.power(0.5 * np.sum(ixi), 4.)
+        return np.sum(np.square(variables)) + np.square(0.5 * np.sum(ixi)) + np.power(0.5 * np.sum(ixi), 4.)
 
 
 # Class Styblinski-Tang function [http://benchmarkfcns.xyz/benchmarkfcns/styblinskitankfcn.html]
@@ -2359,7 +2360,7 @@ class Cigar(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': True,
-                         'Unimodal': False,
+                         'Unimodal': True,
                          'Convex': True}
 
     def get_func_val(self, variables, *args):
@@ -2611,20 +2612,30 @@ class OddSquare(OptimalBasic):
 
 
 # List all available functions
-def list_functions(return_no_print=True):
+def list_functions(rnp=True, fts=None):
+    """
+
+    :param rnp: return but not print if True, otherwise, print but not return
+    :param fts: features to export/print. Possible options: 'Continuous', 'Differentiable','Separable', 'Scalable',
+        'Unimodal', 'Convex'. Default: 'Differentiable','Separable', 'Unimodal'
+    :return:
+    """
+    if fts is None:
+        fts = ['Differentiable', 'Separable', 'Unimodal']
+
     feature_strings = list()
     functions_features = dict()
     for ii in range(len(__all__)):
         function_name = __all__[ii]
         funct = eval("{}(2)".format(function_name))
 
-        feature_str = funct.get_features()
-        weight = funct.get_features("string", "1")
-        functions_features[function_name] = dict(**funct.features, Code=int(weight, 2))
+        feature_str = funct.get_features(fts=fts)
+        weight = funct.get_features("string", "1", fts=fts)
+        functions_features[function_name] = dict(**funct.features, Code=weight)
 
-        feature_strings.append([int(weight, 2), ii + 1, funct.func_name, feature_str])
+        feature_strings.append([weight, ii + 1, funct.func_name, feature_str])
 
-    if not return_no_print:
+    if not rnp:
         # Print first line
         print("Id. & Function Name & Continuous & Differentiable & Separable & Scalable & Unimodal & Convex \\\\")
 
