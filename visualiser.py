@@ -62,7 +62,7 @@ operators = (data_frame['results'][0]['operator_id'])
 dimensions = sorted(list(set(data_frame['dimensions'])))
 
 # %% PLOT FITNESS PER CARD/DIMENSION
-is_saving = False
+is_saving = True
 
 # Special adjustments
 plt.rc('text', usetex=True)
@@ -76,6 +76,9 @@ plt.rc('font', family='serif', size=4)
 
 # Obtain matrices for problems and operators
 operator_matrix, problem_matrix = np.meshgrid(np.array(operators), np.arange(len(problems)))
+
+# Naive weights for tests
+operators_weights = dict()
 
 # Plot a figure per dimension
 for dimension in dimensions:
@@ -113,12 +116,15 @@ for dimension in dimensions:
     plt.show()
 
     if is_saving:
-        fig.savefig(folder_name + 'heatmap-bruteforce-{}D'.format(dimension) + '.pdf',
+        fig.savefig(folder_name + 'raw-heatmap-bruteforce-{}D'.format(dimension) + '.pdf',
                     format='pdf', dpi=fig.dpi)
 
     # -- PART 2: OBTAIN NAIVE INSIGHTS
     grouped_stats = stats.groupby('Group').mean()
     prop_stats = grouped_stats.div(grouped_stats.sum(axis=1), axis=0)
+
+    # Store weights in the final dictionaru
+    operators_weights[dimension] = df2dict(prop_stats)
 
     fig = plt.figure(figsize=(0.08*205, 0.4*8), dpi=333)
     ax = sns.heatmap(prop_stats, cbar=False, cmap=plt.cm.rainbow,
@@ -129,14 +135,8 @@ for dimension in dimensions:
     ax.set_ylim(bottom + 0.5, top - 0.5)
     plt.show()
 
-    break
-    # grouped = stats.groupby(by=['Group'])
-    # ncols = 1
-    # nrows = int(np.ceil(grouped.ngroups / ncols))
-    #
-    # fig, axes = plt.subplots(nrows=nrows, ncols=ncols, sharex=True)
-    #
-    # for (key, ax1) in zip(grouped.groups.keys(), axes.flatten()):
-    #     sns.heatmap(grouped.get_group(key), cbar=False, cmap=plt.cm.rainbow, robust=True, ax=ax1)
+    if is_saving:
+        fig.savefig(folder_name + 'cat-heatmap-bruteforce-{}D'.format(dimension) + '.pdf',
+                    format='pdf', dpi=fig.dpi)
 
-
+save_json(operators_weights, 'operators_weights')

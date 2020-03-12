@@ -3,6 +3,7 @@ Created on Sat Feb 22, 2020
 
 @author: jcrvz (jcrvz.github.io)
 """
+import random
 import os
 import json
 from subprocess import call
@@ -64,7 +65,7 @@ def printmsk(var, level=1, name=None):
         # If is it a dictionary
         if parent_type == 'dict':
             for key, val in var.items():
-                printmsk(val, level + 1, key)
+                printmsk(val, level + 1, str(key))
         elif parent_type in ['list', 'tuple']:
             # Get a sample: first 10 elements (if the list is too long)
             if len(var) > 10:
@@ -188,6 +189,26 @@ def preprocess_bruteforce_files(main_folder='data_files/raw/'):
 
     # Return only the data variable
     return data
+
+
+def df2dict(df):
+    df_dict = df.to_dict('split')
+    return {df_dict['index'][x]: df_dict['data'][x] for x in range(len(df_dict['index']))}
+
+
+def save_json(variable_to_save, file_name=None):
+    class NumpyEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            return json.JSONEncoder.default(self, obj)
+
+    if file_name is None:
+        file_name = 'autosaved-' + str(hex(random.randint(0, 9999)))
+
+    # Create the new file
+    with open("./{}.json".format(file_name), 'w') as json_file:
+        json.dump(variable_to_save, json_file, cls=NumpyEncoder)
 
 
 if __name__ == '__main__':
