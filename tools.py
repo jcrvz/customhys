@@ -8,6 +8,7 @@ import os
 import json
 from subprocess import call
 from hyperheuristic import NumpyEncoder
+import numpy as np
 from tqdm import tqdm
 
 def printmsk(var, level=1, name=None):
@@ -23,7 +24,7 @@ def printmsk(var, level=1, name=None):
 
     >>> variable = {"par0": [1, 2, 3, 4, 5, 6],
             "par1": [1, 'val1', 1.23],
-            "par2": -4.5,
+            "par2" : -4.5,
             "par3": "val2",
             "par4": [7.8, [-9.10, -11.12, 13.14, -15.16]],
             "par5": {"subpar1": 7,
@@ -209,6 +210,14 @@ def save_json(variable_to_save, file_name=None):
     # Create the new file
     with open("./{}.json".format(file_name), 'w') as json_file:
         json.dump(variable_to_save, json_file, cls=NumpyEncoder)
+
+
+def read_json(data_file):
+    with open(data_file, 'r') as json_file:
+        data = json.load(json_file)
+
+    # Return only the data variable
+    return data
 
 
 if __name__ == '__main__':
