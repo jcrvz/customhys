@@ -21,7 +21,13 @@ from os import makedirs as _create_path
 
 
 class Hyperheuristic():
-    def __init__(self, heuristic_space, problem, parameters=None, file_label=''):
+    def __init__(self,
+                 heuristic_space='default.txt',
+                 problem=None,
+                 parameters=None,
+                 file_label='',
+                 weights_array=None):
+
         # Read the heuristic space
         if isinstance(heuristic_space, list):
             self.heuristic_space = heuristic_space
@@ -33,35 +39,36 @@ class Hyperheuristic():
 
         # Assign default values
         if parameters is None:
-            parameters = dict(cardinality=2,        # Search operators in MHs,  lvl:0
+            parameters = dict(cardinality=2,        # Max. numb. of SOs in MHs, lvl:0
                               num_iterations=100,   # Iterations a MH performs, lvl:0
                               num_agents=30,        # Agents in population,     lvl:0
                               num_replicas=100,     # Replicas per each MH,     lvl:1
                               num_steps=100,        # Trials per HH step,       lvl:2
-                              max_temperature=1e8,  # Initial temperature (SA), lvl:2
-                              min_temperature=1e-8, # Threshold temp. (SA),    lvl:2
+                              stagnation_percentage= 0.2, # Stagnation,         lvl:2
+                              max_temperature=100,  # Initial temperature (SA), lvl:2
                               cooling_rate=0.05)    # Cooling rate (SA),        lvl:2
 
         # Read the heuristic space (mandatory)
         self.problem = problem
         self.num_operators = len(self.heuristic_space)
+        self.weights_array = weights_array
 
         # Initialise other parameters
         self.parameters = parameters
         self.file_label = file_label
 
         # Read cardinality
-        if isinstance(parameters['cardinality'], int):
-            # Fixed cardinality
-            self.cardinality_boundaries = [parameters['cardinality']]
-        elif isinstance(parameters['cardinality'], list):
-            # Variable cardinality
-            if len(parameters['cardinality']) == 1:
-                self.cardinality_boundaries = [1, parameters['cardinality'][0]]
-            elif len(parameters['cardinality']) == 2:
-                self.cardinality_boundaries = parameters['cardinality'].sort()
-            else:
-                raise HyperheuristicError('Invalid cardinality!')
+        # if isinstance(parameters['cardinality'], int):
+        #     # Fixed cardinality
+        #     self.cardinality_boundaries = [parameters['cardinality']]
+        # elif isinstance(parameters['cardinality'], list):
+        #     # Variable cardinality
+        #     if len(parameters['cardinality']) == 1:
+        #         self.cardinality_boundaries = [1, parameters['cardinality'][0]]
+        #     elif len(parameters['cardinality']) == 2:
+        #         self.cardinality_boundaries = parameters['cardinality'].sort()
+        #     else:
+        #         raise HyperheuristicError('Invalid cardinality!')
 
     def run(self):
         """
@@ -87,88 +94,158 @@ class Hyperheuristic():
             has performed), 'fitness', 'positions', and 'statistics'.
 
         """
-        # Create the initial solution (it is fixed to be always Random Search)
-        # It is 0 because operators._build_operators put random search as the
-        # first operator.
-        cardinality = 1
-        encoded_solution = [0]
-        solution = [self.heuristic_space[index] for index in encoded_solution]
+        # Read the cardinality (which is the maximum allowed one)
+        max_cardinality = self.parameters['cardinality']
+
+        # Mechanism to mutate/perturbate the current solution
+        def obtain_neighbour_solution(sol=None):
+            if sol is None:
+                # Create a new 1-MH from scratch by using a weights array (if so)
+                encoded_neighbour = np.random.choice(self.num_operators, 1, replace=False, p=self.weights_array)
+            elif isinstance(sol, np.ndarray):
+                current_cardinality = len(sol)
+
+                # First read the available actions 'Add', 'Del',
+                if current_cardinality >= max_cardinality:
+                    available_options = ['Del', 'Per']
+                elif current_cardinality <= 1:
+                    available_options = ['Add', 'Per']
+                else:
+                    available_options = ['Add', 'Del', 'Per']
+
+                # Decide (randomly) which action to do
+                action = np.random.choice(available_options)
+
+                # Perform the corresponding action
+                if action == 'Add':
+                    # Select an operator excluding the ones in the current solution
+                    new_operator = np.random.choice(
+                        np.setdiff1d(np.arange(self.num_operators), sol))
+
+                    # Select where to add such an operator
+                    #       since   0 - left side of the first operator
+                    #               1 - right side of the first operator or left side of the second one
+                    #               ..., and so forth
+                    operator_location = np.random.randint(current_cardinality + 1)
+
+                    # Add the selected operator
+                    encoded_neighbour = np.array((*sol[:operator_location],
+                                                  new_operator,
+                                                  *sol[operator_location:]))
+                elif action == 'Del':
+                    # Delete an operator randomly selected
+                    encoded_neighbour = np.delete(sol, np.random.randint(current_cardinality))
+                else:
+                    # Copy the current solution
+                    encoded_neighbour = np.copy(sol)
+
+                    # Perturbate an operator randomly selected excluding the existing ones
+                    encoded_neighbour[np.random.randint(current_cardinality)] = np.random.choice(
+                        np.setdiff1d(np.arange(self.num_operators), sol))
+            else:
+                raise HyperheuristicError("Invalid type of current solution!")
+
+            # Decode the neighbour solution
+            neighbour = [self.heuristic_space[index] for index in encoded_neighbour]
+
+            return encoded_neighbour, neighbour
+
+        # Define the temperature update function
+        def obtain_temperature(step_val, function='boltzmann'):
+            if function == 'exponential':
+                return self.parameters['max_temperature'] * np.power(
+                    1 - self.parameters['cooling_rate'], step_val)
+            elif function == 'fast':
+                return self.parameters['max_temperature'] / step_val
+            else:  # boltzmann
+                return self.parameters['max_temperature'] / np.log(step_val + 1)
+
+        # Acceptance function
+        def check_acceptance(delta, temp, function='exponential'):
+            if function == 'exponential':
+                return (delta_energy <= 0) or (np.random.rand() < np.exp(-delta / temp))
+            else:  # boltzmann
+                return (delta_energy <= 0) or (np.random.rand() < 1. / (1. + np.exp(delta / temp)))
+
+        # Create the initial solution
+        current_encoded_solution, current_solution = obtain_neighbour_solution()
 
         # Evaluate this solution
-        performance, details = self.evaluate_metaheuristic(solution)
+        current_performance, current_details = self.evaluate_metaheuristic(current_solution)
 
-        # Assign the desired cardinality (if fixed), otherwise initialise cardinality with the lower boundary
-        cardinality = self.cardinality_boundaries if len(self.cardinality_boundaries) == 1 \
-            else self.cardinality_boundaries[0]
-
+        # Initialise the best solution and its performance
+        best_encoded_solution = np.copy(current_encoded_solution)
+        best_performance = current_performance
 
         # Initialise historical register
         historicals = dict(
-            encoded_solution=encoded_solution,
-            solution=solution,
-            performance=performance,
-            details=details)
+            encoded_solution=best_encoded_solution,
+            # solution=solution, (it is to save some space)
+            performance=best_performance,
+            details=current_details)
 
-        # Save this historical register
+        # Save this historical register, step = 0
         _save_iteration(0, historicals, self.file_label)
 
-        # Initialise the temperature and step counter
-        temperature = self.parameters['max_temperature']
-        step = 0
+        # Print the first status update, step = 0
+        print('{} :: Step: {}, Perf: {}, e-Sol: {}'.format(
+            self.file_label, 0, best_performance, best_encoded_solution))
 
-        # Print the first status update
-        print('{} - perf: {}, sol: {}'.format(step, performance, encoded_solution))
+        # Step, stagnation counter and its maximum value
+        step = 0
+        stag_counter = 0
+        max_stag = round(self.parameters['stagnation_percentage'] * self.parameters['num_steps'])
 
         # Perform the annealing simulation
-        while (temperature >= self.parameters['min_temperature']) and (step <= self.parameters['num_steps']):
-            # Update step
+        while (step <= self.parameters['num_steps']) and (stag_counter <= max_stag):
             step += 1
 
-            # Generate a neighbour cardinality (if so)
-            if len(self.cardinality_boundaries) != 1:
-                cardinality += np.random.randint(-1, 1)
-                if cardinality < self.cardinality_boundaries[0]:
-                    cardinality = self.cardinality_boundaries[0]
-                if cardinality > self.cardinality_boundaries[1]:
-                    cardinality = self.cardinality_boundaries[1]
-
-            # Generate a neighbour solution
-            encoded_candidate_solution = np.random.randint(0, self.num_operators, cardinality)
-            candidate_solution = [self.heuristic_space[index] for index in encoded_candidate_solution]
+            # Generate a neighbour solution (just indices-codes)
+            candidate_encoded_solution, candidate_solution = obtain_neighbour_solution(current_encoded_solution)
 
             # Evaluate this candidate solution
             candidate_performance, candidate_details = self.evaluate_metaheuristic(candidate_solution)
 
             # Determine the energy (performance) change
-            delta_energy = candidate_performance - performance
-
-            # Check improvement (Metropolis criterion)
-            if (delta_energy < 0) or (np.random.rand() < np.exp(-delta_energy/temperature)):
-                encoded_solution = encoded_candidate_solution
-                solution = candidate_solution.copy()
-                performance = candidate_performance
-                details = candidate_details.copy()
-
-                # Save this historical register and break
-                _save_iteration(step, {
-                    'encoded_solution': encoded_solution,
-                    'solution': solution,
-                    'performance': performance,
-                    'details': details},
-                    self.file_label)
-
-                print('{} :: Step: {}, Perf: {}, e-Sol: {}'.format(
-                    self.file_label, step, performance, encoded_solution))
-
-                # # When zero performance is reached end the simulation
-                # if performance == 0.0:
-                #     return solution, performance, encoded_solution, historicals
+            delta_energy = candidate_performance - current_performance
 
             # Update temperature
-            temperature *= 1 - self.parameters['cooling_rate']
+            temperature = obtain_temperature(step)
+
+            # Accept the current solution via Metropolis criterion
+            if check_acceptance(delta_energy, temperature):
+                # Update the current solution and its performance
+                current_encoded_solution = np.copy(candidate_encoded_solution)
+                current_performance = candidate_performance
+                if delta_energy > 0:
+                    print('{} :: Step: {}, Perf: {}, e-Sol: {} [Accepted]'.format(
+                        self.file_label, step, current_performance, current_encoded_solution))
+
+            # If the candidate solution is better or equal than the current best solution
+            if candidate_performance < best_performance:
+                # Update the best solution and its performance
+                best_encoded_solution = np.copy(candidate_encoded_solution)
+                best_performance = candidate_performance
+
+                # Reset the stagnation counter
+                stag_counter = 0
+
+                # Save this information
+                _save_iteration(step, {
+                    'encoded_solution': best_encoded_solution,
+                    'performance': best_performance,
+                    'details': candidate_details
+                }, self.file_label)
+
+                # Print update
+                print('{} :: Step: {}, Perf: {}, e-Sol: {}'.format(
+                    self.file_label, step, best_performance, best_encoded_solution))
+            else:
+                # Update the stagnation counter
+                stag_counter += 1
 
         # Return the best solution found and its details
-        return solution, performance, encoded_solution, historicals
+        return current_solution, current_performance, current_encoded_solution, historicals
 
     def evaluate_metaheuristic(self, search_operators):
         # Initialise the historical registers
@@ -219,15 +296,14 @@ class Hyperheuristic():
             operator = [self.heuristic_space[operator_id]]
 
             # Evaluate it within the metaheuristic structure
-            operator_performance, operator_details = \
-                self.evaluate_metaheuristic(operator)
+            operator_performance, operator_details = self.evaluate_metaheuristic(operator)
 
             # Save information
             _save_iteration(operator_id, {
                 'encoded_solution': operator_id,
                 'performance': operator_performance,
-                'statistics': operator_details['statistics']},
-                            self.file_label)
+                'statistics': operator_details['statistics']
+            }, self.file_label)
 
             # print('{}/{} - perf: {}'.format(operator_id + 1,
             #                                 self.num_operators,
@@ -279,9 +355,9 @@ def _save_iteration(iteration_number, variable_to_save, prefix=''):
         json.dump(variable_to_save, json_file, cls=NumpyEncoder)
 
 
-def set_problem(function, boundaries, is_constrained=True):
+def set_problem(function, boundaries, is_constrained=True, weights=None):
     return {'function': function, 'boundaries': boundaries,
-            'is_constrained': is_constrained}
+            'is_constrained': is_constrained, 'weights': weights}
 
 
 class HyperheuristicError(Exception):

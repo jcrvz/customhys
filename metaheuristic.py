@@ -15,7 +15,7 @@ __all__ = ['Metaheuristic', 'Population', 'Operators']
 
 # Read all available operators
 __operators__ = Operators.__all__
-# __operators__ = [x[0] for x in Operators._obtain_operators(1)]
+# __operators__ = [x[0] for x in Operators.obtain_operators(1)]
 __selectors__ = ['greedy', 'probabilistic', 'metropolis', 'all', 'none']
 
 
@@ -46,7 +46,7 @@ class Metaheuristic():
         None.
 
         """
-        # Define the problem function
+        # Read the problem function
         self.problem_function = problem['function']
 
         # Create population
@@ -54,8 +54,7 @@ class Metaheuristic():
                               problem['is_constrained'])
 
         # Check and read the search_operators
-        self.operators, self.selectors = Operators._process_operators(
-            search_operators)
+        self.operators, self.selectors = Operators.process_operators(search_operators)
 
         # Define the maximum number of iterations
         self.num_iterations = num_iterations
@@ -160,7 +159,7 @@ class Metaheuristic():
         """
         return self.historical['position'][-1], self.historical['fitness'][-1]
 
-    @property
+    # @property
     def show_performance(self):
         """
         Show the solution evolution during the iterative process.
@@ -226,8 +225,8 @@ class Metaheuristic():
         # Update population centroid and radius
         current_centroid = np.array(self.pop.positions).mean(0)
         self.historical['centroid'].append(current_centroid)
-        self.historical['radius'].append(np.linalg.norm(self.pop.positions - np.tile(
-            current_centroid, (self.num_agents, 1)), 2, 1).max())
+        self.historical['radius'].append(np.max(np.linalg.norm(self.pop.positions - np.tile(
+            current_centroid, (self.num_agents, 1)), 2, 1)))
 
         # Update stagnation
         if (self.pop.iteration > 0) and (

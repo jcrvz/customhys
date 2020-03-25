@@ -235,8 +235,7 @@ def firefly_dynamic(pop, alpha=1.0, beta=1.0, gamma=100.0,
         epsilon_value = np.random.uniform(
             -0.5, 0.5, (pop.num_agents, pop.num_dimensions))
     elif distribution == "levy":
-        epsilon_value = _random_levy(
-            1.5, (pop.num_agents, pop.num_dimensions))
+        epsilon_value = random_levy((pop.num_agents, pop.num_dimensions), 1.5)
     else:
         raise OperatorsError(
             "Epsilon is not valid: 'uniform' or 'gaussian'")
@@ -594,7 +593,7 @@ def genetic_mutation(pop, scale=1.0, elite_rate=0.1, mutation_rate=0.25,
             mutants = np.random.standard_normal(num_mutations ** 2)
 
         elif distribution == "levy":
-            mutants = _random_levy(1.5, num_mutations ** 2)
+            mutants = random_levy(num_mutations ** 2, 1.5)
 
         else:
             raise OperatorsError('Invalid distribution!')
@@ -694,8 +693,7 @@ def random_flight(pop, scale=1.0, distribution="levy", beta=1.5):
 
     elif distribution == "levy":
         # Calculate the random number with levy stable distribution
-        random_samples = _random_levy(
-            beta, size=(pop.num_agents, pop.num_dimensions))
+        random_samples = random_levy(size=(pop.num_agents, pop.num_dimensions), beta=beta)
 
     else:
         raise OperatorsError('Invalid distribution!')
@@ -734,7 +732,7 @@ def local_random_walk(pop, probability=0.75, scale=1.0,
     elif distribution == "gaussian":
         r_1 = np.random.randn(pop.num_agents, pop.num_dimensions)
     elif distribution == "levy":
-        r_1 = _random_levy(size=(pop.num_agents, pop.num_dimensions))
+        r_1 = random_levy(size=(pop.num_agents, pop.num_dimensions))
     else:
         raise OperatorsError('Invalid distribution!')
     r_2 = np.random.rand(pop.num_agents, pop.num_dimensions)
@@ -787,7 +785,7 @@ def random_search(pop, scale=0.01, distribution="uniform"):
         random_step = np.random.standard_normal((pop.num_agents,
                                                  pop.num_dimensions))
     elif distribution == "levy":
-        random_step = _random_levy(size=(pop.num_agents, pop.num_dimensions))
+        random_step = random_levy(size=(pop.num_agents, pop.num_dimensions))
     else:
         raise OperatorsError('Invalid distribution!')
 
@@ -817,16 +815,15 @@ def spiral_dynamic(pop, radius=0.9, angle=22.5, sigma=0.1):
     # _check_parameter(sigma)
 
     # Determine the rotation matrix
-    rotation_matrix = _get_rotation_matrix(pop.num_dimensions,
-                                           np.deg2rad(angle))
+    rotation_matrix = get_rotation_matrix(pop.num_dimensions,
+                                          np.deg2rad(angle))
 
     for agent in range(pop.num_agents):
         random_radii = np.random.uniform(radius - sigma, radius + sigma,
                                          pop.num_dimensions)
         # If random radii need to be constrained to [0, 1]:
         pop.positions[agent, :] = pop.global_best_position + random_radii * \
-            np.matmul(rotation_matrix, (
-                pop.positions[agent, :] - pop.global_best_position))
+            np.matmul(rotation_matrix, (pop.positions[agent, :] - pop.global_best_position))
 
 
 def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56,
@@ -865,8 +862,8 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56,
         r_1 = np.random.randn(pop.num_agents, pop.num_dimensions)
         r_2 = np.random.randn(pop.num_agents, pop.num_dimensions)
     elif distribution == "levy":
-        r_1 = _random_levy(size=(pop.num_agents, pop.num_dimensions))
-        r_2 = _random_levy(size=(pop.num_agents, pop.num_dimensions))
+        r_1 = random_levy(size=(pop.num_agents, pop.num_dimensions))
+        r_2 = random_levy(size=(pop.num_agents, pop.num_dimensions))
     else:
         raise OperatorsError('Invalid distribution!')
 
@@ -898,7 +895,7 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56,
     pop.positions += pop.velocities
 
 
-def _random_levy(beta=1.5, size=1):
+def random_levy(size, beta=1.5):
     """
     Draw a random number or array using the Levy stable distribution via
     the Mantegna's algorithm
@@ -924,7 +921,7 @@ def _random_levy(beta=1.5, size=1):
     return z * x / (y ** (1 / beta))
 
 
-def _get_rotation_matrix(dimensions, angle=0.39269908169872414):
+def get_rotation_matrix(dimensions, angle=0.39269908169872414):
     """
     Determine the rotation matrix by multiplying all the rotation matrices for each combination of 2D planes.
 
@@ -997,18 +994,18 @@ def _get_rotation_matrix(dimensions, angle=0.39269908169872414):
 #                 par_value, interval[0], interval[1]))
 
 
-# class OperatorsError(Exception):
-#     """
-#     Simple OperatorError to manage exceptions.
-#     """
-#     pass
+class OperatorsError(Exception):
+    """
+    Simple OperatorError to manage exceptions.
+    """
+    pass
 
 
 # ---------------------------------------------------------------------------
 # GENERATOR OF SEARCH OPERATORS
 # ---------------------------------------------------------------------------
 
-def _obtain_operators(num_vals=11):
+def obtain_operators(num_vals=11):
     """
     Generate a list of all the available search operators with a given
     number of values for each parameter (if so).
@@ -1131,7 +1128,7 @@ def _obtain_operators(num_vals=11):
         ]
 
 
-def _build_operators(heuristics, file_name="operators_collection"):
+def build_operators(heuristics, file_name="operators_collection"):
     """
     Create a text file containing all possible combinations of parameter values for each search operator.
 
@@ -1175,8 +1172,7 @@ def _build_operators(heuristics, file_name="operators_collection"):
             num_combinations = int(np.prod(par_num_values))
 
             # Create the table of all possible combinations (index/parameter)
-            indices = [x.flatten() for x in np.meshgrid(
-                *list(map(lambda x: np.arange(x), par_num_values)))]
+            indices = [x.flatten() for x in np.meshgrid(*list(map(lambda y: np.arange(y), par_num_values)))]
 
             # For each combination, create a single dictionary which
             # corresponds to a simple search operator
@@ -1205,7 +1201,7 @@ def _build_operators(heuristics, file_name="operators_collection"):
           tuple(total_counters))
 
 
-def _process_operators(simple_heuristics):
+def process_operators(simple_heuristics):
     """
     Decode the list of operators or heuristics and deliver two lists, one with ready-to-execute strings of operators
     and another with strings of their associated selectors.
@@ -1255,4 +1251,4 @@ def _process_operators(simple_heuristics):
 
 
 if __name__ == '__main__':
-    _build_operators(_obtain_operators(num_vals=11), file_name="automatic")
+    build_operators(obtain_operators(num_vals=11), file_name="automatic")

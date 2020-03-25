@@ -83,10 +83,11 @@ class OptimalBasic:
         self.__noise_type = 'uniform'
         self.__noise_level = 0.0
 
-    def get_features(self, fmt="latex", wrd="Yes", fts=None):
+    def get_features(self, fmt="string", wrd="1", fts=None):
         # Default features to deliver
         if fts is None:
-            fts = ['Continuous', 'Differentiable', 'Separable', 'Scalable', 'Unimodal', 'Convex']
+            # fts = ['Continuous', 'Differentiable', 'Separable', 'Scalable', 'Unimodal', 'Convex']
+            fts = ['Differentiable', 'Separable', 'Unimodal']
 
         def translate_conditional(value):
             if wrd == "Yes":
