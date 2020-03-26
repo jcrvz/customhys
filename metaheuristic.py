@@ -141,8 +141,8 @@ class Metaheuristic():
             self._update_historicals()
 
             # Verbose (if so) some information
-            self._verbose("{}\nStag. counter: {}, pop. radius: {}".format(
-                iteration, self.historical['stagnation'][-1],
+            self._verbose("{}\npop. radius: {}".format(
+                iteration,  # self.historical['stagnation'][-1],
                 self.historical['radius'][-1]))
             self._verbose(self.pop.get_state())
 
@@ -206,7 +206,7 @@ class Metaheuristic():
             position=list(),
             centroid=list(),
             radius=list(),
-            stagnation=list(),
+            # stagnation=list(),
             )
 
     def _update_historicals(self):
@@ -229,12 +229,12 @@ class Metaheuristic():
             current_centroid, (self.num_agents, 1)), 2, 1)))
 
         # Update stagnation
-        if (self.pop.iteration > 0) and (
-                float(self.historical['fitness'][-1]) == float(self.historical['fitness'][-2])):
-            instantaneous_stagnation = self.historical['stagnation'][-1] + 1
-        else:
-            instantaneous_stagnation = 0
-        self.historical['stagnation'].append(instantaneous_stagnation)
+        # if (self.pop.iteration > 0) and (
+        #         float(self.historical['fitness'][-1]) == float(self.historical['fitness'][-2])):
+        #     instantaneous_stagnation = self.historical['stagnation'][-1] + 1
+        # else:
+        #     instantaneous_stagnation = 0
+        # self.historical['stagnation'].append(instantaneous_stagnation)
 
     def _verbose(self, text_to_print):
         """

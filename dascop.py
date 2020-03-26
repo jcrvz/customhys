@@ -131,7 +131,7 @@ def test_set2p(num_dimensions):
         'num_replicas': 50,
         'num_steps': 100,
         'max_temperature': 200,
-        'stagnation_percentage': 0.1,
+        'stagnation_percentage': 0.25,
         'cooling_rate': 0.05,
     }
 
@@ -171,7 +171,7 @@ if __name__ == '__main__':
     # Operators.build_operators(Operators.obtain_operators(num_vals=21), file_name="test-set-21")
 
     # Load the weight data
-    weights_data = jt.read_json('data_files/operators_weights.json')
+    weights_data = jt.read_json('collections/operators_weights.json')
 
     # List of dimensionalities
     dimensions = [2, 5, *range(10, 50 + 1, 10)]

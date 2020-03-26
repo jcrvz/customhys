@@ -217,9 +217,9 @@ class Hyperheuristic():
                 # Update the current solution and its performance
                 current_encoded_solution = np.copy(candidate_encoded_solution)
                 current_performance = candidate_performance
-                if delta_energy > 0:
-                    print('{} :: Step: {}, Perf: {}, e-Sol: {} [Accepted]'.format(
-                        self.file_label, step, current_performance, current_encoded_solution))
+                # if delta_energy > 0:
+                #     print('{} :: Step: {}, Perf: {}, e-Sol: {} [Accepted]'.format(
+                #         self.file_label, step, current_performance, current_encoded_solution))
 
             # If the candidate solution is better or equal than the current best solution
             if candidate_performance < best_performance:

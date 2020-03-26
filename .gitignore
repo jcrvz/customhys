@@ -124,11 +124,9 @@ dmypy.json
 *.xml
 *.iml
 
-images/
-*.eps
-raw_data*
-raw_data*/
-*.json
+data_files/images/*
+data_files/images
+data_files/raw/*
+data_files/raw
 .DS_Store
-*.png
 *.zip
