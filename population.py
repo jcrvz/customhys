@@ -198,10 +198,10 @@ class Population():
             # Update the current best and worst positions (forced to greedy)
             self.current_best_position = self.positions[
                 self.fitness.argmin(), :]
-            self.current_best_fitness = self.fitness.min()
+            self.current_best_fitness = np.min(self.fitness)
             self.current_worst_position = self.positions[
                 self.fitness.argmax(), :]
-            self.current_worst_fitness = self.fitness.max()
+            self.current_worst_fitness = np.min(self.fitness)
         #
         # Update particular positions, velocities and fitness
         elif level == "particular":
@@ -222,7 +222,7 @@ class Population():
             # Read current global best agent
             candidate_position = self.particular_best_positions[
                              self.particular_best_fitness.argmin(), :]
-            candidate_fitness = self.particular_best_fitness.min()
+            candidate_fitness = np.min(self.particular_best_fitness)
             if self._selection(candidate_fitness, self.global_best_fitness,
                                selector) or np.isinf(candidate_fitness):
                 self.global_best_position = candidate_position
@@ -278,8 +278,7 @@ class Population():
         -------
         None.
         """
-        self.positions = np.random.uniform(-1, 1, (self.num_agents,
-                                                   self.num_dimensions))
+        self.positions = np.random.uniform(-1, 1, (self.num_agents, self.num_dimensions))
 
     # -------------------------------------------------------------------------
     #    INTERNAL METHODS (avoid using them outside)
@@ -386,6 +385,9 @@ class Population():
         # None selection
         elif selector == "none":
             selection_condition = False
+        else:
+            selection_condition = None
+            PopulationError('Invalid selector!')
 
         return selection_condition
 

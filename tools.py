@@ -174,7 +174,7 @@ def preprocess_bruteforce_files(main_folder='data_files/raw/'):
             with open(temporal_full_path + '/' + file_name, 'r') as json_file:
                 temporal_data = json.load(json_file)
 
-            # Store information in the correspoding variables
+            # Store information in the corresponding variables
             file_data['operator_id'].append(operator_id)
             file_data['performance'].append(temporal_data['performance'])
             # file_data['fitness'].append(temporal_data['details']['fitness'])
@@ -186,6 +186,68 @@ def preprocess_bruteforce_files(main_folder='data_files/raw/'):
 
     # Save pre-processed data
     with open(main_folder.split('/')[0] + "/brute-force-data.json", 'w') as json_file:
+        json.dump(data, json_file, cls=NumpyEncoder)
+
+    # Return only the data variable
+    return data
+
+def preprocess_first_files(main_folder='data_files/raw/'):
+    # Get folders and exclude hidden ones
+    raw_folders = [element for element in os.listdir(main_folder) if not element.startswith('.')]
+
+    # Sort subfolder names by problem name & dimensions
+    subfolder_names = sorted(raw_folders, key=lambda x: int(x.split('-')[1].strip('D')))
+
+    # Define the basic data structure
+    data = {'problem': list(), 'dimensions': list(), 'results': list()}
+
+    for subfolder in subfolder_names:
+        # Extract the problem name and the number of dimensions
+        problem_name, dimensions, date_str = subfolder.split('-')
+
+        # Store information about this subfolder
+        data['problem'].append(problem_name)
+        data['dimensions'].append(int(dimensions[:-1]))
+
+        # Read all the iterations files contained in this subfolder
+        temporal_full_path = os.path.join(main_folder, subfolder)
+
+        # Iteration (in this case, operator) file names
+        raw_file_names = [element for element in os.listdir(
+            temporal_full_path) if not element.startswith('.')]
+
+        # Sort the list of files based on their iterations
+        file_names = sorted(raw_file_names, key=lambda x: int(x.split('-')[0]))
+
+        # Initialise iteration data with same field as files
+        # details only contains fitness values and positions
+        # file_data = {'operator_id': list(), 'performance': list(),
+        #                   'fitness': list(), 'positions': list()}
+        file_data = {'step': list(), 'performance': list(), 'statistics': list(),
+                     'hist_fitness': list()}
+
+        # Walk on subfolders' files
+        for file_name in tqdm(file_names, desc='{} {}'.format(problem_name, dimensions)):
+
+            # Extract the iteration number and time
+            operator_id = int(file_name.split('-')[0])
+
+            # Read json file
+            with open(temporal_full_path + '/' + file_name, 'r') as json_file:
+                temporal_data = json.load(json_file)
+
+            # Store information in the corresponding variables
+            file_data['step'].append(operator_id)
+            file_data['performance'].append(temporal_data['performance'])
+            file_data['statistics'].append(temporal_data['details']['statistics'])
+            file_data['hist_fitness'].append(
+                [x['fitness'] for x in temporal_data['details']['historical']])
+
+        # Store results in the main data frame
+        data['results'].append(file_data)
+
+    # Save pre-processed data
+    with open(main_folder.split('/')[0] + "/first_test.json", 'w') as json_file:
         json.dump(data, json_file, cls=NumpyEncoder)
 
     # Return only the data variable
@@ -221,5 +283,6 @@ def read_json(data_file):
 
 
 if __name__ == '__main__':
-    processed_data = preprocess_bruteforce_files()
+    # processed_data = preprocess_bruteforce_files()
+    preprocess_first_files()
 

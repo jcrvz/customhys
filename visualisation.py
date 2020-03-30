@@ -14,6 +14,7 @@ from matplotlib.lines import Line2D
 from matplotlib import rcParams, cycler
 import numpy as np
 
+
 # READ RAW DATA FILES
 def read_data_files(main_folder_name='raw_data/'):
     # Define the basic data structure
@@ -55,7 +56,7 @@ def read_data_files(main_folder_name='raw_data/'):
             # Determine the absolute times (in seconds)
             date_time = datetime.strptime(time_str + date_str,
                                           '%H_%M_%S.json%m_%d_%Y')
-            if (iteration == 0):
+            if iteration == 0:
                 initial_time = date_time
                 absolute_time = 0
             else:
@@ -66,7 +67,7 @@ def read_data_files(main_folder_name='raw_data/'):
                       ) as json_file:
                 temporal_data = json.load(json_file)
 
-            # Store information in the correspoding variables
+            # Store information in the corresponding variables
             iteration_data['iteration'].append(iteration)
             iteration_data['time'].append(absolute_time)
             for key in temporal_data.keys():
@@ -132,14 +133,13 @@ for problem_str in problems:
         for problem_id in range(len(data_frame['problem'])):
             if ((data_frame['problem'][problem_id] == problem_str) and
                     (data_frame['dimensions'][problem_id] == dimension)):
-
                 result = data_frame['results'][problem_id]
 
                 y_data.append(np.log10(np.array(
                     result['details'][-1]['fitness']) + 1.0))
 
     violin_parts = plt.violinplot(y_data, range(len(y_data)),
-        showmeans=True, showmedians=True, showextrema=False)
+                                  showmeans=True, showmedians=True, showextrema=False)
 
     violin_parts['cmeans'].set_edgecolor('#AC4C3D')  # Rojo
     violin_parts['cmeans'].set_linewidth(1.5)
