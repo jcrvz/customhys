@@ -8,7 +8,7 @@ Created on Thu Sep 26 16:56:01 2019
 import numpy as np
 from population import Population
 import operators as Operators
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 # from tqdm import tqdm
 
 __all__ = ['Metaheuristic', 'Population', 'Operators']
@@ -19,7 +19,7 @@ __operators__ = Operators.__all__
 __selectors__ = ['greedy', 'probabilistic', 'metropolis', 'all', 'none']
 
 
-class Metaheuristic():
+class Metaheuristic:
     def __init__(self, problem, search_operators, num_agents=30,
                  num_iterations=100):
         """
@@ -50,8 +50,7 @@ class Metaheuristic():
         self.problem_function = problem['function']
 
         # Create population
-        self.pop = Population(problem['boundaries'], num_agents,
-                              problem['is_constrained'])
+        self.pop = Population(problem['boundaries'], num_agents, problem['is_constrained'])
 
         # Check and read the search_operators
         self.operators, self.selectors = Operators.process_operators(search_operators)
@@ -160,37 +159,38 @@ class Metaheuristic():
         return self.historical['position'][-1], self.historical['fitness'][-1]
 
     # @property
-    def show_performance(self):
-        """
-        Show the solution evolution during the iterative process.
-
-        Returns
-        -------
-        None.
-
-        """
-        # Show historical fitness
-        fig1, ax1 = plt.subplots()
-
-        color = 'tab:red'
-        plt.xlabel("Iterations")
-        ax1.set_ylabel("Global Fitness", color=color)
-        ax1.plot(np.arange(0, self.num_iterations + 1),
-                 self.historical['fitness'], color=color)
-        ax1.tick_params(axis='y', labelcolor=color)
-        ax1.set_yscale('linear')
-
-        ax2 = ax1.twinx()
-
-        color = 'tab:blue'
-        ax2.set_ylabel('Population radius', color=color)
-        ax2.plot(np.arange(0, self.num_iterations + 1),
-                 self.historical['radius'], color=color)
-        ax2.tick_params(axis='y', labelcolor=color)
-        ax2.set_yscale('log')
-
-        fig1.tight_layout()
-        plt.show()
+    # Deprecated!
+    # def show_performance(self):
+    #     """
+    #     Show the solution evolution during the iterative process.
+    #
+    #     Returns
+    #     -------
+    #     None.
+    #
+    #     """
+    #     # Show historical fitness
+    #     fig1, ax1 = plt.subplots()
+    #
+    #     color = 'tab:red'
+    #     plt.xlabel("Iterations")
+    #     ax1.set_ylabel("Global Fitness", color=color)
+    #     ax1.plot(np.arange(0, self.num_iterations + 1),
+    #              self.historical['fitness'], color=color)
+    #     ax1.tick_params(axis='y', labelcolor=color)
+    #     ax1.set_yscale('linear')
+    #
+    #     ax2 = ax1.twinx()
+    #
+    #     color = 'tab:blue'
+    #     ax2.set_ylabel('Population radius', color=color)
+    #     ax2.plot(np.arange(0, self.num_iterations + 1),
+    #              self.historical['radius'], color=color)
+    #     ax2.tick_params(axis='y', labelcolor=color)
+    #     ax2.set_yscale('log')
+    #
+    #     fig1.tight_layout()
+    #     plt.show()
 
     def _reset_historicals(self):
         """
@@ -201,13 +201,8 @@ class Metaheuristic():
         None.
 
         """
-        self.historical = dict(
-            fitness=list(),
-            position=list(),
-            centroid=list(),
-            radius=list(),
+        self.historical = dict(fitness=list(), position=list(), centroid=list(), radius=list())
             # stagnation=list(),
-            )
 
     def _update_historicals(self):
         """
@@ -219,12 +214,12 @@ class Metaheuristic():
 
         """
         # Update historical variables
-        self.historical['fitness'].append(self.pop.global_best_fitness)
-        self.historical['position'].append(self.pop.global_best_position)
+        self.historical['fitness'].append(np.copy(self.pop.global_best_fitness))
+        self.historical['position'].append(np.copy(self.pop.global_best_position))
 
         # Update population centroid and radius
         current_centroid = np.array(self.pop.positions).mean(0)
-        self.historical['centroid'].append(current_centroid)
+        self.historical['centroid'].append(np.copy(current_centroid))
         self.historical['radius'].append(np.max(np.linalg.norm(self.pop.positions - np.tile(
             current_centroid, (self.num_agents, 1)), 2, 1)))
 

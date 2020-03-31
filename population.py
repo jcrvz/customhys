@@ -9,7 +9,7 @@ import numpy as np
 __all__ = ['Population']
 
 
-class Population():
+class Population:
     """
     Generates a population that search along the problem domain using
     different strategies.
@@ -56,16 +56,14 @@ class Population():
         self.lower_boundaries = boundaries[0]
         self.upper_boundaries = boundaries[1]
         self.span_boundaries = self.upper_boundaries - self.lower_boundaries
-        self.centre_boundaries = (self.upper_boundaries +
-                                  self.lower_boundaries) / 2
+        self.centre_boundaries = (self.upper_boundaries + self.lower_boundaries) / 2.
 
         # Read number of agents in population
         assert isinstance(num_agents, int)
         self.num_agents = num_agents
 
         # Initialise positions and fitness values
-        self.positions = np.full((self.num_agents, self.num_dimensions),
-                                 np.nan)
+        self.positions = np.full((self.num_agents, self.num_dimensions), np.nan)
         self.velocities = np.full((self.num_agents, self.num_dimensions), 0)
         self.fitness = np.full(self.num_agents, np.nan)
 
@@ -78,14 +76,11 @@ class Population():
         self.current_worst_position = np.full(self.num_dimensions, np.nan)
         self.current_worst_fitness = -float('inf')
 
-        self.particular_best_positions = np.full(
-            (self.num_agents, self.num_dimensions), np.nan)
+        self.particular_best_positions = np.full((self.num_agents, self.num_dimensions), np.nan)
         self.particular_best_fitness = np.full(self.num_agents, np.nan)
 
-        self.previous_positions = np.full((self.num_agents,
-                                           self.num_dimensions), np.nan)
-        self.previous_velocities = np.full((self.num_agents,
-                                            self.num_dimensions), np.nan)
+        self.previous_positions = np.full((self.num_agents, self.num_dimensions), np.nan)
+        self.previous_velocities = np.full((self.num_agents, self.num_dimensions), np.nan)
         self.previous_fitness = np.full(self.num_agents, np.nan)
 
         self.is_constrained = is_constrained
@@ -109,8 +104,7 @@ class Population():
                 str = 'x_best = ARRAY, f_best = VALUE'
 
         """
-        return ("x_best = " + str(self._rescale_back(
-            self.global_best_position)) + ", f_best = " +
+        return ("x_best = " + str(self._rescale_back(self.global_best_position)) + ", f_best = " +
                 str(self.global_best_fitness))
 
     # !!! before: get_positions
@@ -125,9 +119,8 @@ class Population():
             Population positions as a num_agents-by-num_dimensions array.
 
         """
-        rescaled_positions = np.tile(
-            self.centre_boundaries, (self.num_agents, 1)) + self.positions *\
-            np.tile(self.span_boundaries / 2, (self.num_agents, 1))
+        rescaled_positions = np.tile(self.centre_boundaries, (self.num_agents, 1)) + self.positions * \
+            np.tile(self.span_boundaries / 2., (self.num_agents, 1))
         return rescaled_positions
 
     # !!! before: set_population
@@ -147,8 +140,7 @@ class Population():
             Population positions as a num_agents-by-num_dimensions array.
 
         """
-        rescaled_positions = 2 * (positions - np.tile(
-            self.centre_boundaries, (self.num_agents, 1))) / np.tile(
+        rescaled_positions = 2. * (positions - np.tile(self.centre_boundaries, (self.num_agents, 1))) / np.tile(
             self.span_boundaries, (self.num_agents, 1))
 
         return rescaled_positions
@@ -178,41 +170,29 @@ class Population():
         # Update population positons, velocities and fitness
         if level == "population":
             for agent in range(self.num_agents):
-                if self._selection(
-                        self.fitness[agent],
-                        self.previous_fitness[agent], selector):
+                if self._selection(self.fitness[agent], self.previous_fitness[agent], selector):
                     # if new positions are improved, then update past register
-                    self.previous_fitness[agent] = self.fitness[agent]
-                    self.previous_positions[agent, :] = self.positions[
-                        agent, :]
-                    self.previous_velocities[agent, :] = \
-                        self.velocities[agent, :]
+                    self.previous_fitness[agent] = np.copy(self.fitness[agent])
+                    self.previous_positions[agent, :] = np.copy(self.positions[agent, :])
+                    self.previous_velocities[agent, :] = np.copy(self.velocities[agent, :])
                 else:
                     # ... otherwise,return to previous values
-                    self.fitness[agent] = self.previous_fitness[agent]
-                    self.positions[agent, :] = self.previous_positions[
-                        agent, :]
-                    self.velocities[agent, :] = \
-                        self.previous_velocities[agent, :]
+                    self.fitness[agent] = np.copy(self.previous_fitness[agent])
+                    self.positions[agent, :] = np.copy(self.previous_positions[agent, :])
+                    self.velocities[agent, :] = np.copy(self.previous_velocities[agent, :])
 
             # Update the current best and worst positions (forced to greedy)
-            self.current_best_position = self.positions[
-                self.fitness.argmin(), :]
+            self.current_best_position = np.copy(self.positions[self.fitness.argmin(), :])
             self.current_best_fitness = np.min(self.fitness)
-            self.current_worst_position = self.positions[
-                self.fitness.argmax(), :]
+            self.current_worst_position = np.copy(self.positions[self.fitness.argmax(), :])
             self.current_worst_fitness = np.min(self.fitness)
         #
         # Update particular positions, velocities and fitness
         elif level == "particular":
             for agent in range(self.num_agents):
-                if self._selection(
-                        self.fitness[agent],
-                        self.particular_best_fitness[agent],
-                        selector):
-                    self.particular_best_fitness[agent] = self.fitness[agent]
-                    self.particular_best_positions[agent, :] = \
-                        self.positions[agent, :]
+                if self._selection(self.fitness[agent], self.particular_best_fitness[agent], selector):
+                    self.particular_best_fitness[agent] = np.copy(self.fitness[agent])
+                    self.particular_best_positions[agent, :] = np.copy(self.positions[agent, :])
         #
         # Update global positions, velocities and fitness
         elif level == "global":
@@ -220,13 +200,11 @@ class Population():
             self.update_positions("particular", selector)
 
             # Read current global best agent
-            candidate_position = self.particular_best_positions[
-                             self.particular_best_fitness.argmin(), :]
+            candidate_position = np.copy(self.particular_best_positions[self.particular_best_fitness.argmin(), :])
             candidate_fitness = np.min(self.particular_best_fitness)
-            if self._selection(candidate_fitness, self.global_best_fitness,
-                               selector) or np.isinf(candidate_fitness):
-                self.global_best_position = candidate_position
-                self.global_best_fitness = candidate_fitness
+            if self._selection(candidate_fitness, self.global_best_fitness, selector) or np.isinf(candidate_fitness):
+                self.global_best_position = np.copy(candidate_position)
+                self.global_best_fitness = np.copy(candidate_fitness)
         #
         # Raise an error
         else:
@@ -256,8 +234,7 @@ class Population():
 
         # Evaluate each agent in this function
         for agent in range(self.num_agents):
-            self.fitness[agent] = problem_function(
-                self._rescale_back(self.positions[agent, :]))
+            self.fitness[agent] = problem_function(self._rescale_back(self.positions[agent, :]))
 
     # -------------------------------------------------------------------------
     #    INITIALISATORS
@@ -369,14 +346,11 @@ class Population():
             else:
                 selection_condition = bool(np.math.exp(-(new - old) / (
                     self.metropolis_boltzmann * self.metropolis_temperature *
-                    ((1 - self.metropolis_rate) ** self.iteration) + 1e-23))
-                    > np.random.rand())
+                    ((1 - self.metropolis_rate) ** self.iteration) + 1e-23)) > np.random.rand())
         #
         # Probabilistic selection
         elif selector == "probabilistic":
-            selection_condition = bool(
-                (new <= old) or
-                (np.random.rand() <= self.probability_selection))
+            selection_condition = bool((new <= old) or (np.random.rand() <= self.probability_selection))
         #
         # All selection
         elif selector == "all":

@@ -257,8 +257,7 @@ class Hyperheuristic():
         for rep in range(1, self.parameters['num_replicas'] + 1):
 
             # Call the metaheuristic
-            mh = Metaheuristic(self.problem, search_operators,
-                               self.parameters['num_agents'],
+            mh = Metaheuristic(self.problem, search_operators, self.parameters['num_agents'],
                                self.parameters['num_iterations'])
 
             # Run this metaheuristic
