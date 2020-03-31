@@ -218,30 +218,36 @@ def preprocess_first_files(main_folder='data_files/raw/'):
 
         # Sort the list of files based on their iterations
         file_names = sorted(raw_file_names, key=lambda x: int(x.split('-')[0]))
+        last_step = int(file_names[-1].split('-')[0])
 
         # Initialise iteration data with same field as files
         # details only contains fitness values and positions
         # file_data = {'operator_id': list(), 'performance': list(),
         #                   'fitness': list(), 'positions': list()}
         file_data = {'step': list(), 'performance': list(), 'statistics': list(),
-                     'hist_fitness': list()}
+                     'encoded_solution': list(), 'hist_fitness': list()}
 
         # Walk on subfolders' files
-        for file_name in tqdm(file_names, desc='{} {}'.format(problem_name, dimensions)):
+        for file_name in tqdm(file_names, desc='{} {}, last={}'.format(problem_name, dimensions, last_step)):
 
             # Extract the iteration number and time
-            operator_id = int(file_name.split('-')[0])
+            step_id = int(file_name.split('-')[0])
 
             # Read json file
             with open(temporal_full_path + '/' + file_name, 'r') as json_file:
                 temporal_data = json.load(json_file)
 
             # Store information in the corresponding variables
-            file_data['step'].append(operator_id)
+            file_data['step'].append(step_id)
             file_data['performance'].append(temporal_data['performance'])
+            file_data['encoded_solution'].append(temporal_data['encoded_solution'])
             file_data['statistics'].append(temporal_data['details']['statistics'])
-            file_data['hist_fitness'].append(
-                [x['fitness'] for x in temporal_data['details']['historical']])
+
+            # Only save the historical fitness values when step_id is the largest
+            if step_id == last_step:
+                file_data['hist_fitness'] = [x['fitness'] for x in temporal_data['details']['historical']]
+            # file_data['hist_fitness'].append(
+            #     [x['fitness'] for x in temporal_data['details']['historical']])
 
         # Store results in the main data frame
         data['results'].append(file_data)
