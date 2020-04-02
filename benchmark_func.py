@@ -2647,3 +2647,16 @@ def list_functions(rnp=True, fts=None):
             print("{} & {} & {} \\\\".format(*x[1:]))
     else:
         return functions_features
+
+
+def for_all(property, dimension=2):
+    if property == 'features':
+        return list_functions(rnp=True, fts=None)
+    else:
+        info = dict()
+        # Read all functions and request their optimum data
+        for ii in range(len(__all__)):
+            function_name = __all__[ii]
+            info[function_name] = eval("{}({}).{}".format(function_name, dimension, property))
+
+        return info

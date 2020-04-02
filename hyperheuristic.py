@@ -308,6 +308,38 @@ class Hyperheuristic():
             #                                 self.num_operators,
             #                                 operator_performance))
 
+
+    def basic_metaheuristics(self):
+        """
+        This method performs a brute force procedure solving all the problem via all the available search
+        operators without integrating a high-level search method.
+
+        :return: Nothing
+
+        It save results as json files.
+        """
+        # Apply all the search operators in the collection as 1-size MHs
+        for operator_id in range(self.num_operators):
+            operator = self.heuristic_space[operator_id]
+            # Read the corresponding operator
+
+            if isinstance(operator, tuple):
+                operator = [operator]
+
+            # Evaluate it within the metaheuristic structure
+            operator_performance, operator_details = self.evaluate_metaheuristic(operator)
+
+            # Save information
+            _save_iteration(operator_id, {
+                'encoded_solution': operator_id,
+                'performance': operator_performance,
+                'statistics': operator_details['statistics']
+            }, self.file_label)
+
+            # print('{}/{} - perf: {}'.format(operator_id + 1,
+            #                                 self.num_operators,
+            #                                 operator_performance))
+
     @staticmethod
     def get_performance(statistics):
         # Score function using the statistics from fitness values

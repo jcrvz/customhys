@@ -65,70 +65,65 @@ def central_force_dynamic(pop, gravity=0.001, alpha=0.01, beta=1.5, dt=1.0):
     pop.positions += 0.5 * acceleration * (dt ** 2)
 
 
-# def differential_crossover(pop, crossover_rate=0.2, version="binomial"):
-#     """
-#     Performs either the binomial or exponential crossover procedure from
-#     Differential Evolution (DE).
+def differential_crossover(pop, crossover_rate=0.2, version="binomial"):
+    """
+    Performs either the binomial or exponential crossover procedure from
+    Differential Evolution (DE).
 
-#     Parameters
-#     ----------
-#     pop : population
-#         It is a population object.
-#     crossover_rate : float, optional
-#         Probability factor to perform the crossover. The default is 0.5.
-#     version : str, optional
-#         Crossover version. It can be 'binomial' or 'exponential'.
-#         The default is "binomial".
+    Parameters
+    ----------
+    pop : population
+        It is a population object.
+    crossover_rate : float, optional
+        Probability factor to perform the crossover. The default is 0.5.
+    version : str, optional
+        Crossover version. It can be 'binomial' or 'exponential'.
+        The default is "binomial".
 
-#     Returns
-#     -------
-#     None.
+    Returns
+    -------
+    None.
 
-#     """
-#     # Check the scale and beta value
-#     # _check_parameter(crossover_rate)
+    """
+    # Check the scale and beta value
+    # _check_parameter(crossover_rate)
 
-#     # Binomial version
-#     if version == "binomial":
-#         # Define indices
-#         indices = np.tile(np.arange(pop.num_dimensions), (pop.num_agents, 1))
+    # Binomial version
+    if version == "binomial":
+        # Define indices
+        indices = np.tile(np.arange(pop.num_dimensions), (pop.num_agents, 1))
 
-#         # Permute indices per dimension
-#         rand_indices = np.vectorize(np.random.permutation,
-#                                     signature='(n)->(n)')(indices)
+        # Permute indices per dimension
+        rand_indices = np.vectorize(np.random.permutation, signature='(n)->(n)')(indices)
 
-#         # Calculate the NOT condition (because positions already updated!)
-#         condition = np.logical_not((indices == rand_indices) | (
-#             np.random.rand(pop.num_agents, pop.num_dimensions) <=
-#             crossover_rate))
+        # Calculate the NOT condition (because positions already updated!)
+        condition = np.logical_not((indices == rand_indices) |
+                                   (np.random.rand(pop.num_agents, pop.num_dimensions) <= crossover_rate))
 
-#         # Reverse the ones to their previous positions
-#         pop.positions[condition] = pop.previous_positions[condition]
-#     #
-#     # Exponential version
-#     elif version == "exponential":
-#         # Perform the exponential crossover procedure
-#         for agent in range(pop.num_agents):
-#             for dim in range(pop.num_dimensions):
-#                 # Initialise L and choose a random index n
-#                 exp_var = 0
-#                 n = np.random.randint(pop.num_dimensions)
-#                 while True:
-#                     # Increase L and check the exponential CR condition
-#                     exp_var += 1
-#                     if np.logical_not((np.random.rand() < crossover_rate) and
-#                                       (exp_var < pop.num_dimensions)):
-#                         break
+        # Reverse the ones to their previous positions
+        pop.positions[condition] = np.copy(pop.previous_positions[condition])
+    #
+    # Exponential version
+    elif version == "exponential":
+        # Perform the exponential crossover procedure
+        for agent in range(pop.num_agents):
+            for dim in range(pop.num_dimensions):
+                # Initialise L and choose a random index n
+                exp_var = 0
+                n = np.random.randint(pop.num_dimensions)
+                while True:
+                    # Increase L and check the exponential CR condition
+                    exp_var += 1
+                    if np.logical_not((np.random.rand() < crossover_rate) and (exp_var < pop.num_dimensions)):
+                        break
 
-#                 # Perform the crossover if the following condition is met
-#                 if dim not in [(n + x) % pop.num_dimensions for x in
-#                                range(exp_var)]:
-#                     pop.positions[agent, dim] = pop.previous_positions[
-#                         agent, dim]
-#     #
-#     # Invalid version
-#     else:
-#         raise OperatorsError('Invalid differential_crossover version')
+                # Perform the crossover if the following condition is met
+                if dim not in [(n + x) % pop.num_dimensions for x in range(exp_var)]:
+                    pop.positions[agent, dim] = np.copy(pop.previous_positions[agent, dim])
+    #
+    # Invalid version
+    else:
+        raise OperatorsError('Invalid differential_crossover version')
 
 
 def differential_mutation(pop, expression="current-to-best", num_rands=1, factor=1.0):
@@ -1084,8 +1079,7 @@ def build_operators(heuristics, file_name="operators_collection"):
               f"combinations:{num_combinations}")
 
     file.close()
-    print("-" * 50 + "--\nTOTAL: classes=%d, operators=%d" %
-          tuple(total_counters))
+    print("-" * 50 + "--\nTOTAL: classes=%d, operators=%d" % tuple(total_counters))
 
 
 def process_operators(simple_heuristics):
