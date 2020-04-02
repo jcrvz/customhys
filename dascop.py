@@ -209,9 +209,9 @@ def test_set3p(num_dimensions):
         hh = HH.Hyperheuristic('basicmetaheuristics.txt', problem_to_solve, hh_parameters, label)
 
         # Run the HH:Random Search
-        hh.brute_force()
+        hh.basic_metaheuristics(label)
 
-        print(label + " done!")
+        # print(label + " done!")
 
 # %% Auto-run
 if __name__ == '__main__':

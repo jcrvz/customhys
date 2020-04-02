@@ -308,8 +308,7 @@ class Hyperheuristic():
             #                                 self.num_operators,
             #                                 operator_performance))
 
-
-    def basic_metaheuristics(self):
+    def basic_metaheuristics(self, label):
         """
         This method performs a brute force procedure solving all the problem via all the available search
         operators without integrating a high-level search method.
@@ -336,9 +335,7 @@ class Hyperheuristic():
                 'statistics': operator_details['statistics']
             }, self.file_label)
 
-            # print('{}/{} - perf: {}'.format(operator_id + 1,
-            #                                 self.num_operators,
-            #                                 operator_performance))
+            print('{} :: {}/{} - perf: {}'.format(label, operator_id + 1, self.num_operators, operator_performance))
 
     @staticmethod
     def get_performance(statistics):

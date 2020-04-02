@@ -8,14 +8,14 @@
 ('central_force_dynamic', {'gravity': 0.001, 'alpha': 0.10, 'beta': 1.5, 'dt': 1.0}, 'all')
 ('central_force_dynamic', {'gravity': 0.010, 'alpha': 0.10, 'beta': 1.5, 'dt': 1.0}, 'all')
 ('central_force_dynamic', {'gravity': 0.100, 'alpha': 0.10, 'beta': 1.5, 'dt': 1.0}, 'all')
-[('differential_mutation', {'expression': 'rand-to-best-and-current', 'num_rands': 1, 'factor': 1.0}, 'all'), ('differential_crossover', {'crossover_rate': 0.2, 'version'='binomial'}, 'all')]
-[('differential_mutation', {'expression': 'rand-to-best-and-current', 'num_rands': 2, 'factor': 1.0}, 'all'), ('differential_crossover', {'crossover_rate': 0.2, 'version'='binomial'}, 'all')]
-[('differential_mutation', {'expression': 'rand-to-best-and-current', 'num_rands': 1, 'factor': 2.0}, 'all'), ('differential_crossover', {'crossover_rate': 0.2, 'version'='binomial'}, 'all')]
-[('differential_mutation', {'expression': 'rand-to-best-and-current', 'num_rands': 2, 'factor': 2.0}, 'all'), ('differential_crossover', {'crossover_rate': 0.2, 'version'='binomial'}, 'all')]
-[('differential_mutation', {'expression': 'current-to-best', 'num_rands': 1, 'factor': 1.0}, 'all'), ('differential_crossover', {'crossover_rate': 0.2, 'version'='binomial'}, 'all')]
-[('differential_mutation', {'expression': 'current-to-best', 'num_rands': 2, 'factor': 1.0}, 'all'), ('differential_crossover', {'crossover_rate': 0.2, 'version'='binomial'}, 'all')]
-[('differential_mutation', {'expression': 'current-to-best', 'num_rands': 1, 'factor': 2.0}, 'all'), ('differential_crossover', {'crossover_rate': 0.2, 'version'='binomial'}, 'all')]
-[('differential_mutation', {'expression': 'current-to-best', 'num_rands': 2, 'factor': 2.0}, 'all'), ('differential_crossover', {'crossover_rate': 0.2, 'version'='binomial'}, 'all')]
+[('differential_mutation', {'expression': 'rand-to-best-and-current', 'num_rands': 1, 'factor': 1.0}, 'all'), ('differential_crossover', {'crossover_rate': 0.2, 'version': 'binomial'}, 'all')]
+[('differential_mutation', {'expression': 'rand-to-best-and-current', 'num_rands': 2, 'factor': 1.0}, 'all'), ('differential_crossover', {'crossover_rate': 0.2, 'version': 'binomial'}, 'all')]
+[('differential_mutation', {'expression': 'rand-to-best-and-current', 'num_rands': 1, 'factor': 2.0}, 'all'), ('differential_crossover', {'crossover_rate': 0.2, 'version': 'binomial'}, 'all')]
+[('differential_mutation', {'expression': 'rand-to-best-and-current', 'num_rands': 2, 'factor': 2.0}, 'all'), ('differential_crossover', {'crossover_rate': 0.2, 'version': 'binomial'}, 'all')]
+[('differential_mutation', {'expression': 'current-to-best', 'num_rands': 1, 'factor': 1.0}, 'all'), ('differential_crossover', {'crossover_rate': 0.2, 'version': 'binomial'}, 'all')]
+[('differential_mutation', {'expression': 'current-to-best', 'num_rands': 2, 'factor': 1.0}, 'all'), ('differential_crossover', {'crossover_rate': 0.2, 'version': 'binomial'}, 'all')]
+[('differential_mutation', {'expression': 'current-to-best', 'num_rands': 1, 'factor': 2.0}, 'all'), ('differential_crossover', {'crossover_rate': 0.2, 'version': 'binomial'}, 'all')]
+[('differential_mutation', {'expression': 'current-to-best', 'num_rands': 2, 'factor': 2.0}, 'all'), ('differential_crossover', {'crossover_rate': 0.2, 'version': 'binomial'}, 'all')]
 ('firefly_dynamic', {'distribution': 'uniform', 'alpha': 0.1, 'beta': 1.0, 'gamma': 100.0}, 'greedy')
 ('firefly_dynamic', {'distribution': 'uniform', 'alpha': 0.5, 'beta': 1.0, 'gamma': 100.0}, 'greedy')
 ('firefly_dynamic', {'distribution': 'uniform', 'alpha': 1.0, 'beta': 1.0, 'gamma': 100.0}, 'greedy')
