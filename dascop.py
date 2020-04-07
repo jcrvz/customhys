@@ -232,6 +232,6 @@ if __name__ == '__main__':
     weights_data = jt.read_json('collections/operators_weights.json')
 
     # Run it in parallel
-    pool = multiprocessing.Pool()
+    pool = multiprocessing.Pool(10)
     pool.map(test_set2p, problems_and_dimensions)
     # pool.map(test_set2p, dimensions)
