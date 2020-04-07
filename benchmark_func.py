@@ -2613,7 +2613,7 @@ class OddSquare(OptimalBasic):
 
 
 # List all available functions
-def list_functions(rnp=True, fts=None):
+def list_functions(rnp=True, fts=None, wrd="1"):
     """
 
     :param rnp: return but not print if True, otherwise, print but not return
@@ -2631,7 +2631,7 @@ def list_functions(rnp=True, fts=None):
         funct = eval("{}(2)".format(function_name))
 
         feature_str = funct.get_features(fts=fts)
-        weight = funct.get_features("string", "1", fts=fts)
+        weight = funct.get_features("string", wrd=wrd, fts=fts)
         functions_features[function_name] = dict(**funct.features, Code=weight)
 
         feature_strings.append([weight, ii + 1, funct.func_name, feature_str])
@@ -2641,7 +2641,7 @@ def list_functions(rnp=True, fts=None):
         print("Id. & Function Name & Continuous & Differentiable & Separable & Scalable & Unimodal & Convex \\\\")
 
         # Sort list according to the weight values
-        feature_strings = sorted(feature_strings, key=lambda x: x[0], reverse=True)
+        # feature_strings = sorted(feature_strings, key=lambda x: x[0], reverse=True)
 
         for x in feature_strings:
             print("{} & {} & {} \\\\".format(*x[1:]))

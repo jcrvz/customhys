@@ -11,7 +11,7 @@ import hyperheuristic as HH
 # import numpy as np
 import benchmark_func as bf
 import multiprocessing
-# import tools as jt
+import tools as jt
 
 
 # %% Test set used for A Primary Study on Hyper-Heuristics to Customise
@@ -117,9 +117,12 @@ def test_set1p(num_dimensions):
 
 
 # %% Parallel try of test_set2() After brute-force
-def test_set2p(num_dimensions):
+def test_set2p(problem_dimension):
+
+    function_string, num_dimensions = problem_dimension
+
     # Problems definition
-    functions = bf.__all__
+    # functions = bf.__all__
     weights_per_feature = weights_data[str(num_dimensions)]
     is_constrained = True
 
@@ -127,7 +130,7 @@ def test_set2p(num_dimensions):
     hh_parameters = {
         'cardinality': 5,
         'num_agents': 30,
-        'num_iterations': 100,
+        'num_iterations': 1000,
         'num_replicas': 50,
         'num_steps': 100,
         'max_temperature': 200,
@@ -138,31 +141,31 @@ def test_set2p(num_dimensions):
     # print('-' * 10)
     # Find a metaheuristic for each problem
     # for num_dimensions in dimensions:
-    if isinstance(functions, str):
-        functions = [functions]
+    # if isinstance(functions, str):
+    #     functions = [functions]
 
-    for func_id in range(len(functions)):
-        function_string = functions[func_id]
+    # for func_id in range(len(functions)):
+    #     function_string = functions[func_id]
 
-        # Message to print and to store in folders
-        label = "{}-{}D".format(function_string, num_dimensions)
+    # Message to print and to store in folders
+    label = "{}-{}D".format(function_string, num_dimensions)
 
-        # Format the problem
-        problem = eval("bf.{}({})".format(function_string, num_dimensions))
+    # Format the problem
+    problem = eval("bf.{}({})".format(function_string, num_dimensions))
 
-        # HH.set_problem(problem_function, boundaries, True)
-        problem_to_solve = HH.set_problem(lambda x: problem.get_function_value(x),
-                                          (problem.min_search_range, problem.max_search_range),
-                                          is_constrained)
+    # HH.set_problem(problem_function, boundaries, True)
+    problem_to_solve = HH.set_problem(lambda x: problem.get_function_value(x),
+                                      (problem.min_search_range, problem.max_search_range),
+                                      is_constrained)
 
-        # Call the hyperheuristic object
-        hh = HH.Hyperheuristic('default.txt', problem_to_solve, hh_parameters, label,
-                               weights_per_feature[problem.get_features(fmt='string', wrd='1')])
+    # Call the hyperheuristic object
+    hh = HH.Hyperheuristic('default.txt', problem_to_solve, hh_parameters, label,
+                           weights_per_feature[problem.get_features(fmt='string', wrd='1')])
 
-        # Run the HH:Random Search
-        hh.run()
+    # Run the HH:Random Search
+    hh.run()
 
-        print(label + " done!")
+    print(label + " done!")
 
 
 # %% Parallel of test_set1() : Brute-force
@@ -173,7 +176,7 @@ def test_set3p(num_dimensions):
 
     # Hyperheuristic conditions
     hh_parameters = {
-        'cardinality': 1, # Does not matter
+        'cardinality': 1,  # Does not matter
         'num_agents': 30,
         'num_iterations': 100,
         'num_replicas': 30,
@@ -213,18 +216,22 @@ def test_set3p(num_dimensions):
 
         # print(label + " done!")
 
+
 # %% Auto-run
 if __name__ == '__main__':
-    # Build the collection of operators
-    # Operators.build_operators(Operators.obtain_operators(num_vals=21), file_name="test-set-21")
-
-    # Load the weight data
-    weights_data = [] # jt.read_json('collections/operators_weights.json')
-
     # List of dimensionalities
     dimensions = [2, 5, *range(10, 50 + 1, 10)]
 
+    # Build the collection of operators
+    # Operators.build_operators(Operators.obtain_operators(num_vals=21), file_name="test-set-21")
+    functions = bf.__all__
+
+    problems_and_dimensions = [(x, y) for x in functions for y in dimensions]
+
+    # Load the weight data
+    weights_data = jt.read_json('collections/operators_weights.json')
+
     # Run it in parallel
     pool = multiprocessing.Pool()
-    pool.map(test_set3p, dimensions)
-    # test_set2p(dimensions)
+    pool.map(test_set2p, problems_and_dimensions)
+    # pool.map(test_set2p, dimensions)
