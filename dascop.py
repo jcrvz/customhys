@@ -159,8 +159,8 @@ def test_set2p(problem_dimension):
                                       is_constrained)
 
     # Call the hyperheuristic object
-    hh = HH.Hyperheuristic('test-set-21.txt', problem_to_solve, hh_parameters, label,
-                           weights_per_feature[problem.get_features(fmt='string', wrd='1')])
+    hh = HH.Hyperheuristic('test-set-21.txt', problem_to_solve, hh_parameters, label, None)
+                           # weights_per_feature[problem.get_features(fmt='string', wrd='1')])
 
     # Run the HH:Random Search
     hh.run()
