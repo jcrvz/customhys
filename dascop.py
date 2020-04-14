@@ -6,7 +6,7 @@ Created on Mon Sep 30 13:42:15 2019
 """
 
 import hyperheuristic as HH
-# from metaheuristic import Operators
+from metaheuristic import Operators
 # from metaheuristic import Population
 # import numpy as np
 import benchmark_func as bf
@@ -130,7 +130,7 @@ def test_set2p(problem_dimension):
     hh_parameters = {
         'cardinality': 5,
         'num_agents': 30,
-        'num_iterations': 1000,
+        'num_iterations': 100,
         'num_replicas': 50,
         'num_steps': 100,
         'max_temperature': 200,
@@ -159,7 +159,7 @@ def test_set2p(problem_dimension):
                                       is_constrained)
 
     # Call the hyperheuristic object
-    hh = HH.Hyperheuristic('default.txt', problem_to_solve, hh_parameters, label,
+    hh = HH.Hyperheuristic('test-set-21.txt', problem_to_solve, hh_parameters, label,
                            weights_per_feature[problem.get_features(fmt='string', wrd='1')])
 
     # Run the HH:Random Search
@@ -168,7 +168,7 @@ def test_set2p(problem_dimension):
     print(label + " done!")
 
 
-# %% Parallel of test_set1() : Brute-force
+# %% Parallel of test_set1() : Basic Heuristics
 def test_set3p(num_dimensions):
     # Problems definition
     functions = bf.__all__
@@ -223,7 +223,7 @@ if __name__ == '__main__':
     dimensions = [2, 5, *range(10, 50 + 1, 10)]
 
     # Build the collection of operators
-    # Operators.build_operators(Operators.obtain_operators(num_vals=21), file_name="test-set-21")
+    Operators.build_operators(Operators.obtain_operators(num_vals=21), file_name="test-set-21")
     functions = bf.__all__
 
     problems_and_dimensions = [(x, y) for x in functions for y in dimensions]

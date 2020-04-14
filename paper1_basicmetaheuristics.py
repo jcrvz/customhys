@@ -12,13 +12,15 @@ ii. A collection of heuristics called "default.txt" which was handmade because t
 # Load packages
 import os
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import numpy as np
 import tools as jt
-from scipy.stats import rankdata, mode
+from scipy.stats import rankdata
 import seaborn as sns
 import pandas as pd
 import benchmark_func as bf
-sns.set(font_scale=0.5)
+sns.set(context="paper", font_scale=0.5, palette="colorblind", style="ticks")
+
 
 # Read benchmark functions and their features
 # problems = bf.__all__
@@ -86,7 +88,7 @@ for dimension in dimensions:
         temporal_array.append(ranked_data)
 
         # Save only the best one
-        first_metaheuristics.append(np.argsort(ranked_data)[0])
+        first_metaheuristics.append(np.argmin(ranked_data))
         best_metaheuristics[data_frame['problem'][dim_index]].append(np.argsort(ranked_data)[0])
 
     # Create the data frames
@@ -115,10 +117,50 @@ for dimension in dimensions:
     plt.show()
 
     if is_saving:
-        fig.savefig(folder_name + 'raw-heatmap-basicmetaheuristic-{}D'.format(dimension) + '.pdf', format='pdf', dpi=fig.dpi)
+        fig.savefig(folder_name + 'raw-heatmap-basicmetaheuristic-{}D'.format(dimension) + '.pdf', format='pdf',
+                    dpi=fig.dpi)
+
+    # %% Print violin plots
+
+    # Printing section
+    fig, axes = plt.subplots(figsize=(0.08*66, 0.4*8), dpi=333)
+
+    violin_parts = plt.violinplot(np.array(temporal_array), stats_without_category.columns.to_list(),
+                                  showmeans=True, showmedians=True, showextrema=False)
+
+    violin_parts['cmeans'].set_edgecolor('#AC4C3D')  # Rojo
+    violin_parts['cmeans'].set_linewidth(1.5)
+
+    violin_parts['cmedians'].set_edgecolor('#285C6B')  # Azul
+    violin_parts['cmedians'].set_linewidth(1.5)
+
+    for vp in violin_parts['bodies']:
+        vp.set_edgecolor('#154824')
+        vp.set_facecolor('#4EB86E')
+        vp.set_linewidth(1.0)
+        vp.set_alpha(0.75)
+
+    axes.set_xticks(stats_without_category.columns.to_list())
+    plt.ylabel(r'Rank')
+    plt.xlabel(r'Metaheuristic')
+
+    plt.legend([Line2D([0], [0], color='#AC4C3D', lw=3),
+                Line2D([0], [0], color='#285C6B', lw=3)],
+               ['Mean', 'Median'], frameon=False)
+
+    # plt.title("Dim: {}".format(dimension))
+    plt.tight_layout()
+    fig.show()
+
+    # %%
+
+    if is_saving:
+        fig.savefig(folder_name + 'raw-violin-basicmetaheuristic-{}D'.format(dimension) + '.pdf',
+                    format='svg', dpi=fig.dpi)
+    # break
 
 # Save weight for the benchmark problems contained in brute-force-data.json and default.txt
-for key, val in best_metaheuristics.items():
-    best_metaheuristics[key] = np.array(val)
-jt.save_json(best_metaheuristics, 'data_files/best_basicmetaheuristics')
-jt.save_json(metaheuristics_modes, 'data_files/modes_metaheuristics')
+# for key, val in best_metaheuristics.items():
+#     best_metaheuristics[key] = np.array(val)
+# jt.save_json(best_metaheuristics, 'data_files/best_basicmetaheuristics')
+# jt.save_json(metaheuristics_modes, 'data_files/modes_metaheuristics')

@@ -12,13 +12,14 @@ ii. A collection of heuristics called "default.txt" which was handmade because t
 # Load packages
 import os
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import numpy as np
 import tools as jt
 from scipy.stats import rankdata
 import seaborn as sns
 import pandas as pd
 import benchmark_func as bf
-sns.set(font_scale=0.5)
+sns.set(context="paper", font_scale=0.5, palette="colorblind", style="ticks")
 
 # Read benchmark functions and their features
 problem_features = bf.list_functions()
@@ -124,6 +125,44 @@ for dimension in dimensions:
 
     if is_saving:
         fig.savefig(folder_name + 'cat-heatmap-bruteforce-{}D'.format(dimension) + '.pdf', format='pdf', dpi=fig.dpi)
+
+    # %% Print violin plots
+
+    # Printing section
+    fig, axes = plt.subplots(figsize=(0.08*205, 0.4*8), dpi=333)
+
+    violin_parts = plt.violinplot(np.array(temporal_array), stats_without_category.columns.to_list(),
+                                  showmeans=True, showmedians=True, showextrema=False)
+
+    violin_parts['cmeans'].set_edgecolor('#AC4C3D')  # Rojo
+    violin_parts['cmeans'].set_linewidth(1.5)
+
+    violin_parts['cmedians'].set_edgecolor('#285C6B')  # Azul
+    violin_parts['cmedians'].set_linewidth(1.5)
+
+    for vp in violin_parts['bodies']:
+        vp.set_edgecolor('#154824')
+        vp.set_facecolor('#4EB86E')
+        vp.set_linewidth(1.0)
+        vp.set_alpha(0.75)
+
+    axes.set_xticks(stats_without_category.columns.to_list())
+    plt.ylabel(r'Rank')
+    plt.xlabel(r'Simple Metaheuristic')
+
+    plt.legend([Line2D([0], [0], color='#AC4C3D', lw=3),
+                Line2D([0], [0], color='#285C6B', lw=3)],
+               ['Mean', 'Median'], frameon=False)
+
+    # plt.title("Dim: {}".format(dimension))
+    plt.tight_layout()
+    fig.show()
+
+    # %%
+
+    if is_saving:
+        fig.savefig(folder_name + 'raw-violin-bruteforce-{}D'.format(dimension) + '.svg',
+                    format='svg', dpi=fig.dpi)
 
 # Save weight for the benchmark problems contained in brute-force-data.json and default.txt
 jt.save_json(operators_weights, 'data_files/operators_weights')
