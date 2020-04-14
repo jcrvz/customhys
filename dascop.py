@@ -128,7 +128,7 @@ def test_set2p(problem_dimension):
 
     # Hyperheuristic conditions
     hh_parameters = {
-        'cardinality': 5,
+        'cardinality': 3,
         'num_agents': 30,
         'num_iterations': 100,
         'num_replicas': 50,
