@@ -174,7 +174,7 @@ dims = len(dimensions)
 cats = len([*grouped_stats.index.values])
 
 fig, axs = plt.subplots(dims, 1, figsize=(8, 5), dpi=125,
-                        facecolor='w', sharey='True', sharex='True')
+                        facecolor='w', sharey=True, sharex=True)
 
 cmap = plt.get_cmap('rainbow')
 colors = [cmap(i)[:-1] for i in np.linspace(0, 1, cats)]
