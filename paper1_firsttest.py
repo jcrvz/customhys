@@ -8,10 +8,11 @@ ii. A collection of heuristics called "default.txt" which was handmade because t
 @authors:   Jorge Mario Cruz-Duarte (jcrvz.github.io)
 '''
 
-
 # Load packages
 import os
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+import mpl_toolkits.mplot3d
 import numpy as np
 import tools as jt
 from scipy.stats import rankdata
@@ -19,142 +20,319 @@ from scipy.stats import rankdata
 import pandas as pd
 import benchmark_func as bf
 from scipy import stats
-# sns.set(font_scale=0.5)
+# sns.set(context="paper", font_scale=1, palette="colorblind", style="ticks")
 
 # Read benchmark functions and their features
 problem_features = bf.list_functions()
 problem_names = bf.for_all('func_name')
 
-# Read benchmark functions, their features and categorise them
-problem_features_without_code = bf.list_functions()
+# DEL: Read benchmark functions, their features and categorise them
+# problem_features_without_code = bf.list_functions()
 
-# Read heuristic space
+# %%
+
+# Read search operators
 with open('collections/' + 'default.txt', 'r') as operators_file:
     heuristic_space = [eval(line.rstrip('\n')) for line in operators_file]
-search_operators = [x[0].replace('_', ' ') + "-" + "-".join(["{}".format(y) for y in [
-    *x[1].values()]]).replace('_', ' ') + "-" + x[2] for x in heuristic_space]
 
-# Read the data files
-data_frame = jt.read_json('data_files/first_test_v1.json')  # up to 3 with 100 iterations
-# data_frame = jt.read_json('data_files/first_test_v2.json')  # up to 5 with 100 iterations
+# Process search operators as strings
+search_operators = [x[0].replace('_', ' ') + ", PAR: (" +
+                    ", ".join(["{}".format(y) for y in [*x[1].values()]]).replace('_', ' ') +
+                    "), SEL: " + x[2] for x in heuristic_space]
 
-# Load results from basic metaheuristics
-data_basics = jt.read_json('data_files/basic-metaheuristics-data.json')
-basic_metaheuristics = data_basics['results'][0]['operator_id']
+# Read basic metaheuristics
+with open('collections/' + 'basicmetaheuristics.txt', 'r') as operators_file:
+    basic_mhs_collection = [eval(line.rstrip('\n')) for line in operators_file]
+
+
+def read_cardinality(x):
+    if isinstance(x, tuple):
+        return 1
+    if isinstance(x, list):
+        return len(x)
+
+
+# Read basic metaheuristics cardinality
+basic_mhs_cadinality = [read_cardinality(x) for x in basic_mhs_collection]
+
+# %%
+
+# Read data from new (tailored) metaheuristics
+new_mhs_data = jt.read_json('data_files/first_test_v1.json'); card_upto = 3  # up to 3 with 100 iterations
+# new_mhs_data = jt.read_json('data_files/first_test_v2.json'); card_upto = 5  # up to 5 with 100 iterations
+
+# %%
+
+# Load data from basic metaheuristics
+basic_mhs_data = jt.read_json('data_files/basic-metaheuristics-data.json')
+basic_metaheuristics = basic_mhs_data['results'][0]['operator_id']
+
+# %%
 
 # Show the variable tree
-# printmsk(data_frame)
+# printmsk(new_mhs_data)
 
-# Prepare additional lists (like problems, weights, operators, and dimensions)
-problems = [data_frame['problem'][index] for index in sorted(np.unique(data_frame['problem'], return_index=True)[1])]
+# Read the dimensions executed
+dimensions = sorted(list(set(new_mhs_data['dimensions'])))
 
-dimensions = sorted(list(set(data_frame['dimensions'])))
+# Data Frames per dimensions
+data_per_dimension = list()
 
 # Saving images flag
-is_saving = False
+is_saving = True
 
+# Check if the image folder exists
 folder_name = 'data_files/images/'
 if is_saving:
-    # Read (of create if so) a folder for storing images
     if not os.path.isdir(folder_name):
         os.mkdir(folder_name)
 
+# %%
 
-# %% PLOT LAST-PERFORMANCE (FOUND METAHEURISTIC) PER DIMENSION
+# Special adjustments for the plots, i.e., TeX fonts and so on
+plt.rc('text', usetex=True)
+plt.rc('font', family='serif', size=12)
+success_per_category = dict(mean=list(), std=list(), median=list(), q1=list(), q3=list())
 
-# Special adjustments for the plots
-# plt.rc('text', usetex=True)
-# plt.rc('font', family='serif', size=4)
-
-# Plot a figure per dimension
+# %% For each dimension do ...
 for dimension in dimensions:
+
+    # %% dimension = 2
+
     # Find indices corresponding to such a dimension
-    dim_indices = jt.listfind(data_frame['dimensions'], dimension)
+    dim_indices = jt.listfind(new_mhs_data['dimensions'], dimension)
 
     # Get fitness statistical values and stored them in 'arrays'
     steps = list()
     performances = list()
-    mh_performances = list()
+    best_mh_performance = list()
     solutions = list()
-    mh_ids = list()
+    best_mh_index = list()
     fitness_values = list()
-    problem = list()
+    problem_string = list()
     problem_categories = list()
     statistics = list()
     pvalues = list()
     new_vs_basic = list()
+    success_rate = list()
 
-    # Selecting data
-    for dim_index in dim_indices:  # Problems
-        # Read the problems that correspond to this dimension
-        current_problem = problem_names[data_frame['problem'][dim_index]]
-        # current_optimum = problem_optima[current_problem][0]
+    # %%
 
-        # Read the steps, performances, and solutions for each problem
-        steps.append(data_frame['results'][dim_index]['step'])
-        # current_performance = data_frame['results'][dim_index]['performance']
-        current_performance = [x['Med'] + x['IQR'] + x['Avg'] for x in data_frame['results'][dim_index]['statistics']]
+    # For each problem
+    for problem_index in dim_indices:
+
+        # %% problem_index = 0
+
+        # Read the problem name that correspond to this dimension
+        current_problem = problem_names[new_mhs_data['problem'][problem_index]]
+
+        # Store problem name
+        problem_string.append(current_problem)
+
+        # Store problem category
+        problem_categories.append(problem_features[new_mhs_data['problem'][problem_index]]['Code'])
+
+        # Store the number of last step
+        steps.append(new_mhs_data['results'][problem_index]['step'][-1])
+
+        # Read the current performance
+        current_performance = np.copy(new_mhs_data['results'][problem_index]['performance'][-1])
+
+        # Store this performance
         performances.append(current_performance)
-        solutions.append(data_frame['results'][dim_index]['encoded_solution'])
 
-        # Read the last historical fitness evolution (it is for illustrative purposes)
-        last_historical_fitness = [x[-1] for x in data_frame['results'][dim_index]['hist_fitness']]
+        # Store the corresponding solution
+        solutions.append(new_mhs_data['results'][problem_index]['encoded_solution'][-1])
+
+        # Read the last historical fitness values (for illustrative purposes)
+        last_historical_fitness = [x[-1] for x in new_mhs_data['results'][problem_index]['hist_fitness']]
+
+        # Store the last historical fitness
         fitness_values.append(last_historical_fitness)
-        statistics.append(data_frame['results'][dim_index]['statistics'])
 
-        # Normality test of the obtained results
+        # Store the statistics
+        statistics.append(new_mhs_data['results'][problem_index]['statistics'][-1])
+
+        # Perform normality test from historical fitness data
         _, pvalue = stats.normaltest(last_historical_fitness)
+
+        # Store the p-value
         pvalues.append(pvalue)
 
-        # Read the performance reached by all the best basic metaheuristic for this problem/dim
-        # performance_basics = data_basics['results'][dim_index]['performance']
-        temporal_dict = data_basics['results'][dim_index]['statistics']
-        performance_basics = [temporal_dict[op_index]['Med'] + temporal_dict[op_index]['IQR'] +
-                              temporal_dict[op_index]['Avg']
-                              for op_index in range(len(basic_metaheuristics))]
-        min_mh_performance = np.min(performance_basics)
-        mh_performances.append(min_mh_performance)
-        mh_ids.append(np.argmin(performance_basics))
-        new_vs_basic.append(current_performance[-1] - min_mh_performance)
+        # Read the performance of basic metaheuristics
+        basic_performances = np.copy(basic_mhs_data['results'][problem_index]['performance'])
 
-        problem.append(current_problem)
-        problem_categories.append(problem_features[data_frame['problem'][dim_index]]['Code'])
+        # %% Compare tailored metaheuristic with basic metaheuristics
+
+        # Compare the current metaheuristic against the basic metaheuristics
+        performance_comparison = np.copy(current_performance - np.array(basic_performances))
+
+        # Success rate with respect to basic metaheuristics
+        success_rate.append(np.sum(performance_comparison < 0.0) / len(performance_comparison))
+
+        # Find the best basic metaheuristic and its performance
+        min_mh_performance = np.min(basic_performances)
+        best_mh_performance.append(min_mh_performance)
+        best_mh_index.append(np.argmin(basic_performances))
+
+        # Store the comparison between the current metaheuristic with the best basic metaheuristic
+        new_vs_basic.append(current_performance - min_mh_performance)
+
+    # %% Store all the previous information in a DataFrame
 
     # Generate a dataframe to plot the results
-    data_per_dimension = pd.DataFrame({
-        'Problem': problem,
+    current_data_per_dimension = pd.DataFrame({
+        'Problem': problem_string,
         'Category': problem_categories,
         'p-Value': pvalues,
-        'Performance': [x[-1] for x in performances],
-        'Median-Fitness': [x[-1]['Med'] for x in statistics],
-        'IQR-Fitness': [x[-1]['IQR'] for x in statistics],
-        'Avg-Fitness': [x[-1]['Avg'] for x in statistics],
-        'Std-Fitness': [x[-1]['Std'] for x in statistics],
-        'Metaheuristic': [x[-1] for x in solutions],
-        'BasicMH_Performance': mh_performances,
-        'BasicMH_Ids': mh_ids,
-        'perfNew-Basic': new_vs_basic
+        'Performance': performances,
+        'Median-Fitness': [x['Med'] for x in statistics],
+        'IQR-Fitness': [x['IQR'] for x in statistics],
+        'Avg-Fitness': [x['Avg'] for x in statistics],
+        'Std-Fitness': [x['Std'] for x in statistics],
+        'Metaheuristic': solutions,
+        'BasicMH Performance': best_mh_performance,
+        'BasicMH Ids': best_mh_index,
+        'perfNew-Basic': new_vs_basic,
+        'success-Rate': success_rate
     }).sort_values(by=['Category', 'Problem'])
-
-    # -- PART 1: PLOT THE CORRESPONDING VIOLIN PLOTS --
-    # Delete the Group column
-    # stats_without_category = stats.sort_values(by=['Group']).drop(columns=['Group'])
+    data_per_dimension.append(current_data_per_dimension)
 
     # data_per_dimension.to_csv('data_files/first_pd{}D.csv'.format(dimension), index=False)
     # with open('data_files/first_pd{}D.tex'.format(dimension), 'w') as tf:
     #     tf.write(data_per_dimension.to_latex(index=False, header=[
     #         'Problem', 'Category', 'p-value', 'Performance', 'Median', 'IQR', 'Avg.',
-    #         'St. Dev.', 'MH indices', 'Basic MH', 'Basic MH Ind', 'Perf. MH-Basic'
+    #         'St. Dev.', 'MH indices', 'Basic MH', 'Basic MH Ind', 'Perf. MH-Basic', 'Success-Rate'
     #     ]))
 
-    y_data = np.array(new_vs_basic) < 0.0
-    x_data = np.arange(len(y_data))
-    plt.plot(x_data, y_data, '-o')
-    plt.title("Dim: {}, {}/{} = {:.2f}%".format(dimension, np.sum(y_data), len(y_data),
-                                                100 * np.sum(y_data)/len(y_data)))
-    plt.show()
+    # %% Obtain the success rate per category
+    # success_per_category.append([*data_per_dimension.groupby("Category")["perfNew-Basic"].agg(
+    #     lambda x: np.sum(np.array(x) < 0.0) / len(x)).values])
+    success_per_category['mean'].append(
+        [*current_data_per_dimension.groupby("Category")["success-Rate"].agg('mean').values])
+    success_per_category['std'].append(
+        [*current_data_per_dimension.groupby("Category")["success-Rate"].agg(np.std).values])
+    success_per_category['median'].append(
+        [*current_data_per_dimension.groupby("Category")["success-Rate"].agg('median').values])
+    success_per_category['q1'].append(
+        [*current_data_per_dimension.groupby("Category")["success-Rate"].agg(lambda x: np.quantile(x, 0.25)).values])
+    success_per_category['q3'].append(
+        [*current_data_per_dimension.groupby("Category")["success-Rate"].agg(lambda x: np.quantile(x, 0.75)).values])
 
-    # if is_saving:
-    #     fig.savefig(folder_name + 'raw-heatmap-firsttest-{}D'.format(dimension) + '.pdf', format='pdf', dpi=fig.dpi)
+    # %% FIRST PLOT: Success rate per problem
+
+fig = plt.figure(figsize=(4, 3), dpi=125, facecolor='w')
+ax = fig.gca(projection='3d', proj_type='ortho', azim=135, elev=35)
+plt.ion()
+
+x1 = np.arange(len(success_rate))
+
+for dim_ind in range(len(dimensions)):
+    y1 = dim_ind * np.ones(len(success_rate))
+    z1 = data_per_dimension[dim_ind]['success-Rate']
+
+    ax.plot3D(x1, y1, z1)
+
+plt.ioff()
+plt.yticks(np.arange(len(y1)), dimensions)
+plt.ylim(0, len(dimensions))
+plt.xlim(0, x1[-1] + 2 )
+ax.set_ylabel(r'Dimension')
+ax.set_xlabel(r'Problem Id.')
+ax.set_zlabel(r'Success Rate')
+plt.tight_layout()
+
+if is_saving:
+    plt.savefig(folder_name + 'vpSuccessRatePerDimFunc_cardUpTo{}.pdf'.format(card_upto), format='pdf', dpi=333)
+
+plt.show()
+
+# %% SUCCESS RATE FOR ALL DIMENSIONS PER CATEGORY AND CATEGORY
+categories = [*data_per_dimension[0].groupby("Category")["success-Rate"].agg('mean').index.values]
+
+fig = plt.figure(figsize=(4, 3), dpi=125, facecolor='w')
+plt.ion()
+
+y0 = np.array(success_per_category['mean'])
+y1 = y0 - np.array(success_per_category['std'])
+y2 = y1 + np.array(success_per_category['std'])
+
+cmap = plt.get_cmap('tab10')
+colors = [cmap(i)[:-1] for i in np.linspace(0, 1, len(categories))]
 
 
+for k, color in enumerate(colors, start=0):
+    plt.fill_between(np.arange(len(dimensions)), y1[:, k], y2[:, k], color=color, alpha=0.1)
+    plt.plot(np.arange(len(dimensions)), y0[:, k], color=color)
+
+# plt.plot(dimensions, np.array(success_per_category['mean']), '--')
+# plt.xticks(range(len(dimensions)), dimensions)
+plt.ioff()
+plt.legend(categories, frameon=False, loc='lower right', ncol=2)
+plt.xlabel(r'Dimensions')
+plt.ylabel(r'Success Rate')
+plt.ylim((0.5, 1))
+plt.xticks(np.arange(len(dimensions)), dimensions)
+plt.tight_layout()
+
+if is_saving:
+    plt.savefig(folder_name + 'vpSuccessRatePerDimCat_cardUpTo{}.pdf'.format(card_upto), format='pdf', dpi=333)
+
+plt.show()
+
+# %% SUCCESS RATE FOR ALL DIMENSIONS TOTAL
+
+fig = plt.figure(figsize=(4, 3), dpi=125, facecolor='w')
+y_data = np.array([x['success-Rate'].values for x in data_per_dimension])
+x_data = np.arange(len(dimensions))
+
+violin_parts = plt.violinplot(y_data.T, x_data,
+        showmeans=True, showmedians=True, showextrema=False)
+plt.xticks(x_data, labels=dimensions)
+
+violin_parts['cmeans'].set_edgecolor('#AC4C3D')  # Rojo
+violin_parts['cmeans'].set_linewidth(1.5)
+
+violin_parts['cmedians'].set_edgecolor('#285C6B')  # Azul
+violin_parts['cmedians'].set_linewidth(1.5)
+
+for vp in violin_parts['bodies']:
+    vp.set_edgecolor('#523069')  # Moradito oscuro
+    vp.set_facecolor('#A149C1')  # Moradito suave
+    vp.set_linewidth(1.0)
+    vp.set_alpha(0.5)
+
+plt.ylabel(r'Success Rate')
+plt.xlabel(r'Dimensions')
+plt.ioff()
+plt.legend([Line2D([0], [0], color='#AC4C3D', lw=3),
+            Line2D([0], [0], color='#285C6B', lw=3)],
+           ['Mean', 'Median'], frameon=False, loc='lower right')
+plt.ylim(-0.01, 1.01)
+plt.tight_layout()
+
+if is_saving:
+    plt.savefig(folder_name + 'vpSuccessRatePerDim_cardUpTo{}.pdf'.format(card_upto), format='pdf', dpi=333)
+
+plt.show()
+
+# %% CARDINALITY FOR ALL DIMENSIONS TOTAL
+
+fig = plt.figure(figsize=(4, 3), dpi=125, facecolor='w')
+y_data = np.array([[len(y) for y in x['Metaheuristic'].values] for x in data_per_dimension])
+x_data = np.arange(np.max(y_data)) + 1
+
+plt.hist(y_data.T, [*(x_data - .5), x_data[-1] + .5], density=True, histtype='bar')
+plt.xticks(x_data)
+
+plt.ylabel(r'Normalised Frequency')
+plt.xlabel(r'Cardinality')
+plt.ioff()
+plt.legend(dimensions, frameon=False, loc='upper left')
+plt.ylim(0, 0.8)
+plt.tight_layout()
+
+if is_saving:
+    plt.savefig(folder_name + 'vpCardinalityPerDim_cardUpTo{}.pdf'.format(card_upto), format='pdf', dpi=333)
+
+plt.show()

@@ -19,7 +19,7 @@ from scipy.stats import rankdata
 import seaborn as sns
 import pandas as pd
 import benchmark_func as bf
-sns.set(context="paper", font_scale=0.5, palette="colorblind", style="ticks")
+sns.set(context="paper", font_scale=1, palette="colorblind", style="ticks")
 
 # Read benchmark functions and their features
 problem_features = bf.list_functions()
@@ -54,7 +54,7 @@ dimensions = sorted(list(set(data_frame['dimensions'])))
 operators_weights = dict()
 
 # Saving images flag
-is_saving = True
+is_saving = False
 
 folder_name = 'data_files/images/'
 if is_saving:
@@ -166,3 +166,46 @@ for dimension in dimensions:
 
 # Save weight for the benchmark problems contained in brute-force-data.json and default.txt
 jt.save_json(operators_weights, 'data_files/operators_weights')
+
+# %% SUCCESS RATE FOR ALL DIMENSIONS PER CATEGORY AND CATEGORY
+categories_set = [*grouped_stats.index.values]
+
+dims = len(dimensions)
+cats = len([*grouped_stats.index.values])
+
+fig, axs = plt.subplots(dims, 1, figsize=(8, 5), dpi=125,
+                        facecolor='w', sharey='True', sharex='True')
+
+cmap = plt.get_cmap('rainbow')
+colors = [cmap(i)[:-1] for i in np.linspace(0, 1, cats)]
+
+max_weight = np.max([[y for y in x.values()] for x in operators_weights.values()])
+
+# for k, color in enumerate(colors, start=0):
+#     key = operators_weights.keys()[k]
+#     plt.plot(np.arange(len(operators)), operators_weights[key], color=color, label=key)
+
+for dim_ind in range(dims):
+    dim_data = operators_weights[dimensions[dim_ind]]
+
+    y_data = np.array([x for x in dim_data.values()])
+
+    plt.ion()
+    for k, color in enumerate(colors, start=0):
+        axs[dim_ind].bar(operators, y_data[k,:],
+                         color=color, alpha=1.0,
+                         bottom=np.sum(y_data[k+1:-1, :], 0))
+
+    plt.ioff()
+    axs[dim_ind].set_ylabel(r'{}D'.format(dimensions[dim_ind]))
+    axs[dim_ind].set_xlim(operators[0], operators[-1])
+    # axs[dim_ind].set_ylim(0, np.round(max_weight, 3))
+
+plt.xlabel(r'Search Operator')
+axs[0].legend(categories_set, loc='upper center', ncol=cats, frameon=False)
+plt.tight_layout()
+
+if is_saving:
+    plt.savefig(folder_name + 'operatorsWeights.eps', format='eps', dpi=333)
+
+plt.show()
