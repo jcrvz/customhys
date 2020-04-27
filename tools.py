@@ -191,7 +191,8 @@ def preprocess_bruteforce_files(main_folder='data_files/raw/'):
     # Return only the data variable
     return data
 
-def preprocess_first_files(main_folder='data_files/raw/'):
+
+def preprocess_first_files(main_folder='data_files/raw/', output_name='first_test'):
     # Get folders and exclude hidden ones
     raw_folders = [element for element in os.listdir(main_folder) if not element.startswith('.')]
 
@@ -253,7 +254,7 @@ def preprocess_first_files(main_folder='data_files/raw/'):
         data['results'].append(file_data)
 
     # Save pre-processed data
-    with open(main_folder.split('/')[0] + "/first_test.json", 'w') as json_file:
+    with open(main_folder.split('/')[0] + "/" + output_name + ".json", 'w') as json_file:
         json.dump(data, json_file, cls=NumpyEncoder)
 
     # Return only the data variable

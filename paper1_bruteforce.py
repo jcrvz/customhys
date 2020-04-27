@@ -54,7 +54,7 @@ dimensions = sorted(list(set(data_frame['dimensions'])))
 operators_weights = dict()
 
 # Saving images flag
-is_saving = False
+is_saving = True
 
 folder_name = 'data_files/images/'
 if is_saving:
@@ -92,71 +92,80 @@ for dimension in dimensions:
     stats = pd.DataFrame(temporal_array, index=problems, columns=operators)
     stats['Group'] = pd.Series(problems_categories, index=stats.index)
 
-    # -- PART 1: PLOT THE CORRESPONDING HEATMAP --
+    # %% -- PART 1: PLOT THE CORRESPONDING HEATMAP --
     # Delete the Group column
     stats_without_category = stats.sort_values(by=['Group']).drop(columns=['Group'])
 
     # Printing section
-    fig = plt.figure(figsize=(15, 10), dpi=333)
+    # fig = plt.figure(figsize=(8, 5), dpi=125, facecolor='w')
+    #
+    # ax = sns.heatmap(stats_without_category, cbar=False, cmap='rainbow', robust=True,
+    #                  xticklabels=True, yticklabels=True)  # , vmin=1, vmax=5)
+    #
+    # plt.title("Dim: {}".format(dimension))
+    # plt.show()
+    #
+    # if is_saving:
+    #     fig.savefig(folder_name + 'raw-heatmap-bruteforce-{}D'.format(dimension) + '.pdf', format='pdf', dpi=fig.dpi)
 
-    ax = sns.heatmap(stats_without_category, cbar=False, cmap='rainbow', robust=True,
-                     xticklabels=True, yticklabels=True)  # , vmin=1, vmax=5)
-
-    plt.title("Dim: {}".format(dimension))
-    plt.show()
-
-    if is_saving:
-        fig.savefig(folder_name + 'raw-heatmap-bruteforce-{}D'.format(dimension) + '.pdf', format='pdf', dpi=fig.dpi)
-
-    # -- PART 2: OBTAIN NAIVE INSIGHTS
+    # %% -- PART 2: OBTAIN NAIVE INSIGHTS
     grouped_stats = stats.groupby('Group').mean()
     prop_stats = grouped_stats.div(grouped_stats.sum(axis=1), axis=0)
 
     # Store weights in the final dictionary
     operators_weights[dimension] = jt.df2dict(prop_stats)
 
-    fig = plt.figure(figsize=(0.08*205, 0.4*8), dpi=333)
-    ax = sns.heatmap(prop_stats, cbar=False, cmap='rainbow', robust=True, xticklabels=True, yticklabels=True)
-    plt.title("Dim: {}".format(dimension))
-    plt.yticks(rotation=0)
+    fig = plt.figure(figsize=(5, 2), dpi=125, facecolor='w')
+
+    if dimension == 2:
+        ax = sns.heatmap(prop_stats, cbar=True, cmap='rainbow', robust=True, yticklabels=True,
+                         cbar_kws=dict(use_gridspec=False, location="top"))
+    else:
+        ax = sns.heatmap(prop_stats, cbar=False , cmap='rainbow', robust=True, yticklabels=True)
+
+    # plt.title("Dim: {}".format(dimension))
+    # plt.yticks(rotation=0)
     bottom, top = ax.get_ylim()
     ax.set_ylim(bottom + 0.5, top - 0.5)
+    ax.set_xlim(operators[0]-1, operators[-1]+1)
+    ax.set_ylabel(r'Category')
+    ax.set_xlabel(r'Search Operator')
     plt.show()
 
     if is_saving:
-        fig.savefig(folder_name + 'cat-heatmap-bruteforce-{}D'.format(dimension) + '.pdf', format='pdf', dpi=fig.dpi)
+        fig.savefig(folder_name + 'cat-heatmap-bruteforce-{}D'.format(dimension) + '.eps', format='eps', dpi=fig.dpi)
 
     # %% Print violin plots
-
-    # Printing section
-    fig, axes = plt.subplots(figsize=(0.08*205, 0.4*8), dpi=333)
-
-    violin_parts = plt.violinplot(np.array(temporal_array), stats_without_category.columns.to_list(),
-                                  showmeans=True, showmedians=True, showextrema=False)
-
-    violin_parts['cmeans'].set_edgecolor('#AC4C3D')  # Rojo
-    violin_parts['cmeans'].set_linewidth(1.5)
-
-    violin_parts['cmedians'].set_edgecolor('#285C6B')  # Azul
-    violin_parts['cmedians'].set_linewidth(1.5)
-
-    for vp in violin_parts['bodies']:
-        vp.set_edgecolor('#154824')
-        vp.set_facecolor('#4EB86E')
-        vp.set_linewidth(1.0)
-        vp.set_alpha(0.75)
-
-    axes.set_xticks(stats_without_category.columns.to_list())
-    plt.ylabel(r'Rank')
-    plt.xlabel(r'Simple Metaheuristic')
-
-    plt.legend([Line2D([0], [0], color='#AC4C3D', lw=3),
-                Line2D([0], [0], color='#285C6B', lw=3)],
-               ['Mean', 'Median'], frameon=False)
-
-    # plt.title("Dim: {}".format(dimension))
-    plt.tight_layout()
-    fig.show()
+    #
+    # # Printing section
+    # fig, axes = plt.subplots(figsize=(0.08*205, 0.4*8), dpi=333)
+    #
+    # violin_parts = plt.violinplot(np.array(temporal_array), stats_without_category.columns.to_list(),
+    #                               showmeans=True, showmedians=True, showextrema=False)
+    #
+    # violin_parts['cmeans'].set_edgecolor('#AC4C3D')  # Rojo
+    # violin_parts['cmeans'].set_linewidth(1.5)
+    #
+    # violin_parts['cmedians'].set_edgecolor('#285C6B')  # Azul
+    # violin_parts['cmedians'].set_linewidth(1.5)
+    #
+    # for vp in violin_parts['bodies']:
+    #     vp.set_edgecolor('#154824')
+    #     vp.set_facecolor('#4EB86E')
+    #     vp.set_linewidth(1.0)
+    #     vp.set_alpha(0.75)
+    #
+    # axes.set_xticks(stats_without_category.columns.to_list())
+    # plt.ylabel(r'Rank')
+    # plt.xlabel(r'Simple Metaheuristic')
+    #
+    # plt.legend([Line2D([0], [0], color='#AC4C3D', lw=3),
+    #             Line2D([0], [0], color='#285C6B', lw=3)],
+    #            ['Mean', 'Median'], frameon=False)
+    #
+    # # plt.title("Dim: {}".format(dimension))
+    # plt.tight_layout()
+    # fig.show()
 
     # %%
 
