@@ -29,10 +29,43 @@ problem_names = bf.for_all('func_name')
 # DEL: Read benchmark functions, their features and categorise them
 # problem_features_without_code = bf.list_functions()
 
+# %% CASES
+
+# Set the test case
+test_case = 3
+
+# Saving images flag
+is_saving = True
+
+# Choose the corresponding case
+if test_case == 1:
+    # Problem collection
+    operators_collection = 'default'
+
+    # Read data from new (tailored) metaheuristics
+    new_mhs_data = jt.read_json('data_files/first_test_v1.json');
+    card_upto = 3  # up to 3 with 100 iterations
+
+elif test_case == 2:
+    # Problem collection
+    operators_collection = 'default'
+
+    # Read data from new (tailored) metaheuristics
+    new_mhs_data = jt.read_json('data_files/first_test_v2.json');
+    card_upto = 5  # up to 5 with 100 iterations
+
+elif test_case == 3:
+    # Problem collection
+    operators_collection = 'test-set-21'
+
+    # Read data from new (tailored) metaheuristics
+    new_mhs_data = jt.read_json('data_files/first_test_v3.json');
+    card_upto = 3  # up to 3 with 100 iterations
+
 # %%
 
 # Read search operators
-with open('collections/' + 'default.txt', 'r') as operators_file:
+with open('collections/' + operators_collection + '.txt', 'r') as operators_file:
     heuristic_space = [eval(line.rstrip('\n')) for line in operators_file]
 
 # Process search operators as strings
@@ -57,12 +90,6 @@ basic_mhs_cadinality = [read_cardinality(x) for x in basic_mhs_collection]
 
 # %%
 
-# Read data from new (tailored) metaheuristics
-new_mhs_data = jt.read_json('data_files/first_test_v1.json'); card_upto = 3  # up to 3 with 100 iterations
-# new_mhs_data = jt.read_json('data_files/first_test_v2.json'); card_upto = 5  # up to 5 with 100 iterations
-
-# %%
-
 # Load data from basic metaheuristics
 basic_mhs_data = jt.read_json('data_files/basic-metaheuristics-data.json')
 basic_metaheuristics = basic_mhs_data['results'][0]['operator_id']
@@ -77,9 +104,6 @@ dimensions = sorted(list(set(new_mhs_data['dimensions'])))
 
 # Data Frames per dimensions
 data_per_dimension = list()
-
-# Saving images flag
-is_saving = True
 
 # Check if the image folder exists
 folder_name = 'data_files/images/'
@@ -271,7 +295,7 @@ plt.ioff()
 plt.legend(categories, frameon=False, loc='lower right', ncol=2)
 plt.xlabel(r'Dimensions')
 plt.ylabel(r'Success Rate')
-plt.ylim((0.5, 1))
+plt.ylim((0.0, 1))
 plt.xticks(np.arange(len(dimensions)), dimensions)
 plt.tight_layout()
 
@@ -334,5 +358,27 @@ plt.tight_layout()
 
 if is_saving:
     plt.savefig(folder_name + 'vpCardinalityPerDim_cardUpTo{}.pdf'.format(card_upto), format='pdf', dpi=333)
+
+plt.show()
+
+# %% CARDINALITY FOR ALL DIMENSIONS TOTAL (other view)
+
+fig = plt.figure(figsize=(4, 3), dpi=125, facecolor='w')
+y_data = np.array([[len(y) for y in x['Metaheuristic'].values] for x in data_per_dimension])
+x_data = np.arange(np.max(y_data)) + 1
+
+for k in range(len(dimensions)):
+    hist_data = np.histogram(y_data[k,:], [*(x_data - .5), x_data[-1] + .5], density=True)[0]
+plt.xticks(x_data)
+
+plt.ylabel(r'Normalised Frequency')
+plt.xlabel(r'Cardinality')
+plt.ioff()
+plt.legend(dimensions, frameon=False, loc='upper left')
+plt.ylim(0, 0.8)
+plt.tight_layout()
+
+# if is_saving:
+#     plt.savefig(folder_name + 'vpDimPerCard_cardUpTo{}.pdf'.format(card_upto), format='pdf', dpi=333)
 
 plt.show()
