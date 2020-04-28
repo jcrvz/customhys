@@ -46,6 +46,9 @@ if test_case == 1:
     new_mhs_data = jt.read_json('data_files/first_test_v1.json');
     card_upto = 3  # up to 3 with 100 iterations
 
+    # Saving label
+    saving_label = 'short1'
+
 elif test_case == 2:
     # Problem collection
     operators_collection = 'default'
@@ -54,6 +57,9 @@ elif test_case == 2:
     new_mhs_data = jt.read_json('data_files/first_test_v2.json');
     card_upto = 5  # up to 5 with 100 iterations
 
+    # Saving label
+    saving_label = 'short2'
+
 elif test_case == 3:
     # Problem collection
     operators_collection = 'test-set-21'
@@ -61,6 +67,9 @@ elif test_case == 3:
     # Read data from new (tailored) metaheuristics
     new_mhs_data = jt.read_json('data_files/first_test_v3.json');
     card_upto = 3  # up to 3 with 100 iterations
+
+    # Saving label
+    saving_label = 'long1'
 
 # %%
 
@@ -267,7 +276,7 @@ ax.set_zlabel(r'Success Rate')
 plt.tight_layout()
 
 if is_saving:
-    plt.savefig(folder_name + 'vpSuccessRatePerDimFunc_cardUpTo{}.pdf'.format(card_upto), format='pdf', dpi=333)
+    plt.savefig(folder_name + 'vpSuccessRatePerDimFunc_cardUpTo-{}.pdf'.format(saving_label), format='pdf', dpi=333)
 
 plt.show()
 
@@ -300,7 +309,7 @@ plt.xticks(np.arange(len(dimensions)), dimensions)
 plt.tight_layout()
 
 if is_saving:
-    plt.savefig(folder_name + 'vpSuccessRatePerDimCat_cardUpTo{}.pdf'.format(card_upto), format='pdf', dpi=333)
+    plt.savefig(folder_name + 'vpSuccessRatePerDimCat_cardUpTo-{}.pdf'.format(saving_label), format='pdf', dpi=333)
 
 plt.show()
 
@@ -336,7 +345,7 @@ plt.ylim(-0.01, 1.01)
 plt.tight_layout()
 
 if is_saving:
-    plt.savefig(folder_name + 'vpSuccessRatePerDim_cardUpTo{}.pdf'.format(card_upto), format='pdf', dpi=333)
+    plt.savefig(folder_name + 'vpSuccessRatePerDim_cardUpTo-{}.pdf'.format(saving_label), format='pdf', dpi=333)
 
 plt.show()
 
@@ -357,7 +366,7 @@ plt.ylim(0, 0.8)
 plt.tight_layout()
 
 if is_saving:
-    plt.savefig(folder_name + 'vpCardinalityPerDim_cardUpTo{}.pdf'.format(card_upto), format='pdf', dpi=333)
+    plt.savefig(folder_name + 'vpCardinalityPerDim_cardUpTo-{}.pdf'.format(saving_label), format='pdf', dpi=333)
 
 plt.show()
 
@@ -365,20 +374,40 @@ plt.show()
 
 fig = plt.figure(figsize=(4, 3), dpi=125, facecolor='w')
 y_data = np.array([[len(y) for y in x['Metaheuristic'].values] for x in data_per_dimension])
-x_data = np.arange(np.max(y_data)) + 1
+x_data = np.arange(len(dimensions))
+
+plt.ion()
+
+colours = plt.cm.Set2(np.linspace(0, 1, 9))
+
+#  ---
+# N = 20
+# theta = np.linspace(0.0, 2 * np.pi, N, endpoint=False)
+# radii = 10 * np.random.rand(N)
+# width = np.pi / 4 * np.random.rand(N)
+# colors = plt.cm.viridis(radii / 10.)
+#
+# ax = plt.subplot(111, projection='polar')
+# ax.bar(theta, radii, width=width, bottom=0.0, color=colors, alpha=0.5)
+#  --
 
 for k in range(len(dimensions)):
-    hist_data = np.histogram(y_data[k,:], [*(x_data - .5), x_data[-1] + .5], density=True)[0]
+    hist_data = np.histogram(y_data[k,:], [0.5, 1.5, 2.5, 3.5], density=True)[0]
+    for i in range(3):
+        plt.bar(k + (i - 1)/4, hist_data[i], color=colours[i, :], width=0.25, align='center')  # bottom=np.sum(hist_data[:i]),
+
 plt.xticks(x_data)
 
 plt.ylabel(r'Normalised Frequency')
-plt.xlabel(r'Cardinality')
+plt.xlabel(r'Dimensions')
+plt.xticks(x_data, dimensions)
 plt.ioff()
-plt.legend(dimensions, frameon=False, loc='upper left')
-plt.ylim(0, 0.8)
+plt.legend([r'Card. {}'.format(x) for x in [1, 2, 3]], frameon=False, loc='upper left', ncol=1)
+plt.ylim(0, 1.0)
 plt.tight_layout()
+plt.ioff()
 
-# if is_saving:
-#     plt.savefig(folder_name + 'vpDimPerCard_cardUpTo{}.pdf'.format(card_upto), format='pdf', dpi=333)
+if is_saving:
+    plt.savefig(folder_name + 'vpDimPerCard_cardUpTo-{}.pdf'.format(saving_label), format='pdf', dpi=333)
 
 plt.show()
