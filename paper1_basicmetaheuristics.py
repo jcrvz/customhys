@@ -19,7 +19,7 @@ from scipy.stats import rankdata
 import seaborn as sns
 import pandas as pd
 import benchmark_func as bf
-sns.set(context="paper", font_scale=0.5, palette="colorblind", style="ticks")
+sns.set(context="paper", font_scale=1, palette="colorblind", style="ticks")
 
 
 # Read benchmark functions and their features
@@ -103,7 +103,7 @@ for dimension in dimensions:
 
     metaheuristics_modes[dimension] = jt.df2dict(grouped_stats)
 
-    # -- PART 1: PLOT THE CORRESPONDING HEATMAP --
+    # %% -- PART 1: PLOT THE CORRESPONDING HEATMAP --
     # Delete the Group column
     # stats_without_category = stats.sort_values(by=['Group']).drop(columns=['Group'])
 
@@ -117,8 +117,29 @@ for dimension in dimensions:
     plt.show()
 
     if is_saving:
-        fig.savefig(folder_name + 'raw-heatmap-basicmetaheuristic-{}D'.format(dimension) + '.pdf', format='pdf',
+        fig.savefig(folder_name + 'cat-heatmap-basicmetaheuristic-{}D'.format(dimension) + '.pdf', format='pdf',
                     dpi=fig.dpi)
+
+    # %% -- PART 2: OBTAIN NAIVE INSIGHTS
+    grouped_stats = stats.groupby('Group').mean()
+    prop_stats = grouped_stats.div(grouped_stats.sum(axis=1), axis=0)
+
+    fig = plt.figure(figsize=(5, 2), dpi=125, facecolor='w')
+
+    if dimension == 2:
+        ax = sns.heatmap(prop_stats, cbar=True, cmap='rainbow', robust=True, yticklabels=True,
+                         cbar_kws=dict(use_gridspec=False, location="top"))
+    else:
+        ax = sns.heatmap(prop_stats, cbar=False, cmap='rainbow', robust=True, yticklabels=True)
+
+    # plt.title("Dim: {}".format(dimension))
+    # plt.yticks(rotation=0)
+    bottom, top = ax.get_ylim()
+    ax.set_ylim(bottom + 0.5, top - 0.5)
+    ax.set_xlim(operators[0] - 1, operators[-1] + 1)
+    ax.set_ylabel(r'Category')
+    ax.set_xlabel(r'Basic Metaheuristic')
+    plt.show()
 
     # %% Print violin plots
 
