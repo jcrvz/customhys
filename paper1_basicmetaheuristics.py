@@ -117,7 +117,7 @@ for dimension in dimensions:
     plt.show()
 
     if is_saving:
-        fig.savefig(folder_name + 'cat-heatmap-basicmetaheuristic-{}D'.format(dimension) + '.pdf', format='pdf',
+        fig.savefig(folder_name + 'raw-heatmap-basicmetaheuristic-{}D'.format(dimension) + '.pdf', format='pdf',
                     dpi=fig.dpi)
 
     # %% -- PART 2: OBTAIN NAIVE INSIGHTS
@@ -139,6 +139,12 @@ for dimension in dimensions:
     ax.set_xlim(operators[0] - 1, operators[-1] + 1)
     ax.set_ylabel(r'Category')
     ax.set_xlabel(r'Basic Metaheuristic')
+    plt.tight_layout()
+
+    if is_saving:
+        fig.savefig(folder_name + 'cat-heatmap-basicmetaheuristic-{}D'.format(dimension) + '.eps', format='eps',
+                    dpi=fig.dpi)
+
     plt.show()
 
     # %% Print violin plots
