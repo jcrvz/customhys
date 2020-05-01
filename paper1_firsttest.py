@@ -125,6 +125,7 @@ if is_saving:
 # Special adjustments for the plots, i.e., TeX fonts and so on
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif', size=12)
+plt.rc('axes', facecolor='white')
 success_per_category = dict(mean=list(), std=list(), median=list(), q1=list(), q3=list())
 
 # %% For each dimension do ...
@@ -255,10 +256,10 @@ for dimension in dimensions:
     # %% FIRST PLOT: Success rate per problem
 
 fig = plt.figure(figsize=(4, 3), dpi=125, facecolor='w')
-ax = fig.gca(projection='3d', proj_type='ortho', azim=135, elev=35)
+ax = fig.gca(projection='3d', proj_type='ortho', azim=140, elev=40)
 plt.ion()
 
-x1 = np.arange(len(success_rate))
+x1 = np.arange(len(success_rate)) + 1
 
 for dim_ind in range(len(dimensions)):
     y1 = dim_ind * np.ones(len(success_rate))
@@ -267,23 +268,26 @@ for dim_ind in range(len(dimensions)):
     ax.plot3D(x1, y1, z1)
 
 plt.ioff()
+
 plt.yticks(np.arange(len(y1)), dimensions)
-plt.ylim(0, len(dimensions))
-plt.xlim(0, x1[-1] + 2 )
+plt.ylim(0, len(dimensions)-1)
+plt.xlim(1, x1[-1] + 1 )
+ax.set_xticks(np.round(np.linspace(1, 107, 7)))
 ax.set_ylabel(r'Dimension')
 ax.set_xlabel(r'Problem Id.')
 ax.set_zlabel(r'Success Rate')
 plt.tight_layout()
 
 if is_saving:
-    plt.savefig(folder_name + 'vpSuccessRatePerDimFunc_cardUpTo-{}.pdf'.format(saving_label), format='pdf', dpi=333)
+    plt.savefig(folder_name + 'Exp-SuccessRatePerDimFunc_{}.svg'.format(saving_label), format='svg',
+                facecolor=fig.get_facecolor(), dpi=333)
 
 plt.show()
 
-# %% SUCCESS RATE FOR ALL DIMENSIONS PER CATEGORY AND CATEGORY
+# %% SUCCESS RATE FOR ALL DIMENSIONS PER CATEGORY
 categories = [*data_per_dimension[0].groupby("Category")["success-Rate"].agg('mean').index.values]
 
-fig = plt.figure(figsize=(4, 3), dpi=125, facecolor='w')
+fig = plt.figure(figsize=(5, 3), dpi=125, facecolor='w')
 plt.ion()
 
 y0 = np.array(success_per_category['mean'])
@@ -305,80 +309,87 @@ plt.legend(categories, frameon=False, loc='lower right', ncol=2)
 plt.xlabel(r'Dimensions')
 plt.ylabel(r'Success Rate')
 plt.ylim((0.0, 1))
+plt.xlim(0, len(dimensions)-1)
 plt.xticks(np.arange(len(dimensions)), dimensions)
 plt.tight_layout()
 
 if is_saving:
-    plt.savefig(folder_name + 'vpSuccessRatePerDimCat_cardUpTo-{}.pdf'.format(saving_label), format='pdf', dpi=333)
+    plt.savefig(folder_name + 'Exp-SuccessRatePerDimCat_{}.pdf'.format(saving_label), format='pdf', dpi=333)
 
 plt.show()
 
 # %% SUCCESS RATE FOR ALL DIMENSIONS TOTAL
 
-fig = plt.figure(figsize=(4, 3), dpi=125, facecolor='w')
-y_data = np.array([x['success-Rate'].values for x in data_per_dimension])
-x_data = np.arange(len(dimensions))
-
-violin_parts = plt.violinplot(y_data.T, x_data,
-        showmeans=True, showmedians=True, showextrema=False)
-plt.xticks(x_data, labels=dimensions)
-
-violin_parts['cmeans'].set_edgecolor('#AC4C3D')  # Rojo
-violin_parts['cmeans'].set_linewidth(1.5)
-
-violin_parts['cmedians'].set_edgecolor('#285C6B')  # Azul
-violin_parts['cmedians'].set_linewidth(1.5)
-
-for vp in violin_parts['bodies']:
-    vp.set_edgecolor('#523069')  # Moradito oscuro
-    vp.set_facecolor('#A149C1')  # Moradito suave
-    vp.set_linewidth(1.0)
-    vp.set_alpha(0.5)
-
-plt.ylabel(r'Success Rate')
-plt.xlabel(r'Dimensions')
-plt.ioff()
-plt.legend([Line2D([0], [0], color='#AC4C3D', lw=3),
-            Line2D([0], [0], color='#285C6B', lw=3)],
-           ['Mean', 'Median'], frameon=False, loc='lower right')
-plt.ylim(-0.01, 1.01)
-plt.tight_layout()
-
-if is_saving:
-    plt.savefig(folder_name + 'vpSuccessRatePerDim_cardUpTo-{}.pdf'.format(saving_label), format='pdf', dpi=333)
-
-plt.show()
+# fig = plt.figure(figsize=(4, 3), dpi=125, facecolor='w')
+# y_data = np.array([x['success-Rate'].values for x in data_per_dimension])
+# x_data = np.arange(len(dimensions))
+#
+# violin_parts = plt.violinplot(y_data.T, x_data,
+#         showmeans=True, showmedians=True, showextrema=False)
+# plt.xticks(x_data, labels=dimensions)
+#
+# violin_parts['cmeans'].set_edgecolor('#AC4C3D')  # Rojo
+# violin_parts['cmeans'].set_linewidth(1.5)
+#
+# violin_parts['cmedians'].set_edgecolor('#285C6B')  # Azul
+# violin_parts['cmedians'].set_linewidth(1.5)
+#
+# for vp in violin_parts['bodies']:
+#     vp.set_edgecolor('#523069')  # Moradito oscuro
+#     vp.set_facecolor('#A149C1')  # Moradito suave
+#     vp.set_linewidth(1.0)
+#     vp.set_alpha(0.5)
+#
+# plt.ylabel(r'Success Rate')
+# plt.xlabel(r'Dimensions')
+# plt.ioff()
+# plt.legend([Line2D([0], [0], color='#AC4C3D', lw=3),
+#             Line2D([0], [0], color='#285C6B', lw=3)],
+#            ['Mean', 'Median'], frameon=False, loc='lower right')
+# plt.ylim(-0.01, 1.01)
+# plt.xlim(x_data[0], x_data[-1])
+# plt.tight_layout()
+#
+# if is_saving:
+#     plt.savefig(folder_name + 'Exp-SuccessRatePerDim_{}.pdf'.format(saving_label), format='pdf', dpi=333)
+#
+# plt.show()
 
 # %% CARDINALITY FOR ALL DIMENSIONS TOTAL
 
-fig = plt.figure(figsize=(4, 3), dpi=125, facecolor='w')
-y_data = np.array([[len(y) for y in x['Metaheuristic'].values] for x in data_per_dimension])
-x_data = np.arange(np.max(y_data)) + 1
+# fig = plt.figure(figsize=(6, 3), dpi=125, facecolor='w')
+# y_data = np.array([[len(y) for y in x['Metaheuristic'].values] for x in data_per_dimension])
 
-plt.hist(y_data.T, [*(x_data - .5), x_data[-1] + .5], density=True, histtype='bar')
-plt.xticks(x_data)
-
-plt.ylabel(r'Normalised Frequency')
-plt.xlabel(r'Cardinality')
-plt.ioff()
-plt.legend(dimensions, frameon=False, loc='upper left')
-plt.ylim(0, 0.8)
-plt.tight_layout()
-
-if is_saving:
-    plt.savefig(folder_name + 'vpCardinalityPerDim_cardUpTo-{}.pdf'.format(saving_label), format='pdf', dpi=333)
-
-plt.show()
+#
+# plt.hist(y_data.T, [*(card_bin_centres - .5), card_bin_centres[-1] + .5], density=True, histtype='bar')
+# plt.xticks(card_bin_centres)
+#
+# plt.ylabel(r'Normalised Frequency')
+# plt.xlabel(r'Cardinality')
+# plt.ioff()
+# plt.legend(dimensions, frameon=False, loc='upper left')
+# plt.ylim(0, 0.8)
+# plt.tight_layout()
+#
+# if is_saving:
+#     plt.savefig(folder_name + 'Exp-CardinalityPerDim_{}.pdf'.format(saving_label), format='pdf', dpi=333)
+#
+# plt.show()
 
 # %% CARDINALITY FOR ALL DIMENSIONS TOTAL (other view)
 
-fig = plt.figure(figsize=(4, 3), dpi=125, facecolor='w')
+fig = plt.figure(figsize=(6, 3), dpi=125, facecolor='w')
 y_data = np.array([[len(y) for y in x['Metaheuristic'].values] for x in data_per_dimension])
+card_bin_centres = np.arange(np.max(y_data)) + 1
 x_data = np.arange(len(dimensions))
 
 plt.ion()
 
-colours = plt.cm.Set2(np.linspace(0, 1, 9))
+num_cards = len(card_bin_centres)
+bin_width = 1/(num_cards + 1)
+sub_bins = np.linspace(-0.5+bin_width, 0.5-bin_width, num_cards)
+
+colours = plt.cm.tab10(np.linspace(0, 1, 10))
 
 #  ---
 # N = 20
@@ -392,9 +403,10 @@ colours = plt.cm.Set2(np.linspace(0, 1, 9))
 #  --
 
 for k in range(len(dimensions)):
-    hist_data = np.histogram(y_data[k,:], [0.5, 1.5, 2.5, 3.5], density=True)[0]
-    for i in range(3):
-        plt.bar(k + (i - 1)/4, hist_data[i], color=colours[i, :], width=0.25, align='center')  # bottom=np.sum(hist_data[:i]),
+    hist_data = np.histogram(y_data[k,:], [*(card_bin_centres - .5), card_bin_centres[-1] + .5], density=True)[0]
+    for i in range(num_cards):
+        plt.bar(k + sub_bins[i], hist_data[i], color=colours[i, :], width=bin_width, align='center')
+        # bottom=np.sum(hist_data[:i]),
 
 plt.xticks(x_data)
 
@@ -402,12 +414,12 @@ plt.ylabel(r'Normalised Frequency')
 plt.xlabel(r'Dimensions')
 plt.xticks(x_data, dimensions)
 plt.ioff()
-plt.legend([r'Card. {}'.format(x) for x in [1, 2, 3]], frameon=False, loc='upper left', ncol=1)
-plt.ylim(0, 1.0)
+plt.legend([r'{}'.format(x) for x in card_bin_centres], frameon=False, loc='upper left', ncol=int(np.ceil(num_cards/3)))
+# plt.ylim(0, 1.0)
 plt.tight_layout()
 plt.ioff()
 
 if is_saving:
-    plt.savefig(folder_name + 'vpDimPerCard_cardUpTo-{}.pdf'.format(saving_label), format='pdf', dpi=333)
+    plt.savefig(folder_name + 'Exp-DimPerCard_{}.pdf'.format(saving_label), format='pdf', dpi=333)
 
 plt.show()
