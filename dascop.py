@@ -169,9 +169,9 @@ def test_set2p(problem_dimension):
 
 
 # %% Parallel of test_set1() : Basic Heuristics
-def test_set3p(num_dimensions):
-    # Problems definition
-    functions = bf.__all__
+def test_set3p(problem_dimension):
+
+    function_string, num_dimensions = problem_dimension
     is_constrained = True
 
     # Hyperheuristic conditions
@@ -186,33 +186,33 @@ def test_set3p(num_dimensions):
         'cooling_rate': 0.05,  # Not used
     }
 
-    if isinstance(functions, str):
-        functions = [functions]
-    for func_id in range(len(functions)):
-        function_string = functions[func_id]
+    # if isinstance(functions, str):
+    #     functions = [functions]
+    # for func_id in range(len(functions)):
+    #     function_string = functions[func_id]
 
-        # print('Func: {}/{}...'.format(func_id + 1, len(functions)))
+    # print('Func: {}/{}...'.format(func_id + 1, len(functions)))
 
-        # Message to print and to store in folders
-        label = "{}-{}D".format(function_string, num_dimensions)
-        # print('... ' + label + ':')
+    # Message to print and to store in folders
+    label = "{}-{}D".format(function_string, num_dimensions)
+    # print('... ' + label + ':')
 
-        # Format the problem
-        problem = eval("bf.{}({})".format(function_string, num_dimensions))
+    # Format the problem
+    problem = eval("bf.{}({})".format(function_string, num_dimensions))
 
-        # HH.set_problem(problem_function, boundaries, True)
-        problem_to_solve = HH.set_problem(
-            lambda x: problem.get_function_value(x),
-            (problem.min_search_range,
-             problem.max_search_range),
-            is_constrained
-        )
+    # HH.set_problem(problem_function, boundaries, True)
+    problem_to_solve = HH.set_problem(
+        lambda x: problem.get_function_value(x),
+        (problem.min_search_range,
+         problem.max_search_range),
+        is_constrained
+    )
 
-        # Call the hyperheuristic object
-        hh = HH.Hyperheuristic('basicmetaheuristics.txt', problem_to_solve, hh_parameters, label)
+    # Call the hyperheuristic object
+    hh = HH.Hyperheuristic('basicmetaheuristics.txt', problem_to_solve, hh_parameters, label)
 
-        # Run the HH:Random Search
-        hh.basic_metaheuristics(label)
+    # Run the HH:Random Search
+    hh.basic_metaheuristics(label)
 
         # print(label + " done!")
 
