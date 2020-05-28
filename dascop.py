@@ -223,15 +223,15 @@ if __name__ == '__main__':
     dimensions = [2, 5, *range(10, 50 + 1, 10)]
 
     # Build the collection of operators
-    Operators.build_operators(Operators.obtain_operators(num_vals=21), file_name="test-set-21")
+    # Operators.build_operators(Operators.obtain_operators(num_vals=21), file_name="test-set-21")
     functions = bf.__all__
 
     problems_and_dimensions = [(x, y) for x in functions for y in dimensions]
 
     # Load the weight data
-    weights_data = jt.read_json('collections/operators_weights.json')
+    # weights_data = jt.read_json('collections/operators_weights.json')
 
     # Run it in parallel
     pool = multiprocessing.Pool(10)
-    pool.map(test_set2p, problems_and_dimensions)
+    pool.map(test_set3p, problems_and_dimensions)
     # pool.map(test_set2p, dimensions)
