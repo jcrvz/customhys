@@ -32,10 +32,10 @@ problem_names = bf.for_all('func_name')
 # %% CASES
 
 # Set the test case
-test_case = 3
+test_case = 2
 
 # Saving images flag
-is_saving = True
+is_saving = False
 
 # Choose the corresponding case
 if test_case == 1:
@@ -202,7 +202,7 @@ for dimension in dimensions:
         performance_comparison = np.copy(current_performance - np.array(basic_performances))
 
         # Success rate with respect to basic metaheuristics
-        success_rate.append(np.sum(performance_comparison < 0.0) / len(performance_comparison))
+        success_rate.append(np.sum(performance_comparison <= 0.0) / len(performance_comparison))
 
         # Find the best basic metaheuristic and its performance
         min_mh_performance = np.min(basic_performances)
@@ -263,7 +263,9 @@ x1 = np.arange(len(success_rate)) + 1
 
 for dim_ind in range(len(dimensions)):
     y1 = dim_ind * np.ones(len(success_rate))
-    z1 = data_per_dimension[dim_ind]['success-Rate']
+    dummy_df = data_per_dimension[dim_ind].sort_index()
+
+    z1 = dummy_df['success-Rate']
 
     ax.plot3D(x1, y1, z1)
 
@@ -272,6 +274,7 @@ plt.ioff()
 plt.yticks(np.arange(len(y1)), dimensions)
 plt.ylim(0, len(dimensions)-1)
 plt.xlim(1, x1[-1] + 1 )
+ax.set_zlim(-0.01, 1.01)
 ax.set_xticks(np.round(np.linspace(1, 107, 7)))
 ax.set_ylabel(r'Dimension')
 ax.set_xlabel(r'Problem Id.')
@@ -308,7 +311,8 @@ plt.ioff()
 plt.legend(categories, frameon=False, loc='lower right', ncol=2)
 plt.xlabel(r'Dimensions')
 plt.ylabel(r'Success Rate')
-plt.ylim((0.0, 1))
+plt.ylim((-0.1, 1.1))
+# plt.yscale('log')
 plt.xlim(0, len(dimensions)-1)
 plt.xticks(np.arange(len(dimensions)), dimensions)
 plt.tight_layout()
@@ -318,42 +322,65 @@ if is_saving:
 
 plt.show()
 
-# %% SUCCESS RATE FOR ALL DIMENSIONS TOTAL
+# %% P-Value FOR ALL DIMENSIONS TOTAL
 
-# fig = plt.figure(figsize=(4, 3), dpi=125, facecolor='w')
-# y_data = np.array([x['success-Rate'].values for x in data_per_dimension])
-# x_data = np.arange(len(dimensions))
-#
-# violin_parts = plt.violinplot(y_data.T, x_data,
-#         showmeans=True, showmedians=True, showextrema=False)
-# plt.xticks(x_data, labels=dimensions)
-#
-# violin_parts['cmeans'].set_edgecolor('#AC4C3D')  # Rojo
-# violin_parts['cmeans'].set_linewidth(1.5)
-#
-# violin_parts['cmedians'].set_edgecolor('#285C6B')  # Azul
-# violin_parts['cmedians'].set_linewidth(1.5)
-#
-# for vp in violin_parts['bodies']:
-#     vp.set_edgecolor('#523069')  # Moradito oscuro
-#     vp.set_facecolor('#A149C1')  # Moradito suave
-#     vp.set_linewidth(1.0)
-#     vp.set_alpha(0.5)
-#
-# plt.ylabel(r'Success Rate')
-# plt.xlabel(r'Dimensions')
-# plt.ioff()
-# plt.legend([Line2D([0], [0], color='#AC4C3D', lw=3),
-#             Line2D([0], [0], color='#285C6B', lw=3)],
-#            ['Mean', 'Median'], frameon=False, loc='lower right')
-# plt.ylim(-0.01, 1.01)
-# plt.xlim(x_data[0], x_data[-1])
-# plt.tight_layout()
-#
-# if is_saving:
-#     plt.savefig(folder_name + 'Exp-SuccessRatePerDim_{}.pdf'.format(saving_label), format='pdf', dpi=333)
-#
-# plt.show()
+# fig = plt.figure(f)
+
+fig, axs = plt.subplots(len(dimensions), sharex=True, sharey=True, figsize=(4.5, 7), dpi=125, facecolor='w')
+
+cmap = plt.get_cmap('tab10')
+colors = [cmap(i)[:-1] for i in np.linspace(0, 1, len(dimensions))]
+
+categories_r = categories[::-1]
+frames = [pd.DataFrame(x.groupby('Category')["p-Value"].agg('mean')) for x in data_per_dimension]
+result = pd.concat(frames, axis=1)
+result.columns = ['{}D'.format(dim) for dim in dimensions]
+print(result.iloc[::-1].to_latex(index=True, float_format="%.3g"))
+
+avg_p_value = [np.nan_to_num(x["p-Value"].values) for x in data_per_dimension]
+pVal_stats = stats.describe(avg_p_value, axis=1)
+print(pd.DataFrame({"mean": pVal_stats.mean, "std": np.sqrt(pVal_stats.variance)},
+                   index=dimensions).to_latex())
+
+for id_dim in range(len(dimensions)):
+    pValues_per_dim = data_per_dimension[id_dim].groupby('Category')["p-Value"].apply(list)
+
+    y_data = [np.nan_to_num(list(x)) for x in pValues_per_dim.values][::-1]
+    x_data = np.arange(len(categories_r))
+
+    violin_parts = axs[id_dim].violinplot(y_data, x_data,
+            showmeans=True, showmedians=True, showextrema=False)
+
+    axs[id_dim].set_ylim(0, 0.5)
+    axs[id_dim].set_title(r'{}D'.format(dimensions[id_dim]), fontsize=12)
+
+    violin_parts['cmeans'].set_edgecolor('#AC4C3D')  # Rojo
+    violin_parts['cmeans'].set_linewidth(1.5)
+
+    violin_parts['cmedians'].set_edgecolor('#285C6B')  # Azul
+    violin_parts['cmedians'].set_linewidth(1.5)
+
+    for vp in violin_parts['bodies']:
+        vp.set_facecolor(colors[id_dim])
+        vp.set_linewidth(1.0)
+        vp.set_alpha(0.5)
+
+
+axs[3].set_ylabel(r'$p$-Value')
+plt.xlabel(r'Categories')
+plt.ioff()
+# plt.yscale('log')
+axs[0].legend([Line2D([0], [0], color='#AC4C3D', lw=3),
+            Line2D([0], [0], color='#285C6B', lw=3)],
+           ['Mean', 'Median'], frameon=False, loc='center right', fontsize=12)
+plt.xlim(-0.5, x_data[-1]+0.5)
+plt.xticks(x_data, labels=categories_r)
+plt.tight_layout()
+
+if is_saving:
+    plt.savefig(folder_name + 'Exp-PValue_{}.pdf'.format(saving_label), format='pdf', dpi=333)
+
+plt.show()
 
 # %% CARDINALITY FOR ALL DIMENSIONS TOTAL
 
@@ -423,3 +450,36 @@ if is_saving:
     plt.savefig(folder_name + 'Exp-DimPerCard_{}.pdf'.format(saving_label), format='pdf', dpi=333)
 
 plt.show()
+
+#  %%
+#
+# # %% Print violin plots
+#
+# # Printing section
+# fig, axes = plt.subplots(figsize=(0.08*205, 0.4*8), dpi=333)
+#
+# violin_parts = plt.violinplot(np.array(temporal_array), stats_without_category.columns.to_list(),
+#                               showmeans=True, showmedians=True, showextrema=False)
+#
+# violin_parts['cmeans'].set_edgecolor('#AC4C3D')  # Rojo
+# violin_parts['cmeans'].set_linewidth(1.5)
+#
+# violin_parts['cmedians'].set_edgecolor('#285C6B')  # Azul
+# violin_parts['cmedians'].set_linewidth(1.5)
+#
+# for vp in violin_parts['bodies']:
+#     vp.set_edgecolor('#154824')
+#     vp.set_facecolor('#4EB86E')
+#     vp.set_linewidth(1.0)
+#     vp.set_alpha(0.75)
+#
+# axes.set_xticks(stats_without_category.columns.to_list())
+# plt.ylabel(r'Rank')
+# plt.xlabel(r'Simple Metaheuristic')
+#
+# plt.legend([Line2D([0], [0], color='#AC4C3D', lw=3),
+#             Line2D([0], [0], color='#285C6B', lw=3)],
+#            ['Mean', 'Median'], frameon=False)
+#
+# # plt.title("Dim: {}".format(dimension))
+# plt.tight_layout()
