@@ -131,3 +131,5 @@ data_files/raw
 .DS_Store
 *.zip
 /defaultset_forLaTeX
+/test.xlsx
+/chunk_2d.csv

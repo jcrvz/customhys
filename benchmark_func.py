@@ -196,7 +196,8 @@ class OptimalBasic:
             os.mkdir(self.save_dir)
         if self.plot_object is None:
             self.plot(samples, resolution)
-        self.plot_object.savefig(self.save_dir + self.func_name + '.png')
+        plt.tight_layout()
+        self.plot_object.savefig(self.save_dir + self.func_name + '.svg')
         plt.show()
 
 
@@ -806,7 +807,7 @@ class Mishra1(OptimalBasic):
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
-        g_funct = self.variable_num - np.sum(variables[:self.variable_num - 1])
+        g_funct = self.variable_num - np.sum(variables[:-1])
         return np.power(1. + g_funct, g_funct)
 
 
@@ -823,12 +824,12 @@ class Mishra2(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Unimodal': False,
+                         'Unimodal': True,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
         g_funct = self.variable_num - 0.5 * np.sum(
-            variables[:self.variable_num - 1] + variables[1:self.variable_num])
+            variables[:-1] + variables[1:])
         return np.power(1 + g_funct, g_funct)
 
 
@@ -864,7 +865,7 @@ class Mishra11(OptimalBasic):
         self.global_optimum_solution = 0.
         self.func_name = 'Mishra 11'
         self.features = {'Continuous': True,
-                         'Differentiable': True,
+                         'Differentiable': False,
                          'Separable': False,
                          'Scalable': False,
                          'Unimodal': False,
@@ -1022,7 +1023,7 @@ class Quartic(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': True,
-                         'Unimodal': False,
+                         'Unimodal': True,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -1310,8 +1311,8 @@ class Schwefel222(OptimalBasic):
         self.global_optimum_solution = 0.
         self.func_name = 'Schwefel 2.22'
         self.features = {'Continuous': True,
-                         'Differentiable': True,
-                         'Separable': True,
+                         'Differentiable': False,
+                         'Separable': False,
                          'Scalable': True,
                          'Unimodal': True,
                          'Convex': True}
@@ -1353,7 +1354,7 @@ class Schwefel225(OptimalBasic):
                          'Differentiable': True,
                          'Separable': True,
                          'Scalable': False,
-                         'Unimodal': True,
+                         'Unimodal': False,
                          'Convex': True}
 
     def get_func_val(self, variables, *args):
@@ -1486,7 +1487,7 @@ class SchafferN1(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Unimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -1509,7 +1510,7 @@ class SchafferN2(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Unimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -1531,7 +1532,7 @@ class SchafferN3(OptimalBasic):
                          'Differentiable': False,
                          'Separable': False,
                          'Scalable': True,
-                         'Unimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -1554,7 +1555,7 @@ class SchafferN4(OptimalBasic):
                          'Differentiable': False,
                          'Separable': False,
                          'Scalable': True,
-                         'Unimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -1677,7 +1678,7 @@ class StrechedVSineWave(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': True,
-                         'Unimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -1721,7 +1722,7 @@ class Trid(OptimalBasic):
                          'Differentiable': True,
                          'Separable': False,
                          'Scalable': False,
-                         'Unimodal': False,
+                         'Unimodal': True,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -2185,7 +2186,7 @@ class ZeroSum(OptimalBasic):
                          'Differentiable': False,
                          'Separable': False,
                          'Scalable': True,
-                         'Unimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -2206,7 +2207,7 @@ class Levy(OptimalBasic):
                          'Differentiable': False,
                          'Separable': False,
                          'Scalable': True,
-                         'Unimodal': True,
+                         'Unimodal': False,
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
@@ -2498,7 +2499,7 @@ class TypeI(OptimalBasic):
                          'Differentiable': False,
                          'Separable': False,
                          'Scalable': False,
-                         'Unimodal': False,
+                         'Unimodal': True,
                          'Convex': False}
 
     def get_func_val(self, variables, alpha=0.8, beta=1.0):

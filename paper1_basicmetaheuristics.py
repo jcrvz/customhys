@@ -33,7 +33,7 @@ categories = categorical_features.groupby('Code').first()
 categories['Members'] = categorical_features.groupby('Code').count().mean(axis=1)
 
 # Read the data files
-data_frame = jt.read_json('data_files/basic-metaheuristics-data.json')
+data_frame = jt.read_json('data_files/basic-metaheuristics-data_v2.json')
 
 # Show the variable tree
 # printmsk(data_frame)

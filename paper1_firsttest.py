@@ -16,11 +16,12 @@ import mpl_toolkits.mplot3d
 import numpy as np
 import tools as jt
 from scipy.stats import rankdata
-# import seaborn as sns
+import seaborn as sns
 import pandas as pd
 import benchmark_func as bf
 from scipy import stats
-# sns.set(context="paper", font_scale=1, palette="colorblind", style="ticks")
+sns.set(context="paper", font_scale=1, palette="colorblind", style="ticks",
+        rc={'text.usetex':True, 'font.family':'serif', 'font.size':12})
 
 # Read benchmark functions and their features
 problem_features = bf.list_functions()
@@ -32,7 +33,7 @@ problem_names = bf.for_all('func_name')
 # %% CASES
 
 # Set the test case
-test_case = 2
+test_case = 1
 
 # Saving images flag
 is_saving = False
@@ -100,7 +101,7 @@ basic_mhs_cadinality = [read_cardinality(x) for x in basic_mhs_collection]
 # %%
 
 # Load data from basic metaheuristics
-basic_mhs_data = jt.read_json('data_files/basic-metaheuristics-data.json')
+basic_mhs_data = jt.read_json('data_files/basic-metaheuristics-data_v2.json')
 basic_metaheuristics = basic_mhs_data['results'][0]['operator_id']
 
 # %%
@@ -230,14 +231,7 @@ for dimension in dimensions:
         'perfNew-Basic': new_vs_basic,
         'success-Rate': success_rate
     }).sort_values(by=['Category', 'Problem'])
-    data_per_dimension.append(current_data_per_dimension)
-
-    # data_per_dimension.to_csv('data_files/first_pd{}D.csv'.format(dimension), index=False)
-    # with open('data_files/first_pd{}D.tex'.format(dimension), 'w') as tf:
-    #     tf.write(data_per_dimension.to_latex(index=False, header=[
-    #         'Problem', 'Category', 'p-value', 'Performance', 'Median', 'IQR', 'Avg.',
-    #         'St. Dev.', 'MH indices', 'Basic MH', 'Basic MH Ind', 'Perf. MH-Basic', 'Success-Rate'
-    #     ]))
+    data_per_dimension.append(current_data_per_dimension)  # sort_index()
 
     # %% Obtain the success rate per category
     # success_per_category.append([*data_per_dimension.groupby("Category")["perfNew-Basic"].agg(
@@ -282,7 +276,7 @@ ax.set_zlabel(r'Success Rate')
 plt.tight_layout()
 
 if is_saving:
-    plt.savefig(folder_name + 'Exp-SuccessRatePerDimFunc_{}.svg'.format(saving_label), format='svg',
+    plt.savefig(folder_name + 'Exp-SuccessRatePerDimFunc_{}.eps'.format(saving_label), format='eps',
                 facecolor=fig.get_facecolor(), dpi=333)
 
 plt.show()
@@ -348,10 +342,11 @@ for id_dim in range(len(dimensions)):
     y_data = [np.nan_to_num(list(x)) for x in pValues_per_dim.values][::-1]
     x_data = np.arange(len(categories_r))
 
-    violin_parts = axs[id_dim].violinplot(y_data, x_data,
+    violin_parts = axs[id_dim].violinplot(np.array(y_data), x_data,
             showmeans=True, showmedians=True, showextrema=False)
 
-    axs[id_dim].set_ylim(0, 0.5)
+    # axs[id_dim].set_ylim(0, 0.05)
+    # axs[id_dim].set_yscale('log')
     axs[id_dim].set_title(r'{}D'.format(dimensions[id_dim]), fontsize=12)
 
     violin_parts['cmeans'].set_edgecolor('#AC4C3D')  # Rojo
@@ -483,3 +478,222 @@ plt.show()
 #
 # # plt.title("Dim: {}".format(dimension))
 # plt.tight_layout()
+
+# %%
+dfs = [x['Performance'].sort_index() for x in data_per_dimension]
+result_v2 = pd.concat(dfs, axis=1)
+result_v2.columns = ['{}D'.format(dim) for dim in dimensions]
+for col in result_v2.columns:
+    result_v2[col] = result_v2[col].map('{:.4g}'.format)
+# print(result_v2.to_latex(index=True, float_format="{:0.3f}".format ))
+# data_per_dimension.to_csv('data_files/first_pd{}D.csv'.format(dimension), index=False)
+with open('data_files/first_test{}.tex'.format(test_case), 'w') as tf:
+    tf.write(result_v2.to_latex())
+
+# %% Granular analysis
+
+# Selected problems
+selected_problems_names = ['Sphere', 'Rastrigin', 'Schwefel', 'Griewank', 'Step',
+                     'Stochastic', 'TypeI', 'SchafferN3']
+custom_ylims = {'Sphere':(-1, 100), 'Rastrigin':(-1, 110), 'Schwefel':(-0.1, 22), 'Griewank':(-0.01, 6),
+                'Step':(-1, 175), 'Stochastic':(-0.1, 9), 'SchafferN3':(-0.1, 20), 'NeedleEye':(-100, 4000)}
+cmap = plt.get_cmap('tab10')
+colors = [cmap(i)[:-1] for i in np.linspace(0, 1, len(dimensions))]
+boxprops = []
+whiskerprops = []
+medianprops = []
+meanprops = []
+capprops = []
+for col in colors:
+    boxprops.append(dict(linestyle='-', linewidth=1, edgecolor=col, facecolor=col))
+    whiskerprops.append(dict(linestyle='-', linewidth=1, color=col))
+    medianprops.append(dict(linestyle='-', linewidth=1, color='black'))
+    meanprops.append(dict(linestyle='--', linewidth=1, color='blue'))
+    capprops.append(dict(linestyle='-', linewidth=1, color=col))
+
+# For each selected problem get the ids
+# for problem in selected_problems_names:
+#     selected_problem_ids = [i for i,x in enumerate(new_mhs_data['problem']) if x == problem]
+#
+#     fig, ax = plt.subplots(1, figsize=[3, 4], dpi=333)
+#     plt.ion()
+#
+#     # For each dimension
+#     for dim_id in range(len(dimensions)):
+#         datum = new_mhs_data['results'][selected_problem_ids[dim_id]]['statistics'][-1]
+#
+#         pre_boxplot = []
+#         # for datum in data_set:
+#         item = {}
+#
+#         # item["label"] = '{}'.format(dimensions[dim_id])  # not required
+#         item["mean"] = datum['Avg']  # not required
+#         item["med"] = datum['Med']
+#         item["q1"] = datum['Med'] - datum['IQR']/2
+#         item["q3"] = datum['Med'] + datum['IQR']/2
+#         item["whislo"] = datum['Min']  # required
+#         item["whishi"] = datum['Max']  # required
+#         item["fliers"] = []  # required if showfliers=True
+#
+#         pre_boxplot.append(item)
+#
+#         ax.bxp(pre_boxplot, positions=[dim_id], patch_artist=True, widths=0.5, meanprops=meanprops[dim_id],
+#                boxprops=boxprops[dim_id], capprops=capprops[dim_id], showmeans=True, meanline=True,
+#                whiskerprops=whiskerprops[dim_id], medianprops=medianprops[dim_id])
+#
+#         ax.plot(new_mhs_data['results'][selected_problem_ids[dim_id]]['hist_fitness'])
+#
+#     ax.set_title(problem)
+#     ax.set_xlabel(r'Dimensions')
+#     ax.set_ylim(custom_ylims[problem])
+#     ax.set_ylabel(r'Finess values')
+#     ax.set_xticklabels(dimensions)
+#     plt.ioff()
+#     plt.show()
+
+
+# %% ---
+# For each selected problem get the ids
+for problem in selected_problems_names:
+    selected_problem_ids = [i for i, x in enumerate(new_mhs_data['problem']) if x == problem]
+
+    fig, axs = plt.subplots(1, figsize=[4, 2.5], dpi=333)
+    plt.ion()
+
+    # For each dimension
+    for dim_id in range(len(dimensions)):
+        matrix = np.array(new_mhs_data['results'][selected_problem_ids[dim_id]]['hist_fitness']).T
+
+        axs.plot(matrix, color=colors[dim_id], alpha=0.05, linewidth=2)
+        axs.plot(np.mean(matrix, 1), color=colors[dim_id])
+
+    # axs.set_title(problem)
+    axs.set_xlabel(r'Iteration')
+    # ax.set_ylim(custom_ylims[problem])
+    axs.set_ylabel(r'Fitness values')
+    # ax.set_xticklabels(dimensions)
+    plt.ioff()
+
+    lines_for_legend = []
+    dimensions_for_legend = []
+    if problem == 'Sphere':
+        for dim_id in range(len(dimensions)):
+            lines_for_legend.append(Line2D([0], [0], color=colors[dim_id], lw=3))
+            dimensions_for_legend.append('{}D'.format(dimensions[dim_id]))
+        axs.legend(lines_for_legend, dimensions_for_legend, ncol=2,
+                   frameon=False, loc='upper right', fontsize=12)
+    plt.tight_layout()
+
+    if is_saving:
+        plt.savefig(folder_name + 'Sample_{}-Exp{}.pdf'.format(problem, test_case),
+                    format='pdf', dpi=333)
+
+    plt.show()
+
+# new_mhs_data['results'][selected_problem_ids[dim_id]]['hist_fitness']
+
+# %%
+so_labels = ['{}'.format(cardi+1) for cardi in range(card_upto)]
+
+
+operator_families = [operator.split(',')[0].capitalize() for operator in search_operators]
+os_family = sorted(list(set(operator_families)), reverse=True)
+
+fig, axs = plt.subplots(1, len(dimensions), figsize=[10, 3], dpi=333, sharey=True)
+
+# libraries
+for dim_id in range(len(dimensions)):
+    df0 = data_per_dimension[dim_id].copy()
+    df0['Metaheuristic'] = df0['Metaheuristic'].apply(
+        lambda x: [os_family.index(operator_families[int(y)]) for y in x])
+    df1 = pd.DataFrame(df0["Metaheuristic"].to_list(), columns=so_labels)
+
+    df2 = pd.concat([data_per_dimension[dim_id]['Category'], df1], axis=1)
+    df2.Category = df2.Category.astype('category')
+
+    # Make the plot
+    pd.plotting.parallel_coordinates(df2, 'Category', colormap=plt.get_cmap("tab10"),
+                                     sort_labels=True, alpha=0.3, ax=axs[dim_id])
+
+    axs[dim_id].set_title(r'{}D'.format(dimensions[dim_id]))
+
+    if dim_id == 0:
+        handles, labels = axs[dim_id].get_legend_handles_labels()
+
+        # sort both labels and handles by labels
+        labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0], reverse=True))
+        axs[dim_id].legend(handles, labels, loc="upper center", ncol=len(dimensions) + 1,
+                           bbox_to_anchor=(4.5, 0.5))
+    else:
+        axs[dim_id].get_legend().remove()
+
+axs[0].set_yticks(np.arange(len(os_family)))
+axs[0].set_yticklabels(os_family)
+axs[3].set_xlabel(r'Heuristic')
+
+if is_saving:
+    plt.savefig(folder_name + 'ParCoor-Exp{}.svg'.format(test_case), format='svg', dpi=333)
+
+plt.show()
+
+# %%
+def real_formatting(value):
+    if value == 0.0:
+        value_order = 1
+    else:
+        value_order = np.floor(np.log10(np.abs(value)))
+    if -2 <= value_order <= 2:
+        return '%.2f' % value
+    else:
+        return '%.1fe%d' % (value * (10 ** -value_order), value_order)
+
+def get_subframework(fields, with_cat=False, alias=None):
+    if not isinstance(fields, list):
+        fields = [fields]
+    def mask(x):
+        if alias is None:
+            return  x[:4]
+        else:
+            return alias
+
+    cat = ['Category'] if with_cat else []
+    frs = [data_per_dimension[0][cat + fields].sort_index()] + \
+          [x[fields].sort_index() for x in data_per_dimension[1:]]
+    rsl = pd.concat(frs, axis=1)
+    # rsl.columns = sum( (['MH{}D'.format(x), 'Perf{}D'.format(x)] for x in dimensions), [] )
+    rsl.columns = cat + ['{}{}D'.format(mask(y), x) for x in dimensions for y in fields]
+    return rsl
+
+rsl = get_subframework(['Metaheuristic', 'Performance'], with_cat=False, alias='')
+
+for col in ['Perf{}D'.format(x) for x in dimensions]:
+    rsl[col] = rsl[col].apply(real_formatting)
+for col in ['Meta{}D'.format(x) for x in dimensions]:
+    rsl[col] = rsl[col].apply(lambda y: ', '.join([str(x) for x in y]))
+
+print(rsl.to_latex())
+
+# %%
+
+rsl1 = get_subframework(['p-Value'], with_cat=True)
+
+fig = plt.figure(figsize=[4, 3], dpi=333)
+
+colours1 = plt.cm.tab10(np.linspace(0, 1, len(dimensions)))
+
+# for dim, c in zip(dimensions[1:], colours1):
+#     if dim == 2:
+#         sns.stripplot(rsl1.Category, rsl1['p-Va2D'], jitter=0.01, size=3, color=c,
+#                            dodge=False, label='2D')
+#         # ax = rsl1.plot.scatter(x='Category', y='p-Va2D', color=c, label='2D')
+#     else:
+#         # rsl1.plot.scatter(x='Category', y='p-Va{}D'.format(dim), color=np.array([c]),
+#         #                   label=r'{}D'.format(dim), ax=ax)
+#         sns.stripplot(rsl1.Category, rsl1['p-Va{}D'.format(dim)], jitter=0.1, size=3, color=c,
+#                       dodge=False, label=r'{}D'.format(dim))
+
+dff = pd.melt(rsl1, var_name='Dim', value_vars=['p-Va{}D'.format(x) for x in dimensions],
+              id_vars=['Category'], value_name='p-Value')
+sns.stripplot(data = dff, x='Category', y = 'p-Value', hue = 'Dim', size=3,
+              jitter = 0.1, dodge = True, alpha = 0.7,  palette = colours1)
+plt.show()
