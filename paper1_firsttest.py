@@ -24,7 +24,7 @@ sns.set(context="paper", font_scale=1, palette="colorblind", style="ticks",
         rc={'text.usetex':True, 'font.family':'serif', 'font.size':12})
 
 # Read benchmark functions and their features
-problem_features = bf.list_functions()
+problem_features = bf.list_functions()  # fts=['Differentiable', 'Unimodal']
 problem_names = bf.for_all('func_name')
 
 # DEL: Read benchmark functions, their features and categorise them
@@ -33,10 +33,10 @@ problem_names = bf.for_all('func_name')
 # %% CASES
 
 # Set the test case
-test_case = 1
+test_case = 3
 
 # Saving images flag
-is_saving = False
+is_saving = True  # False
 
 # Choose the corresponding case
 if test_case == 1:
@@ -114,6 +114,7 @@ dimensions = sorted(list(set(new_mhs_data['dimensions'])))
 
 # Data Frames per dimensions
 data_per_dimension = list()
+data_for_comparison = list()
 
 # Check if the image folder exists
 folder_name = 'data_files/images/'
@@ -150,6 +151,7 @@ for dimension in dimensions:
     pvalues = list()
     new_vs_basic = list()
     success_rate = list()
+    difference_performances = list()
 
     # %%
 
@@ -189,7 +191,7 @@ for dimension in dimensions:
         statistics.append(new_mhs_data['results'][problem_index]['statistics'][-1])
 
         # Perform normality test from historical fitness data
-        _, pvalue = stats.normaltest(last_historical_fitness)
+        _, pvalue = stats.normaltest(last_historical_fitness)  # D'Agostino-Pearson
 
         # Store the p-value
         pvalues.append(pvalue)
@@ -213,6 +215,9 @@ for dimension in dimensions:
         # Store the comparison between the current metaheuristic with the best basic metaheuristic
         new_vs_basic.append(current_performance - min_mh_performance)
 
+        # Difference between performances
+        difference_performances.append(current_performance - basic_performances)
+
     # %% Store all the previous information in a DataFrame
 
     # Generate a dataframe to plot the results
@@ -226,12 +231,18 @@ for dimension in dimensions:
         'Avg-Fitness': [x['Avg'] for x in statistics],
         'Std-Fitness': [x['Std'] for x in statistics],
         'Metaheuristic': solutions,
+        'Cardinality': [len(x) for x in solutions],
         'BasicMH Performance': best_mh_performance,
         'BasicMH Ids': best_mh_index,
         'perfNew-Basic': new_vs_basic,
         'success-Rate': success_rate
     }).sort_values(by=['Category', 'Problem'])
     data_per_dimension.append(current_data_per_dimension)  # sort_index()
+
+    mat_aux = np.array(difference_performances).T;
+    dict_aux = {'PD{}'.format(ii): mat_aux[ii,:] for ii in range(mat_aux.shape[0])}
+    current_data_for_comparison = pd.DataFrame({'Category': problem_categories, **dict_aux})
+    data_for_comparison.append(current_data_for_comparison)
 
     # %% Obtain the success rate per category
     # success_per_category.append([*data_per_dimension.groupby("Category")["perfNew-Basic"].agg(
@@ -289,7 +300,7 @@ plt.ion()
 
 y0 = np.array(success_per_category['mean'])
 y1 = y0 - np.array(success_per_category['std'])
-y2 = y1 + np.array(success_per_category['std'])
+y2 = y0 + np.array(success_per_category['std'])
 
 cmap = plt.get_cmap('tab10')
 colors = [cmap(i)[:-1] for i in np.linspace(0, 1, len(categories))]
@@ -590,6 +601,7 @@ for problem in selected_problems_names:
 
     plt.show()
 
+
 # new_mhs_data['results'][selected_problem_ids[dim_id]]['hist_fitness']
 
 # %%
@@ -613,9 +625,10 @@ for dim_id in range(len(dimensions)):
 
     # Make the plot
     pd.plotting.parallel_coordinates(df2, 'Category', colormap=plt.get_cmap("tab10"),
-                                     sort_labels=True, alpha=0.3, ax=axs[dim_id])
+                                     sort_labels=True, alpha=0.3, ax=axs[dim_id], axvlines=False)
 
     axs[dim_id].set_title(r'{}D'.format(dimensions[dim_id]))
+    axs[dim_id].grid(None)
 
     if dim_id == 0:
         handles, labels = axs[dim_id].get_legend_handles_labels()
@@ -664,20 +677,25 @@ def get_subframework(fields, with_cat=False, alias=None):
     rsl.columns = cat + ['{}{}D'.format(mask(y), x) for x in dimensions for y in fields]
     return rsl
 
-rsl = get_subframework(['Metaheuristic', 'Performance'], with_cat=False, alias='')
+rsl = get_subframework(['Metaheuristic', 'Performance'], with_cat=True)
+rsl.insert(loc=0, column='Id', value=rsl.index)
+rsl['Id'] = rsl['Id'].apply(lambda x: x + 1)
 
 for col in ['Perf{}D'.format(x) for x in dimensions]:
     rsl[col] = rsl[col].apply(real_formatting)
 for col in ['Meta{}D'.format(x) for x in dimensions]:
     rsl[col] = rsl[col].apply(lambda y: ', '.join([str(x) for x in y]))
 
-print(rsl.to_latex())
+# rsl0 = rsl.rename_axis('Id').sort_values(by = ['Category', 'Id'], ascending = [False, True])
+rsl0 = rsl.sort_values(by = ['Category', 'Id'], ascending = [False, True])
+
+print(rsl0.to_latex(index=False, multicolumn='Category'))
 
 # %%
 
-rsl1 = get_subframework(['p-Value'], with_cat=True)
+rsl1 = get_subframework(['p-Value'], with_cat=True, alias='')
 
-fig = plt.figure(figsize=[4, 3], dpi=333)
+fig = plt.figure(figsize=[8, 2], dpi=333)
 
 colours1 = plt.cm.tab10(np.linspace(0, 1, len(dimensions)))
 
@@ -692,8 +710,102 @@ colours1 = plt.cm.tab10(np.linspace(0, 1, len(dimensions)))
 #         sns.stripplot(rsl1.Category, rsl1['p-Va{}D'.format(dim)], jitter=0.1, size=3, color=c,
 #                       dodge=False, label=r'{}D'.format(dim))
 
-dff = pd.melt(rsl1, var_name='Dim', value_vars=['p-Va{}D'.format(x) for x in dimensions],
+dff = pd.melt(rsl1, var_name='Dim', value_vars=['{}D'.format(x) for x in dimensions[::-1]],
               id_vars=['Category'], value_name='p-Value')
 sns.stripplot(data = dff, x='Category', y = 'p-Value', hue = 'Dim', size=3,
               jitter = 0.1, dodge = True, alpha = 0.7,  palette = colours1)
+plt.ylabel(r'$p$-Value' + r' - Exp. {}'.format(test_case))
+
+handles, labels = plt.gca().get_legend_handles_labels()
+plt.legend(handles[::-1], labels[::-1], title=None, mode='expand', ncol=7, markerscale=0.5, handletextpad=0.05)
+
+plt.gca().invert_xaxis()
+
+if is_saving:
+    plt.savefig(folder_name + 'pVals-Exp{}.svg'.format(test_case), format='svg', dpi=333)
+
 plt.show()
+
+
+# %% Wilcoxon tests
+fwer_matr = list()
+
+portions = np.linspace(0, 1, 50)
+# portion = 0.65
+for portion in portions:
+    num_comparisons = int(portion * 66)
+
+    fwer_vals = list()
+    fwer_cats = list()
+    for dim_id in range(len(dimensions)):
+        resulting_df = data_for_comparison[dim_id].copy()
+
+        overall_pValues = np.sort(
+            resulting_df.drop('Category', 1).apply(lambda x: stats.wilcoxon(x, alternative='less')[1], 0).values)
+        fwer_vals.append(1 - np.prod(1 - overall_pValues[:num_comparisons]))
+    fwer_matr.append(np.array(fwer_vals))
+
+fwer_matr = np.array(fwer_matr)
+
+# ---- p-values FWER Wilcoxon per dimension varying the proportion
+fig, ax = plt.subplots(1, figsize=[3, 2], dpi=333)
+
+# colours = plt.cm.viridis(np.linspace(0,1, len(dimensions)))
+
+for dim_id in range(len(dimensions)):
+    ax.plot(portions, fwer_matr[:, dim_id], color=colors[dim_id], label='{}D'.format(dimensions[dim_id]))
+    # lines_for_legend.append(Line2D([0], [0], color=colours[dim_id], lw=3) for dim_id in range(len(dimensions)))
+    # dimensions_for_legend.append('{}D'.format(dimensions[dim_id]) for dim_id in range(len(dimensions)))
+
+ax.set_ylim(-0.01, 1.01), plt.xlim(0.0, 1.0)
+ax.hlines(0.05, 0, 1, colors='k', linestyles='dashed', lw=1.0)
+ax.set_ylabel(r'$p$-value'),
+ax.set_xlabel(r'Basic MHs portion')
+plt.legend(ncol=2, frameon=False, loc='upper left', fontsize=10)
+
+if is_saving:
+    plt.savefig(folder_name + 'pVW-All-Exp{}.svg'.format(test_case), format='svg', dpi=333)
+
+plt.show()
+
+# %%-----
+
+portion = 0.02
+num_comparisons = int(portion * 66)
+
+fwer_cats = list()
+for dim_id in range(len(dimensions)):
+    resulting_df = data_for_comparison[dim_id].copy()
+    resulting_df['Category'] = resulting_df['Category'].apply(lambda x: x[-1])
+
+    pVals_per_category = resulting_df.groupby(by='Category').aggregate(
+        lambda x: stats.wilcoxon(x, alternative='less')[1]).values
+    fwer_cats.append([1 - np.prod(1 - np.sort(pVals_per_category[ii,:])[:num_comparisons])
+                      for ii in range(pVals_per_category.shape[0])])
+fwer_cats = np.array(fwer_cats).T
+
+# ig, ax = plt.subplots(1, figsize=[3, 2], dpi=333)
+#
+# # colours = plt.cm.viridis(np.linspace(0,1, len(dimensions)))
+# binary_categories = ['Multimodal', 'Unimodal']
+# for cat_id in range(len(binary_categories)):
+#     ax.plot(np.arange(len(dimensions)),
+#             fwer_cats[cat_id, :], color=colors[cat_id], label=r'{}'.format(binary_categories[cat_id]))
+#     # lines_for_legend.append(Line2D([0], [0], color=colours[dim_id], lw=3) for dim_id in range(len(dimensions)))
+#     # dimensions_for_legend.append('{}D'.format(dimensions[dim_id]) for dim_id in range(len(dimensions)))
+#
+# # ax.set_ylim(-0.01, 1.01)
+# ax.set_xlim(-0.05, 6.05)
+# ax.set_xticks(np.arange(len(dimensions)))
+# ax.set_xticklabels(dimensions)
+# ax.set_ylabel(r'$p$-value'),
+# ax.set_xlabel(r'Dimensions')
+# ax.hlines(0.05, -1, fwer_cats.shape[1], colors='k', linestyles='dashed', lw=1.0)
+# plt.legend(ncol=1, frameon=False, loc='upper left', fontsize=10)
+#
+# if is_saving:
+#     plt.savefig(folder_name + 'pVW-Cat-Exp{}.svg'.format(test_case), format='svg', dpi=333)
+#
+# plt.show()
+
+print([portions[fwer_matr[:, ii] <= 0.05][-1] for ii in range(fwer_matr.shape[1])])
