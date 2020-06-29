@@ -9,8 +9,39 @@ import numpy as np
 from sklearn.neighbors import KernelDensity as ksdensity
 from scipy.stats import levy_stable
 
-def random_walk():
-    r = levy_stable.rvs(alpha, beta, size=1000)
+
+class Characteriser():
+
+
+
+
+def normalise_vector(vector):
+    return vector / np.max([np.linalg.norm(vector), 1e-23])
+
+def random_levy_walk(initial_position, num_steps, boundaries):
+
+    # Parameters for generating the Levy random values
+    alpha_levy = 0.5
+    beta_levy = 1
+
+    # Get the number of dimensions and initialise the output matrix
+    num_dimensions = np.size(initial_position)
+    positions = [initial_position]
+
+    # Start the loop for all the steps
+    while len(positions) <= num_steps + 1:
+        # Get the Levy-distributed step and a point in the hyper-sphere surface
+        new_position = positions[-1] + levy_stable.rvs(alpha_levy, beta_levy, size=num_dimensions) * \
+                       normalise_vector(np.random.randn(num_dimensions))
+
+        # Check if this position is within the domain and register it
+        if (new_position > boundaries[0, ]).all() & (new_position < boundaries[1, ]).all():
+            positions.append(new_position)
+
+    return positions
+
+def evaluate_positions(function, positions):
+    return [function(position) for position in positions]
 
 
 def length_scale(sample_positions, fitness_values, bandwidth_mode=1, num_kernel_samples=1000):
@@ -24,7 +55,7 @@ def length_scale(sample_positions, fitness_values, bandwidth_mode=1, num_kernel_
         sample_positions[indices_1, :] - sample_positions[indices_2, :], axis=1)
     
     # Estimate the bandwidth
-    if not isinstance(bandwidth_mode, 'str'):
+    if not isinstance(bandwidth_mode, str):
         bandwidth = bandwidth_mode
     
     # Estimate the distribution function
