@@ -361,7 +361,7 @@ class Population:
             selection_condition = False
         else:
             selection_condition = None
-            PopulationError('Invalid selector!')
+            raise PopulationError('Invalid selector!')
 
         return selection_condition
 
