@@ -139,3 +139,4 @@ data_files/raw
 *.png
 *.txt
 *.svg
+.DS_Store
