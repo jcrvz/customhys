@@ -136,7 +136,18 @@ class OptimalBasic:
         return self.optimal_solution
 
     def get_search_range(self):
-        return self.max_search_range, self.min_search_range
+        return self.min_search_range, self.max_search_range  # Recently modified 8-jul-20
+
+    def set_search_range(self, min_search_range, max_search_range):
+        if isinstance(min_search_range, (float, int)) and isinstance(max_search_range, (float, int)):
+            self.min_search_range = np.array([min_search_range] * self.variable_num)
+            self.max_search_range = np.array([max_search_range] * self.variable_num)
+        else:
+            if (len(min_search_range) == self.variable_num) and (len(max_search_range) == self.variable_num):
+                self.min_search_range = min_search_range
+                self.max_search_range = max_search_range
+            else:
+                print('Invalid range!')
 
     def get_func_val(self, variables, *args):
         return -1

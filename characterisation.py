@@ -6,11 +6,14 @@ Created on Thu Sep 26 16:56:01 2019
 """
 
 import numpy as np
-from sklearn.neighbors import KernelDensity as ksdensity
+from sklearn.neighbors import KernelDensity
+from sklearn.model_selection import GridSearchCV
 import scipy.stats as st
 
 
 class Characteriser():
+
+    # _normal_scaling_factor = np.power(1 / (4 * np.pi), 1/10)
 
     def __init__(self):
         # Define the parameters
@@ -20,30 +23,23 @@ class Characteriser():
         self.normalised_boundaries = True
         self.num_dimensions = None
 
+        self.num_samples = 1000
         self.sampling_method = 'levy_walk'
-        self.levy_walk_steps = 1000
         self.levy_walk_initial = 'rand'
         self.levy_walk_alpha = 0.5
         self.levy_walk_beta = 1.0
 
-    def set_length_scale(self, bandwidth_mode=1, kde_samples=1000):
-        # Estimate the bandwidth
-        if not isinstance(bandwidth_mode, str):
-            self.bandwidth = bandwidth_mode
-        else:
-            self.bandwidth = None
+        self.position_samples = None
+        self.fitness_values = None
 
-        # Samples from the estimated pde
-        self.kde_samples = kde_samples
-
-    # Main method: Evaluate one feature for one function
-    def get_feature(self, function, feature, samples=None):
+    # Initialise the sampling method and the function evaluation
+    def initialise(self, function, samples=None):
         # Read boundaries and determine the span and centre
         lower_boundaries = function.max_search_range
         upper_boundaries = function.min_search_range
         span_boundaries = upper_boundaries - lower_boundaries
         centre_boundaries = (upper_boundaries + lower_boundaries) / 2.
-        
+
         # Read the number of dimensions
         self.num_dimensions = len(centre_boundaries)
 
@@ -51,28 +47,51 @@ class Characteriser():
         # TODO: Add more methods for generating samples
         if samples is None:
             if self.sampling_method == 'levy_walk':
-                position_samples = self._levy_walk(self.levy_walk_initial, self.levy_walk_steps,
-                                                   self.levy_walk_alpha, self.levy_walk_beta)
+                self.position_samples = self._levy_walk(self.levy_walk_initial, self.num_samples,
+                                                        self.levy_walk_alpha, self.levy_walk_beta)
 
         # Evaluate them in the function
-        function_values = self._evaluate_positions(function, span_boundaries, centre_boundaries, position_samples)
+        self.fitness_values = self._evaluate_positions(
+            function, span_boundaries, centre_boundaries, self.position_samples)
+
+    def length_scale(self, function=None, bandwidth_mode='silverman_rule', samples=None, kde_samples=1000):
+        # Samples from the estimated pde
+        self.kde_samples = kde_samples
+
+        # Initialise the sample positions and their fitness
+        if ((self.position_samples is None) | (self.fitness_values is None)) & (function is not None):
+            self.initialise(function, samples)
 
         # Determine the length scale
-
-
-
-    def _length_scale(self, sample_positions, fitness_values):
-
-        # Determine the length scale
-        indices_1 = np.random.permutation(len(fitness_values))
+        indices_1 = np.random.permutation(len(self.fitness_values))
         indices_2 = np.array([*indices_1[1:], indices_1[0]])
 
-        length_scale = np.abs(fitness_values[indices_1] - fitness_values[indices_2]) / np.linalg.norm(
-            sample_positions[indices_1, :] - sample_positions[indices_2, :], axis=1)
+        length_scale = (np.abs(self.fitness_values[indices_1] - self.fitness_values[indices_2]) / np.linalg.norm(
+            self.position_samples[indices_1, :] - self.position_samples[indices_2, :], axis=1)).reshape(-1, 1)
+
+        # Estimate the bandwidth
+        if not isinstance(bandwidth_mode, str):
+            self.bandwidth = bandwidth_mode
+        else:
+            if bandwidth_mode == 'exhaustive':
+                order = int(np.ceil(np.log10(np.std(length_scale))))
+                coarse_grid = GridSearchCV(KernelDensity(),
+                                           {'bandwidth': np.logspace(order / 2 - 3, order / 2 + 3, 25)}, cv=3)
+                first_approach = coarse_grid.fit(length_scale).best_estimator_.bandwidth
+                fine_grid = GridSearchCV(KernelDensity(), {'bandwidth':
+                    np.linspace(0.5 * first_approach, 2 * first_approach, 50)}, cv=3)
+                self.bandwidth = fine_grid.fit(length_scale).best_estimator_.bandwidth
+            elif bandwidth_mode == 'scott_rule':
+                self.bandwidth = 1.06 * np.std(length_scale) * np.power(self.num_samples, -1/5)
+            elif bandwidth_mode == 'silverman_rule':
+                self.bandwidth = 0.9 * np.min([np.std(length_scale), st.iqr(length_scale)/1.34]) * \
+                                 np.power(self.num_samples, -1/5)
+            else:
+                self.bandwidth = None
 
         # Estimate the distribution function
-        pdf_xvalues = np.linspace(0, np.max(length_scale) * 1.1, self.kde_samples)
-        pdf_fvalues = np.exp(ksdensity(bandwidth=self.bandwidth).fit(length_scale).score_samples(pdf_xvalues))
+        pdf_xvalues = np.linspace(0.9 * length_scale.min(), 1.1 * length_scale.max(), self.kde_samples).reshape(-1, 1)
+        pdf_fvalues = np.exp(KernelDensity(bandwidth=self.bandwidth).fit(length_scale).score_samples(pdf_xvalues))
 
         # Get statistics from raw length_scale values
         dst = st.describe(length_scale)
@@ -82,6 +101,7 @@ class Characteriser():
 
         # Return a dictionary with all the information
         return dict(nob=dst.nobs,
+                    raw=length_scale,
                     Min=dst.minmax[0],
                     Max=dst.minmax[1],
                     Avg=dst.mean,
@@ -94,12 +114,12 @@ class Characteriser():
                     KDE_bw=self.bandwidth,
                     PDF_fx=pdf_fvalues,
                     PDF_xs=pdf_xvalues,
-                    Entropy=entropy_value,
-                    ), length_scale
+                    Entropy=entropy_value)
 
     @staticmethod
     def _evaluate_positions(function, span_boundaries, centre_boundaries, positions):
-        return [function(centre_boundaries + position * (span_boundaries / 2.)) for position in positions]
+        return np.array([function.get_function_value(centre_boundaries + position * (span_boundaries / 2.))
+                         for position in positions])
 
     @staticmethod
     def _normalise_vector(vector):
@@ -128,7 +148,7 @@ class Characteriser():
             if (new_position > -1.0).all() & (new_position < 1.0).all():
                 positions.append(new_position)
 
-        return positions
+        return np.array(positions)
 
 
 
@@ -139,6 +159,33 @@ class CharacteriserError(Exception):
     """
     pass
 
+
+if __name__ == '__main__':
+    import benchmark_func as bf
+    import matplotlib.pyplot as plt
+
+    results_all = []
+
+    for problem_str in bf.__all__:
+        problem = eval('bf.' + problem_str + '(2)')
+
+        chsr = Characteriser()
+        results_all.append(chsr.length_scale(problem, bandwidth_mode='silverman_rule')['Entropy'])
+
+        print('Evaluated ' + problem_str + '...')
+        
+    plt.semilogy([res + 1 for res in results_all]), plt.show()
+
+
+
+    # problem = bf.Sphere(2)
+    # problem.set_search_range(-5, 5)
+    #
+    # chsr = Characteriser()
+    # results = chsr.length_scale(problem, bandwidth_mode='exhaustive')
+    # plt.hist(results['raw'], density=True, bins=100), plt.plot(results['PDF_xs'], results['PDF_fx']), plt.show()
+    #
+    # print(results['Entropy'])
 
 # def fast_univariate_bandwidth_estimate_STEPI(
 #         num_points, source_points,  accuracy=1e-3):
