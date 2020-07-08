@@ -1,4 +1,4 @@
-# Customising Metaheuristics via Hyper-heuristics
+# CUSTomising Optimisation Metaheuristics via HYper-heuristic Search
 
 This project aims to develop an approach based on, but not limited to, Data Science and Optimisation for solving continuous optimisation problems. As a final product, engineers and academicians can dispose of a framework for tailoring metaheuristics for these problems, closely related to practical engineering problems.
 
