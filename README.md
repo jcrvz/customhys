@@ -1,22 +1,6 @@
-# Data-driven Automatic Selector for Continuous Optimisation Problems (DASCOP)
+# Customising Metaheuristics via Hyper-heuristics
 
 This project aims to develop an approach based on, but not limited to, Data Science and Optimisation for solving continuous optimisation problems. As a final product, engineers and academicians can dispose of a framework for tailoring metaheuristics for these problems, closely related to practical engineering problems.
-
-## Publications
-
-[1] [Cruz-Duarte, J.M., Amaya, I., Ortiz-Bayliss, J.C., Connat-Pablos, S.E., and Terashima-Marín, H., A Primary Study on Hyper-Heuristics to Customise Metaheuristics for Continuous Optimisation. Submitted to CEC'2020.](./docfiles/SearchOperators_CEC.pdf)
-
-## Tasks
-
-- [x] Collect metaheuristics and extract their search operators (SOs).
-- [x] Collect benchmark functions (BFs) for continuous optimisation.
-- [x] Build the optimisation framework.
-- [x] Test this framework with the chosen SOs and BFs as a primary study.
-
-
-
-- [ ] Test the search operators collection generating a 1-cardinality metaheuristic for each one
-
 
 ## Current data structure
 
@@ -100,3 +84,6 @@ data_frame = {dict: N}
 :  :  :  :  :  : 
 ```
 
+## Publications
+
+[1] [Cruz-Duarte, J.M., Amaya, I., Ortiz-Bayliss, J.C., Connat-Pablos, S.E., and Terashima-Marín, H., A Primary Study on Hyper-Heuristics to Customise Metaheuristics for Continuous Optimisation. Submitted to CEC'2020.](./docfiles/SearchOperators_CEC.pdf)
