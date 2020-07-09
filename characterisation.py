@@ -164,28 +164,26 @@ if __name__ == '__main__':
     import benchmark_func as bf
     import matplotlib.pyplot as plt
 
-    results_all = []
-
-    for problem_str in bf.__all__:
-        problem = eval('bf.' + problem_str + '(2)')
-
-        chsr = Characteriser()
-        results_all.append(chsr.length_scale(problem, bandwidth_mode='silverman_rule')['Entropy'])
-
-        print('Evaluated ' + problem_str + '...')
-        
-    plt.semilogy([res + 1 for res in results_all]), plt.show()
-
-
-
-    # problem = bf.Sphere(2)
-    # problem.set_search_range(-5, 5)
+    # results_all = []
     #
-    # chsr = Characteriser()
-    # results = chsr.length_scale(problem, bandwidth_mode='exhaustive')
-    # plt.hist(results['raw'], density=True, bins=100), plt.plot(results['PDF_xs'], results['PDF_fx']), plt.show()
+    # for problem_str in bf.__all__:
+    #     problem = eval('bf.' + problem_str + '(2)')
     #
-    # print(results['Entropy'])
+    #     chsr = Characteriser()
+    #     results_all.append(chsr.length_scale(problem, bandwidth_mode='silverman_rule')['Entropy'])
+    #
+    #     print('Evaluated ' + problem_str + '...')
+    #
+    # plt.semilogy([res + 1 for res in results_all]), plt.show()
+
+    problem = bf.Sphere(2)
+    problem.set_search_range(-5, 5)
+
+    chsr = Characteriser()
+    results = chsr.length_scale(problem, bandwidth_mode='exhaustive')
+    plt.hist(results['raw'], density=True, bins=100), plt.plot(results['PDF_xs'], results['PDF_fx']), plt.show()
+
+    print(results['Entropy'])
 
 # def fast_univariate_bandwidth_estimate_STEPI(
 #         num_points, source_points,  accuracy=1e-3):
