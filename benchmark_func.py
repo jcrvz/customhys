@@ -1,31 +1,25 @@
 # -*- coding: utf-8 -*-
 """
 This model is an upgraded version of the Keita Tomochika's module in
-https://github.com/keit0222/optimization-evaluation. The current module only
-contain N-dimensional functions.
+https://github.com/keit0222/optimization-evaluation. The current module only contain N-dimensional functions. These
+functions are listed in ``__all__``.
 
-All these functions are based and revisited on the following research papers
-and web sites:
-- Momin Jamil and Xin-She Yang, A literature survey of benchmark functions for
-    global optimization problems, Int. Journal of Mathematical Modelling and
-    Numerical Optimisation}, Vol. 4, No. 2, pp. 150–194 (2013), arXiv:1308.4008
-- Mazhar Ansari Ardeh, https://github.com/mazhar-ansari-ardeh,
-    http://benchmarkfcns.xyz
-- Sonja Surjanovic and Derek Bingham, Simon Fraser University,
-    https://www.sfu.ca/~ssurjano/optimization.html
-- Ali R. Al-Roomi (2015). Unconstrained Single-Objective Benchmark Functions
-    Repository [https://www.al-roomi.org/benchmarks/unconstrained]. Halifax,
-    Nova Scotia, Canada: Dalhousie University, Electrical and Computer
-    Engineering.
-- B.Y. Qu, J.J. Liang, Z.Y. Wang, Q. Chen, P.N. Suganthan. Novel benchmark
-    functions for continuous multimodal optimization with comparative results.
-    Swarm and Evolutionary Computation, 26 (2016), 23-34.
+All these functions are based and revisited on the following research papers and web sites:
 
-@authors:   Jorge Mario Cruz-Duarte (jcrvz.github.io) and
-            Keita Tomochika (github.com/keit0222)
+- Momin Jamil and Xin-She Yang, A literature survey of benchmark functions for global optimization problems,
+Int. Journal of Mathematical Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150–194 (2013), arXiv:1308.4008
+- Mazhar Ansari Ardeh, https://github.com/mazhar-ansari-ardeh, http://benchmarkfcns.xyz
+- Sonja Surjanovic and Derek Bingham, Simon Fraser University, https://www.sfu.ca/~ssurjano/optimization.html
+- Ali R. Al-Roomi (2015). Unconstrained Single-Objective Benchmark Functions Repository. Halifax, Nova Scotia,
+Canada, Dalhousie University, Electrical and Computer Engineering. https://www.al-roomi.org/benchmarks/unconstrained
+- B.Y. Qu, J.J. Liang, Z.Y. Wang, Q. Chen, P.N. Suganthan. Novel benchmark functions for continuous multimodal
+optimization with comparative results. Swarm and Evolutionary Computation, 26 (2016), 23-34.
+
+Created on Tue Sep 17 14:29:43 2019
+
+@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
 """
 
-# import sys
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -36,31 +30,37 @@ from matplotlib import rcParams
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif', size=11)
 
-# from functools import wraps
-
-__all__ = ['Ackley1', 'Ackley4', 'Alpine1', 'Alpine2', 'Bohachevsky', 'Brent', 'Brown', 'CarromTable',
-           'ChungReynolds', 'Cigar', 'CosineMixture', 'CrossInTray', 'CrossLegTable', 'CrownedCross',
-           'Csendes', 'Deb1', 'Deb2', 'DeflectedCorrugatedSpring', 'DixonPrice', 'DropWave',
-           'EggHolder', 'Ellipsoid', 'ExpandedDecreasingMinima', 'ExpandedEqualMinima',
-           'ExpandedFiveUnevenPeakTrap', 'ExpandedTwoPeakTrap', 'ExpandedUnevenMinima', 'Exponential',
-           'F2', 'Giunta', 'Griewank', 'HappyCat', 'HyperEllipsoid', 'InvertedCosineWave',
-           'JennrichSampson', 'KTablet', 'Katsuura', 'Levy', 'LunacekN01', 'LunacekN02',
-           'Michalewicz', 'Mishra1', 'Mishra2', 'Mishra7', 'Mishra11', 'ModifiedVincent', 'NeedleEye',
-           'Pathological', 'Periodic', 'Perm01', 'Perm02', 'Pinter', 'PowellSum',
-           'Price01', 'Qing', 'Quartic', 'Quintic', 'Rana', 'Rastrigin', 'Ridge', 'Rosenbrock',
-           'RotatedHyperEllipsoid', 'Salomon', 'Sargan', 'SchafferN1', 'SchafferN2', 'SchafferN3',
-           'SchafferN4', 'SchafferN6', 'Schubert', 'Schubert3', 'Schubert4', 'SchumerSteiglitz',
-           'Schwefel', 'Schwefel12', 'Schwefel204', 'Schwefel220', 'Schwefel221', 'Schwefel222',
-           'Schwefel223', 'Schwefel225', 'Schwefel226', 'Sphere', 'Step', 'Step2', 'Step3', 'StepInt',
-           'Stochastic', 'StrechedVSineWave', 'StyblinskiTang', 'SumSquares', 'Trid',
-           'Trigonometric1', 'Trigonometric2', 'TypeI', 'TypeII', 'Vincent', 'WWavy', 'Weierstrass',
-           'Whitley', 'XinSheYang1', 'XinSheYang2', 'XinSheYang3', 'XinSheYang4', 'YaoLiu09',
+__all__ = ['Ackley1', 'Ackley4', 'Alpine1', 'Alpine2', 'Bohachevsky', 'Brent', 'Brown', 'CarromTable', 'ChungReynolds',
+           'Cigar', 'CosineMixture', 'CrossInTray', 'CrossLegTable', 'CrownedCross', 'Csendes', 'Deb1', 'Deb2',
+           'DeflectedCorrugatedSpring', 'DixonPrice', 'DropWave', 'EggHolder', 'Ellipsoid', 'ExpandedDecreasingMinima',
+           'ExpandedEqualMinima', 'ExpandedFiveUnevenPeakTrap', 'ExpandedTwoPeakTrap', 'ExpandedUnevenMinima',
+           'Exponential', 'F2', 'Giunta', 'Griewank', 'HappyCat', 'HyperEllipsoid', 'InvertedCosineWave',
+           'JennrichSampson', 'KTablet', 'Katsuura', 'Levy', 'LunacekN01', 'LunacekN02', 'Michalewicz', 'Mishra1',
+           'Mishra2', 'Mishra7', 'Mishra11', 'ModifiedVincent', 'NeedleEye', 'Pathological', 'Periodic', 'Perm01',
+           'Perm02', 'Pinter', 'PowellSum', 'Price01', 'Qing', 'Quartic', 'Quintic', 'Rana', 'Rastrigin', 'Ridge',
+           'Rosenbrock', 'RotatedHyperEllipsoid', 'Salomon', 'Sargan', 'SchafferN1', 'SchafferN2', 'SchafferN3',
+           'SchafferN4', 'SchafferN6', 'Schubert', 'Schubert3', 'Schubert4', 'SchumerSteiglitz', 'Schwefel',
+           'Schwefel12', 'Schwefel204', 'Schwefel220', 'Schwefel221', 'Schwefel222', 'Schwefel223', 'Schwefel225',
+           'Schwefel226', 'Sphere', 'Step', 'Step2', 'Step3', 'StepInt', 'Stochastic', 'StrechedVSineWave',
+           'StyblinskiTang', 'SumSquares', 'Trid', 'Trigonometric1', 'Trigonometric2', 'TypeI', 'TypeII', 'Vincent',
+           'WWavy', 'Weierstrass', 'Whitley', 'XinSheYang1', 'XinSheYang2', 'XinSheYang3', 'XinSheYang4', 'YaoLiu09',
            'Zakharov', 'ZeroSum']
 
 
-# %% Basic function class
+# %% BASIC FUNCTION CLASS
 class OptimalBasic:
-    def __init__(self, variable_num):
+    """
+    This is the basic class for a generic optimisation problem.
+    """
+
+    def __init__(self, variable_num=2):
+        """
+        Initialise a problem object using only the dimensionality of its domain.
+
+        :param int variable_num: optional.
+            Number of dimensions or variables for the problem domain. The default values is 2 (this is the common option
+            for plotting purposes).
+        """
         self.variable_num = variable_num
         self.max_search_range = np.array([0] * self.variable_num)
         self.min_search_range = np.array([0] * self.variable_num)
@@ -74,7 +74,7 @@ class OptimalBasic:
                          'Convex': True}
         self.plot_object = None
         self.func_name = ''
-        self.save_dir = "{0}/function_plots/".format(os.path.dirname(os.path.abspath(__file__)))
+        self.save_dir = '{0}/function_plots/'.format(os.path.dirname(os.path.abspath(__file__)))
 
         self.__offset_domain = 0.0
         self.__scale_domain = 1.0
@@ -83,10 +83,26 @@ class OptimalBasic:
         self.__noise_type = 'uniform'
         self.__noise_level = 0.0
 
-    def get_features(self, fmt="string", wrd="1", fts=None):
+    def get_features(self, fmt='string', wrd='1', fts=None):
+        """
+        Return the categorical features of the current function.
+
+        :param str fmt: optional
+            Format to deliver the features. Possible options are 'latex' and 'string'. If none of these options are
+            chosen, this method returns the equivalent decimal value of the binary sequence corresponding to the
+            features, e.g., 010 -> 2. The default is 'string'.
+        :param str wrd: optional
+            Specification to represent the features. Possible values are 'Yes' (for 'Yes' or 'No'), '1' (for '1' or
+            '0'), and 'X' (for 'X' or ' '). If none of these options are chosen, features are represented as binary
+            integers, i.e., 1 or 0. The default is '1'.
+        :param list fts: optional
+            Features to be read. The available features are: 'Continuous', 'Differentiable', 'Separable', 'Scalable',
+            'Unimodal', 'Convex' The default is ['Differentiable', 'Separable', 'Unimodal'].
+
+        :return: str or int
+        """
         # Default features to deliver
         if fts is None:
-            # fts = ['Continuous', 'Differentiable', 'Separable', 'Scalable', 'Unimodal', 'Convex']
             fts = ['Differentiable', 'Separable', 'Unimodal']
 
         def translate_conditional(value):
@@ -111,34 +127,108 @@ class OptimalBasic:
         else:
             return sum(features)
 
-    def set_offset_domain(self, value):
-        self.__offset_domain = value
+    def set_offset_domain(self, value=None):
+        """
+        Add an offset value for the problem domain, i.e., f(x + offset).
 
-    def set_offset_function(self, value):
-        self.__offset_function = value
+        :param float value:
+            The value to add to the variable before evaluate the function. It could be a float or numpy.array. The
+            default is None.
+        """
+        if value:
+            self.__offset_domain = value
 
-    def set_scale_domain(self, value):
-        self.__scale_domain = value
+    def set_offset_function(self, value=None):
+        """
+        Add an offset value for the problem function, i.e., f(x) + offset
 
-    def set_scale_function(self, value):
-        self.__scale_function = value
+        :param float value:
+            The value to add to the function after evaluate it. The default is None.
+        """
+        if value:
+            self.__offset_function = value
 
-    def set_noise_type(self, value):
-        self.__noise_type = value
+    def set_scale_domain(self, value=None):
+        """
+        Add a scale value for the problem domain, i.e., f(scale * x)
 
-    def set_noise_level(self, value):
-        self.__noise_level = value
+        :param float value:
+            The value to add to the variable before evaluate the function. It could be a float or numpy.array. The
+            default is None.
+        """
+        if value:
+            self.__scale_domain = value
+
+    def set_scale_function(self, value=None):
+        """
+        Add a scale value for the problem function, i.e., scale * f(x)
+
+        :param float value:
+            The value to add to the function after evaluate it. The default is None.
+        """
+        if value:
+            self.__scale_function = value
+
+    def set_noise_type(self, noise_distribution=None):
+        """
+        Specify the noise distribution to add, i.e., f(x) + noise
+
+        :param str noise_distribution:
+            Noise distribution. It can be 'gaussian' or 'uniform'. The default is None.
+        """
+        if noise_distribution:
+            self.__noise_type = noise_distribution
+
+    def set_noise_level(self, value=None):
+        """
+        Specify the noise level, i.e., f(x) + value * noise
+
+        :param float value:
+            Noise level. The default is None.
+        """
+        if value:
+            self.__noise_level = value
 
     def get_global_optimum_solution(self):
+        """
+        Return the theoretical global optimum value.
+
+        **Note:** Not all the functions have recognised theoretical optima.
+
+        :return: float
+        """
         return self.global_optimum_solution
 
     def get_optimal_solution(self):
+        """
+        Return the theoretical solution.
+
+        **Note:** Not all the functions have recognised theoretical optima.
+
+        :return: numpy.array
+        """
         return self.optimal_solution
 
     def get_search_range(self):
-        return self.min_search_range, self.max_search_range  # Recently modified 8-jul-20
+        """
+        Return the problem domain defined by the lower and upper boundaries, both are 1-by-variable_num arrays.
+
+        :returns: numpy.array, numpy.array
+        """
+        return self.min_search_range, self.max_search_range
 
     def set_search_range(self, min_search_range, max_search_range):
+        """
+        Define the problem domain defined by the lower and upper boundaries. They could be 1-by-variable_num arrays or
+        floats.
+
+        :param min_search_range:
+            Lower boundary of the problem domain. It can be a numpy.array or a float.
+        :param max_search_range:
+            Upper boundary of the problem domain. It can be a numpy.array or a float.
+
+        :return: None.
+        """
         if isinstance(min_search_range, (float, int)) and isinstance(max_search_range, (float, int)):
             self.min_search_range = np.array([min_search_range] * self.variable_num)
             self.max_search_range = np.array([max_search_range] * self.variable_num)
@@ -150,21 +240,64 @@ class OptimalBasic:
                 print('Invalid range!')
 
     def get_func_val(self, variables, *args):
+        """
+        Evaluate the problem function without considering additions like noise, offset, etc.
+
+        :param numpy.array variables:
+            The position where the problem function is going to be evaluated.
+
+        :param args:
+            Additional arguments that some problem functions could consider.
+
+        :return: float
+        """
         return -1
 
     def get_function_value(self, variables, *args):
+        """
+        Evaluate the problem function considering additions like noise, offset, etc. This method calls ``get_func_val``.
+
+        :param numpy.array variables:
+            The position where the problem function is going to be evaluated.
+
+        :param args:
+            Additional arguments that some problem functions could consider.
+
+        :return: float
+        """
+        # Apply modifications to the position
         variables = self.__scale_domain * variables + self.__offset_domain
+
+        # Check which kind of noise to use
         if self.__noise_type in ['gaussian', 'normal', 'gauss']:
             noise_value = np.random.randn()
         else:
             noise_value = np.random.rand()
+
+        # Call ``get_func_val``with the modificaitons
         return self.__scale_function * self.get_func_val(variables, *args) + \
                (self.__noise_level * noise_value) + self.__offset_function
 
     def plot(self, samples=55, resolution=100):
+        """
+        Plot the current problem in 2D.
+
+        :param int samples: Optional.
+            Number of samples per dimension. The default is 55.
+
+        :param int resolution: Optional.
+            Resolution in dpi according to matplotlib.pyplot.figure(). The default is 100.
+
+        :return: matplotlib.pyplot
+        """
+        # Generate the samples for each dimension.
         x = np.linspace(self.min_search_range[0], self.max_search_range[0], samples)
         y = np.linspace(self.min_search_range[1], self.max_search_range[1], samples)
+
+        # Create the grid matrices
         matrix_x, matrix_y = np.meshgrid(x, y)
+
+        # Evaluate each node of the grid into the problem function
         matrix_z = []
         for xy_list in zip(matrix_x, matrix_y):
             z = []
@@ -175,13 +308,17 @@ class OptimalBasic:
             matrix_z.append(z)
         matrix_z = np.array(matrix_z)
 
+        # Initialise the figure
         fig = plt.figure(figsize=[4, 3], dpi=resolution, facecolor='w')
         ls = LightSource(azdeg=90, altdeg=45)
         rgb = ls.shade(matrix_z, plt.cm.jet)
 
+        # Plot data
         ax = fig.gca(projection='3d', proj_type='ortho')
         ax.plot_surface(matrix_x, matrix_y, matrix_z, rstride=1, cstride=1, linewidth=0.5,
                         antialiased=False, facecolors=rgb)  #
+
+        # Adjust the labels
         ax.set_xlabel('$x_1$')
         ax.set_ylabel('$x_2$')
         ax.set_zlabel('$f(x, y)$')
@@ -192,27 +329,44 @@ class OptimalBasic:
         ax.yaxis.pane.fill = False
         ax.zaxis.pane.fill = False
 
+        # Set last adjustments
         self.plot_object = plt.gcf()
-
         plt.grid(linewidth=1.0)
-
         plt.gcf().subplots_adjust(left=0.05, right=0.85)
         plt.show()
 
+        # Return the object for further modifications or for saving
         return self.plot_object
 
     # TODO: Improve function to generate better images
-    def save_fig(self, samples=100, resolution=333):
+    def save_fig(self, samples=100, resolution=333, ext='png'):
+        """
+        Save the 2D representation of the problem function. There is no requirement to plot it before.
+
+        :param int samples: Optional.
+            Number of samples per dimension. The default is 100.
+        :param int resolution: Optional.
+            Resolution in dpi according to matplotlib.pyplot.figure(). The default is 333.
+        :param str ext: Optional.
+            Extension of the image file. The default is 'png'
+
+        :return: None.
+        """
+        # Verify if the path exists
         if not os.path.isdir(self.save_dir):
             os.mkdir(self.save_dir)
+
+        # Verify if the figure was previously plotted. If not, then do it
         if self.plot_object is None:
             self.plot(samples, resolution)
+
+        # Save it
         plt.tight_layout()
-        self.plot_object.savefig(self.save_dir + self.func_name + '.svg')
+        self.plot_object.savefig(self.save_dir + self.func_name + '.' + ext)
         plt.show()
 
 
-# %% Optimization benchmark function group
+# %% SPECIFIC PROBLEM FUNCTIONS
 # 1 - Class Ackley 1 function
 class Ackley1(OptimalBasic):
     def __init__(self, variable_num):
@@ -2597,7 +2751,7 @@ class InvertedCosineWave(OptimalBasic):
                          'Convex': False}
 
     def get_func_val(self, variables, k=6., *args):
-        x_vals = np.square(variables[:-1]) + np.square(variables[1:])\
+        x_vals = np.square(variables[:-1]) + np.square(variables[1:]) \
                  + 0.5 * variables[1:] * variables[:-1]
         return -np.sum(np.exp(-x_vals / 8.) * np.cos(4. * np.sqrt(x_vals)))
 
@@ -2619,11 +2773,12 @@ class OddSquare(OptimalBasic):
                          'Convex': False}
 
     def get_func_val(self, variables, k=6., *args):
-        x_vals = np.square(variables[:-1]) + np.square(variables[1:])\
+        x_vals = np.square(variables[:-1]) + np.square(variables[1:]) \
                  + 0.5 * variables[1:] * variables[:-1]
         return -np.sum(np.exp(-x_vals / 8.) * np.cos(4. * np.sqrt(x_vals)))
 
 
+# %% TOOLS TO HANDLE THE PROBLEMS
 # List all available functions
 def list_functions(rnp=True, fts=None, wrd="1"):
     """
