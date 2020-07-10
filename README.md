@@ -1,4 +1,6 @@
-# CUSTomising Optimisation Metaheuristics via HYper-heuristic Search
+![CHM_Logo](./docfiles/chm_logo.png)
+
+# CUSTOMHYS (Customising optimisation metaheuristics via hyper-heuristic search)
 
 This project aims to develop an approach based on, but not limited to, Data Science and Optimisation for solving continuous optimisation problems. As a final product, engineers and academicians can dispose of a framework for tailoring metaheuristics for these problems, closely related to practical engineering problems.
 
