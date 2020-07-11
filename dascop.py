@@ -2,13 +2,11 @@
 """
 Created on Mon Sep 30 13:42:15 2019
 
-@author: L03130342
+@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
 """
 
 import hyperheuristic as HH
 from metaheuristic import Operators
-# from metaheuristic import Population
-# import numpy as np
 import benchmark_func as bf
 import multiprocessing
 import tools as jt
@@ -50,12 +48,13 @@ def test_set0():
             problem = eval(f"bf.{function_string}({num_dimensions})")
             function = lambda x: problem.get_func_val(x)
             # HH.set_problem(problem_function, boundaries, True)
-            Problem = HH.set_problem(function,
-                                     (problem.min_search_range / divider, problem.max_search_range / divider),
-                                     is_constrained)
+            # Problem = HH.set_problem(function,
+            #                          (problem.min_search_range / divider, problem.max_search_range / divider),
+            #                          is_constrained)
+            problem_to_solve = problem.get_formatted_problem(is_constrained)
 
             # Call the hyperheuristic object
-            hh = HH.Hyperheuristic(heuristics_collection, Problem, hh_parameters, label)
+            hh = HH.Hyperheuristic(heuristics_collection, problem_to_solve, hh_parameters, label)
 
             # Run the HH:Random Search
             hh.run()
@@ -100,12 +99,13 @@ def test_set1p(num_dimensions):
         problem = eval("bf.{}({})".format(function_string, num_dimensions))
 
         # HH.set_problem(problem_function, boundaries, True)
-        problem_to_solve = HH.set_problem(
-            lambda x: problem.get_function_value(x),
-            (problem.min_search_range / divider,
-             problem.max_search_range / divider),
-            is_constrained
-        )
+        # problem_to_solve = HH.set_problem(
+        #     lambda x: problem.get_function_value(x),
+        #     (problem.min_search_range / divider,
+        #      problem.max_search_range / divider),
+        #     is_constrained
+        # )
+        problem_to_solve = problem.get_formatted_problem(is_constrained)
 
         # Call the hyperheuristic object
         hh = HH.Hyperheuristic('default.txt', problem_to_solve, hh_parameters, label)
@@ -154,9 +154,10 @@ def test_set2p(problem_dimension):
     problem = eval("bf.{}({})".format(function_string, num_dimensions))
 
     # HH.set_problem(problem_function, boundaries, True)
-    problem_to_solve = HH.set_problem(lambda x: problem.get_function_value(x),
-                                      (problem.min_search_range, problem.max_search_range),
-                                      is_constrained)
+    # problem_to_solve = HH.set_problem(lambda x: problem.get_function_value(x),
+    #                                   (problem.min_search_range, problem.max_search_range),
+    #                                   is_constrained)
+    problem_to_solve = problem.get_formatted_problem(is_constrained)
 
     # Call the hyperheuristic object
     hh = HH.Hyperheuristic('test-set-21.txt', problem_to_solve, hh_parameters, label, None)
@@ -201,12 +202,12 @@ def test_set3p(problem_dimension):
     problem = eval("bf.{}({})".format(function_string, num_dimensions))
 
     # HH.set_problem(problem_function, boundaries, True)
-    problem_to_solve = HH.set_problem(
-        lambda x: problem.get_function_value(x),
-        (problem.min_search_range,
-         problem.max_search_range),
-        is_constrained
-    )
+    # problem_to_solve = HH.set_problem(
+    #     lambda x: problem.get_function_value(x),
+    #     (problem.min_search_range, problem.max_search_range),
+    #     is_constrained
+    # )
+    problem_to_solve = problem.get_formatted_problem(is_constrained)
 
     # Call the hyperheuristic object
     hh = HH.Hyperheuristic('basicmetaheuristics.txt', problem_to_solve, hh_parameters, label)

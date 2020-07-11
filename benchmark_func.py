@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-This model is an upgraded version of the Keita Tomochika's module in
+This module is an upgraded version of the Keita Tomochika's module in
 https://github.com/keit0222/optimization-evaluation. The current module only contain N-dimensional functions. These
 functions are listed in ``__all__``.
 
@@ -364,6 +364,22 @@ class OptimalBasic:
         plt.tight_layout()
         self.plot_object.savefig(self.save_dir + self.func_name + '.' + ext)
         plt.show()
+
+    def get_formatted_problem(self, is_constrained=True):
+        """
+        Return the problem in a simple format to be used in a solving procedure. This format contains the ``function``
+        in lambda form, the ``boundaries`` as a tuple with the lower and upper boundaries, and the ``is_constrained``
+        flag.
+
+        :param bool is_constrained: Optional.
+            Flag indicating if the problem domain has hard boundaries.
+
+        :return: dict.
+        """
+        # TODO: Include additional parameters to build the formatted problem, e.g., length scale feature.
+        return dict(function=lambda x: self.get_function_value(x),
+                    boundaries=(self.min_search_range, self.max_search_range),
+                    is_constrained=is_constrained)
 
 
 # %% SPECIFIC PROBLEM FUNCTIONS
@@ -2779,44 +2795,70 @@ class OddSquare(OptimalBasic):
 
 
 # %% TOOLS TO HANDLE THE PROBLEMS
-# List all available functions
-def list_functions(rnp=True, fts=None, wrd="1"):
+def list_functions(rnp=True, fts=None, wrd='1'):
     """
+    This function list all available functions in screen. It could be formatted for copy and paste in a latex document.
 
-    :param rnp: return but not print if True, otherwise, print but not return
-    :param fts: features to export/print. Possible options: 'Continuous', 'Differentiable','Separable', 'Scalable',
-        'Unimodal', 'Convex'. Default: 'Differentiable','Separable', 'Unimodal'
-    :return:
+    :param bool rnp: Optional.
+        Flag (return-not-print). If True, the function delivers a list but not print, otherwise, print but not return.
+        An example of the list returned when rnp = True is:
+            [[function1_weight, function1_id, function1_name, function1_features],
+             [function2_weight, function2_id, function2_name, function2_features],
+             ...
+             [functionN_weight, functionN_id, functionN_name, functionN_features]]
+
+    Weights are determined with ``function.get_features("string", wrd=wrd, fts=fts)``
+
+    :param list fts: Optional.
+        Features to export/print. Possible options: 'Continuous', 'Differentiable','Separable', 'Scalable', 'Unimodal',
+        'Convex'. Default: ['Differentiable','Separable', 'Unimodal']
+
+    :return: list or none.
     """
+    # Set the default value
     if fts is None:
         fts = ['Differentiable', 'Separable', 'Unimodal']
 
+    # Initialise the variables
     feature_strings = list()
     functions_features = dict()
+
+    # For all the functions
     for ii in range(len(__all__)):
+        # Get the name and initialise its object in two dimensions
         function_name = __all__[ii]
         funct = eval("{}(2)".format(function_name))
 
+        # Get the features and weights
         feature_str = funct.get_features(fts=fts)
         weight = funct.get_features("string", wrd=wrd, fts=fts)
         functions_features[function_name] = dict(**funct.features, Code=weight)
 
+        # Build the list
         feature_strings.append([weight, ii + 1, funct.func_name, feature_str])
 
     if not rnp:
         # Print first line
         print("Id. & Function Name & Continuous & Differentiable & Separable & Scalable & Unimodal & Convex \\\\")
-
-        # Sort list according to the weight values
-        # feature_strings = sorted(feature_strings, key=lambda x: x[0], reverse=True)
-
         for x in feature_strings:
             print("{} & {} & {} \\\\".format(*x[1:]))
     else:
+        # Return the list
         return functions_features
 
 
 def for_all(property, dimension=2):
+    """
+    Read determined property or attribute for all the problems, and return a list.
+
+    :param str property:
+        Property to read. Please, check the attributes from a given problem object.
+
+    :param int dimension: Optional
+        Dimension to initialise all the problems.
+
+    :return: list
+    """
     if property == 'features':
         return list_functions(rnp=True, fts=None)
     else:
@@ -2824,6 +2866,6 @@ def for_all(property, dimension=2):
         # Read all functions and request their optimum data
         for ii in range(len(__all__)):
             function_name = __all__[ii]
-            info[function_name] = eval("{}({}).{}".format(function_name, dimension, property))
+            info[function_name] = eval('{}({}).{}'.format(function_name, dimension, property))
 
         return info

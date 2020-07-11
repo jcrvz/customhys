@@ -1,50 +1,47 @@
 # -*- coding: utf-8 -*-
 """
+This module containts the Metaheuristic class.
+
 Created on Thu Sep 26 16:56:01 2019
 
-@author: Jorge Mario Cruz-Duarte (jcrvz.github.io)
+@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
 """
 
 import numpy as np
 from population import Population
 import operators as Operators
-# import matplotlib.pyplot as plt
-# from tqdm import tqdm
 
 __all__ = ['Metaheuristic', 'Population', 'Operators']
-
-# Read all available operators
 __operators__ = Operators.__all__
-# __operators__ = [x[0] for x in Operators.obtain_operators(1)]
 __selectors__ = ['greedy', 'probabilistic', 'metropolis', 'all', 'none']
 
 
 class Metaheuristic:
-    def __init__(self, problem, search_operators, num_agents=30,
-                 num_iterations=100):
+    """
+        This is the Metaheuristic class, each object corresponds to a metaheuristic implemented with a sequence of
+        search operators from Operators, and it is based on a population from Population.
+    """
+    def __init__(self, problem, search_operators, num_agents=30, num_iterations=100):
         """
-        Create a metaheuristic method by employing different simple search
-        operators.
+        Create a population-based metaheuristic by employing different simple search operators.
 
-        Parameters
-        ----------
-        problem : dict
-            This is a dictionary containing the 'function' that maps a 1-by-D
-            array of real values ​​to a real value, 'is_constrained' flag
-            indicated that solution is inside the search space, and the
-            'boundaries' (a tuple with two lists of size D). These two lists
-            correspond to the lower and upper limits of search space, such as:
-                boundaries = (lower_boundaries, upper_boundaries)
-            Note: Dimensions of search domain are read from these boundaries.
-        search_operators : list
-            A list of available search operators.
-        num_agents : int, optional
-            Numbre of agents or population size. The default is 30.
+        :param dict problem:
+            This is a dictionary containing the 'function' that maps a 1-by-D array of real values ​​to a real value,
+            'is_constrained' flag that indicates the solution is inside the search space, and the 'boundaries' (a tuple
+            with two lists of size D). These two lists correspond to the lower and upper limits of domain, such as:
+            ``boundaries = (lower_boundaries, upper_boundaries)``
 
-        Returns
-        -------
-        None.
+            **Note:** Dimensions (D) of search domain are read from these boundaries. The problem can be obtained from
+            the ``benchmark_func`` module.
+        :param list search_operators:
+            A list of available search operators. These operators must correspond to those available in the
+            ``operators`` module.
+        :param int num_agents: Optional.
+            Number of agents or population size. The default is 30.
+        :param int num_iterations: Optional.
+            Number of iterations or generations that the metaheuristic is going to perform. The default is 100.
 
+        :return: None.
         """
         # Read the problem function
         self.problem_function = problem['function']
@@ -72,11 +69,9 @@ class Metaheuristic:
 
     def run(self):
         """
-        Run the metaheuristic for solving a defined problem.
+        Run the metaheuristic for solving the defined problem.
 
-        Returns
-        -------
-        None.
+        :return: None.
 
         """
         # Set initial iteration
@@ -105,13 +100,6 @@ class Metaheuristic:
 
         # Start optimisaton procedure
         for iteration in range(1, self.num_iterations + 1):
-            # tqdm(range(1, self.num_iterations + 1),
-            #                   desc='MH', position = 0, leave = True,
-            #                   postfix={
-            #                       'fitness': self.pop.global_best_fitness},
-            #                   bar_format="{l_bar}{bar}| " +
-            #                   "[{n_fmt}/{total_fmt}" + "{postfix}]"):
-
             # Update the current iteration
             self.pop.iteration = iteration
 
@@ -121,8 +109,7 @@ class Metaheuristic:
                 operator_name, operator_params = operator.split('(')
 
                 # Apply an operator
-                exec("Operators." + operator_name + "(self.pop," +
-                     operator_params)
+                exec('Operators.' + operator_name + '(self.pop,' + operator_params)
 
                 # Evaluate fitness values
                 self.pop.evaluate_fitness(self.problem_function)
@@ -140,24 +127,18 @@ class Metaheuristic:
             self._update_historicals()
 
             # Verbose (if so) some information
-            self._verbose("{}\npop. radius: {}".format(
-                iteration,  # self.historical['stagnation'][-1],
-                self.historical['radius'][-1]))
+            self._verbose('{}\npop. radius: {}'.format(iteration, self.historical['radius'][-1]))
             self._verbose(self.pop.get_state())
 
     def get_solution(self):
         """
-        Deliver the last position and fitness obtained after run.
+        Deliver the last position and fitness value obtained after ``run`` the metaheuristic procedure.
 
-        Returns
-        -------
-        ndarray
-            Best position vector found.
-        float
-            Best fitness value found.
+        :returns: ndarray, float
         """
         return self.historical['position'][-1], self.historical['fitness'][-1]
 
+    # TODO: Integrate this property again
     # @property
     # Deprecated!
     # def show_performance(self):
@@ -194,24 +175,17 @@ class Metaheuristic:
 
     def _reset_historicals(self):
         """
-        Reset the self.historical variable
+        Reset the ``historical`` variables.
 
-        Returns
-        -------
-        None.
-
+        :return: None.
         """
         self.historical = dict(fitness=list(), position=list(), centroid=list(), radius=list())
-            # stagnation=list(),
 
     def _update_historicals(self):
         """
-        Update the historical variables
+        Update the ``historical`` variables.
 
-        Returns
-        -------
-        None.
-
+        :return: None.
         """
         # Update historical variables
         self.historical['fitness'].append(np.copy(self.pop.global_best_fitness))
@@ -223,6 +197,7 @@ class Metaheuristic:
         self.historical['radius'].append(np.max(np.linalg.norm(self.pop.positions - np.tile(
             current_centroid, (self.num_agents, 1)), 2, 1)))
 
+        # TODO: Implement stagnation again
         # Update stagnation
         # if (self.pop.iteration > 0) and (
         #         float(self.historical['fitness'][-1]) == float(self.historical['fitness'][-2])):
@@ -233,17 +208,12 @@ class Metaheuristic:
 
     def _verbose(self, text_to_print):
         """
-        Print each step performed during the solution procedure
+        Print each step performed during the solution procedure. It only works if ``verbose`` flag is True.
 
-        Parameters
-        ----------
-        text_to_print : str
+        :param str text_to_print:
             Explanation about what the metaheuristic is doing.
 
-        Returns
-        -------
-        None.
-
+        :return: None.
         """
         if self.verbose:
             print(text_to_print)
