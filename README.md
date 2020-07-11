@@ -1,9 +1,8 @@
-<center> <img src="./docfiles/chm_logo.png" alt="alt text" width="200"> </center>
+# customhys
 
-# CUSTOMHYS 
-**Customising optimisation metaheuristics via hyper-heuristic search**
+<img align="left" src="./docfiles/chm_logo.png?raw=true" width="200"/>
 
-This project aims to develop an approach based on, but not limited to, Data Science and Optimisation for solving continuous optimisation problems. As a final product, engineers and academicians can dispose of a framework for tailoring metaheuristics for these problems, closely related to practical engineering problems.
+CUSTOMHYS (Customising optimisation metaheuristics via hyper-heuristic search). [Improve] This project aims to develop an approach based on, but not limited to, Data Science and Optimisation for solving continuous optimisation problems. As a final product, engineers and academicians can dispose of a framework for tailoring metaheuristics for these problems, closely related to practical engineering problems.
 
 ## Current data structure
 
