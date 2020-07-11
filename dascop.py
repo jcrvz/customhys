@@ -123,7 +123,7 @@ def test_set2p(problem_dimension):
 
     # Problems definition
     # functions = bf.__all__
-    weights_per_feature = weights_data[str(num_dimensions)]
+    # weights_per_feature = weights_data[str(num_dimensions)]
     is_constrained = True
 
     # Hyperheuristic conditions
