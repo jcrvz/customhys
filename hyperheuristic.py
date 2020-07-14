@@ -11,6 +11,7 @@ import scipy.stats as st
 from metaheuristic import Metaheuristic
 from datetime import datetime
 import json
+import tools as jt
 from os.path import exists as _check_path
 from os import makedirs as _create_path
 
@@ -465,7 +466,7 @@ def _save_step(step_number, variable_to_save, prefix=''):
     # Create a new file for this step
     with open(folder_name + f"/{step_number}-" + now.strftime(
             "%H_%M_%S") + ".json", 'w') as json_file:
-        json.dump(variable_to_save, json_file, cls=NumpyEncoder)
+        json.dump(variable_to_save, json_file, cls=jt.NumpyEncoder)
 
 
 class HyperheuristicError(Exception):
@@ -474,12 +475,3 @@ class HyperheuristicError(Exception):
     """
     pass
 
-
-class NumpyEncoder(json.JSONEncoder):
-    """
-    Numpy encoder
-    """
-    def default(self, obj):
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        return json.JSONEncoder.default(self, obj)
