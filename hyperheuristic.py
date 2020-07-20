@@ -18,8 +18,7 @@ from os import makedirs as _create_path
 
 class Hyperheuristic():
     """
-        This is the Hyperheuristic class, each object corresponds to a hyper-heuristic process implemented with a
-        heuristic collection from Operators to build metaheuristics using the Metaheuristic module.
+    This is the Hyperheuristic class, each object corresponds to a hyper-heuristic process implemented with a heuristic collection from Operators to build metaheuristics using the Metaheuristic module.
     """
 
     def __init__(self, heuristic_space='default.txt', problem=None, parameters=None, file_label='', weights_array=None):

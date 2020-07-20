@@ -253,6 +253,22 @@ def df2dict(df):
     return {df_dict['index'][x]: df_dict['data'][x] for x in range(len(df_dict['index']))}
 
 
+def check_fields(default_dict, new_dict):
+    """
+    Return the dictionary with default keys and values updated by using the information of ``new_dict``
+
+    :param dict default_dict:
+        Dictionary with default values.
+    :param dict new_dict:
+        Dictionary with new values.
+    :return: dict.
+    """
+    # Check if the entered variable has different values
+    for key in list(set(default_dict.keys()) & set(new_dict.keys())):
+        default_dict[key] = new_dict[key]
+    return default_dict
+
+
 def save_json(variable_to_save, file_name=None):
     """
     Save a variable composed with diverse types of variables, like numpy.
