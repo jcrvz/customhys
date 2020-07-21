@@ -125,7 +125,7 @@ class Population:
 
         :returns: numpy.ndarray
         """
-        return rescaled_positions = 2. * (positions - np.tile(self.centre_boundaries, (self.num_agents, 1))) / np.tile(
+        return 2. * (positions - np.tile(self.centre_boundaries, (self.num_agents, 1))) / np.tile(
             self.span_boundaries, (self.num_agents, 1))
 
     def update_positions(self, level='population', selector='all'):

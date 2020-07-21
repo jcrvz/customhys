@@ -15,7 +15,9 @@ import tools as jt
 from os import path
 
 
-class Experiment():
+# %% EXPERIMENT CLASS
+
+class Experiment:
     """
     Create an experiment using the toolbox.
     """
@@ -25,7 +27,7 @@ class Experiment():
         self.exp_config = jt.check_fields(
             {
                 'experiment_name': 'test',
-                'experiment_type': 'default',  # 'default' -> hh, 'brute-force', 'basic_metaheuristics'
+                'experiment_type': 'default',  # 'default' -> hh, 'brute_force', 'basic_metaheuristics'
                 'heuristic_collection_file': 'default.txt',
                 'weights_dataset_file': None,  # 'operators_weights.json',
                 'use_parallel': True,
@@ -84,7 +86,7 @@ class Experiment():
         # Check if the experiment will be in parallel
         if self.exp_config['use_parallel']:
             pool = multiprocessing.Pool(self.exp_config['parallel_pool_size'])
-            pool.map(lambda x: self._simple_run(x), all_problems)
+            pool.map(self._simple_run, all_problems)
         else:
             for prob_dim in all_problems:
                 self._simple_run(prob_dim)
@@ -117,164 +119,8 @@ class Experiment():
         else:
             hh.run()
 
-        # TODO: Add pre-label to now the current status
+        # TODO: Add pre-label to know the current status
         print(label + ' done!')
-
-
-# %% Parallel of test_set1() : Brute-force
-def test_set0(num_dimensions):
-    # Problems definition
-    functions = bf.__all__
-    is_constrained = True
-
-    # Hyperheuristic conditions
-    hh_parameters = {
-        'cardinality': 1,
-        'num_agents': 30,
-        'num_iterations': 100,
-        'num_replicas': 30,
-        'num_trials': 100,  # Not used
-        'max_temperature': 100,  # Not used
-        'min_temperature': 0.1,  # Not used
-        'cooling_rate': 0.05,  # Not used
-    }
-
-    # Find a metaheuristic for each problem
-    if isinstance(functions, str):  # If it is only one function
-        functions = [functions]
-    for func_id in range(len(functions)):
-        function_string = functions[func_id]
-
-        # Message to print and to store in folders
-        label = "{}-{}D".format(function_string, num_dimensions)
-
-        # Get and format the problem
-        problem = eval("bf.{}({})".format(function_string, num_dimensions))
-        problem_to_solve = problem.get_formatted_problem(is_constrained)
-
-        # Call the hyperheuristic object
-        hh = HH.Hyperheuristic('default.txt', problem_to_solve, hh_parameters, label)
-
-        # Run the HH:Random Search
-        hh.brute_force()
-
-        print(label + " done!")
-
-
-# %% Parallel of test_set1() : Basic Heuristics
-def test_set1(problem_dimension):
-    function_string, num_dimensions = problem_dimension
-    is_constrained = True
-
-    # Hyperheuristic conditions
-    hh_parameters = {
-        'cardinality': 1,  # Does not matter
-        'num_agents': 30,
-        'num_iterations': 100,
-        'num_replicas': 30,
-        'num_trials': 100,  # Not used
-        'max_temperature': 100,  # Not used
-        'min_temperature': 0.1,  # Not used
-        'cooling_rate': 0.05,  # Not used
-    }
-
-    # if isinstance(functions, str):
-    #     functions = [functions]
-    # for func_id in range(len(functions)):
-    #     function_string = functions[func_id]
-
-    # print('Func: {}/{}...'.format(func_id + 1, len(functions)))
-
-    # Message to print and to store in folders
-    label = '{}-{}D'.format(function_string, num_dimensions)
-
-    # Get and format the problem
-    problem = eval('bf.{}({})'.format(function_string, num_dimensions))
-    problem_to_solve = problem.get_formatted_problem(is_constrained)
-
-    # Call the hyperheuristic object
-    hh = HH.Hyperheuristic('basicmetaheuristics.txt', problem_to_solve, hh_parameters, label)
-
-    # Run the HH:Random Search
-    hh.basic_metaheuristics(label)
-
-    print(label + ' done!')
-
-
-# %% Parallel try of test_set2() After brute-force
-def test_set2(problem_dimension):
-    function_string, num_dimensions = problem_dimension
-
-    # Problems definition
-    # functions = bf.__all__
-    weights_per_feature = weights_data[str(num_dimensions)]
-    is_constrained = True
-
-    # Hyperheuristic conditions
-    hh_parameters = {
-        'cardinality': 3,
-        'num_agents': 30,
-        'num_iterations': 100,
-        'num_replicas': 50,
-        'num_steps': 100,
-        'max_temperature': 200,
-        'stagnation_percentage': 0.3,
-        'cooling_rate': 0.05,
-    }
-
-    # Message to print and to store in folders
-    label = '{}-{}D'.format(function_string, num_dimensions)
-
-    # Get and format the problem
-    problem = eval('bf.{}({})'.format(function_string, num_dimensions))
-    problem_to_solve = problem.get_formatted_problem(is_constrained)
-
-    # Call the hyperheuristic object
-    hh = HH.Hyperheuristic('test-set-11.txt', problem_to_solve, hh_parameters, label, None)
-    # weights_per_feature[problem.get_features(fmt='string', wrd='1')])
-
-    # Run the HH:Random Search
-    hh.run()
-
-    print(label + ' done!')
-
-
-# %% Parallel try of test_set2() After brute-force
-def test_set3(problem_dimension):
-    function_string, num_dimensions = problem_dimension
-
-    # Problems definition
-    # functions = bf.__all__
-    weights_per_feature = weights_data[str(num_dimensions)]
-    is_constrained = True
-
-    # Hyperheuristic conditions
-    hh_parameters = {
-        'cardinality': 3,
-        'num_agents': 30,
-        'num_iterations': 100,
-        'num_replicas': 50,
-        'num_steps': 100,
-        'max_temperature': 200,
-        'stagnation_percentage': 0.3,
-        'cooling_rate': 0.05,
-    }
-
-    # Message to print and to store in folders
-    label = '{}-{}D'.format(function_string, num_dimensions)
-
-    # Get and format the problem
-    problem = eval('bf.{}({})'.format(function_string, num_dimensions))
-    problem_to_solve = problem.get_formatted_problem(is_constrained)
-
-    # Call the hyperheuristic object
-    hh = HH.Hyperheuristic('test-set-11.txt', problem_to_solve, hh_parameters, label, None)
-    # weights_per_feature[problem.get_features(fmt='string', wrd='1')])
-
-    # Run the HH:Random Search
-    hh.run()
-
-    print(label + ' done!')
 
 
 class ExperimentError(Exception):
@@ -284,21 +130,45 @@ class ExperimentError(Exception):
     pass
 
 
+# %% PREDEFINED CONFIGURATIONS
+
+pr_config = {'dimensions': [2, 5], 'functions': [bf.__all__[0]]}
+
+ex_configs = [
+    {'experiment_name': 'brute_force', 'experiment_type': 'brute_force', 'heuristic_collection_file': 'default.txt'},
+    {'experiment_name': 'basic_metaheuristics', 'experiment_type': 'basic_metaheuristics',
+     'heuristic_collection_file': 'basicmetaheuristics.txt'},
+    {'experiment_name': 'short_test1', 'experiment_type': 'default', 'heuristic_collection_file': 'default.txt',
+     'weights_dataset_file': 'operators_weights.json', 'use_parallel': True},  # Default
+    {'experiment_name': 'short_test2', 'experiment_type': 'default', 'heuristic_collection_file': 'default.txt'},
+    {'experiment_name': 'long_test', 'experiment_type': 'default', 'heuristic_collection_file': 'test-set-21.txt',
+     'auto_collection_num_vals': 21}
+]
+hh_configs = [
+    {'cardinality': 1, 'num_replicas': 30},
+    {'cardinality': 1, 'num_replicas': 30},
+    {'cardinality': 3, 'num_replicas': 50},  # Default
+    {'cardinality': 5, 'num_replicas': 50},
+    {'cardinality': 3, 'num_replicas': 50}
+]
+
 # %% Auto-run
 if __name__ == '__main__':
-    # List of dimensionalities
-    dimensions = [2, 5, *range(10, 50 + 1, 10)]
 
-    # Build the collection of operators
-    # Operators.build_operators(Operators.obtain_operators(num_vals=11), file_name="test-set-11")
-    functions = bf.__all__
+    import argparse
 
-    problems_and_dimensions = [(x, y) for x in functions for y in dimensions]
+    parser = argparse.ArgumentParser(description='Run certain predefined experiment, default experiment index is 2')
+    parser.add_argument('exp_index', metavar='index', type=int, nargs='?', default=2, choices=range(len(hh_configs)),
+                        help='position of the experiment to run according to the configuration dictionaries')
+    exp_ind = list(vars(parser.parse_args()).values())[0]
 
-    # Load the weight data
-    # weights_data = jt.read_json('collections/operators_weights.json')
+    # Read the entered configuration
+    # pr_config = ...  # In this case is the same for all experiments
+    ex_config = ex_configs[exp_ind]
+    hh_config = hh_configs[exp_ind]
 
-    # Run it in parallel
-    pool = multiprocessing.Pool(10)
-    pool.map(test_set1, problems_and_dimensions)
-    # pool.map(test_set2p, dimensions)
+    # Create the experiment to runs
+    exp = Experiment(exp_config=ex_config, hh_config=hh_config, prob_config=pr_config)
+
+    # Run the experiment et voilà
+    exp.run()
