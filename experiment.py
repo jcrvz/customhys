@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-This script contains the main experiments performed using the current framework.
+This module contains the main experiments performed using the current framework.
 
 Created on Mon Sep 30 13:42:15 2019
 
@@ -19,10 +19,56 @@ from os import path
 
 class Experiment:
     """
-    Create an experiment using the toolbox.
+    Create an experiment using certain configurations.
     """
-
     def __init__(self, exp_config, hh_config, prob_config):
+        """
+        Initialise the experiment object.
+
+        :param dict exp_config:
+            Configuration dictionary related to the experiment. Keys and default values are listed as follows:
+
+                'experiment_name':              'test',         # Name of the experiment
+                'experiment_type':              'default',      # Type: 'default', 'brute_force', 'basic_metaheuristics'
+                'heuristic_collection_file':    'default.txt',  # Heuristic space located in /collections/
+                'weights_dataset_file':         None,           # Weights or probability distribution of heuristic space
+                'use_parallel':                 True,           # Run the experiment using a pool of processors
+                'parallel_pool_size':           None,           # Number of processors available, None = Default
+                'auto_collection_num_vals':     5               # Number of values for creating an automatic collection
+
+            **NOTE 1:** 'experiment_type': 'default' or another name mean hyper-heuristic.
+            **NOTE 2:** If the collection does not exist and it is not a reserved one ('default.txt', 'automatic.txt',
+                        'basicmetaheuristics.txt', 'test_collection'), then an automatic heuristic space is generated
+                        with ``Operators.build_operators`` with 'auto_collection_num_vals' as ``num_vals`` and
+                        'heuristic_collection_file' as ``filename``.
+            **NOTE 3:** # 'weights_dataset_file' must be determined in a preprocessing step. For the 'default' heuristic
+                        space, it is provided 'operators_weights.json'.
+
+        :param dict hh_config:
+            Configuration dictionary related to the hyper-heuristic procedure. Keys and default values are listed as
+            follows:
+
+                'cardinality':                      3,          # Maximum cardinality used for building metaheuristics
+                'num_agents':                       30,         # Population size employed by the metaheuristic
+                'num_iterations':                   100,        # Maximum number of iterations used by the metaheuristic
+                'num_replicas':                     50,         # Number of replicas for each metaheuristic implemented
+                'num_steps':                        100,        # * Number of steps that the hyper-heuristic performs
+                'max_temperature':                  200,        # * Initial temperature for HH-Simulated Annealing
+                'stagnation_percentage':            0.3,        # * Percentage of stagnation used by the hyper-heuristic
+                'cooling_rate':                     0.05        # * Cooling rate for HH-Simulated Annealing
+
+            **NOTE 4:** Keys with * correspond to those that are only used when ``exp_config['experiment_type']`` is
+                neither 'brute_force' or 'basic_metaheuristic'.
+
+        :param dict prob_config:
+            Configuration dictionary related to the problems to solve. Keys and default values are listed as follows:
+
+                'dimensions':       [2, 5, 10, 20, 30, 40, 50], # List of dimensions for the problem domains
+                'functions':        bf.__all__,                 # List of function names of the optimisation problems
+                'is_constrained':   True                        # True if the problem domain is hard constrained
+
+        :return: None.
+        """
         # Load the default experiment configuration and compare it with exp_cfg
         self.exp_config = jt.check_fields(
             {
@@ -79,6 +125,11 @@ class Experiment:
             self.weights_data = None
 
     def run(self):
+        """
+        Run the experiment according to the configuration variables.
+
+        :return: None
+        """
         # TODO: Create a task log for prevent interruptions
         # Create a list of problems from functions and dimensions combinations
         all_problems = [(x, y) for x in self.prob_config['functions'] for y in self.prob_config['dimensions']]
@@ -92,11 +143,19 @@ class Experiment:
                 self._simple_run(prob_dim)
 
     def _simple_run(self, prob_dim):
+        """
+        Perform a single run, i.e., for a problem and dimension combination
+
+        :param tuple prob_dim:
+            Problem name and dimensionality ``(function_string, num_dimensions)``
+
+        :return: None.
+        """
         # Read the function name and the number of dimensions
         function_string, num_dimensions = prob_dim
 
         # Message to print and to store in folders
-        label = '{}-{}D'.format(function_string, num_dimensions)
+        label = '{}-{}D-{}'.format(function_string, num_dimensions, self.exp_config['experiment_name'])
 
         # Get and format the problem
         problem = eval('bf.{}({})'.format(function_string, num_dimensions))
@@ -131,9 +190,9 @@ class ExperimentError(Exception):
 
 
 # %% PREDEFINED CONFIGURATIONS
+# TODO: Use configuration files instead of predefined dictionaries
 
-pr_config = {'dimensions': [2, 5], 'functions': [bf.__all__[0]]}
-
+# Configuration dictionary for experiments
 ex_configs = [
     {'experiment_name': 'brute_force', 'experiment_type': 'brute_force', 'heuristic_collection_file': 'default.txt'},
     {'experiment_name': 'basic_metaheuristics', 'experiment_type': 'basic_metaheuristics',
@@ -144,19 +203,26 @@ ex_configs = [
     {'experiment_name': 'long_test', 'experiment_type': 'default', 'heuristic_collection_file': 'test-set-21.txt',
      'auto_collection_num_vals': 21}
 ]
+
+# Configuration dictionary for hyper-heuristics
 hh_configs = [
     {'cardinality': 1, 'num_replicas': 30},
     {'cardinality': 1, 'num_replicas': 30},
-    {'cardinality': 3, 'num_replicas': 50},  # Default
+    {'cardinality': 3, 'num_replicas': 2},  # Default
     {'cardinality': 5, 'num_replicas': 50},
     {'cardinality': 3, 'num_replicas': 50}
 ]
 
+# Configuration dictionary for problems (the same for all)
+pr_config = {'dimensions': [2, 5], 'functions': [bf.__all__[0]]}  # Only for quick testing
+# pr_config = {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__}
+
 # %% Auto-run
 if __name__ == '__main__':
-
+    # Import module for calling this code from command-line
     import argparse
 
+    # Only one argument is allowed: the code
     parser = argparse.ArgumentParser(description='Run certain predefined experiment, default experiment index is 2')
     parser.add_argument('exp_index', metavar='index', type=int, nargs='?', default=2, choices=range(len(hh_configs)),
                         help='position of the experiment to run according to the configuration dictionaries')

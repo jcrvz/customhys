@@ -16,9 +16,10 @@ from os.path import exists as _check_path
 from os import makedirs as _create_path
 
 
-class Hyperheuristic():
+class Hyperheuristic:
     """
-    This is the Hyperheuristic class, each object corresponds to a hyper-heuristic process implemented with a heuristic collection from Operators to build metaheuristics using the Metaheuristic module.
+    This is the Hyperheuristic class, each object corresponds to a hyper-heuristic process implemented with a heuristic
+    collection from Operators to build metaheuristics using the Metaheuristic module.
     """
 
     def __init__(self, heuristic_space='default.txt', problem=None, parameters=None, file_label='', weights_array=None):
@@ -65,18 +66,18 @@ class Hyperheuristic():
             with open('collections/' + heuristic_space, 'r') as operators_file:
                 self.heuristic_space = [eval(line.rstrip('\n')) for line in operators_file]
         else:
-            raise HyperheuristicError("Invalid heuristic_space")
+            raise HyperheuristicError('Invalid heuristic_space')
 
         # Assign default values
         if parameters is None:
-            parameters = dict(cardinality=2,        # Max. numb. of SOs in MHs, lvl:0
-                              num_iterations=100,   # Iterations a MH performs, lvl:0
-                              num_agents=30,        # Agents in population,     lvl:0
-                              num_replicas=100,     # Replicas per each MH,     lvl:1
-                              num_steps=100,        # Trials per HH step,       lvl:2
+            parameters = dict(cardinality=2,  # Max. numb. of SOs in MHs, lvl:0
+                              num_iterations=100,  # Iterations a MH performs, lvl:0
+                              num_agents=30,  # Agents in population,     lvl:0
+                              num_replicas=100,  # Replicas per each MH,     lvl:1
+                              num_steps=100,  # Trials per HH step,       lvl:2
                               stagnation_percentage=0.2,  # Stagnation,         lvl:2
                               max_temperature=100,  # Initial temperature (SA), lvl:2
-                              cooling_rate=0.05)    # Cooling rate (SA),        lvl:2
+                              cooling_rate=0.05)  # Cooling rate (SA),        lvl:2
 
         # Read the problem
         if problem:
@@ -188,8 +189,7 @@ class Hyperheuristic():
             :return: float
             """
             if function == 'exponential':
-                return self.parameters['max_temperature'] * np.power(
-                    1 - self.parameters['cooling_rate'], step_val)
+                return self.parameters['max_temperature'] * np.power(1 - self.parameters['cooling_rate'], step_val)
             elif function == 'fast':
                 return self.parameters['max_temperature'] / step_val
             else:  # boltzmann
@@ -207,7 +207,7 @@ class Hyperheuristic():
                 Temperature value for determining the acceptance probability.
 
             :param str function: Optional.
-                Function for determining the acceptance proability. It can be 'exponential' or 'boltzmann'. The default
+                Function for determining the acceptance probability. It can be 'exponential' or 'boltzmann'. The default
                 is 'boltzmann'.
 
             :return: bool
@@ -312,7 +312,6 @@ class Hyperheuristic():
 
         # Run the metaheuristic several times
         for rep in range(1, self.parameters['num_replicas'] + 1):
-
             # Call the metaheuristic
             mh = Metaheuristic(self.problem, search_operators, self.parameters['num_agents'],
                                self.parameters['num_iterations'])
@@ -334,7 +333,7 @@ class Hyperheuristic():
 
         # Return the performance value and the corresponding details
         return self.get_performance(fitness_stats), dict(historical=historical_data, fitness=fitness_data,
-            positions=position_data, statistics=fitness_stats)
+                                                         positions=position_data, statistics=fitness_stats)
 
     def brute_force(self):
         """
@@ -359,9 +358,11 @@ class Hyperheuristic():
                 'statistics': operator_details['statistics']
             }, self.file_label)
 
-            # print('{}/{} - perf: {}'.format(operator_id + 1, self.num_operators, operator_performance))
+            # Print update
+            print('{} :: Operator {} of {}, Perf: {}'.format(
+                self.file_label, operator_id + 1, self.num_operators, operator_performance))
 
-    def basic_metaheuristics(self, label):
+    def basic_metaheuristics(self):
         """
         This method performs a brute force procedure solving the problem via all the predefined metaheuristics in
         './collections/basicmetaheuristics.txt'. Many of them are 1-cardinality MHs but other are 2-cardinality ones.
@@ -387,7 +388,9 @@ class Hyperheuristic():
                 'statistics': operator_details['statistics']
             }, self.file_label)
 
-            print('{} :: {}/{} - perf: {}'.format(label, operator_id + 1, self.num_operators, operator_performance))
+            # Print update
+            print('{} :: BasicMH {} of {}, Perf: {}'.format(
+                self.file_label, operator_id + 1, self.num_operators, operator_performance))
 
     @staticmethod
     def get_performance(statistics):
@@ -404,7 +407,7 @@ class Hyperheuristic():
         # TODO: Verify if using conditional for choosing between options is not cost computing
         # return statistics['Med']                                                                  # Option 1
         # return statistics['Avg'] + statistics['Std']                                              # Option 2
-        return statistics['Med'] + statistics['IQR']                                                # Option 3
+        return statistics['Med'] + statistics['IQR']  # Option 3
         # return statistics['Avg'] + statistics['Std'] + statistics['Med'] + statistics['IQR']      # Option 4
 
     @staticmethod
@@ -455,16 +458,17 @@ def _save_step(step_number, variable_to_save, prefix=''):
     now = datetime.now()
 
     # Define the folder name
-    sep = '-' if (prefix != '') else ''
-    folder_name = "data_files/raw/" + prefix + sep + now.strftime("%m_%d_%Y")
+    if prefix != '':
+        folder_name = 'data_files/raw/' + prefix
+    else:
+        folder_name = 'data_files/raw/' + 'Exp-' + now.strftime('%m_%d_%Y')
 
     # Check if this path exists
     if not _check_path(folder_name):
         _create_path(folder_name)
 
     # Create a new file for this step
-    with open(folder_name + f"/{step_number}-" + now.strftime(
-            "%H_%M_%S") + ".json", 'w') as json_file:
+    with open(folder_name + f'/{step_number}-' + now.strftime('%m_%d_%Y_%H_%M_%S') + '.json', 'w') as json_file:
         json.dump(variable_to_save, json_file, cls=jt.NumpyEncoder)
 
 
@@ -473,4 +477,3 @@ class HyperheuristicError(Exception):
     Simple HyperheuristicError to manage exceptions.
     """
     pass
-
