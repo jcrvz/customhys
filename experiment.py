@@ -28,46 +28,47 @@ class Experiment:
         :param dict exp_config:
             Configuration dictionary related to the experiment. Keys and default values are listed as follows:
 
-                'experiment_name':              'test',         # Name of the experiment
-                'experiment_type':              'default',      # Type: 'default', 'brute_force', 'basic_metaheuristics'
-                'heuristic_collection_file':    'default.txt',  # Heuristic space located in /collections/
-                'weights_dataset_file':         None,           # Weights or probability distribution of heuristic space
-                'use_parallel':                 True,           # Run the experiment using a pool of processors
-                'parallel_pool_size':           None,           # Number of processors available, None = Default
-                'auto_collection_num_vals':     5               # Number of values for creating an automatic collection
+            'experiment_name':              'test',         # Name of the experiment
+            'experiment_type':              'default',      # Type: 'default', 'brute_force', 'basic_metaheuristics'
+            'heuristic_collection_file':    'default.txt',  # Heuristic space located in /collections/
+            'weights_dataset_file':         None,           # Weights or probability distribution of heuristic space
+            'use_parallel':                 True,           # Run the experiment using a pool of processors
+            'parallel_pool_size':           None,           # Number of processors available, None = Default
+            'auto_collection_num_vals':     5               # Number of values for creating an automatic collection
 
             **NOTE 1:** 'experiment_type': 'default' or another name mean hyper-heuristic.
             **NOTE 2:** If the collection does not exist and it is not a reserved one ('default.txt', 'automatic.txt',
-                        'basicmetaheuristics.txt', 'test_collection'), then an automatic heuristic space is generated
-                        with ``Operators.build_operators`` with 'auto_collection_num_vals' as ``num_vals`` and
-                        'heuristic_collection_file' as ``filename``.
+            'basicmetaheuristics.txt', 'test_collection'), then an automatic heuristic space is generated with
+            ``Operators.build_operators`` with 'auto_collection_num_vals' as ``num_vals`` and
+            'heuristic_collection_file' as ``filename``.
             **NOTE 3:** # 'weights_dataset_file' must be determined in a preprocessing step. For the 'default' heuristic
-                        space, it is provided 'operators_weights.json'.
+            space, it is provided 'operators_weights.json'.
 
         :param dict hh_config:
             Configuration dictionary related to the hyper-heuristic procedure. Keys and default values are listed as
             follows:
 
-                'cardinality':                      3,          # Maximum cardinality used for building metaheuristics
-                'num_agents':                       30,         # Population size employed by the metaheuristic
-                'num_iterations':                   100,        # Maximum number of iterations used by the metaheuristic
-                'num_replicas':                     50,         # Number of replicas for each metaheuristic implemented
-                'num_steps':                        100,        # * Number of steps that the hyper-heuristic performs
-                'max_temperature':                  200,        # * Initial temperature for HH-Simulated Annealing
-                'stagnation_percentage':            0.3,        # * Percentage of stagnation used by the hyper-heuristic
-                'cooling_rate':                     0.05        # * Cooling rate for HH-Simulated Annealing
+            'cardinality':                      3,          # Maximum cardinality used for building metaheuristics
+            'num_agents':                       30,         # Population size employed by the metaheuristic
+            'num_iterations':                   100,        # Maximum number of iterations used by the metaheuristic
+            'num_replicas':                     50,         # Number of replicas for each metaheuristic implemented
+            'num_steps':                        100,        # * Number of steps that the hyper-heuristic performs
+            'max_temperature':                  200,        # * Initial temperature for HH-Simulated Annealing
+            'stagnation_percentage':            0.3,        # * Percentage of stagnation used by the hyper-heuristic
+            'cooling_rate':                     0.05        # * Cooling rate for HH-Simulated Annealing
 
             **NOTE 4:** Keys with * correspond to those that are only used when ``exp_config['experiment_type']`` is
-                neither 'brute_force' or 'basic_metaheuristic'.
+            neither 'brute_force' or 'basic_metaheuristic'.
 
         :param dict prob_config:
             Configuration dictionary related to the problems to solve. Keys and default values are listed as follows:
 
-                'dimensions':       [2, 5, 10, 20, 30, 40, 50], # List of dimensions for the problem domains
-                'functions':        bf.__all__,                 # List of function names of the optimisation problems
-                'is_constrained':   True                        # True if the problem domain is hard constrained
+            'dimensions':       [2, 5, 10, 20, 30, 40, 50], # List of dimensions for the problem domains
+            'functions':        bf.__all__,                 # List of function names of the optimisation problems
+            'is_constrained':   True                        # True if the problem domain is hard constrained
 
         :return: None.
+
         """
         # Load the default experiment configuration and compare it with exp_cfg
         self.exp_config = jt.check_fields(
