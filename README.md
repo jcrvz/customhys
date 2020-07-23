@@ -4,7 +4,11 @@
 
 CUSTOMHYS (Customising optimisation metaheuristics via hyper-heuristic search). This framework provides tools for solving, but not limited to, continuous optimisation problems using a hyper-heuristic approach for customising metaheuristics. Such an approach is powered by a strategy based on Simulated Annealing. Also, several search operators serve as building blocks for tailoring metaheuristics. They were extracted from ten well-known metaheuristics in the literature.
 
-## Current data structure
+
+
+<details>
+<summary> <H2> Current data structure </H2> </summary>
+<p>
 
 - ```N``` is the number of files within data_files folder
 - ```M``` is the number of hyper-heuristic iterations (metaheuristic candidates)
@@ -85,6 +89,8 @@ data_frame = {dict: N}
 |  |  |  |  |  |-- 'MAD' = {float}
 :  :  :  :  :  : 
 ```
+</p>
+</details> 
 
 ## Publications
 

@@ -1,4 +1,8 @@
 import setuptools
+import pathlib
+
+# The text of the README file
+README = (pathlib.Path(__file__).parent / 'README.md').read_text()
 
 setuptools.setup(
     name='customhys',
