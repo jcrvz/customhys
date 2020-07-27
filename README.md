@@ -10,16 +10,6 @@ CUSTOMHYS (Customising optimisation metaheuristics via hyper-heuristic search). 
 <summary> Show </summary>
 <p>
 
-- ```N``` is the number of files within data_files folder
-- ```M``` is the number of hyper-heuristic iterations (metaheuristic candidates)
-- ```C``` is the number of search operators in the metaheuristic (cardinality)
-- ```P``` is the number of control parameters for each search operator
-- ```R``` is the number of repetitions performed for each metaheuristic candidate
-- ```D``` is the dimensionality of the problem tackled by the metaheuristic candidate
-- ```I``` is the number of iterations performed by the metaheuristic candidate
- 
-
-- ```search_operator_structure``` corresponds to ```[operator_name = {str}, control_parameters = {dict: P}, selector = {str}]```
 
 ```
 data_frame = {dict: N}
@@ -89,6 +79,15 @@ data_frame = {dict: N}
 |  |  |  |  |  |-- 'MAD' = {float}
 :  :  :  :  :  : 
 ```
+where:
+- ```N``` is the number of files within data_files folder
+- ```M``` is the number of hyper-heuristic iterations (metaheuristic candidates)
+- ```C``` is the number of search operators in the metaheuristic (cardinality)
+- ```P``` is the number of control parameters for each search operator
+- ```R``` is the number of repetitions performed for each metaheuristic candidate
+- ```D``` is the dimensionality of the problem tackled by the metaheuristic candidate
+- ```I``` is the number of iterations performed by the metaheuristic candidate
+- ```search_operator_structure``` corresponds to ```[operator_name = {str}, control_parameters = {dict: P}, selector = {str}]```
 </p>
 </details> 
 
