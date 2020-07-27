@@ -2,7 +2,38 @@
 
 <img align="left" src="./docfiles/chm_logo.png?raw=true" width="200"/>
 
-CUSTOMHYS (Customising optimisation metaheuristics via hyper-heuristic search). This framework provides tools for solving, but not limited to, continuous optimisation problems using a hyper-heuristic approach for customising metaheuristics. Such an approach is powered by a strategy based on Simulated Annealing. Also, several search operators serve as building blocks for tailoring metaheuristics. They were extracted from ten well-known metaheuristics in the literature.
+**Customising optimisation metaheuristics via hyper-heuristic search** (CUSTOMHYS). A framework that provides tools for solving, but not limited to, continuous optimisation problems using a hyper-heuristic approach for customising metaheuristics. Such an approach is powered by a strategy based on Simulated Annealing. Also, several search operators serve as building blocks for tailoring metaheuristics. They were extracted from ten well-known metaheuristics in the literature.
+
+### 🛠 Requirements:
+Python 3.7 and higher. Packages: NumPy 1.18.5, SciPy 1.5.0, Matplotlib 3.2.2, json 2.0.9, tqdm 4.47.0.
+
+## 🧰 Modules
+
+### 🤯 Problems (benchmark functions)
+
+[``benchmark_func.py``](./benchmark_func.py)
+
+### 👯‍♂️ Population
+
+### 🦾 Search Operators (low-level heuristics)
+
+### 🤖 Metaheuristic (mid-level heuristic)
+
+### 👽 Hyper-heuristic (high-level heuristic)
+
+### 🏭 Experiment
+
+### 🗜️ Tools
+
+## 🏗️ Future Modules
+
+### 📊 Visualisation
+
+### 🌡️ Characterisation
+
+## 🚀 Features
+
+
 
 ### Current data structure
 
@@ -77,7 +108,7 @@ data_frame = {dict: N}
 |  |  |  |  |  |-- 'IQR' = {float}
 |  |  |  |  |  |-- 'Med' = {float}
 |  |  |  |  |  |-- 'MAD' = {float}
-:  :  :  :  :  : 
+:  :  :  :  :  :
 ```
 where:
 - ```N``` is the number of files within data_files folder
@@ -89,7 +120,7 @@ where:
 - ```I``` is the number of iterations performed by the metaheuristic candidate
 - ```search_operator_structure``` corresponds to ```[operator_name = {str}, control_parameters = {dict: P}, selector = {str}]```
 </p>
-</details> 
+</details>
 
 ## Publications
 
