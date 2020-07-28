@@ -140,3 +140,4 @@ data_files/raw
 *.txt
 *.svg
 .DS_Store
+!docfiles/
