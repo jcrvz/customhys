@@ -9,8 +9,7 @@ Python 3.7 and higher. Packages: NumPy 1.18.5, SciPy 1.5.0, Matplotlib 3.2.2, js
 
 ## 🧰 Modules
 
-<img src="./docfiles/dependency_diagram.png?raw=true" width="600" alt="Module Dependency Diagram"/>
-
+![Module Dependency Diagram](docfiles/dependency_diagram.png)
 
 ### 🤯 Problems (benchmark functions)
 
