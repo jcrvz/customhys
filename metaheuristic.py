@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-This module containts the Metaheuristic class.
+This module contains the Metaheuristic class.
 
 Created on Thu Sep 26 16:56:01 2019
 

@@ -4,63 +4,68 @@
 
 **Customising optimisation metaheuristics via hyper-heuristic search** (CUSTOMHYS). A framework that provides tools for solving, but not limited to, continuous optimisation problems using a hyper-heuristic approach for customising metaheuristics. Such an approach is powered by a strategy based on Simulated Annealing. Also, several search operators serve as building blocks for tailoring metaheuristics. They were extracted from ten well-known metaheuristics in the literature.
 
+Detailed information about this framework can be found in [1, 2]. Plus, the code for the module is well-documented, so many details are provided.
+
 ### 🛠 Requirements:
 Python 3.7 and higher. Packages: NumPy 1.18.5, SciPy 1.5.0, Matplotlib 3.2.2, json 2.0.9, tqdm 4.47.0.
 
 ## 🧰 Modules
 
+The modules that comprise this framework depend on some basic Python packages, as well as they liaise each other. The module dependency diagram is presented as follows:
+
 ![Module Dependency Diagram](docfiles/dependency_diagram.png)
+
+**NOTE:** Each module is briefly described below. If you require further information, please check the corresponding source code.
 
 ### 🤯 Problems (benchmark functions)
 
-[``benchmark_func.py``](./benchmark_func.py)
+This module includes several benchmark functions as classes to be solved by using optimisation techniques.
+
+Source: [``benchmark_func.py``](./benchmark_func.py)
 
 ### 👯‍♂️ Population
 
-[``population.py``](./population.py)
+This module contains the class Population. A Population object corresponds to a set of agents or individuals within a problem domain. These agents themselves do not explore the function landscape, but they know when to update the position according to a selection procedure.
+
+Source: [``population.py``](./population.py)
 
 ### 🦾 Search Operators (low-level heuristics)
 
-[``operators.py``](./operators.py)
+This module has a collection of search operators (simple heuristics) extracted from several well-known metaheuristics in the literature. Such operators work over a population, i.e., modify the individuals' positions.
+
+Source: [``operators.py``](./operators.py)
 
 ### 🤖 Metaheuristic (mid-level heuristic)
 
-[``metaheuristic.py``](./metaheuristic.py)
+This module contains the Metaheuristic class. A metaheuristic object implements a set of search operators to guide a population in a search procedure within an optimisation problem.
+
+Source: [``metaheuristic.py``](./metaheuristic.py)
 
 ### 👽 Hyper-heuristic (high-level heuristic)
 
-[``hyperheuristic.py``](./hyperheuristic.py)
+This module contains the Hyperheuristic class. Similar to the Metaheuristic class, but in this case, a collection of search operators is required. A hyper-heuristic object searches within the heuristic space to find the sequence that builds the best metaheuristic for a specific problem.
+
+Source: [``hyperheuristic.py``](./hyperheuristic.py)
 
 ### 🏭 Experiment
 
-[``experiment.py``](./experiment.py)
+This module contains the Experiment class.  An experiment object can run several hyper-heuristic procedures for a list of optimisation problems.
+
+Source: [``experiment.py``](./experiment.py)
 
 ### 🗜️ Tools
 
-[``tools.py``](./tools.py)
+This module contains several functions and methods utilised by many modules in this package.
 
-## 🏗️ Work-in-Progress
+Source: [``tools.py``](./tools.py)
 
-*NOTE:* Partial codes of these modules are available but they may do not work properly.
+### 💾 Data Structure
 
-### 📊 Visualisation
-
-[``visualisation.py``](./visualisation.py)
-
-### 🌡️ Characterisation
-
-[``characterisation.py``](./characterisation.py)
-
-## 🚀 Features
-
-
-
-### Current data structure
+The experiments are saved in JSON files. The data structure of a saved file follows a particular scheme described below.
 
 <details>
-<summary> Show </summary>
+<summary> Expand structure </summary>
 <p>
-
 
 ```
 data_frame = {dict: N}
@@ -142,6 +147,23 @@ where:
 </p>
 </details>
 
-## Publications
+## 🏗️ Work-in-Progress
 
-[1] [Cruz-Duarte, J.M., Amaya, I., Ortiz-Bayliss, J.C., Connat-Pablos, S.E., and Terashima-Marín, H., A Primary Study on Hyper-Heuristics to Customise Metaheuristics for Continuous Optimisation. Submitted to CEC'2020.](./docfiles/SearchOperators_CEC.pdf)
+The following modules are available, but they may do not work. They are currently under developing.
+
+### 🌡️ Characterisation
+
+This module intends to provide metrics for characterising the benchmark functions.
+
+Source: [``characterisation.py``](./characterisation.py)
+
+### 📊 Visualisation
+
+This module intends to provide several tools for plotting results from the experiments.
+
+Source: [``visualisation.py``](./visualisation.py)
+
+## References
+
+1. [Cruz-Duarte, J.M., Amaya, I., Ortiz-Bayliss, J.C., Connat-Pablos, S.E., and Terashima-Marín, H., A Primary Study on Hyper-Heuristics to Customise Metaheuristics for Continuous Optimisation. CEC'2020. Accepted.](./docfiles/SearchOperators_CEC.pdf)
+1. [Cruz-Duarte, J.M., Amaya, I., Ortiz-Bayliss, J.C., Connat-Pablos, S.E., Terashima-Marín, H., and Shi, Y., Hyper-Heuristics to Customise Metaheuristics for Continuous Optimisation. Submitted to SWEVO.](./docfiles/SWEVO-S-20-00229_submitted.pdf)
