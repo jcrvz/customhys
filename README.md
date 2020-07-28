@@ -9,27 +9,48 @@ Python 3.7 and higher. Packages: NumPy 1.18.5, SciPy 1.5.0, Matplotlib 3.2.2, js
 
 ## 🧰 Modules
 
+<img src="./docfiles/dependency_diagram.png?raw=true" width="600" alt="Module Dependency Diagram"/>
+
+
 ### 🤯 Problems (benchmark functions)
 
 [``benchmark_func.py``](./benchmark_func.py)
 
 ### 👯‍♂️ Population
 
+[``population.py``](./population.py)
+
 ### 🦾 Search Operators (low-level heuristics)
+
+[``operators.py``](./operators.py)
 
 ### 🤖 Metaheuristic (mid-level heuristic)
 
+[``metaheuristic.py``](./metaheuristic.py)
+
 ### 👽 Hyper-heuristic (high-level heuristic)
+
+[``hyperheuristic.py``](./hyperheuristic.py)
 
 ### 🏭 Experiment
 
+[``experiment.py``](./experiment.py)
+
 ### 🗜️ Tools
 
-## 🏗️ Future Modules
+[``tools.py``](./tools.py)
+
+## 🏗️ Work-in-Progress
+
+*NOTE:* Partial codes of these modules are available but they may do not work properly.
 
 ### 📊 Visualisation
 
+[``visualisation.py``](./visualisation.py)
+
 ### 🌡️ Characterisation
+
+[``characterisation.py``](./characterisation.py)
 
 ## 🚀 Features
 
