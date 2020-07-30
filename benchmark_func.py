@@ -48,7 +48,7 @@ __all__ = ['Ackley1', 'Ackley4', 'Alpine1', 'Alpine2', 'Bohachevsky', 'Brent', '
 
 
 # %% BASIC FUNCTION CLASS
-class OptimalBasic:
+class BasicProblem:
     """
     This is the basic class for a generic optimisation problem.
     """
@@ -65,7 +65,7 @@ class OptimalBasic:
         self.max_search_range = np.array([0] * self.variable_num)
         self.min_search_range = np.array([0] * self.variable_num)
         self.optimal_solution = np.array([0] * self.variable_num)
-        self.global_optimum_solution = 0
+        self.optimal_fitness = 0
         self.features = {'Continuous': True,
                          'Differentiable': True,
                          'Separable': True,
@@ -106,12 +106,12 @@ class OptimalBasic:
             fts = ['Differentiable', 'Separable', 'Unimodal']
 
         def translate_conditional(value):
-            if wrd == "Yes":
-                words = ["Yes", "No"]
-            elif wrd == "1":
-                words = ["1", "0"]
-            elif wrd == "X":
-                words = ["X", " "]
+            if wrd == 'Yes':
+                words = ['Yes', 'No']
+            elif wrd == '1':
+                words = ['1', '0']
+            elif wrd == 'X':
+                words = ['X', ' ']
             else:
                 words = [1, 0]
             return words[0] if value else words[1]
@@ -189,7 +189,7 @@ class OptimalBasic:
         if value:
             self.__noise_level = value
 
-    def get_global_optimum_solution(self):
+    def get_optimal_fitness(self):
         """
         Return the theoretical global optimum value.
 
@@ -197,7 +197,7 @@ class OptimalBasic:
 
         :return: float
         """
-        return self.global_optimum_solution
+        return self.optimal_fitness
 
     def get_optimal_solution(self):
         """
@@ -211,7 +211,7 @@ class OptimalBasic:
 
     def get_search_range(self):
         """
-        Return the problem domain defined by the lower and upper boundaries, both are 1-by-variable_num arrays.
+        Return the problem domain given by the lower and upper boundaries, both are 1-by-variable_num arrays.
 
         :returns: numpy.array, numpy.array
         """
@@ -219,7 +219,7 @@ class OptimalBasic:
 
     def set_search_range(self, min_search_range, max_search_range):
         """
-        Define the problem domain defined by the lower and upper boundaries. They could be 1-by-variable_num arrays or
+        Define the problem domain given by the lower and upper boundaries. They could be 1-by-variable_num arrays or
         floats.
 
         :param min_search_range:
@@ -265,6 +265,9 @@ class OptimalBasic:
 
         :return: float
         """
+        if isinstance(variables, list):
+            variables = np.array(variables)
+
         # Apply modifications to the position
         variables = self.__scale_domain * variables + self.__offset_domain
 
@@ -274,7 +277,7 @@ class OptimalBasic:
         else:
             noise_value = np.random.rand()
 
-        # Call ``get_func_val``with the modificaitons
+        # Call ``get_func_val``with the modifications
         return self.__scale_function * self.get_func_val(variables, *args) + \
                (self.__noise_level * noise_value) + self.__offset_function
 
@@ -357,8 +360,8 @@ class OptimalBasic:
             os.mkdir(self.save_dir)
 
         # Verify if the figure was previously plotted. If not, then do it
-        if self.plot_object is None:
-            self.plot(samples, resolution)
+        # if self.plot_object is None:
+        self.plot(samples, resolution)
 
         # Save it
         plt.tight_layout()
@@ -384,7 +387,7 @@ class OptimalBasic:
 
 # %% SPECIFIC PROBLEM FUNCTIONS
 # 1 - Class Ackley 1 function
-class Ackley1(OptimalBasic):
+class Ackley1(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([35.] * self.variable_num)
@@ -406,7 +409,7 @@ class Ackley1(OptimalBasic):
 
 
 # 4 - Class Ackley 4 function
-class Ackley4(OptimalBasic):
+class Ackley4(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([35] * self.variable_num)
@@ -429,7 +432,7 @@ class Ackley4(OptimalBasic):
 
 
 # 6 - Class Alpine 1 function
-class Alpine1(OptimalBasic):
+class Alpine1(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -449,7 +452,7 @@ class Alpine1(OptimalBasic):
 
 
 # 7 - Class Alpine 2 function
-class Alpine2(OptimalBasic):
+class Alpine2(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -469,7 +472,7 @@ class Alpine2(OptimalBasic):
 
 
 # 25 - Class Brown function
-class Brown(OptimalBasic):
+class Brown(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([4.] * self.variable_num)
@@ -491,7 +494,7 @@ class Brown(OptimalBasic):
 
 
 # Class Brent function
-class Brent(OptimalBasic):
+class Brent(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([0.] * self.variable_num)
@@ -512,7 +515,7 @@ class Brent(OptimalBasic):
 
 
 # 34 - Class Chung Reynolds function [Al-Roomi2015]
-class ChungReynolds(OptimalBasic):
+class ChungReynolds(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -532,7 +535,7 @@ class ChungReynolds(OptimalBasic):
 
 
 # 40 - Class Csendes function
-class Csendes(OptimalBasic):
+class Csendes(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([2.] * self.variable_num)
@@ -553,7 +556,7 @@ class Csendes(OptimalBasic):
 
 
 # 38 - Class Cosine Mixture function
-class CosineMixture(OptimalBasic):
+class CosineMixture(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([1.] * self.variable_num)
@@ -573,7 +576,7 @@ class CosineMixture(OptimalBasic):
 
 
 # 43 - Class Deb 1 function
-class Deb1(OptimalBasic):
+class Deb1(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([1.] * self.variable_num)
@@ -593,7 +596,7 @@ class Deb1(OptimalBasic):
 
 
 # Class Deb 2 function [https://al-roomi.org/benchmarks/unconstrained/n-dimensions/232-deb-s-function-no-02]
-class Deb2(OptimalBasic):
+class Deb2(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([1.] * self.variable_num)
@@ -614,7 +617,7 @@ class Deb2(OptimalBasic):
 
 
 # 48 - Class Dixon & Price function
-class DixonPrice(OptimalBasic):
+class DixonPrice(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -637,7 +640,7 @@ class DixonPrice(OptimalBasic):
 
 
 # Class Drop-Wave function [http://benchmarkfcns.xyz/benchmarkfcns/dropwavefcn.html]
-class DropWave(OptimalBasic):
+class DropWave(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([5.12] * self.variable_num)
@@ -658,7 +661,7 @@ class DropWave(OptimalBasic):
 
 
 # 53 - Class Egg Holder function
-class EggHolder(OptimalBasic):
+class EggHolder(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([512.] * self.variable_num)
@@ -682,7 +685,7 @@ class EggHolder(OptimalBasic):
 
 
 # Class Expanded Two-Peak Trap function [Qu2016]
-class ExpandedTwoPeakTrap(OptimalBasic):
+class ExpandedTwoPeakTrap(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -713,7 +716,7 @@ class ExpandedTwoPeakTrap(OptimalBasic):
 
 
 # Class Expanded Five-Uneven-Peak Trap function [Qu2016]
-class ExpandedFiveUnevenPeakTrap(OptimalBasic):
+class ExpandedFiveUnevenPeakTrap(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -755,7 +758,7 @@ class ExpandedFiveUnevenPeakTrap(OptimalBasic):
 
 
 # Class Expanded Equal Minima function [Qu2016]
-class ExpandedEqualMinima(OptimalBasic):
+class ExpandedEqualMinima(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -781,7 +784,7 @@ class ExpandedEqualMinima(OptimalBasic):
 
 
 # Class Expanded Decreasing Minima function [Qu2016]
-class ExpandedDecreasingMinima(OptimalBasic):
+class ExpandedDecreasingMinima(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -809,7 +812,7 @@ class ExpandedDecreasingMinima(OptimalBasic):
 
 
 # Class Expanded Uneven Minima function [Qu2016]
-class ExpandedUnevenMinima(OptimalBasic):
+class ExpandedUnevenMinima(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -837,7 +840,7 @@ class ExpandedUnevenMinima(OptimalBasic):
 
 # Class Vincent function [http://infinity77.net/global_optimization/test_functions_nd_V.html#go_benchmark
 # .VenterSobiezcczanskiSobieski]
-class Vincent(OptimalBasic):
+class Vincent(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -857,7 +860,7 @@ class Vincent(OptimalBasic):
 
 
 # Class Modified Vincent function [Qu2016]
-class ModifiedVincent(OptimalBasic):
+class ModifiedVincent(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -886,7 +889,7 @@ class ModifiedVincent(OptimalBasic):
 
 
 # 54 - Class Exponential function
-class Exponential(OptimalBasic):
+class Exponential(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([1.] * self.variable_num)
@@ -906,7 +909,7 @@ class Exponential(OptimalBasic):
 
 
 # Class Giunta function
-class Giunta(OptimalBasic):
+class Giunta(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([1.] * self.variable_num)
@@ -928,7 +931,7 @@ class Giunta(OptimalBasic):
 
 
 # 59 - Class Griewank function
-class Griewank(OptimalBasic):
+class Griewank(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -949,7 +952,7 @@ class Griewank(OptimalBasic):
 
 
 # Class Happy Cat function [http://benchmarkfcns.xyz/benchmarkfcns/happycatfcn.html]
-class HappyCat(OptimalBasic):
+class HappyCat(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -972,7 +975,7 @@ class HappyCat(OptimalBasic):
 
 
 # 74 - Class Mishra 1 function
-class Mishra1(OptimalBasic):
+class Mishra1(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([1.] * self.variable_num)
@@ -993,7 +996,7 @@ class Mishra1(OptimalBasic):
 
 
 # 75 - Class Mishra 2 function
-class Mishra2(OptimalBasic):
+class Mishra2(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([1.] * self.variable_num)
@@ -1015,7 +1018,7 @@ class Mishra2(OptimalBasic):
 
 
 # 80 - Class Mishra 7 function
-class Mishra7(OptimalBasic):
+class Mishra7(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -1037,7 +1040,7 @@ class Mishra7(OptimalBasic):
 
 
 # 84 - Class Mishra 11 function (Arithmetic Mean - Geometric Mean Equality)
-class Mishra11(OptimalBasic):
+class Mishra11(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -1059,7 +1062,7 @@ class Mishra11(OptimalBasic):
 
 
 # Class Needle-Eye function [Al-Roomi2015]
-class NeedleEye(OptimalBasic):
+class NeedleEye(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -1081,7 +1084,7 @@ class NeedleEye(OptimalBasic):
 
 
 # 87 - Class Pathological function
-class Pathological(OptimalBasic):
+class Pathological(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -1104,7 +1107,7 @@ class Pathological(OptimalBasic):
 
 
 # 89 - Class Pinter function
-class Pinter(OptimalBasic):
+class Pinter(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -1130,7 +1133,7 @@ class Pinter(OptimalBasic):
 
 
 # Class Periodic function
-class Periodic(OptimalBasic):
+class Periodic(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -1151,7 +1154,7 @@ class Periodic(OptimalBasic):
 
 
 # 93 - Class Powell Sum function
-class PowellSum(OptimalBasic):
+class PowellSum(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([1.] * self.variable_num)
@@ -1171,7 +1174,7 @@ class PowellSum(OptimalBasic):
 
 
 # 98 - Class Qing function
-class Qing(OptimalBasic):
+class Qing(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([500.] * self.variable_num)
@@ -1192,7 +1195,7 @@ class Qing(OptimalBasic):
 
 
 # 100 - Class Quartic function
-class Quartic(OptimalBasic):
+class Quartic(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([1.28] * self.variable_num)
@@ -1212,7 +1215,7 @@ class Quartic(OptimalBasic):
 
 
 # 101 - Class Quintic function
-class Quintic(OptimalBasic):
+class Quintic(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -1234,7 +1237,7 @@ class Quintic(OptimalBasic):
 
 
 # 102 - Class Rana function
-class Rana(OptimalBasic):
+class Rana(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([500.000001] * self.variable_num)
@@ -1257,7 +1260,7 @@ class Rana(OptimalBasic):
 
 
 # Class Rastrigin function
-class Rastrigin(OptimalBasic):
+class Rastrigin(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([5.12] * self.variable_num)
@@ -1278,7 +1281,7 @@ class Rastrigin(OptimalBasic):
 
 
 # Class Ridge function
-class Ridge(OptimalBasic):
+class Ridge(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([5.] * self.variable_num)
@@ -1298,7 +1301,7 @@ class Ridge(OptimalBasic):
 
 
 # 105 - Class Rosenbrock function
-class Rosenbrock(OptimalBasic):
+class Rosenbrock(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([30.] * self.variable_num)
@@ -1319,7 +1322,7 @@ class Rosenbrock(OptimalBasic):
 
 
 # 110 - Class Salomon function
-class Salomon(OptimalBasic):
+class Salomon(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -1340,7 +1343,7 @@ class Salomon(OptimalBasic):
 
 
 # 111 - Class Sargan function
-class Sargan(OptimalBasic):
+class Sargan(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -1362,7 +1365,7 @@ class Sargan(OptimalBasic):
 
 
 # 117 - Class Schumer-Steiglitz function [Al-Roomi2015]
-class SchumerSteiglitz(OptimalBasic):
+class SchumerSteiglitz(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -1382,7 +1385,7 @@ class SchumerSteiglitz(OptimalBasic):
 
 
 # 118 - Class Schwefel function
-class Schwefel(OptimalBasic):
+class Schwefel(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -1402,7 +1405,7 @@ class Schwefel(OptimalBasic):
 
 
 # 119 - Class Schwefel 1.2 function
-class Schwefel12(OptimalBasic):
+class Schwefel12(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -1423,7 +1426,7 @@ class Schwefel12(OptimalBasic):
 
 
 # 120 - Class Schwefel 2.04 function
-class Schwefel204(OptimalBasic):
+class Schwefel204(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -1443,7 +1446,7 @@ class Schwefel204(OptimalBasic):
 
 
 # 122 - Class Schwefel 2.20 function
-class Schwefel220(OptimalBasic):
+class Schwefel220(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -1463,7 +1466,7 @@ class Schwefel220(OptimalBasic):
 
 
 # 123 - Class Schwefel 2.21 function
-class Schwefel221(OptimalBasic):
+class Schwefel221(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -1483,7 +1486,7 @@ class Schwefel221(OptimalBasic):
 
 
 # 124 - Class Schwefel 2.22 function
-class Schwefel222(OptimalBasic):
+class Schwefel222(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -1503,7 +1506,7 @@ class Schwefel222(OptimalBasic):
 
 
 # 125 - Class Schwefel 2.23 function
-class Schwefel223(OptimalBasic):
+class Schwefel223(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -1523,7 +1526,7 @@ class Schwefel223(OptimalBasic):
 
 
 # 127 - Class Schwefel 2.25 function
-class Schwefel225(OptimalBasic):
+class Schwefel225(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -1544,7 +1547,7 @@ class Schwefel225(OptimalBasic):
 
 
 # 128 - Class Schwefel 2.26 function [http://benchmarkfcns.xyz/benchmarkfcns/schwefelfcn.html]
-class Schwefel226(OptimalBasic):
+class Schwefel226(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([500.] * self.variable_num)
@@ -1565,7 +1568,7 @@ class Schwefel226(OptimalBasic):
 
 
 # 133 - Class Schubert function
-class Schubert(OptimalBasic):
+class Schubert(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -1587,7 +1590,7 @@ class Schubert(OptimalBasic):
 
 
 # 134 - Class Schubert 3 function
-class Schubert3(OptimalBasic):
+class Schubert3(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -1610,7 +1613,7 @@ class Schubert3(OptimalBasic):
 
 
 # 135 - Class Schubert 4 function
-class Schubert4(OptimalBasic):
+class Schubert4(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -1633,7 +1636,7 @@ class Schubert4(OptimalBasic):
 
 
 # 136 - Class Schaffer N6 function
-class SchafferN6(OptimalBasic):
+class SchafferN6(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -1656,7 +1659,7 @@ class SchafferN6(OptimalBasic):
 
 
 # 136* - Class Schaffer N1 function [http://benchmarkfcns.xyz/benchmarkfcns/schaffern1fcn.html]
-class SchafferN1(OptimalBasic):
+class SchafferN1(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -1679,7 +1682,7 @@ class SchafferN1(OptimalBasic):
 
 
 # 136* - Class Schaffer N2 function [http://benchmarkfcns.xyz/benchmarkfcns/schaffern2fcn.html]
-class SchafferN2(OptimalBasic):
+class SchafferN2(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -1701,7 +1704,7 @@ class SchafferN2(OptimalBasic):
 
 
 # 136* - Class Schaffer N3 function [http://benchmarkfcns.xyz/benchmarkfcns/schaffern3fcn.html]
-class SchafferN3(OptimalBasic):
+class SchafferN3(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -1724,7 +1727,7 @@ class SchafferN3(OptimalBasic):
 
 
 # 136* - Class Schaffer N4 function [http://benchmarkfcns.xyz/benchmarkfcns/schaffern4fcn.html]
-class SchafferN4(OptimalBasic):
+class SchafferN4(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -1747,7 +1750,7 @@ class SchafferN4(OptimalBasic):
 
 
 # 137 - Class Sphere function
-class Sphere(OptimalBasic):
+class Sphere(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -1767,7 +1770,7 @@ class Sphere(OptimalBasic):
 
 
 # 138 - Class Step function
-class Step(OptimalBasic):
+class Step(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -1787,7 +1790,7 @@ class Step(OptimalBasic):
 
 
 # 139 - Class Step 2 function
-class Step2(OptimalBasic):
+class Step2(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -1807,7 +1810,7 @@ class Step2(OptimalBasic):
 
 
 # 140 - Class Step 3 function
-class Step3(OptimalBasic):
+class Step3(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -1827,7 +1830,7 @@ class Step3(OptimalBasic):
 
 
 # 141 - Class Step Int function
-class StepInt(OptimalBasic):
+class StepInt(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([5.12] * self.variable_num)
@@ -1847,7 +1850,7 @@ class StepInt(OptimalBasic):
 
 
 # 142 - Class Streched V Sine Wave function
-class StrechedVSineWave(OptimalBasic):
+class StrechedVSineWave(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -1869,7 +1872,7 @@ class StrechedVSineWave(OptimalBasic):
 
 
 # 143 - Class Sum Squares function
-class SumSquares(OptimalBasic):
+class SumSquares(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -1889,7 +1892,7 @@ class SumSquares(OptimalBasic):
 
 
 # 150 - Class Trid function [http://www.sfu.ca/~ssurjano/trid.html]
-class Trid(OptimalBasic):
+class Trid(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([np.square(self.variable_num)] * self.variable_num)
@@ -1911,7 +1914,7 @@ class Trid(OptimalBasic):
 
 
 # 153 - Class Trigonometric 1 function
-class Trigonometric1(OptimalBasic):
+class Trigonometric1(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([np.pi] * self.variable_num)
@@ -1934,7 +1937,7 @@ class Trigonometric1(OptimalBasic):
 
 
 # 154 - Class Trigonometric 2 function
-class Trigonometric2(OptimalBasic):
+class Trigonometric2(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([500.] * self.variable_num)
@@ -1956,7 +1959,7 @@ class Trigonometric2(OptimalBasic):
 
 
 # 165 - Class W-Wavy function
-class WWavy(OptimalBasic):
+class WWavy(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([np.pi] * self.variable_num)
@@ -1977,7 +1980,7 @@ class WWavy(OptimalBasic):
 
 
 # 166 - Class Weierstrass function
-class Weierstrass(OptimalBasic):
+class Weierstrass(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([0.5] * self.variable_num)
@@ -2001,7 +2004,7 @@ class Weierstrass(OptimalBasic):
 
 
 # 167 - Class Whitley function
-class Whitley(OptimalBasic):
+class Whitley(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.24] * self.variable_num)
@@ -2023,7 +2026,7 @@ class Whitley(OptimalBasic):
 
 
 # 169 - Class Xin-She Yang 1 function
-class XinSheYang1(OptimalBasic):
+class XinSheYang1(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([5.] * self.variable_num)
@@ -2044,7 +2047,7 @@ class XinSheYang1(OptimalBasic):
 
 
 # 170 - Class Xin-She Yang 2 function
-class XinSheYang2(OptimalBasic):
+class XinSheYang2(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([2. * np.pi] * self.variable_num)
@@ -2064,7 +2067,7 @@ class XinSheYang2(OptimalBasic):
 
 
 # 171 - Class Xin-She Yang 3 function
-class XinSheYang3(OptimalBasic):
+class XinSheYang3(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([20.] * self.variable_num)
@@ -2086,7 +2089,7 @@ class XinSheYang3(OptimalBasic):
 
 
 # 172 - Class Xin-She Yang 4 function
-class XinSheYang4(OptimalBasic):
+class XinSheYang4(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -2108,7 +2111,7 @@ class XinSheYang4(OptimalBasic):
 
 
 # 173 - Class Zakharov function
-class Zakharov(OptimalBasic):
+class Zakharov(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -2129,7 +2132,7 @@ class Zakharov(OptimalBasic):
 
 
 # Class Styblinski-Tang function [http://benchmarkfcns.xyz/benchmarkfcns/styblinskitankfcn.html]
-class StyblinskiTang(OptimalBasic):
+class StyblinskiTang(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([5.] * self.variable_num)
@@ -2150,7 +2153,7 @@ class StyblinskiTang(OptimalBasic):
 
 # Class Stochastic function [https://al-roomi.org/benchmarks/unconstrained/n-dimensions/267-xin-she-yang-s-function
 # -no-07]
-class Stochastic(OptimalBasic):
+class Stochastic(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([5.] * self.variable_num)
@@ -2171,7 +2174,7 @@ class Stochastic(OptimalBasic):
 
 
 # Class Ellipsoid function \cite{Finck2009}
-class Ellipsoid(OptimalBasic):
+class Ellipsoid(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([5.12] * self.variable_num)
@@ -2192,7 +2195,7 @@ class Ellipsoid(OptimalBasic):
 
 
 # Class Hyper-Ellipsoid function http://www.geatbx.com/docu/fcnindex-01.html#P109_4163
-class HyperEllipsoid(OptimalBasic):
+class HyperEllipsoid(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([5.12] * self.variable_num)
@@ -2212,7 +2215,7 @@ class HyperEllipsoid(OptimalBasic):
 
 
 # Class Rotated-Hyper-Ellipsoid function http://www.sfu.ca/~ssurjano/rothyp.html
-class RotatedHyperEllipsoid(OptimalBasic):
+class RotatedHyperEllipsoid(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([65.536] * self.variable_num)
@@ -2232,7 +2235,7 @@ class RotatedHyperEllipsoid(OptimalBasic):
 
 
 # Class Michalewicz function \cite{Molga2005}
-class Michalewicz(OptimalBasic):
+class Michalewicz(BasicProblem):
     # Optimal solution for the first 100 dimensions (approximated), with m = 10
     approximated_optima = [2.2029, 1.5708, 1.2850, 1.9231, 0.9967, 2.3988, 1.8772, 0.7885,
                            1.9590, 1.2170, 1.1604, 2.1268, 0.6188, 1.5708, 1.9023, 1.2419,
@@ -2268,7 +2271,7 @@ class Michalewicz(OptimalBasic):
 
 
 # Class K-Tablet function \cite{Sakuma2004}
-class KTablet(OptimalBasic):
+class KTablet(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([5.12] * self.variable_num)
@@ -2289,7 +2292,7 @@ class KTablet(OptimalBasic):
 
 
 # Class Perm 01 function [http://infinity77.net/global_optimization/test_functions_nd_P.html#go_benchmark.PenHolder]
-class Perm01(OptimalBasic):
+class Perm01(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([self.variable_num + 1] * self.variable_num)
@@ -2312,7 +2315,7 @@ class Perm01(OptimalBasic):
 
 
 # Class Perm 02 function [http://www.sfu.ca/~ssurjano/perm0db.html]
-class Perm02(OptimalBasic):
+class Perm02(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([self.variable_num + 1] * self.variable_num)
@@ -2335,7 +2338,7 @@ class Perm02(OptimalBasic):
 
 
 # Class Yao Liu 09 function [http://infinity77.net/global_optimization/test_functions_nd_Y.html#go_benchmark.YaoLiu04]
-class YaoLiu09(OptimalBasic):
+class YaoLiu09(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([5.12] * self.variable_num)
@@ -2355,7 +2358,7 @@ class YaoLiu09(OptimalBasic):
 
 
 # Class Zero Sum function [http://infinity77.net/global_optimization/test_functions_nd_Z.html#go_benchmark.Zirilli]
-class ZeroSum(OptimalBasic):
+class ZeroSum(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -2376,7 +2379,7 @@ class ZeroSum(OptimalBasic):
 
 
 # Class Levy function [http://www.sfu.ca/~ssurjano/levy.html]
-class Levy(OptimalBasic):
+class Levy(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -2400,7 +2403,7 @@ class Levy(OptimalBasic):
 
 
 # Class Price 01 function
-class Price01(OptimalBasic):
+class Price01(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([500.] * self.variable_num)
@@ -2421,7 +2424,7 @@ class Price01(OptimalBasic):
 
 # Class Bohachevsky function [http://infinity77.net/global_optimization/test_functions_nd_B.html#go_benchmark
 # .Bohachevsky]
-class Bohachevsky(OptimalBasic):
+class Bohachevsky(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([15.] * self.variable_num)
@@ -2445,7 +2448,7 @@ class Bohachevsky(OptimalBasic):
 
 # Class Bohachevsky function [http://infinity77.net/global_optimization/test_functions_nd_C.html#go_benchmark
 # .CarromTable]
-class CarromTable(OptimalBasic):
+class CarromTable(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -2467,7 +2470,7 @@ class CarromTable(OptimalBasic):
 
 # Class CrownedCross function [http://infinity77.net/global_optimization/test_functions_nd_C.html#go_benchmark
 # .CrownedCross]
-class CrownedCross(OptimalBasic):
+class CrownedCross(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -2489,7 +2492,7 @@ class CrownedCross(OptimalBasic):
 
 # Class CrossInTray function [http://infinity77.net/global_optimization/test_functions_nd_C.html#go_benchmark
 # .CrownedCross]
-class CrossInTray(OptimalBasic):
+class CrossInTray(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([15.] * self.variable_num)
@@ -2510,7 +2513,7 @@ class CrossInTray(OptimalBasic):
 
 
 # Class CrossLegTable function [al-roomi]
-class CrossLegTable(OptimalBasic):
+class CrossLegTable(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
@@ -2531,7 +2534,7 @@ class CrossLegTable(OptimalBasic):
 
 
 # Class Cigar function [http://infinity77.net/global_optimization/test_functions_nd_C.html#go_benchmark.CarromTable]
-class Cigar(OptimalBasic):
+class Cigar(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -2551,7 +2554,7 @@ class Cigar(OptimalBasic):
 
 
 # Class Deflected Corrugated Spring function [al-roomi]
-class DeflectedCorrugatedSpring(OptimalBasic):
+class DeflectedCorrugatedSpring(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)  # 2 alpha
@@ -2572,7 +2575,7 @@ class DeflectedCorrugatedSpring(OptimalBasic):
 
 
 # Class Katsuura function [http://infinity77.net/global_optimization/test_functions_nd_K.html#go_benchmark.Katsuura]
-class Katsuura(OptimalBasic):
+class Katsuura(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([100.] * self.variable_num)
@@ -2596,7 +2599,7 @@ class Katsuura(OptimalBasic):
 
 # Class Jennrich-Sampson function [http://infinity77.net/global_optimization/test_functions_nd_J.html#go_benchmark
 # .JennrichSampson]
-class JennrichSampson(OptimalBasic):
+class JennrichSampson(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([1.] * self.variable_num)
@@ -2620,7 +2623,7 @@ class JennrichSampson(OptimalBasic):
 
 # Class Lunacek's bi-Sphere function [https://al-roomi.org/benchmarks/unconstrained/n-dimensions/228-lunacek-s-bi
 # -sphere-function]
-class LunacekN01(OptimalBasic):
+class LunacekN01(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([5.12] * self.variable_num)
@@ -2644,7 +2647,7 @@ class LunacekN01(OptimalBasic):
 
 # Class Lunacek's bi-Rastrigin function [https://al-roomi.org/benchmarks/unconstrained/n-dimensions/229-lunacek-s-bi
 # -rastrigin-function]
-class LunacekN02(OptimalBasic):
+class LunacekN02(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([5.12] * self.variable_num)
@@ -2668,7 +2671,7 @@ class LunacekN02(OptimalBasic):
 
 
 # Class Type-I Simple Deceptive Problem function \cite{Suzuki2002}
-class TypeI(OptimalBasic):
+class TypeI(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([1.] * self.variable_num)
@@ -2694,7 +2697,7 @@ class TypeI(OptimalBasic):
 
 
 # Class Type-II Medium-Complex Deceptive Problem function \cite{Suzuki2002}
-class TypeII(OptimalBasic):
+class TypeII(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([1.] * self.variable_num)
@@ -2726,7 +2729,7 @@ class TypeII(OptimalBasic):
 
 
 # Class F2 function [al-roomi]
-class F2(OptimalBasic):
+class F2(BasicProblem):
     l_values = [5.1, 0.5, 2.772588722239781, 0.066832364099628, 0.64]
 
     def __init__(self, variable_num):
@@ -2751,7 +2754,7 @@ class F2(OptimalBasic):
 
 
 # Class Inverted Cosine-Wave function [al-roomi]
-class InvertedCosineWave(OptimalBasic):
+class InvertedCosineWave(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([5.] * self.variable_num)
@@ -2773,7 +2776,7 @@ class InvertedCosineWave(OptimalBasic):
 
 
 # Class Odd Square function [al-roomi]
-class OddSquare(OptimalBasic):
+class OddSquare(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
         self.max_search_range = np.array([5.] * self.variable_num)
@@ -2797,7 +2800,7 @@ class OddSquare(OptimalBasic):
 # %% TOOLS TO HANDLE THE PROBLEMS
 def list_functions(rnp=True, fts=None, wrd='1'):
     """
-    This function list all available functions in screen. It could be formatted for copy and paste in a latex document.
+    This function lists all available functions in screen. It could be formatted for copy and paste in a latex document.
 
     :param bool rnp: Optional.
         Flag (return-not-print). If True, the function delivers a list but not print, otherwise, print but not return.
@@ -2839,7 +2842,7 @@ def list_functions(rnp=True, fts=None, wrd='1'):
 
     if not rnp:
         # Print first line
-        print("Id. & Function Name & Continuous & Differentiable & Separable & Scalable & Unimodal & Convex \\\\")
+        print("Id. & Function Name & " + ' & '.join(fts) + " \\\\")
         for x in feature_strings:
             print("{} & {} & {} \\\\".format(*x[1:]))
     else:
@@ -2849,7 +2852,7 @@ def list_functions(rnp=True, fts=None, wrd='1'):
 
 def for_all(property, dimension=2):
     """
-    Read determined property or attribute for all the problems, and return a list.
+    Read a determined property or attribute for all the problems and return a list.
 
     :param str property:
         Property to read. Please, check the attributes from a given problem object.
