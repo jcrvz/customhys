@@ -2,7 +2,7 @@
 
 <img align="left" src="./docfiles/chm_logo.png?raw=true" width="200"/>
 
-**Customising optimisation metaheuristics via hyper-heuristic search** (CUSTOMHYS). A framework that provides tools for solving, but not limited to, continuous optimisation problems using a hyper-heuristic approach for customising metaheuristics. Such an approach is powered by a strategy based on Simulated Annealing. Also, several search operators serve as building blocks for tailoring metaheuristics. They were extracted from ten well-known metaheuristics in the literature.
+**Customising optimisation metaheuristics via hyper-heuristic search** (CUSTOMHyS). A framework that provides tools for solving, but not limited to, continuous optimisation problems using a hyper-heuristic approach for customising metaheuristics. Such an approach is powered by a strategy based on Simulated Annealing. Also, several search operators serve as building blocks for tailoring metaheuristics. They were extracted from ten well-known metaheuristics in the literature.
 
 Detailed information about this framework can be found in [1, 2]. Plus, the code for the module is well-documented, so many details are provided.
 
