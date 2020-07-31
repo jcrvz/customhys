@@ -12,6 +12,7 @@ import numpy as np
 __all__ = ['Population']
 __selectors__ = ['all', 'greedy', 'metropolis', 'probabilistic']
 
+
 class Population:
     """
     This is the Population class, each object corresponds to a population of agents within a search space.
@@ -51,8 +52,8 @@ class Population:
             raise PopulationError('Lower and upper boundaries must have the same length')
 
         # Read the upper and lower boundaries of search space
-        self.lower_boundaries = boundaries[0]
-        self.upper_boundaries = boundaries[1]
+        self.lower_boundaries = np.array(boundaries[0]) if isinstance(boundaries[0], list) else boundaries[0]
+        self.upper_boundaries = np.array(boundaries[1]) if isinstance(boundaries[1], list) else boundaries[1]
         self.span_boundaries = self.upper_boundaries - self.lower_boundaries
         self.centre_boundaries = (self.upper_boundaries + self.lower_boundaries) / 2.
 
@@ -115,7 +116,7 @@ class Population:
 
     def set_positions(self, positions):
         """
-        Return the current population positions. Positions are represented in a matrix of size:
+        Modify the current population positions. Positions are represented in a matrix of size:
             ``positions.shape() = (num_agents, num_dimensions)``
 
         Note: The position is rescaled to the original search space.
@@ -192,7 +193,7 @@ class Population:
         Evaluate the population positions in the problem function.
 
         :param function problem_function:
-            A function that maps a 1-by-D array of real values ​​to a real value.
+            A function that maps a 1-by-D array of real values to a real value.
 
         :returns: None.
         """

@@ -149,7 +149,7 @@ def read_subfolders(foldername):
 
 def preprocess_files(main_folder='data_files/raw/', output_name='brute_force'):
     """
-    Return data from results saved in a main folder. This method save the summary file in json format. Take in account
+    Return data from results saved in the main folder. This method save the summary file in json format. Take in account
     that ``output_name = 'brute_force'`` has a special behaviour due to each json file stored in sub-folders correspond
     to a specific operator. Otherwise, these files use to correspond to a candidate solution (i.e., a metaheuristic)
     from the hyper-heuristic process.

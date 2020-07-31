@@ -278,8 +278,8 @@ class BasicProblem:
             noise_value = np.random.rand()
 
         # Call ``get_func_val``with the modifications
-        return self.__scale_function * self.get_func_val(variables, *args) + \
-               (self.__noise_level * noise_value) + self.__offset_function
+        return self.__scale_function * self.get_func_val(variables, *args) + self.__noise_level * noise_value + \
+               self.__offset_function
 
     def plot(self, samples=55, resolution=100):
         """
