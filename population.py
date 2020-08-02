@@ -8,6 +8,8 @@ Created on Tue Sep 17 14:29:43 2019
 """
 
 import numpy as np
+from itertools import product as cartesian_product
+from itertools import islice
 
 __all__ = ['Population']
 __selectors__ = ['all', 'greedy', 'metropolis', 'probabilistic']
@@ -218,11 +220,26 @@ class Population:
         Initialise population by an initialisation scheme.
 
         :param str scheme: optional
-            Initialisation scheme. Right now, there is only 'random' initialisation, which consists of using a random
-            uniform distribution in [-1,1]. The default is 'random'.
+            Initialisation scheme. It is only 'random' initialisation in the current version. We are working on
+            implementing 'grid' initialisation. This 'random' consists of using a random uniform distribution in [-1,1].
+            The default is 'random'.
 
         :returns: None.
         """
+        # if scheme == 'grid':
+        #     # This scheme only works with a maximum dimension of 32
+        #
+        #     # Determine how many nodes per string should be
+        #     nodes_string = int(np.max([3, np.ceil(np.power(self.num_agents, 1 / self.num_dimensions))]))
+        #
+        #     # Number of combinations and difference
+        #     num_comb = nodes_string ** self.num_dimensions
+        #     ini_part = (num_comb - self.num_agents) // 2
+        #
+        #     # Find the grid for all the points (nodes) between -1 and 1
+        #     raw_grid = cartesian_product(np.linspace(-1.0, 1.0, nodes_string), repeat=self.num_dimensions)
+        #     full_grid = [list(p) for p in islice(raw_grid, ini_part, ini_part + self.num_agents)]
+        # else:
         self.positions = np.random.uniform(-1, 1, (self.num_agents, self.num_dimensions))
 
     # ================
