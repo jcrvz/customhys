@@ -220,32 +220,41 @@ class Population:
         Initialise population by an initialisation scheme.
 
         :param str scheme: optional
-            Initialisation scheme. It is only 'random' initialisation in the current version. We are working on
-            implementing 'grid' initialisation. This 'random' consists of using a random uniform distribution in [-1,1].
-            The default is 'random'.
+            Initialisation scheme. It is only 'random' and 'grid' initialisation in the current version. We are working
+            on implementing initialisation methods. The 'random' consists of using a random uniform distribution in
+            [-1,1]. Otherwise, 'grid' implements a grid-like structure. The default is 'random'.
 
         :returns: None.
         """
-        # if scheme == 'grid':
-        #     # This scheme only works with a maximum dimension of 32
-        #
-        #     # Determine how many nodes per string should be
-        #     nodes_string = int(np.max([3, np.ceil(np.power(self.num_agents, 1 / self.num_dimensions))]))
-        #
-        #     # Number of combinations and difference
-        #     num_comb = nodes_string ** self.num_dimensions
-        #     ini_part = (num_comb - self.num_agents) // 2
-        #
-        #     # Find the grid for all the points (nodes) between -1 and 1
-        #     raw_grid = cartesian_product(np.linspace(-1.0, 1.0, nodes_string), repeat=self.num_dimensions)
-        #     full_grid = [list(p) for p in islice(raw_grid, ini_part, ini_part + self.num_agents)]
-        # else:
-        self.positions = np.random.uniform(-1, 1, (self.num_agents, self.num_dimensions))
+        if scheme == 'grid':
+            self.positions = self._grid_matrix(self.num_dimensions, self.num_agents)
+        else:
+            self.positions = np.random.uniform(-1, 1, (self.num_agents, self.num_dimensions))
 
     # ================
     # INTERNAL METHODS
     # ================
     # Avoid using them outside
+
+    @staticmethod
+    def _grid_matrix(num_dimensions, num_agents):
+
+        total_vertices = 2 ** num_dimensions
+
+        basic_matrix = 2 * np.array(
+            [[int(x) for x in list(format(k, '0{}b'.format(num_dimensions)))] for k in range(total_vertices)]) - 1
+
+        output_matrix = np.copy(basic_matrix)
+
+        if num_agents > total_vertices:
+            num_matrices = int(np.ceil((num_agents - total_vertices) / total_vertices)) + 1
+            for k in range(1, num_matrices):
+                k_matrix = (1 - k / num_matrices) * basic_matrix
+                output_matrix = np.concatenate((output_matrix, k_matrix), axis=0)
+
+        output_matrix = output_matrix[:num_agents, :]
+
+        return output_matrix
 
     def _check_simple_constraints(self):
         """
