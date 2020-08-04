@@ -193,7 +193,7 @@ def firefly_dynamic(pop, alpha=1.0, beta=1.0, gamma=100.0, distribution='uniform
     elif distribution == 'uniform':
         epsilon_value = np.random.uniform(-0.5, 0.5, (pop.num_agents, pop.num_dimensions))
     elif distribution == 'levy':
-        epsilon_value = random_levy((pop.num_agents, pop.num_dimensions), 1.5)
+        epsilon_value = _random_levy((pop.num_agents, pop.num_dimensions), 1.5)
     else:
         raise OperatorsError('Invalid distribution')
 
@@ -494,7 +494,7 @@ def genetic_mutation(pop, scale=1.0, elite_rate=0.1, mutation_rate=0.25, distrib
             mutants = np.random.standard_normal(num_mutations ** 2)
 
         elif distribution == 'levy':
-            mutants = random_levy(num_mutations ** 2, 1.5)
+            mutants = _random_levy(num_mutations ** 2, 1.5)
 
         else:
             raise OperatorsError('Invalid distribution!')
@@ -581,7 +581,7 @@ def random_flight(pop, scale=1.0, distribution='levy', beta=1.5):
 
     elif distribution == 'levy':
         # Calculate the random number with levy stable distribution
-        random_samples = random_levy(size=(pop.num_agents, pop.num_dimensions), beta=beta)
+        random_samples = _random_levy(size=(pop.num_agents, pop.num_dimensions), beta=beta)
 
     else:
         raise OperatorsError('Invalid distribution!')
@@ -612,7 +612,7 @@ def local_random_walk(pop, probability=0.75, scale=1.0, distribution='uniform'):
     elif distribution == "gaussian":
         r_1 = np.random.randn(pop.num_agents, pop.num_dimensions)
     elif distribution == "levy":
-        r_1 = random_levy(size=(pop.num_agents, pop.num_dimensions))
+        r_1 = _random_levy(size=(pop.num_agents, pop.num_dimensions))
     else:
         raise OperatorsError('Invalid distribution!')
     r_2 = np.random.rand(pop.num_agents, pop.num_dimensions)
@@ -657,7 +657,7 @@ def random_search(pop, scale=0.01, distribution='uniform'):
     elif distribution == "gaussian":
         random_step = np.random.standard_normal((pop.num_agents, pop.num_dimensions))
     elif distribution == "levy":
-        random_step = random_levy(size=(pop.num_agents, pop.num_dimensions))
+        random_step = _random_levy(size=(pop.num_agents, pop.num_dimensions))
     else:
         raise OperatorsError('Invalid distribution!')
 
@@ -719,8 +719,8 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56, version='con
         r_1 = np.random.randn(pop.num_agents, pop.num_dimensions)
         r_2 = np.random.randn(pop.num_agents, pop.num_dimensions)
     elif distribution == 'levy':
-        r_1 = random_levy(size=(pop.num_agents, pop.num_dimensions))
-        r_2 = random_levy(size=(pop.num_agents, pop.num_dimensions))
+        r_1 = _random_levy(size=(pop.num_agents, pop.num_dimensions))
+        r_2 = _random_levy(size=(pop.num_agents, pop.num_dimensions))
     else:
         raise OperatorsError('Invalid distribution!')
 
@@ -752,7 +752,7 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56, version='con
 
 # %% INTERNAL METHODS
 
-def random_levy(size, beta=1.5):
+def _random_levy(size, beta=1.5):
     """
     This is an internal method to draw a random number (or array) using the Levy stable distribution via the
     Mantegna's algorithm.

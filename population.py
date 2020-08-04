@@ -220,13 +220,14 @@ class Population:
         Initialise population by an initialisation scheme.
 
         :param str scheme: optional
-            Initialisation scheme. It is only 'random' and 'grid' initialisation in the current version. We are working
-            on implementing initialisation methods. The 'random' consists of using a random uniform distribution in
-            [-1,1]. Otherwise, 'grid' implements a grid-like structure. The default is 'random'.
+            Initialisation scheme. It is only 'random' and 'vertex' initialisation in the current version. We are
+            working on implementing initialisation methods. The 'random' consists of using a random uniform distribution
+            in [-1,1]. Otherwise, 'vertex' uses the vertices of nested hyper-cubes to allocate the agents. The default
+            is 'random'.
 
         :returns: None.
         """
-        if scheme == 'grid':
+        if scheme == 'vertex':
             self.positions = self._grid_matrix(self.num_dimensions, self.num_agents)
         else:
             self.positions = np.random.uniform(-1, 1, (self.num_agents, self.num_dimensions))
