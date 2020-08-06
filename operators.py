@@ -131,25 +131,26 @@ def differential_mutation(pop, expression='current-to-best', num_rands=1, factor
     :return: None.
 
     """
+    # TODO: Include the expression 'current-to-pbest'
     # Create mutants using the expression provided in scheme
-    if expression == "rand":
+    if expression == 'rand':
         mutant = pop.positions[np.random.permutation(pop.num_agents), :]
 
-    elif expression == "best":
+    elif expression == 'best':
         mutant = np.tile(pop.global_best_position, (pop.num_agents, 1))
 
-    elif expression == "current":
+    elif expression == 'current':
         mutant = pop.positions
 
-    elif expression == "current-to-best":
+    elif expression == 'current-to-best':
         mutant = pop.positions + factor * (np.tile(pop.global_best_position, (pop.num_agents, 1)) -
                                            pop.positions[np.random.permutation(pop.num_agents), :])
 
-    elif expression == "rand-to-best":
+    elif expression == 'rand-to-best':
         mutant = pop.positions[np.random.permutation(pop.num_agents), :] + factor * (np.tile(
             pop.global_best_position, (pop.num_agents, 1)) - pop.positions[np.random.permutation(pop.num_agents), :])
 
-    elif expression == "rand-to-best-and-current":
+    elif expression == 'rand-to-best-and-current':
         mutant = pop.positions[np.random.permutation(pop.num_agents), :] + factor * (
                 np.tile(pop.global_best_position, (pop.num_agents, 1)) -
                 pop.positions[np.random.permutation(pop.num_agents), :] +

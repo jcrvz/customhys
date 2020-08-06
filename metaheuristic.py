@@ -26,7 +26,7 @@ class Metaheuristic:
         Create a population-based metaheuristic by employing different simple search operators.
 
         :param dict problem:
-            This is a dictionary containing the 'function' that maps a 1-by-D array of real values ​​to a real value,
+            This is a dictionary containing the 'function' that maps a 1-by-D array of real values to a real value,
             'is_constrained' flag that indicates the solution is inside the search space, and the 'boundaries' (a tuple
             with two lists of size D). These two lists correspond to the lower and upper limits of domain, such as:
             ``boundaries = (lower_boundaries, upper_boundaries)``
@@ -44,12 +44,14 @@ class Metaheuristic:
         :return: None.
         """
         # Read the problem function
-        self.problem_function = problem['function']
+        self._problem_function = problem['function']
 
         # Create population
         self.pop = Population(problem['boundaries'], num_agents, problem['is_constrained'])
 
         # Check and read the search_operators
+        if not isinstance(search_operators, list):
+            search_operators = [search_operators]
         self.operators, self.selectors = Operators.process_operators(search_operators)
 
         # Define the maximum number of iterations
@@ -81,7 +83,7 @@ class Metaheuristic:
         self.pop.initialise_positions()  # Default: random
 
         # Evaluate fitness values
-        self.pop.evaluate_fitness(self.problem_function)
+        self.pop.evaluate_fitness(self._problem_function)
 
         # Update population, particular, and global
         self.pop.update_positions('population', 'all')  # Default
@@ -98,6 +100,7 @@ class Metaheuristic:
             self._verbose("{} with {}".format(operator, selector))
         self._verbose("{}".format('-' * 50))
 
+        # TODO: Implement other stopping criteria
         # Start optimisaton procedure
         for iteration in range(1, self.num_iterations + 1):
             # Update the current iteration
@@ -112,7 +115,7 @@ class Metaheuristic:
                 exec('Operators.' + operator_name + '(self.pop,' + operator_params)
 
                 # Evaluate fitness values
-                self.pop.evaluate_fitness(self.problem_function)
+                self.pop.evaluate_fitness(self._problem_function)
 
                 # Update population
                 if selector in __selectors__:

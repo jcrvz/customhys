@@ -32,7 +32,7 @@ class Hyperheuristic:
             ``./collections/default.txt'``) just like ``operators.build_operators`` generates. The default is
             'default.txt'.
         :param dict problem:
-            This is a dictionary containing the 'function' that maps a 1-by-D array of real values ​​to a real value,
+            This is a dictionary containing the 'function' that maps a 1-by-D array of real values to a real value,
             'is_constrained' flag that indicates the solution is inside the search space, and the 'boundaries' (a tuple
             with two lists of size D). These two lists correspond to the lower and upper limits of domain, such as:
             ``boundaries = (lower_boundaries, upper_boundaries)``
