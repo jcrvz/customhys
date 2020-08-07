@@ -70,15 +70,14 @@ class Hyperheuristic:
 
         # Assign default values
         if parameters is None:
-            parameters = dict(cardinality=2,  # Max. numb. of SOs in MHs, lvl:0
+            parameters = dict(cardinality=3,  # Max. numb. of SOs in MHs, lvl:0
                               num_iterations=100,  # Iterations a MH performs, lvl:0
                               num_agents=30,  # Agents in population,     lvl:0
-                              num_replicas=100,  # Replicas per each MH,     lvl:1
+                              num_replicas=50,  # Replicas per each MH,     lvl:1
                               num_steps=100,  # Trials per HH step,       lvl:2
-                              stagnation_percentage=0.2,  # Stagnation,         lvl:2
-                              max_temperature=100,  # Initial temperature (SA), lvl:2
+                              stagnation_percentage=0.3,  # Stagnation,         lvl:2
+                              max_temperature=200,  # Initial temperature (SA), lvl:2
                               cooling_rate=0.05)  # Cooling rate (SA),        lvl:2
-
         # Read the problem
         if problem:
             self.problem = problem
@@ -107,8 +106,7 @@ class Hyperheuristic:
             information about each replica carried out with the metaheuristic. Its fields are 'historical' (each
             iteration that the metaheuristic has performed), 'fitness', 'positions', and 'statistics'.
 
-        :returns: solution (list), performance (float), encoded_solution (list), historicals (dict)
-           solution : list
+        :returns: solution (list), performance (float), encoded_solution (list)
         """
         # Read the cardinality (which is the maximum allowed one)
         max_cardinality = self.parameters['cardinality']
@@ -262,6 +260,7 @@ class Hyperheuristic:
             if check_acceptance(delta_energy, temperature):
                 # Update the current solution and its performance
                 current_encoded_solution = np.copy(candidate_encoded_solution)
+                current_solution = np.copy(candidate_solution)
                 current_performance = candidate_performance
                 # if delta_energy > 0:
                 #     print('{} :: Step: {}, Perf: {}, e-Sol: {} [Accepted]'.format(
@@ -271,6 +270,7 @@ class Hyperheuristic:
             if candidate_performance < best_performance:
                 # Update the best solution and its performance
                 best_encoded_solution = np.copy(candidate_encoded_solution)
+                best_solution = np.copy(candidate_solution)
                 best_performance = candidate_performance
 
                 # Reset the stagnation counter
@@ -291,7 +291,7 @@ class Hyperheuristic:
                 stag_counter += 1
 
         # Return the best solution found and its details
-        return current_solution, current_performance, current_encoded_solution, historicals
+        return best_solution, best_performance, best_encoded_solution
 
     def evaluate_metaheuristic(self, search_operators):
         """
