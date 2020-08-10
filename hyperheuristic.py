@@ -226,11 +226,12 @@ class Hyperheuristic:
         best_performance = current_performance
 
         # Initialise historical register
-        historicals = dict(encoded_solution=best_encoded_solution, performance=best_performance,
-                           details=current_details)
+        # historicals = dict(encoded_solution=best_encoded_solution, performance=best_performance,
+        #                    details=current_details)
 
         # Save this historical register, step = 0
-        _save_step(0, historicals, self.file_label)
+        _save_step(0, dict(encoded_solution=best_encoded_solution, performance=best_performance,
+                           details=current_details), self.file_label)
 
         # Print the first status update, step = 0
         print('{} :: Step: {}, Perf: {}, e-Sol: {}'.format(self.file_label, 0, best_performance, best_encoded_solution))
@@ -332,8 +333,8 @@ class Hyperheuristic:
         fitness_stats = self.get_statistics(fitness_data)
 
         # Return the performance value and the corresponding details
-        return self.get_performance(fitness_stats), dict(historical=historical_data, fitness=fitness_data,
-                                                         positions=position_data, statistics=fitness_stats)
+        return self.get_performance(fitness_stats), dict(
+            historical=historical_data, fitness=fitness_data, positions=position_data, statistics=fitness_stats)
 
     def brute_force(self):
         """

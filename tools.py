@@ -147,7 +147,7 @@ def read_subfolders(foldername):
     return [element for element in os.listdir(foldername) if not element.startswith('.')]
 
 
-def preprocess_files(main_folder='data_files/raw/', output_name='brute_force'):
+def preprocess_files(main_folder='data_files/raw/', output_name='brute_force', only_laststep=True):
     """
     Return data from results saved in the main folder. This method save the summary file in json format. Take in account
     that ``output_name = 'brute_force'`` has a special behaviour due to each json file stored in sub-folders correspond
@@ -159,6 +159,9 @@ def preprocess_files(main_folder='data_files/raw/', output_name='brute_force'):
     :param str output_name:
         Label of the experiment, for example, if the data correspond to a brute force deployment, then use
         'brute_force'; otherwise, use a different label, for example, 'first_test'. The default is 'brute_force'.
+    :param bool only_laststep: Optional.
+        Flag for only save the last step of all fitness values from the historical data. It is useful for large amount
+          of experiments. It only works when ``output_name'' is not 'brute_force'. The default is True.
 
     :return: dict.
     """
@@ -217,14 +220,17 @@ def preprocess_files(main_folder='data_files/raw/', output_name='brute_force'):
             # Store information in the corresponding variables
             file_data[label_operator].append(operator_id)
             file_data['performance'].append(temporal_data['performance'])
-            file_data['statistics'].append(temporal_data['statistics'])
-            if not output_name == 'brute_force':
+            if output_name == 'brute_force':
+                file_data['statistics'].append(temporal_data['statistics'])
+            else:
                 file_data['encoded_solution'].append(temporal_data['encoded_solution'])
+                file_data['statistics'].append(temporal_data['details']['statistics'])
 
                 # Only save the historical fitness values when operator_id is the largest one
-                if operator_id == last_step:
-                    file_data['hist_fitness'] = [
-                        x['fitness'] for x in temporal_data['details']['historical']]
+                if only_laststep and operator_id == last_step:
+                    file_data['hist_fitness'] = [x['fitness'] for x in temporal_data['details']['historical']]
+                else:
+                    file_data['hist_fitness'].append([x['fitness'] for x in temporal_data['details']['historical']])
 
             # Following information can be included but resulting files will be larger
             # file_data['fitness'].append(temporal_data['details']['fitness'])
