@@ -43,13 +43,13 @@ class Hyperheuristic:
             Parameters to implement the hyper-heuristic procedure, the following fields must be provided: 'cardinality',
             'num_iterations', 'num_agents', 'num_replicas', 'num_steps', 'stagnation_percentage', 'max_temperature', and
             'cooling_rate'. The default is showing next:
-                parameters = {cardinality=2,                # Max. numb. of SOs in MHs, lvl:1
+                parameters = {cardinality=3,                # Max. numb. of SOs in MHs, lvl:1
                               num_iterations=100,           # Iterations a MH performs, lvl:1
                               num_agents=30,                # Agents in population,     lvl:1
-                              num_replicas=100,             # Replicas per each MH,     lvl:2
+                              num_replicas=50,              # Replicas per each MH,     lvl:2
                               num_steps=100,                # Trials per HH step,       lvl:2
-                              stagnation_percentage=0.2,    # Stagnation,               lvl:2
-                              max_temperature=100,          # Initial temperature (SA), lvl:2
+                              stagnation_percentage=0.3,    # Stagnation percentage,    lvl:2
+                              max_temperature=200,          # Initial temperature (SA), lvl:2
                               cooling_rate=0.05}            # Cooling rate (SA),        lvl:2
 
             **Note:** Level (lvl) flag corresponds to the heuristic level of the parameter. lvl:1 concerns to mid-level
@@ -70,14 +70,14 @@ class Hyperheuristic:
 
         # Assign default values
         if parameters is None:
-            parameters = dict(cardinality=3,  # Max. numb. of SOs in MHs, lvl:0
-                              num_iterations=100,  # Iterations a MH performs, lvl:0
-                              num_agents=30,  # Agents in population,     lvl:0
-                              num_replicas=50,  # Replicas per each MH,     lvl:1
-                              num_steps=100,  # Trials per HH step,       lvl:2
-                              stagnation_percentage=0.3,  # Stagnation,         lvl:2
-                              max_temperature=200,  # Initial temperature (SA), lvl:2
-                              cooling_rate=0.05)  # Cooling rate (SA),        lvl:2
+            parameters = dict(cardinality=3,                # Max. numb. of SOs in MHs, lvl:1
+                              num_iterations=100,           # Iterations a MH performs, lvl:1
+                              num_agents=30,                # Agents in population,     lvl:1
+                              num_replicas=50,              # Replicas per each MH,     lvl:2
+                              num_steps=100,                # Trials per HH step,       lvl:2
+                              stagnation_percentage=0.3,    # Stagnation percentage,    lvl:2
+                              max_temperature=200,          # Initial temperature (SA), lvl:2
+                              cooling_rate=0.05)            # Cooling rate (SA),        lvl:2
         # Read the problem
         if problem:
             self.problem = problem

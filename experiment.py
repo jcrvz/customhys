@@ -7,12 +7,52 @@ Created on Mon Sep 30 13:42:15 2019
 @author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
 """
 
-import hyperheuristic as HH
+import hyperheuristic as hyp
 from metaheuristic import Operators
 import benchmark_func as bf
 import multiprocessing
-import tools as jt
+import tools as tl
 from os import path
+
+
+# %% PREDEFINED CONFIGURATIONS
+# TODO: Use configuration files instead of predefined dictionaries
+
+# Configuration dictionary for experiments
+ex_configs = [
+    {'experiment_name': 'short_test1', 'experiment_type': 'default', 'heuristic_collection_file': 'default.txt',
+     'weights_dataset_file': 'operators_weights.json', 'use_parallel': True},  # 0 - Default
+    {'experiment_name': 'brute_force', 'experiment_type': 'brute_force',
+     'heuristic_collection_file': 'default.txt'},  # 1 - Brute force
+    {'experiment_name': 'basic_metaheuristics', 'experiment_type': 'basic_metaheuristics',
+     'heuristic_collection_file': 'basicmetaheuristics.txt'},  # 2 - Basic metaheuristics
+    {'experiment_name': 'short_test1', 'experiment_type': 'default', 'heuristic_collection_file': 'default.txt',
+     'weights_dataset_file': 'operators_weights.json', 'use_parallel': True},  # 3 - Short collection
+    {'experiment_name': 'short_test2', 'experiment_type': 'default',
+     'heuristic_collection_file': 'default.txt'},  # 4 - Short collection +
+    {'experiment_name': 'long_test', 'experiment_type': 'default', 'heuristic_collection_file': 'test-set-21.txt',
+     'auto_collection_num_vals': 21}  # 5 - Long collection
+]
+
+# Configuration dictionary for hyper-heuristics
+hh_configs = [
+    {'cardinality': 3, 'num_replicas': 10},  # 0 - Default
+    {'cardinality': 1, 'num_replicas': 30},  # 1 - Brute force
+    {'cardinality': 1, 'num_replicas': 30},  # 2 - Basic metaheuristic
+    {'cardinality': 3, 'num_replicas': 50},  # 3 - Short collection
+    {'cardinality': 5, 'num_replicas': 50},  # 4 - Short collection +
+    {'cardinality': 3, 'num_replicas': 50}   # 5 - Long collection
+]
+
+# Configuration dictionary for problems
+pr_configs = [
+    {'dimensions': [2, 5], 'functions': [bf.__all__[hyp.np.random.randint(0, len(bf.__all__))]]},  # 0 - Default
+    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 1 - Brute force
+    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 2 - Basic metaheuristic
+    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 3 - Short collection
+    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 4 - Short collection +
+    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 5 - Long collection
+]
 
 
 # %% EXPERIMENT CLASS
@@ -21,7 +61,7 @@ class Experiment:
     """
     Create an experiment using certain configurations.
     """
-    def __init__(self, exp_config, hh_config, prob_config):
+    def __init__(self, exp_config=ex_configs[0], hh_config=hh_configs[0], prob_config=pr_configs[0]):
         """
         Initialise the experiment object.
 
@@ -71,7 +111,7 @@ class Experiment:
 
         """
         # Load the default experiment configuration and compare it with exp_cfg
-        self.exp_config = jt.check_fields(
+        self.exp_config = tl.check_fields(
             {
                 'experiment_name': 'test',
                 'experiment_type': 'default',  # 'default' -> hh, 'brute_force', 'basic_metaheuristics'
@@ -83,7 +123,7 @@ class Experiment:
             }, exp_config)
 
         # Load the default hyper-heuristic configuration and compare it with hh_cfg
-        self.hh_config = jt.check_fields(
+        self.hh_config = tl.check_fields(
             {
                 'cardinality': 3,
                 'num_agents': 30,
@@ -96,7 +136,7 @@ class Experiment:
             }, hh_config)
 
         # Load the default problem configuration and compare it with prob_config
-        self.prob_config = jt.check_fields(
+        self.prob_config = tl.check_fields(
             {
                 'dimensions': [2, 5, *range(10, 50 + 1, 10)],
                 'functions': bf.__all__,
@@ -119,7 +159,7 @@ class Experiment:
         if self.exp_config['weights_dataset_file'] and (
                 self.exp_config['experiment_type'] not in ['brute_force', 'basic_metaheuristics']):
             if path.isfile('collections/' + self.exp_config['weights_dataset_file']):
-                self.weights_data = jt.read_json('collections/' + self.exp_config['weights_dataset_file'])
+                self.weights_data = tl.read_json('collections/' + self.exp_config['weights_dataset_file'])
             else:
                 raise ExperimentError('A valid weights_dataset_file must be provided in exp_config')
         else:
@@ -167,9 +207,9 @@ class Experiment:
             if self.weights_data else None
 
         # Call the hyper-heuristic object
-        hh = HH.Hyperheuristic(heuristic_space=self.exp_config['heuristic_collection_file'],
-                               problem=problem_to_solve, parameters=self.hh_config,
-                               file_label=label, weights_array=weights)
+        hh = hyp.Hyperheuristic(heuristic_space=self.exp_config['heuristic_collection_file'],
+                                problem=problem_to_solve, parameters=self.hh_config,
+                                file_label=label, weights_array=weights)
 
         # Run the HH according to the specified type
         if self.exp_config['experiment_type'] == 'brute_force':
@@ -190,49 +230,21 @@ class ExperimentError(Exception):
     pass
 
 
-# %% PREDEFINED CONFIGURATIONS
-# TODO: Use configuration files instead of predefined dictionaries
-
-# Configuration dictionary for experiments
-ex_configs = [
-    {'experiment_name': 'brute_force', 'experiment_type': 'brute_force', 'heuristic_collection_file': 'default.txt'},
-    {'experiment_name': 'basic_metaheuristics', 'experiment_type': 'basic_metaheuristics',
-     'heuristic_collection_file': 'basicmetaheuristics.txt'},
-    {'experiment_name': 'short_test1', 'experiment_type': 'default', 'heuristic_collection_file': 'default.txt',
-     'weights_dataset_file': 'operators_weights.json', 'use_parallel': True},  # Default
-    {'experiment_name': 'short_test2', 'experiment_type': 'default', 'heuristic_collection_file': 'default.txt'},
-    {'experiment_name': 'long_test', 'experiment_type': 'default', 'heuristic_collection_file': 'test-set-21.txt',
-     'auto_collection_num_vals': 21}
-]
-
-# Configuration dictionary for hyper-heuristics
-hh_configs = [
-    {'cardinality': 1, 'num_replicas': 30},
-    {'cardinality': 1, 'num_replicas': 30},
-    {'cardinality': 3, 'num_replicas': 2},  # Default
-    {'cardinality': 5, 'num_replicas': 50},
-    {'cardinality': 3, 'num_replicas': 50}
-]
-
-# Configuration dictionary for problems (the same for all)
-pr_config = {'dimensions': [2, 5], 'functions': [bf.__all__[0]]}  # Only for quick testing
-# pr_config = {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__}
-
 # %% Auto-run
 if __name__ == '__main__':
     # Import module for calling this code from command-line
     import argparse
 
     # Only one argument is allowed: the code
-    parser = argparse.ArgumentParser(description='Run certain predefined experiment, default experiment index is 2')
-    parser.add_argument('exp_index', metavar='index', type=int, nargs='?', default=2, choices=range(len(hh_configs)),
+    parser = argparse.ArgumentParser(description='Run certain predefined experiment, default experiment index is 0')
+    parser.add_argument('exp_index', metavar='index', type=int, nargs='?', default=0, choices=range(len(hh_configs)),
                         help='position of the experiment to run according to the configuration dictionaries')
     exp_ind = list(vars(parser.parse_args()).values())[0]
 
     # Read the entered configuration
-    # pr_config = ...  # In this case is the same for all experiments
     ex_config = ex_configs[exp_ind]
     hh_config = hh_configs[exp_ind]
+    pr_config = pr_configs[exp_ind]
 
     # Create the experiment to runs
     exp = Experiment(exp_config=ex_config, hh_config=hh_config, prob_config=pr_config)
