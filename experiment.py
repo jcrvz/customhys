@@ -20,14 +20,14 @@ from os import path
 
 # Configuration dictionary for experiments
 ex_configs = [
-    {'experiment_name': 'short_test1', 'experiment_type': 'default', 'heuristic_collection_file': 'default.txt',
-     'weights_dataset_file': 'operators_weights.json', 'use_parallel': True},  # 0 - Default
+    {'experiment_name': 'demo_test', 'experiment_type': 'default', 'heuristic_collection_file': 'default.txt',
+     'weights_dataset_file': 'operators_weights.json'},  # 0 - Default
     {'experiment_name': 'brute_force', 'experiment_type': 'brute_force',
      'heuristic_collection_file': 'default.txt'},  # 1 - Brute force
     {'experiment_name': 'basic_metaheuristics', 'experiment_type': 'basic_metaheuristics',
      'heuristic_collection_file': 'basicmetaheuristics.txt'},  # 2 - Basic metaheuristics
     {'experiment_name': 'short_test1', 'experiment_type': 'default', 'heuristic_collection_file': 'default.txt',
-     'weights_dataset_file': 'operators_weights.json', 'use_parallel': True},  # 3 - Short collection
+     'weights_dataset_file': 'operators_weights.json'},  # 3 - Short collection
     {'experiment_name': 'short_test2', 'experiment_type': 'default',
      'heuristic_collection_file': 'default.txt'},  # 4 - Short collection +
     {'experiment_name': 'long_test', 'experiment_type': 'default', 'heuristic_collection_file': 'test-set-21.txt',
@@ -36,7 +36,7 @@ ex_configs = [
 
 # Configuration dictionary for hyper-heuristics
 hh_configs = [
-    {'cardinality': 3, 'num_replicas': 10},  # 0 - Default
+    {'cardinality': 3, 'num_replicas': 30},  # 0 - Default
     {'cardinality': 1, 'num_replicas': 30},  # 1 - Brute force
     {'cardinality': 1, 'num_replicas': 30},  # 2 - Basic metaheuristic
     {'cardinality': 3, 'num_replicas': 50},  # 3 - Short collection
@@ -81,8 +81,8 @@ class Experiment:
             'basicmetaheuristics.txt', 'test_collection'), then an automatic heuristic space is generated with
             ``Operators.build_operators`` with 'auto_collection_num_vals' as ``num_vals`` and
             'heuristic_collection_file' as ``filename``.
-            **NOTE 3:** # 'weights_dataset_file' must be determined in a preprocessing step. For the 'default' heuristic
-            space, it is provided 'operators_weights.json'.
+            **NOTE 3:** # 'weights_dataset_file' must be determined in a pre-processing step. For the 'default'
+            heuristic space, it is provided 'operators_weights.json'.
 
         :param dict hh_config:
             Configuration dictionary related to the hyper-heuristic procedure. Keys and default values are listed as
@@ -144,10 +144,10 @@ class Experiment:
             }, prob_config)
 
         # Check if the heuristic collection exists
-        if not path.isfile('collections/' + exp_config['heuristic_collection_file']):
+        if not path.isfile('./collections/' + self.exp_config['heuristic_collection_file']):
             # If the name is a reserved one. These files cannot be not created automatically
-            if exp_config['heuristic_collection_file'] in ['default.txt', 'automatic.txt',
-                                                           'basicmetaheuristics.txt', 'test_collection']:
+            if exp_config['heuristic_collection_file'] in ['default.txt', 'automatic.txt', 'basicmetaheuristics.txt',
+                                                           'test_collection']:
                 raise ExperimentError('This collection name is reserved and cannot be created automatically!')
             else:
                 Operators.build_operators(Operators.obtain_operators(
@@ -156,8 +156,8 @@ class Experiment:
                 self.exp_config['weights_dataset_file'] = None
 
         # Check if the weights dataset not exist or required
-        if self.exp_config['weights_dataset_file'] and (
-                self.exp_config['experiment_type'] not in ['brute_force', 'basic_metaheuristics']):
+        if self.exp_config['weights_dataset_file'] and (self.exp_config['experiment_type'] not in [
+            'brute_force', 'basic_metaheuristics']):
             if path.isfile('collections/' + self.exp_config['weights_dataset_file']):
                 self.weights_data = tl.read_json('collections/' + self.exp_config['weights_dataset_file'])
             else:
