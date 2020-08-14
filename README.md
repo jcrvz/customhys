@@ -19,7 +19,7 @@ The modules that comprise this framework depend on some basic Python packages, a
 
 ### 🤯 Problems (benchmark functions)
 
-This module includes several benchmark functions as classes to be solved by using optimisation techniques.
+This module includes several benchmark functions as classes to be solved by using optimisation techniques. The class structure is based on the Keita Tomochika repository [optimization-evaluation](https://github.com/keit0222/optimization-evaluation).
 
 Source: [``benchmark_func.py``](./benchmark_func.py)
 
@@ -31,7 +31,7 @@ Source: [``population.py``](./population.py)
 
 ### 🦾 Search Operators (low-level heuristics)
 
-This module has a collection of search operators (simple heuristics) extracted from several well-known metaheuristics in the literature. Such operators work over a population, i.e., modify the individuals' positions.
+This module has a collection of search operators (simple heuristics) extracted from several well-known metaheuristics in the literature. Such operators work over a population, i.e., modify the individuals' positions. 
 
 Source: [``operators.py``](./operators.py)
 
