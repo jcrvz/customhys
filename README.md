@@ -4,7 +4,7 @@
 
 **Customising optimisation metaheuristics via hyper-heuristic search** (CUSTOMHyS). This framework provides tools for solving, but not limited to, continuous optimisation problems using a hyper-heuristic approach for customising metaheuristics. Such an approach is powered by a strategy based on Simulated Annealing. Also, several search operators serve as building blocks for tailoring metaheuristics. They were extracted from ten well-known metaheuristics in the literature.
 
-Detailed information about this framework can be found in [1, 2]. Plus, the code for the module is well-documented, so many details are provided.
+Detailed information about this framework can be found in [1, 2]. Plus, the code for each module is well-documented.
 
 ### 🛠 Requirements:
 Python 3.7 and higher. Packages: NumPy 1.18.5, SciPy 1.5.0, Matplotlib 3.2.2, json 2.0.9, tqdm 4.47.0.
