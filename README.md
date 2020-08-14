@@ -163,6 +163,12 @@ This module intends to provide several tools for plotting results from the exper
 
 Source: [``visualisation.py``](./visualisation.py)
 
+## Sponsors
+
+<a href="https://tec.mx/en" target="_blank"><img src="./docfiles/logoTEC_full.png" width="250"></a>
+<a href="http://www.cas.cn/" target="_blank"><img src="./docfiles/cas_logo.png" width="250"></a>
+<a href="https://www.gob.mx/conacyt" target="_blank"><img src="./docfiles/conacyt-logo.png" width="250"></a>
+
 ## References
 
 1. [Cruz-Duarte, J.M., Amaya, I., Ortiz-Bayliss, J.C., Connat-Pablos, S.E., and Terashima-Marín, H., A Primary Study on Hyper-Heuristics to Customise Metaheuristics for Continuous Optimisation. CEC'2020. Accepted.](./docfiles/SearchOperators_CEC.pdf)
