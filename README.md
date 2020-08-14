@@ -19,7 +19,7 @@ The modules that comprise this framework depend on some basic Python packages, a
 
 ### 🤯 Problems (benchmark functions)
 
-This module includes several benchmark functions as classes to be solved by using optimisation techniques. The class structure is based on the Keita Tomochika repository [optimization-evaluation](https://github.com/keit0222/optimization-evaluation).
+This module includes several benchmark functions as classes to be solved by using optimisation techniques. The class structure is based on Keita Tomochika's repository [optimization-evaluation](https://github.com/keit0222/optimization-evaluation).
 
 Source: [``benchmark_func.py``](./benchmark_func.py)
 
