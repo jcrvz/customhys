@@ -16,54 +16,65 @@ from os import path
 
 
 # %% PREDEFINED CONFIGURATIONS
-# TODO: Use configuration files instead of predefined dictionaries
+# Use configuration files instead of predefined dictionaries
 
-# Configuration dictionary for experiments
-ex_configs = [
-    {'experiment_name': 'demo_test', 'experiment_type': 'default', 'heuristic_collection_file': 'default.txt',
-     'weights_dataset_file': 'operators_weights.json'},  # 0 - Default
-    {'experiment_name': 'brute_force', 'experiment_type': 'brute_force',
-     'heuristic_collection_file': 'default.txt'},  # 1 - Brute force
-    {'experiment_name': 'basic_metaheuristics', 'experiment_type': 'basic_metaheuristics',
-     'heuristic_collection_file': 'basicmetaheuristics.txt'},  # 2 - Basic metaheuristics
-    {'experiment_name': 'short_test1', 'experiment_type': 'default', 'heuristic_collection_file': 'default.txt',
-     'weights_dataset_file': 'operators_weights.json'},  # 3 - Short collection
-    {'experiment_name': 'short_test2', 'experiment_type': 'default',
-     'heuristic_collection_file': 'default.txt'},  # 4 - Short collection +
-    {'experiment_name': 'long_test', 'experiment_type': 'default', 'heuristic_collection_file': 'test-set-21.txt',
-     'auto_collection_num_vals': 21}  # 5 - Long collection
-]
-
-# Configuration dictionary for hyper-heuristics
-hh_configs = [
-    {'cardinality': 3, 'num_replicas': 30},  # 0 - Default
-    {'cardinality': 1, 'num_replicas': 30},  # 1 - Brute force
-    {'cardinality': 1, 'num_replicas': 30},  # 2 - Basic metaheuristic
-    {'cardinality': 3, 'num_replicas': 50},  # 3 - Short collection
-    {'cardinality': 5, 'num_replicas': 50},  # 4 - Short collection +
-    {'cardinality': 3, 'num_replicas': 50}   # 5 - Long collection
-]
-
-# Configuration dictionary for problems
-pr_configs = [
-    {'dimensions': [2, 5], 'functions': [bf.__all__[hyp.np.random.randint(0, len(bf.__all__))]]},  # 0 - Default
-    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 1 - Brute force
-    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 2 - Basic metaheuristic
-    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 3 - Short collection
-    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 4 - Short collection +
-    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 5 - Long collection
-]
+# # Configuration dictionary for experiments
+# ex_configs = [
+#     {'experiment_name': 'demo_test', 'experiment_type': 'default', 'heuristic_collection_file': 'default.txt',
+#      'weights_dataset_file': 'operators_weights.json'},  # 0 - Default
+#     {'experiment_name': 'brute_force', 'experiment_type': 'brute_force',
+#      'heuristic_collection_file': 'default.txt'},  # 1 - Brute force
+#     {'experiment_name': 'basic_metaheuristics', 'experiment_type': 'basic_metaheuristics',
+#      'heuristic_collection_file': 'basicmetaheuristics.txt'},  # 2 - Basic metaheuristics
+#     {'experiment_name': 'short_test1', 'experiment_type': 'default', 'heuristic_collection_file': 'default.txt',
+#      'weights_dataset_file': 'operators_weights.json'},  # 3 - Short collection
+#     {'experiment_name': 'short_test2', 'experiment_type': 'default',
+#      'heuristic_collection_file': 'default.txt'},  # 4 - Short collection +
+#     {'experiment_name': 'long_test', 'experiment_type': 'default', 'heuristic_collection_file': 'test-set-21.txt',
+#      'auto_collection_num_vals': 21}  # 5 - Long collection
+# ]
+#
+# # Configuration dictionary for hyper-heuristics
+# hh_configs = [
+#     {'cardinality': 3, 'num_replicas': 30},  # 0 - Default
+#     {'cardinality': 1, 'num_replicas': 30},  # 1 - Brute force
+#     {'cardinality': 1, 'num_replicas': 30},  # 2 - Basic metaheuristic
+#     {'cardinality': 3, 'num_replicas': 50},  # 3 - Short collection
+#     {'cardinality': 5, 'num_replicas': 50},  # 4 - Short collection +
+#     {'cardinality': 3, 'num_replicas': 50}   # 5 - Long collection
+# ]
+#
+# # Configuration dictionary for problems
+# pr_configs = [
+#     {'dimensions': [2, 5], 'functions': ['<choose_randomly>']},  # 0 - Default
+#     {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 1 - Brute force
+#     {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 2 - Basic metaheuristic
+#     {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 3 - Short collection
+#     {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 4 - Short collection +
+#     {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 5 - Long collection
+# ]
 
 
 # %% EXPERIMENT CLASS
+
+# _ex_config_demo = {'experiment_name': 'demo_test', 'experiment_type': 'default',
+#                    'heuristic_collection_file': 'default.txt', 'weights_dataset_file': 'operators_weights.json'}
+# _hh_config_demo = {'cardinality': 3, 'num_replicas': 30}
+# _pr_config_demo = {'dimensions': [2, 5], 'functions': [bf.__all__[hyp.np.random.randint(0, len(bf.__all__))]]}
 
 class Experiment:
     """
     Create an experiment using certain configurations.
     """
-    def __init__(self, exp_config=ex_configs[0], hh_config=hh_configs[0], prob_config=pr_configs[0]):
+
+    def __init__(self, config_file=None, exp_config=None, hh_config=None, prob_config=None):
         """
         Initialise the experiment object.
+
+        :param str config_file:
+            Name of the configuration JSON file with the configuration dictionaries: exp_config, hh_config, and
+            prob_config. If only the filename is provided, it is assumed that such a file is in the directory
+            './exconf/'. Otherwise, the full path must be entered. The default value is None.
 
         :param dict exp_config:
             Configuration dictionary related to the experiment. Keys and default values are listed as follows:
@@ -110,6 +121,35 @@ class Experiment:
         :return: None.
 
         """
+        # If there is a configuration file
+        if config_file:
+            # Adjustments
+            directory, filename = path.split(config_file)
+            if directory == '':
+                directory = './exconf/'  # Default directory
+            basename, extension = path.splitext(filename)
+            if extension not in ['.json', '']:
+                raise ExperimentError("Configuration file must be JSON")
+
+            # Existence verification and load
+            full_path = path.join(directory, basename + '.json')
+            if path.isfile(full_path):
+                all_configs = tl.read_json(full_path)
+
+                # Load data from json file
+                exp_config = all_configs['ex_config']
+                hh_config = all_configs['hh_config']
+                prob_config = all_configs['prob_config']
+            else:
+                raise ExperimentError(f"File {full_path} does not exist!")
+        else:
+            if exp_config is None:
+                exp_config = dict()
+            if hh_config is None:
+                hh_config = dict()
+            if prob_config is None:
+                prob_config = dict()
+
         # Load the default experiment configuration and compare it with exp_cfg
         self.exp_config = tl.check_fields(
             {
@@ -143,6 +183,11 @@ class Experiment:
                 'is_constrained': True
             }, prob_config)
 
+        # Check if there is a special case of function name: <choose_randomly>
+        self.prob_config['functions'] = [
+            bf.__all__[hyp.np.random.randint(0, len(bf.__all__))] if fun == '<choose_randomly>' else fun
+            for fun in self.prob_config['functions']]
+
         # Check if the heuristic collection exists
         if not path.isfile('./collections/' + self.exp_config['heuristic_collection_file']):
             # If the name is a reserved one. These files cannot be not created automatically
@@ -156,8 +201,8 @@ class Experiment:
                 self.exp_config['weights_dataset_file'] = None
 
         # Check if the weights dataset not exist or required
-        if self.exp_config['weights_dataset_file'] and (self.exp_config['experiment_type'] not in [
-            'brute_force', 'basic_metaheuristics']):
+        if self.exp_config['weights_dataset_file'] and (
+                self.exp_config['experiment_type'] not in ['brute_force', 'basic_metaheuristics']):
             if path.isfile('collections/' + self.exp_config['weights_dataset_file']):
                 self.weights_data = tl.read_json('collections/' + self.exp_config['weights_dataset_file'])
             else:
@@ -236,18 +281,27 @@ if __name__ == '__main__':
     import argparse
 
     # Only one argument is allowed: the code
-    parser = argparse.ArgumentParser(description='Run certain predefined experiment, default experiment index is 0')
-    parser.add_argument('exp_index', metavar='index', type=int, nargs='?', default=0, choices=range(len(hh_configs)),
-                        help='position of the experiment to run according to the configuration dictionaries')
-    exp_ind = list(vars(parser.parse_args()).values())[0]
+    parser = argparse.ArgumentParser(
+        description="Run certain experiment, default experiment is './exconf/demo.json'")
+    parser.add_argument('exp_config', metavar='config_filename', type=str, nargs='?', default='demo',
+                        help="Name of the configuration file in './exconf/' or its full path. Only JSON files.")
+    # choices = [x.split('.')[0] for x in listdir('./exconf') if x.split('.')[1] == 'json'],
+    # exp_filename = list(vars(parser.parse_args()).values())[0]
+    exp_filename = parser.parse_args().exp_config
+
+    # print(exp_filename)
 
     # Read the entered configuration
-    ex_config = ex_configs[exp_ind]
-    hh_config = hh_configs[exp_ind]
-    pr_config = pr_configs[exp_ind]
+    # ex_config = ex_configs[exp_ind]
+    # hh_config = hh_configs[exp_ind]
+    # pr_config = pr_configs[exp_ind]
 
     # Create the experiment to runs
-    exp = Experiment(exp_config=ex_config, hh_config=hh_config, prob_config=pr_config)
+    exp = Experiment(config_file=exp_filename)
+
+    print(exp.prob_config)
+    print(exp.hh_config)
+    print(exp.exp_config)
 
     # Run the experiment et voilà
-    exp.run()
+    # exp.run()
