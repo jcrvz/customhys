@@ -141,3 +141,4 @@ data_files/raw
 *.svg
 .DS_Store
 !docfiles/
+!exconf/*
