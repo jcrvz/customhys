@@ -18,41 +18,41 @@ from os import path
 # %% PREDEFINED CONFIGURATIONS
 # Use configuration files instead of predefined dictionaries
 
-# # Configuration dictionary for experiments
-# ex_configs = [
-#     {'experiment_name': 'demo_test', 'experiment_type': 'default', 'heuristic_collection_file': 'default.txt',
-#      'weights_dataset_file': 'operators_weights.json'},  # 0 - Default
-#     {'experiment_name': 'brute_force', 'experiment_type': 'brute_force',
-#      'heuristic_collection_file': 'default.txt'},  # 1 - Brute force
-#     {'experiment_name': 'basic_metaheuristics', 'experiment_type': 'basic_metaheuristics',
-#      'heuristic_collection_file': 'basicmetaheuristics.txt'},  # 2 - Basic metaheuristics
-#     {'experiment_name': 'short_test1', 'experiment_type': 'default', 'heuristic_collection_file': 'default.txt',
-#      'weights_dataset_file': 'operators_weights.json'},  # 3 - Short collection
-#     {'experiment_name': 'short_test2', 'experiment_type': 'default',
-#      'heuristic_collection_file': 'default.txt'},  # 4 - Short collection +
-#     {'experiment_name': 'long_test', 'experiment_type': 'default', 'heuristic_collection_file': 'test-set-21.txt',
-#      'auto_collection_num_vals': 21}  # 5 - Long collection
-# ]
-#
-# # Configuration dictionary for hyper-heuristics
-# hh_configs = [
-#     {'cardinality': 3, 'num_replicas': 30},  # 0 - Default
-#     {'cardinality': 1, 'num_replicas': 30},  # 1 - Brute force
-#     {'cardinality': 1, 'num_replicas': 30},  # 2 - Basic metaheuristic
-#     {'cardinality': 3, 'num_replicas': 50},  # 3 - Short collection
-#     {'cardinality': 5, 'num_replicas': 50},  # 4 - Short collection +
-#     {'cardinality': 3, 'num_replicas': 50}   # 5 - Long collection
-# ]
-#
-# # Configuration dictionary for problems
-# pr_configs = [
-#     {'dimensions': [2, 5], 'functions': ['<choose_randomly>']},  # 0 - Default
-#     {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 1 - Brute force
-#     {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 2 - Basic metaheuristic
-#     {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 3 - Short collection
-#     {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 4 - Short collection +
-#     {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 5 - Long collection
-# ]
+# Configuration dictionary for experiments
+ex_configs = [
+    {'experiment_name': 'demo_test', 'experiment_type': 'default', 'heuristic_collection_file': 'default.txt',
+     'weights_dataset_file': 'operators_weights.json'},  # 0 - Default
+    {'experiment_name': 'brute_force', 'experiment_type': 'brute_force',
+     'heuristic_collection_file': 'default.txt'},  # 1 - Brute force
+    {'experiment_name': 'basic_metaheuristics', 'experiment_type': 'basic_metaheuristics',
+     'heuristic_collection_file': 'basicmetaheuristics.txt'},  # 2 - Basic metaheuristics
+    {'experiment_name': 'short_test1', 'experiment_type': 'default', 'heuristic_collection_file': 'default.txt',
+     'weights_dataset_file': 'operators_weights.json'},  # 3 - Short collection
+    {'experiment_name': 'short_test2', 'experiment_type': 'default',
+     'heuristic_collection_file': 'default.txt'},  # 4 - Short collection +
+    {'experiment_name': 'long_test', 'experiment_type': 'default', 'heuristic_collection_file': 'test-set-21.txt',
+     'auto_collection_num_vals': 21}  # 5 - Long collection
+]
+
+# Configuration dictionary for hyper-heuristics
+hh_configs = [
+    {'cardinality': 3, 'num_replicas': 30},  # 0 - Default
+    {'cardinality': 1, 'num_replicas': 30},  # 1 - Brute force
+    {'cardinality': 1, 'num_replicas': 30},  # 2 - Basic metaheuristic
+    {'cardinality': 3, 'num_replicas': 50},  # 3 - Short collection
+    {'cardinality': 5, 'num_replicas': 50},  # 4 - Short collection +
+    {'cardinality': 3, 'num_replicas': 50}   # 5 - Long collection
+]
+
+# Configuration dictionary for problems
+pr_configs = [
+    {'dimensions': [2, 5], 'functions': ['<choose_randomly>']},  # 0 - Default
+    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 1 - Brute force
+    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 2 - Basic metaheuristic
+    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 3 - Short collection
+    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 4 - Short collection +
+    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 5 - Long collection
+]
 
 
 # %% EXPERIMENT CLASS
