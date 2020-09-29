@@ -147,7 +147,8 @@ def read_subfolders(foldername):
     return [element for element in os.listdir(foldername) if not element.startswith('.')]
 
 
-def preprocess_files(main_folder='data_files/raw/', output_name='brute_force', only_laststep=True):
+def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_laststep=True,
+                     output_name='processed_data',):
     """
     Return data from results saved in the main folder. This method save the summary file in json format. Take in account
     that ``output_name = 'brute_force'`` has a special behaviour due to each json file stored in sub-folders correspond
@@ -156,12 +157,15 @@ def preprocess_files(main_folder='data_files/raw/', output_name='brute_force', o
 
     :param str main_folder: Optional.
         Location of the main folder. The default is 'data_files/raw/'.
-    :param str output_name:
-        Label of the experiment, for example, if the data correspond to a brute force deployment, then use
-        'brute_force'; otherwise, use a different label, for example, 'first_test'. The default is 'brute_force'.
+    :param str kind:
+        Type of procedure run to obtain the data files. They can be 'brute_force', 'basic_metaheuristic', and any other,
+        which means metaheuristics without fixed search operators. The default is 'brute_force'.
     :param bool only_laststep: Optional.
         Flag for only save the last step of all fitness values from the historical data. It is useful for large amount
-          of experiments. It only works when ``output_name'' is not 'brute_force'. The default is True.
+          of experiments. It only works when ``kind'' is neither 'brute_force' or 'basic_metaheuristic'. The default is
+          True.
+    :param str output_name:
+        Name of the resulting file. The default is 'processed_data'.
 
     :return: dict.
     """
@@ -194,7 +198,12 @@ def preprocess_files(main_folder='data_files/raw/', output_name='brute_force', o
         file_names = sorted(raw_file_names, key=lambda x: int(x.split('-')[0]))
 
         # When using brute_force experiments, the last_step has no sense.
-        if output_name == 'brute_force':
+        if kind == 'brute_force':
+            last_step = -1
+            label_operator = 'operator_id'
+            # Initialise iteration data
+            file_data = {'operator_id': list(), 'performance': list(), 'statistics': list(), 'fitness': list()}
+        elif kind == 'basic_metaheuristic':
             last_step = -1
             label_operator = 'operator_id'
             # Initialise iteration data
@@ -221,10 +230,13 @@ def preprocess_files(main_folder='data_files/raw/', output_name='brute_force', o
             # Store information in the corresponding variables
             file_data[label_operator].append(operator_id)
             file_data['performance'].append(temporal_data['performance'])
-            if output_name == 'brute_force':
+            if kind == 'brute_force':
                 file_data['statistics'].append(temporal_data['statistics'])
                 file_data['fitness'].append(temporal_data['fitness'])
-                file_data['hist_fitness'].append(temporal_data['historical'])  # !remove
+            elif kind == 'basic_metaheuristic':
+                file_data['statistics'].append(temporal_data['statistics'])
+                file_data['fitness'].append(temporal_data['fitness'])
+                file_data['hist_fitness'].append(temporal_data['historical'])
             else:
                 file_data['encoded_solution'].append(temporal_data['encoded_solution'])
                 file_data['statistics'].append(temporal_data['details']['statistics'])
