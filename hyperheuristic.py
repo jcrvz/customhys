@@ -222,6 +222,7 @@ class Hyperheuristic:
         current_performance, current_details = self.evaluate_metaheuristic(current_solution)
 
         # Initialise the best solution and its performance
+        best_solution = np.copy(current_solution)
         best_encoded_solution = np.copy(current_encoded_solution)
         best_performance = current_performance
 
@@ -261,7 +262,7 @@ class Hyperheuristic:
             if check_acceptance(delta_energy, temperature):
                 # Update the current solution and its performance
                 current_encoded_solution = np.copy(candidate_encoded_solution)
-                current_solution = np.copy(candidate_solution)
+                # current_solution = np.copy(candidate_solution)
                 current_performance = candidate_performance
                 # if delta_energy > 0:
                 #     print('{} :: Step: {}, Perf: {}, e-Sol: {} [Accepted]'.format(
@@ -387,6 +388,8 @@ class Hyperheuristic:
                 'encoded_solution': operator_id,
                 'performance': operator_performance,
                 'statistics': operator_details['statistics']
+                # 'fitness': operator_details['fitness'],  # to-delete
+                # 'historical': operator_details['historical']  # to-delete
             }, self.file_label)
 
             # Print update

@@ -198,7 +198,8 @@ def preprocess_files(main_folder='data_files/raw/', output_name='brute_force', o
             last_step = -1
             label_operator = 'operator_id'
             # Initialise iteration data
-            file_data = {'operator_id': list(), 'performance': list(), 'statistics': list()}
+            file_data = {'operator_id': list(), 'performance': list(), 'statistics': list(),
+                         'fitness': list(), 'hist_fitness': list()}  # !remove -> 'hist_fitness': list()
         else:
             last_step = int(file_names[-1].split('-')[0])
             label_operator = 'step'
@@ -222,6 +223,8 @@ def preprocess_files(main_folder='data_files/raw/', output_name='brute_force', o
             file_data['performance'].append(temporal_data['performance'])
             if output_name == 'brute_force':
                 file_data['statistics'].append(temporal_data['statistics'])
+                file_data['fitness'].append(temporal_data['fitness'])
+                file_data['hist_fitness'].append(temporal_data['historical'])  # !remove
             else:
                 file_data['encoded_solution'].append(temporal_data['encoded_solution'])
                 file_data['statistics'].append(temporal_data['details']['statistics'])
