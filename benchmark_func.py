@@ -281,6 +281,17 @@ class BasicProblem:
         return self.__scale_function * self.get_func_val(variables, *args) + self.__noise_level * noise_value + \
                self.__offset_function
 
+    def get_function_values(self, samples):
+        """
+        Map the `get_function_value` method to evaluate a list of samples and return the evaluation for each sample.
+
+        :param list samples:
+            List of positions in the problem domain to be evaluated.
+
+        :return: list
+        """
+        return [self.get_function_value(sample) for sample in samples]
+
     def plot(self, samples=55, resolution=100):
         """
         Plot the current problem in 2D.
