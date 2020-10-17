@@ -2861,14 +2861,14 @@ def list_functions(rnp=True, fts=None, wrd='1'):
         return functions_features
 
 
-def for_all(property, dimension=2):
+def for_all(property, dimensions=2):
     """
     Read a determined property or attribute for all the problems and return a list.
 
     :param str property:
         Property to read. Please, check the attributes from a given problem object.
 
-    :param int dimension: Optional
+    :param int dimensions: Optional
         Dimension to initialise all the problems.
 
     :return: list
@@ -2880,6 +2880,25 @@ def for_all(property, dimension=2):
         # Read all functions and request their optimum data
         for ii in range(len(__all__)):
             function_name = __all__[ii]
-            info[function_name] = eval('{}({}).{}'.format(function_name, dimension, property))
+            info[function_name] = eval('{}({}).{}'.format(function_name, dimensions, property))
 
         return info
+
+
+def choose_problem(problem_name=None, num_dimensions=None):
+    """
+    Select a problem from __all__ using its string name and create its object for a given number of dimensions. If no
+    problem is specified, it prints the full list of the available problems.
+
+    :param str problem_name:
+
+    :type problem_name:
+    :param int num_dimensions:
+    :type num_dimensions:
+    :return:
+    :rtype:
+    """
+    if problem_name and num_dimensions:
+        return eval('{}({})'.format(problem_name, num_dimensions))
+    else:
+        print(f'You need to choose one problem. Available problems: {__all__}')

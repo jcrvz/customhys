@@ -6,14 +6,12 @@ Created on Mon Sep 30 13:42:15 2019
 
 @author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
 """
-
 import hyperheuristic as hyp
 from metaheuristic import Operators
 import benchmark_func as bf
 import multiprocessing
 import tools as tl
 from os import path
-
 
 # %% PREDEFINED CONFIGURATIONS
 # Use configuration files instead of predefined dictionaries
@@ -61,6 +59,7 @@ pr_configs = [
 #                    'heuristic_collection_file': 'default.txt', 'weights_dataset_file': 'operators_weights.json'}
 # _hh_config_demo = {'cardinality': 3, 'num_replicas': 30}
 # _pr_config_demo = {'dimensions': [2, 5], 'functions': [bf.__all__[hyp.np.random.randint(0, len(bf.__all__))]]}
+
 
 class Experiment:
     """
@@ -121,72 +120,8 @@ class Experiment:
         :return: None.
 
         """
-        # If there is a configuration file
-        if config_file:
-            # Adjustments
-            directory, filename = path.split(config_file)
-            if directory == '':
-                directory = './exconf/'  # Default directory
-            basename, extension = path.splitext(filename)
-            if extension not in ['.json', '']:
-                raise ExperimentError("Configuration file must be JSON")
-
-            # Existence verification and load
-            full_path = path.join(directory, basename + '.json')
-            if path.isfile(full_path):
-                all_configs = tl.read_json(full_path)
-
-                # Load data from json file
-                exp_config = all_configs['ex_config']
-                hh_config = all_configs['hh_config']
-                prob_config = all_configs['prob_config']
-            else:
-                raise ExperimentError(f"File {full_path} does not exist!")
-        else:
-            if exp_config is None:
-                exp_config = dict()
-            if hh_config is None:
-                hh_config = dict()
-            if prob_config is None:
-                prob_config = dict()
-
-        # Load the default experiment configuration and compare it with exp_cfg
-        self.exp_config = tl.check_fields(
-            {
-                'experiment_name': 'test',
-                'experiment_type': 'default',  # 'default' -> hh, 'brute_force', 'basic_metaheuristics'
-                'heuristic_collection_file': 'default.txt',
-                'weights_dataset_file': None,  # 'operators_weights.json',
-                'use_parallel': True,
-                'parallel_pool_size': None,  # Default
-                'auto_collection_num_vals': 5
-            }, exp_config)
-
-        # Load the default hyper-heuristic configuration and compare it with hh_cfg
-        self.hh_config = tl.check_fields(
-            {
-                'cardinality': 3,
-                'num_agents': 30,
-                'num_iterations': 100,
-                'num_replicas': 50,
-                'num_steps': 100,
-                'max_temperature': 200,
-                'stagnation_percentage': 0.3,
-                'cooling_rate': 0.05
-            }, hh_config)
-
-        # Load the default problem configuration and compare it with prob_config
-        self.prob_config = tl.check_fields(
-            {
-                'dimensions': [2, 5, *range(10, 50 + 1, 10)],
-                'functions': bf.__all__,
-                'is_constrained': True
-            }, prob_config)
-
-        # Check if there is a special case of function name: <choose_randomly>
-        self.prob_config['functions'] = [
-            bf.__all__[hyp.np.random.randint(0, len(bf.__all__))] if fun == '<choose_randomly>' else fun
-            for fun in self.prob_config['functions']]
+        self.exp_config, self.hh_config, self.prob_config = read_config_file(config_file=None, exp_config=None,
+                                                                             hh_config=None, prob_config=None)
 
         # Check if the heuristic collection exists
         if not path.isfile('./collections/' + self.exp_config['heuristic_collection_file']):
@@ -218,7 +153,8 @@ class Experiment:
         """
         # TODO: Create a task log for prevent interruptions
         # Create a list of problems from functions and dimensions combinations
-        all_problems = [(x, y) for x in self.prob_config['functions'] for y in self.prob_config['dimensions']]
+        # all_problems = [(x, y) for x in self.prob_config['functions'] for y in self.prob_config['dimensions']]
+        all_problems = create_task_list(self.prob_config['functions'], self.prob_config['dimensions'])
 
         # Check if the experiment will be in parallel
         if self.exp_config['use_parallel']:
@@ -244,7 +180,8 @@ class Experiment:
         label = '{}-{}D-{}'.format(function_string, num_dimensions, self.exp_config['experiment_name'])
 
         # Get and format the problem
-        problem = eval('bf.{}({})'.format(function_string, num_dimensions))
+        # problem = eval('bf.{}({})'.format(function_string, num_dimensions))
+        problem = bf.choose_problem(function_string, num_dimensions)
         problem_to_solve = problem.get_formatted_problem(self.prob_config['is_constrained'])
 
         # Read the particular weights array (if so)
@@ -273,6 +210,100 @@ class ExperimentError(Exception):
     Simple ExperimentError to manage exceptions.
     """
     pass
+
+
+def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_config=None):
+    """
+    Return the experimental (`exp_config`), hyper-heuristic (`hh_config`), problem (`prob_config`) configuration
+    variables from `config_file`, if it is supplied. Otherwise, use the `exp_config`, `hh_config`, and `prob_config`
+    inputs. If there is no input, then assume the default values for these three configuration variables. Further
+    information about these variables can be found in the Experiment class's `__doc__`.
+    """
+
+    # If there is a configuration file
+    if config_file:
+        # Adjustments
+        directory, filename = path.split(config_file)
+        if directory == '':
+            directory = './exconf/'  # Default directory
+        basename, extension = path.splitext(filename)
+        if extension not in ['.json', '']:
+            raise ExperimentError("Configuration file must be JSON")
+
+        # Existence verification and load
+        full_path = path.join(directory, basename + '.json')
+        if path.isfile(full_path):
+            all_configs = tl.read_json(full_path)
+
+            # Load data from json file
+            exp_config = all_configs['ex_config']
+            hh_config = all_configs['hh_config']
+            prob_config = all_configs['prob_config']
+        else:
+            raise ExperimentError(f"File {full_path} does not exist!")
+    else:
+        if exp_config is None:
+            exp_config = dict()
+        if hh_config is None:
+            hh_config = dict()
+        if prob_config is None:
+            prob_config = dict()
+
+    # Load the default experiment configuration and compare it with exp_cfg
+    exp_config = tl.check_fields(
+        {
+            'experiment_name': 'test',
+            'experiment_type': 'default',  # 'default' -> hh, 'brute_force', 'basic_metaheuristics'
+            'heuristic_collection_file': 'default.txt',
+            'weights_dataset_file': None,  # 'operators_weights.json',
+            'use_parallel': True,
+            'parallel_pool_size': None,  # Default
+            'auto_collection_num_vals': 5
+        }, exp_config)
+
+    # Load the default hyper-heuristic configuration and compare it with hh_cfg
+    hh_config = tl.check_fields(
+        {
+            'cardinality': 3,
+            'num_agents': 30,
+            'num_iterations': 100,
+            'num_replicas': 50,
+            'num_steps': 100,
+            'max_temperature': 200,
+            'stagnation_percentage': 0.3,
+            'cooling_rate': 0.05
+        }, hh_config)
+
+    # Load the default problem configuration and compare it with prob_config
+    prob_config = tl.check_fields(
+        {
+            'dimensions': [2, 5, *range(10, 50 + 1, 10)],
+            'functions': bf.__all__,
+            'is_constrained': True
+        }, prob_config)
+
+    # Check if there is a special case of function name: <choose_randomly>
+    prob_config['functions'] = [
+        bf.__all__[hyp.np.random.randint(0, len(bf.__all__))] if fun == '<choose_randomly>' else fun
+        for fun in prob_config['functions']]
+
+    return exp_config, hh_config, prob_config
+
+
+def create_task_list(function_list, dimension_list):
+    """
+    Return a list of combinations (in tuple form) for problems from functions and dimensions.
+
+    :param list function_list:
+        List of functions from the `benchmark_func` module.
+
+    :param list dimension_list:
+        List of dimensions considered for each one of these functions.
+
+    :return: list of tuples
+    """
+    # TODO: Create a task list for prevent interruptions
+    return [(x, y) for x in function_list for y in dimension_list]
 
 
 # %% Auto-run
