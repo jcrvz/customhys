@@ -8,37 +8,127 @@ import numpy as np
 from sklearn.neighbors import KernelDensity
 from sklearn.model_selection import GridSearchCV
 import scipy.stats as st
-from experiment import read_config_file
+from experiment import read_config_file, create_task_list
 import pflacco.pflacco as pf
 
 
 class Gorddo:
-    def __init__(self, config_file=None, boundaries=None, dimensions=None):
+    def __init__(self, boundaries=None, dimensions=None, **kwargs):
         # TODO: Add feature of accepting specified list of functions, dimensions, and boundaries
 
         # Read the configuration file
-        _, _, self.prob_config = read_config_file(config_file)
+        _, _, self.prob_config = read_config_file(**kwargs)
 
-        self.boundaries = boundaries
-        self.dimensions = dimensions
+        # Set the forced boundaries and dimensions
+        if boundaries:
+            if isinstance(boundaries, tuple):
+                lower, upper = boundaries
 
-    def run(self):
-        pass
+                # Hypercube problem domain
+                if isinstance(lower, (float, int)) and isinstance(upper, (float, int)):
+                    if dimensions:
+                        if isinstance(dimensions, int) and (dimensions > 1):
+                            self.num_dimensions = dimensions
+                        else:
+                            raise CharacteriserError('dimensions must be a integer greater than one!')
+                    else:
+                        self.num_dimensions = None
+
+                    self.lower_boundaries = lower
+                    self.upper_boundaries = upper
+
+                # Parallelepiped problem domain
+                else:
+                    if len(lower) == len(upper):
+                        if not dimensions:
+                            dimensions = len(lower)
+                        else:
+                            if not isinstance(dimensions, int) or (1 > dimensions > len(lower)):
+                                raise CharacteriserError(
+                                    'dimensions must be a integer between 2 and len(boundaries[0])!')
+
+                        self.num_dimensions = dimensions
+                        self.lower_boundaries = np.array(lower[:dimensions])
+                        self.upper_boundaries = np.array(upper[:dimensions])
+                    else:
+                        raise CharacteriserError('lower and upper boundaries must have the same length!')
+            else:
+                raise CharacteriserError('boundaries must be a tuple!')
+        else:
+            self.lower_boundaries = None
+            self.upper_boundaries = None
+
+            if dimensions:
+                if isinstance(dimensions, int) and (dimensions > 1):
+                    self.num_dimensions = dimensions
+                else:
+                    raise CharacteriserError('dimensions must be a integer greater than one!')
+            else:
+                self.num_dimensions = None
+
+        self.features = list()
+
+    def run(self, sampling_method='latin_hypercube'):
+        # Create the combination of (problem, dimension) to be characterised (overwrite dimensions if specified)
+        problems = create_task_list(self.prob_config['functions'],
+                                    [self.num_dimensions] if self.num_dimensions else self.prob_config['dimensions'])
+        num_problems = len(problems)
+
+        # For each problem and dimension find the features
+        for index, prob_dim in enumerate(problems, start=1):
+            problem_string, num_dimensions = prob_dim
+
+            # Call the problem to characterise
+            problem_object = bf.choose_problem(problem_string, num_dimensions)
+
+            # Overwrite the boundaries of the problem domain
+            if self.lower_boundaries:  # also self.upper_boundaries
+                problem_object.set_search_range(self.lower_boundaries, self.upper_boundaries)
+
+            # Create a characteriser object
+            chsr = Characteriser(sampling_method)
+
+            # Mark start the characterising procedure
+            print('Characterising {}-{}D...'.format(problem_string, num_dimensions))
+
+            # Calculate the features
+            self.features.append(chsr.characterise(problem_object))
+
+            # Mark end the characterising procedure
+            print('DONE! [{}/{}]'.format(index, num_problems))
+
+        """
+        Set the problem domain using boundaries information as well as dimensions, if so.
+
+        :param tuple boundaries:
+            Domain boundaries for the problem domain, they must be given in a tuple such as (`lower_boundary`,
+            `upper_boundary`), since `lower_boundary` and `upper_boundary` are either int|float or lists of
+            int|float.
+            Depending of the nature of these boundaries certain behaviours are considered:
+                - `lower_boundary` and `upper_boundary` are int|float -> Problem domain is given by a hypercube so
+                    `dimensions` are mandatory.
+                - `lower_boundary` and `upper_boundary` are array-like (lists) -> Problem domain is given by a
+                    parallelepiped so `dimensions` are optional (this value is inferred from `lower_boundary`).
+                    If `dimensions` are specified, its value must be between 2 and `len(lower_boundary)`. Therefore,
+                    if this value is lower than `len(lower_boundary)`, it is assumed that the entered boundaries are
+                    quite general so, for such a case, `dimensions` is highly relevant and is used to reshape the
+                    boundary lists, i. e., `new_boundary = old_boundary[:dimensions]`.
+
+        :param int dimensions:
+            Number of dimensions to modify the internal value. Default is None.
+
+        :return: None
+        """
 
 
 class Characteriser:
     def __init__(self, sampling_method='latin_hypercube'):
-        # Define high relevance parameters, if they are not None, their values have high priority
-        self.num_dimensions = None
-        self.lower_boundaries = None
-        self.upper_boundaries = None
-
         self.sampling_method = sampling_method
 
         self.num_blocks = 3
         self.is_minimising = True
 
-        self.available_features = pf.list_available_feature_sets()
+        self.available_features = pf.list_available_feature_sets(False, False)
 
         # self.bandwidth = 1
         # self.kde_samples = 1000
@@ -54,30 +144,23 @@ class Characteriser:
 
     # TODO: Generalise for multiple feature suites
     def characterise(self, problem_object, samples=None):
-        # # Cast list of problems
-        # if not isinstance(problems, list):
-        #     problems = [problems]
 
-        # # Initialise the feature register
-        # features = list()
-
-        # For each problem find the features
-        # for problem_object in problems:
         # TODO: Add other kind of problem definition (same for evaluation)
+        lower_boundaries = problem_object.min_search_range
+        upper_boundaries = problem_object.max_search_range
+        num_dimensions = problem_object.variable_num
         # If the problem object is a string, assume that it refers to an benchmark_func's object
-        if isinstance(problem_object, bf.BasicProblem):
-            # problem = bf.choose_problem(problem_object, num_dimensions)
-
-            # Read boundaries and determine the span and centre : high level -> self. _boundaries
-            lower_boundaries = self.lower_boundaries if self.lower_boundaries else problem_object.min_search_range
-            upper_boundaries = self.upper_boundaries if self.upper_boundaries else problem_object.max_search_range
-            # span_boundaries = upper_boundaries - lower_boundaries
-            # centre_boundaries = (upper_boundaries + lower_boundaries) / 2.
-        else:
-            raise CharacteriserError('Problem object not recognised!')
+        # if isinstance(problem_object, bf.BasicProblem):
+        # Read boundaries and determine the span and centre : high level -> self. _boundaries
+        # lower_boundaries = self.lower_boundaries if self.lower_boundaries else problem_object.min_search_range
+        # upper_boundaries = self.upper_boundaries if self.upper_boundaries else problem_object.max_search_range
+        # span_boundaries = upper_boundaries - lower_boundaries
+        # centre_boundaries = (upper_boundaries + lower_boundaries) / 2.
+        # else:
+        #     raise CharacteriserError('Problem object not recognised!')
 
         # Read the number of dimensions
-        num_dimensions = self.num_dimensions if self.num_dimensions else len(lower_boundaries)
+        # num_dimensions = self.num_dimensions if self.num_dimensions else len(lower_boundaries)
 
         # Update the number of observations
         num_samples = samples if samples else 50 * num_dimensions
@@ -95,17 +178,20 @@ class Characteriser:
                 (num_samples, num_dimensions))
 
         # Evaluate them in the function
-        if isinstance(problem_object, bf.BasicProblem):
-            fitness_values = problem_object.get_function_values(position_samples)
+        fitness_values = problem_object.get_function_values(position_samples)
 
         # Create the feature object
         feature_object = pf.create_feature_object(x=position_samples, y=fitness_values, minimize=self.is_minimising,
-                                                  lower=lower_boundaries, upper=upper_boundaries,
-                                                  blocks=self.num_blocks)
+                                                  lower=lower_boundaries, upper=upper_boundaries)
+                                                  # blocks=self.num_blocks)
+        # fun=lambda x: problem_object.get_function_values(x))
 
         # Calculate all the features
         # TODO: Revise how to calculate specific features (probably we need to modify pflacco)
-        feature_values = pf.calculate_features(feat_object=feature_object)
+        # feature_values = pf.calculate_features(feat_object=feature_object)
+        feature_values = dict()
+        for feature_set_name in self.available_features:
+            feature_values.update(pf.calculate_feature_set(feat_object=feature_object, set_name=feature_set_name))
 
         return feature_values
 
@@ -202,57 +288,6 @@ class Characteriser:
     #
     #     return np.array(positions)
 
-    def set_problem_domain(self, boundaries, dimensions=None):
-        """
-        Set the problem domain using boundaries information as well as dimensions, if so.
-
-        :param tuple boundaries:
-            Domain boundaries for the problem domain, they must be given in a tuple such as (`lower_boundary`,
-            `upper_boundary`), since `lower_boundary` and `upper_boundary` are either int|float or lists of int|float.
-            Depending of the nature of these boundaries certain behaviours are considered:
-                - `lower_boundary` and `upper_boundary` are int|float -> Problem domain is given by a hypercube so
-                    `dimensions` are mandatory.
-                - `lower_boundary` and `upper_boundary` are array-like (lists) -> Problem domain is given by a
-                    parallelepiped so `dimensions` are optional (this value is inferred from `lower_boundary`).
-                    If `dimensions` are specified, its value must be between 2 and `len(lower_boundary)`. Therefore,
-                    if this value is lower than `len(lower_boundary)`, it is assumed that the entered boundaries are
-                    quite general so, for such a case, `dimensions` is highly relevant and is used to reshape the
-                    boundary lists, i. e., `new_boundary = old_boundary[:dimensions]`.
-
-        :param int dimensions:
-            Number of dimensions to modify the internal value. Default is None.
-
-        :return: None
-        """
-        if boundaries:
-            lower, upper = boundaries
-            if isinstance(lower, (float, int)) and isinstance(upper, (float, int)):
-                if dimensions:
-                    if isinstance(dimensions, int):
-                        self.num_dimensions = dimensions
-                    else:
-                        raise CharacteriserError('dimensions must be a integer!')
-                else:
-                    CharacteriserError('dimensions are required for setting a hypercube domain')
-
-                self.lower_boundaries = np.array([lower] * dimensions)
-                self.upper_boundaries = np.array([upper] * dimensions)
-            else:
-                if len(lower) == len(upper):
-                    if not dimensions:
-                        dimensions = len(lower)
-                    else:
-                        if not isinstance(dimensions, int) or (1 > dimensions > len(lower)):
-                            raise CharacteriserError('dimensions must be a integer between 2 and len(boundaries[0])!')
-
-                    self.num_dimensions = dimensions
-                    self.lower_boundaries = np.array(lower[:dimensions])
-                    self.upper_boundaries = np.array(upper[:dimensions])
-                else:
-                    raise CharacteriserError('lower and upper must have the same length!')
-        else:
-            raise CharacteriserError('boundaries must be entered!')
-
 
 class CharacteriserError(Exception):
     """
@@ -277,11 +312,16 @@ if __name__ == '__main__':
     #
     # plt.semilogy([res + 1 for res in results_all]), plt.show()
 
-    problem = bf.Sphere(2)
-    problem.set_search_range(-5, 5)
+    # problem = bf.Sphere(2)
+    # problem.set_search_range(-5, 5)
+    # chsr = Characteriser()
+    # results = chsr.characterise(problem)
 
-    chsr = Characteriser()
-    results = chsr.characterise(problem)
+    gdd = Gorddo(dimensions=30, prob_config={'dimensions': [2], 'functions': [
+        'WWavy', 'Weierstrass', 'Whitley', 'XinSheYang1', 'XinSheYang2', 'XinSheYang3', 'XinSheYang4', 'YaoLiu09',
+        'Zakharov', 'ZeroSum']})
+    gdd.run()
+
 
     # results = chsr.length_scale(problem, bandwidth_mode='exhaustive')
     # plt.hist(results['raw'], density=True, bins=100), plt.plot(results['PDF_xs'], results['PDF_fx']), plt.show()
