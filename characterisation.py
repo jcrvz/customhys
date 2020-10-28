@@ -11,7 +11,7 @@ from sklearn.neighbors import KernelDensity
 from sklearn.model_selection import GridSearchCV
 import scipy.stats as st
 from experiment import read_config_file, create_task_list
-import pflacco.pflacco as pf
+import pjflacco as pf
 
 
 # TODO: Avoid using pflacco (it is no longer maintained)
