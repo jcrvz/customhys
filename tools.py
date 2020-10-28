@@ -290,7 +290,7 @@ def check_fields(default_dict, new_dict):
     return default_dict
 
 
-def save_json(variable_to_save, file_name=None):
+def save_json(variable_to_save, file_name=None, suffix=None):
     """
     Save a variable composed with diverse types of variables, like numpy.
 
@@ -298,14 +298,18 @@ def save_json(variable_to_save, file_name=None):
         Variable to save.
     :param str file_name: Optional.
         Filename to save the variable. If this is None, a random name is used. The default is None.
-    :return:
-    :rtype:
+    :param str suffix: Optional.
+        Prefix to put in the file_name. The default is None.
+
+    :return: None
     """
     if file_name is None:
         file_name = 'autosaved-' + str(hex(random.randint(0, 9999)))
 
+    suffix = '_' + suffix if suffix else ''
+
     # Create the new file
-    with open('./{}.json'.format(file_name), 'w') as json_file:
+    with open('./{}{}.json'.format(file_name, suffix), 'w') as json_file:
         json.dump(variable_to_save, json_file, cls=NumpyEncoder)
 
 

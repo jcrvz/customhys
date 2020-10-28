@@ -4,12 +4,17 @@ Created on Thu Sep 26 16:56:01 2019
 
 @author: Jorge Mario Cruz-Duarte (jcrvz.github.io)
 """
+import os
 import numpy as np
+from tools import save_json
 from sklearn.neighbors import KernelDensity
 from sklearn.model_selection import GridSearchCV
 import scipy.stats as st
 from experiment import read_config_file, create_task_list
 import pflacco.pflacco as pf
+
+
+# TODO: Avoid using pflacco (it is no longer maintained)
 
 
 class Gorddo:
@@ -66,7 +71,9 @@ class Gorddo:
             else:
                 self.num_dimensions = None
 
-        self.features = list()
+        self.problem_features = list()
+        self.problem_names = list()
+        self.problem_dimensions = list()
 
     def run(self, sampling_method='latin_hypercube'):
         # Create the combination of (problem, dimension) to be characterised (overwrite dimensions if specified)
@@ -92,10 +99,29 @@ class Gorddo:
             print('Characterising {}-{}D...'.format(problem_string, num_dimensions))
 
             # Calculate the features
-            self.features.append(chsr.characterise(problem_object))
+            self.problem_features.append(chsr.characterise(problem_object))
+            self.problem_names.append(problem_string)
+            self.problem_dimensions.append(num_dimensions)
 
             # Mark end the characterising procedure
             print('DONE! [{}/{}]'.format(index, num_problems))
+
+    def save_results(self, file_name=None, folder_name=None):
+
+        folder_name = 'characteristics/' if not folder_name else folder_name
+
+        # Verify if the path exists
+        if not os.path.isdir(folder_name):
+            os.mkdir(folder_name)
+
+        if not (len(self.problem_features) == 0):
+            save_json(dict(
+                name=self.problem_names,
+                dimensions=self.problem_dimensions,
+                features=self.problem_features
+            ), folder_name + file_name, suffix='features')
+        else:
+            raise CharacteriserError('Features variable is empty, len = 0')
 
         """
         Set the problem domain using boundaries information as well as dimensions, if so.
@@ -183,7 +209,7 @@ class Characteriser:
         # Create the feature object
         feature_object = pf.create_feature_object(x=position_samples, y=fitness_values, minimize=self.is_minimising,
                                                   lower=lower_boundaries, upper=upper_boundaries)
-                                                  # blocks=self.num_blocks)
+        # blocks=self.num_blocks)
         # fun=lambda x: problem_object.get_function_values(x))
 
         # Calculate all the features
@@ -317,11 +343,9 @@ if __name__ == '__main__':
     # chsr = Characteriser()
     # results = chsr.characterise(problem)
 
-    gdd = Gorddo(dimensions=30, prob_config={'dimensions': [2], 'functions': [
-        'WWavy', 'Weierstrass', 'Whitley', 'XinSheYang1', 'XinSheYang2', 'XinSheYang3', 'XinSheYang4', 'YaoLiu09',
-        'Zakharov', 'ZeroSum']})
+    gdd = Gorddo(prob_config={'dimensions': [2, 5, 10, 20, 30, 40, 50], 'functions': bf.__all__})
     gdd.run()
-
+    gdd.save_results('all')
 
     # results = chsr.length_scale(problem, bandwidth_mode='exhaustive')
     # plt.hist(results['raw'], density=True, bins=100), plt.plot(results['PDF_xs'], results['PDF_fx']), plt.show()
