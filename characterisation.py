@@ -18,7 +18,7 @@ import pjflacco as pf
 
 
 class Gorddo:
-    def __init__(self, boundaries=None, dimensions=None, **kwargs):
+    def __init__(self, boundaries=None, dimensions=None, folder_name=None, **kwargs):
         # TODO: Add feature of accepting specified list of functions, dimensions, and boundaries
 
         # Read the configuration file
@@ -71,15 +71,22 @@ class Gorddo:
             else:
                 self.num_dimensions = None
 
-        self.problem_features = list()
-        self.problem_names = list()
-        self.problem_dimensions = list()
+        # Verify if the path exists
+        self.folder_name = 'characteristics/' if not folder_name else folder_name
+        if not os.path.isdir(self.folder_name):
+            os.mkdir(self.folder_name)
 
-    def run(self, sampling_method='latin_hypercube'):
+        # self.problem_features = list()
+        # self.problem_names = list()
+        # self.problem_dimensions = list()
+
+    def run(self, sampling_method='latin_hypercube', prefix=None):
         # Create the combination of (problem, dimension) to be characterised (overwrite dimensions if specified)
         problems = create_task_list(self.prob_config['functions'],
                                     [self.num_dimensions] if self.num_dimensions else self.prob_config['dimensions'])
         num_problems = len(problems)
+
+        prefix = '' if not prefix else prefix + '_'
 
         # For each problem and dimension find the features
         for index, prob_dim in enumerate(problems, start=1):
@@ -98,30 +105,29 @@ class Gorddo:
             # Mark start the characterising procedure
             print('Characterising {}-{}D...'.format(problem_string, num_dimensions))
 
-            # Calculate the features
-            self.problem_features.append(chsr.characterise(problem_object))
-            self.problem_names.append(problem_string)
-            self.problem_dimensions.append(num_dimensions)
+            try:
+                # Calculate the features
+                problem_features = chsr.characterise(problem_object)
 
-            # Mark end the characterising procedure
-            print('DONE! [{}/{}]'.format(index, num_problems))
+                # Save data
+                save_json(problem_features,
+                          self.folder_name + '{}{}-{}D'.format(prefix, problem_string, num_dimensions),
+                          suffix='fts')
 
-    def save_results(self, file_name=None, folder_name=None):
+                # Mark end the characterising procedure
+                print('DONE! [{}/{}]'.format(index, num_problems))
+            except Exception as e:
+                print(e)
 
-        folder_name = 'characteristics/' if not folder_name else folder_name
-
-        # Verify if the path exists
-        if not os.path.isdir(folder_name):
-            os.mkdir(folder_name)
-
-        if not (len(self.problem_features) == 0):
-            save_json(dict(
-                name=self.problem_names,
-                dimensions=self.problem_dimensions,
-                features=self.problem_features
-            ), folder_name + file_name, suffix='features')
-        else:
-            raise CharacteriserError('Features variable is empty, len = 0')
+        # def save_results(self, file_name=None, ):
+        #
+        #
+        #
+        #
+        #     if not (len(self.problem_features) == 0):
+        #
+        #     else:
+        #         raise CharacteriserError('Features variable is empty, len = 0')
 
         """
         Set the problem domain using boundaries information as well as dimensions, if so.
@@ -194,7 +200,7 @@ class Characteriser:
         # Generate the samples
         # TODO: Add more methods for generating samples
         if self.sampling_method == 'latin_hypercube':  # available with pflacco
-            position_samples = pf.create_initial_sample(n_obs=num_samples, dim=num_dimensions, type='lhs',
+            position_samples = pf.create_initial_sample(n_obs=num_samples, dim=num_dimensions, type_sampling='lhs',
                                                         lower_bound=lower_boundaries, upper_bound=upper_boundaries)
         # elif self.sampling_method == 'levy_walk':
         #     self.position_samples = self._levy_walk(self.levy_walk_initial, self.num_samples,
@@ -343,9 +349,12 @@ if __name__ == '__main__':
     # chsr = Characteriser()
     # results = chsr.characterise(problem)
 
-    gdd = Gorddo(prob_config={'dimensions': [2, 5, 10, 20, 30, 40, 50], 'functions': bf.__all__})
+    gdd = Gorddo(prob_config={
+        'dimensions': [2, 5, 10, 20, 30, 40, 50],
+        'functions': bf.__all__
+    })
     gdd.run()
-    gdd.save_results('all')
+    # gdd.save_results('F2')
 
     # results = chsr.length_scale(problem, bandwidth_mode='exhaustive')
     # plt.hist(results['raw'], density=True, bins=100), plt.plot(results['PDF_xs'], results['PDF_fx']), plt.show()

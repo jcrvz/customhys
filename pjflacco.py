@@ -17,6 +17,7 @@ if len(names_to_install) > 0:
 
 flacco = importr('flacco')
 
+
 def _translate_control(control):
     """
     Transforms a python dict to a valid R object
@@ -26,6 +27,8 @@ def _translate_control(control):
     Returns: R object of type ListVector
 
     """
+    if control is None:
+        control = {}
     ctrl = {}
     for key, lst in control.items():
         if isinstance(lst, list):
@@ -56,6 +59,7 @@ def summary(r_object):
     """
     base.summary(r_object)
 
+
 def printr(r_object):
     """
     Interface to R's print function
@@ -65,45 +69,52 @@ def printr(r_object):
     """
     base.print(r_object)
 
-def calculate_features(feat_object, control = {}):
+
+def calculate_features(feat_object, control=None):
     """
-    Performs an Exploratory Landscape Analysis of a continuous function and computes various features, which quantify the function's landscape.
+    Performs an Exploratory Landscape Analysis of a continuous function and computes various features, which quantify
+    the function's landscape.
     Args:
       feat_object: R feature objected as created by create_feature_object()
-      control:  python dict containing various settings for feature set. For more details see https://cran.r-project.org/web/packages/flacco/flacco.pdf. (Default value = {})
+      control:  python dict containing various settings for feature set. For more details see
+      https://cran.r-project.org/web/packages/flacco/flacco.pdf. (Default value = {})
 
     Returns:
 
     """
     control = _translate_control(control)
     feat_set = flacco.calculateFeatures(feat_object, control)
-    return {key : feat_set.rx2(key)[0] for key in feat_set.names}
+    return {key: feat_set.rx2(key)[0] for key in feat_set.names}
 
 
-def calculate_feature_set(feat_object, set_name, control = {}):
+def calculate_feature_set(feat_object, set_name, control=None):
     """
-    Performs an Exploratory Landscape Analysis of a continuous function and computes various features, which quantify the function's landscape for a single feature set.
+    Performs an Exploratory Landscape Analysis of a continuous function and computes various features, which quantify
+    the function's landscape for a single feature set.
     
     Args:
       feat_object: R feature objected as created by create_feature_object()
       set_name: feature set name, use list_all_available_feature_sets() to get an overview 
-      control:  python dict containing various settings for feature set. For more details see https://cran.r-project.org/web/packages/flacco/flacco.pdf. (Default value = {})
+      control:  python dict containing various settings for feature set. For more details see
+      https://cran.r-project.org/web/packages/flacco/flacco.pdf. (Default value = {})
 
     Returns:
 
     """
     control = _translate_control(control)
     feat_set = flacco.calculateFeatureSet(feat_object, set_name, control)
-    return {key : feat_set.rx2(key)[0] for key in feat_set.names}
+    return {key: feat_set.rx2(key)[0] for key in feat_set.names}
 
-def create_initial_sample(n_obs, dim, type = 'lhs', lower_bound = None, upper_bound = None):
+
+def create_initial_sample(n_obs, dim, type_sampling='lhs', lower_bound=None, upper_bound=None):
     """
-    Convenient helper function, which creates an initial sample - either based on random (uniform) sampling or using latin hypercube sampling.
+    Convenient helper function, which creates an initial sample - either based on random (uniform) sampling or using
+    latin hypercube sampling.
 
     Args:
       n_obs: number of observations
       dim: number of dimensions
-      type: type of sampling strategy (Default value = 'lhs')
+      type_sampling: type of sampling strategy (Default value = 'lhs')
       lower_bound: The lower bounds of the initial sample as a list of size dim (Default value = 0)
       upper_bound: The upper bounds of the initial sample as a list of size dim (Default value = 1)
 
@@ -115,12 +126,13 @@ def create_initial_sample(n_obs, dim, type = 'lhs', lower_bound = None, upper_bo
     if upper_bound is None:
         upper_bound = np.array([1] * dim)
 
-    pcontrol = {
-        'init_sample.type': type,
+    control = {
+        'init_sample.type': type_sampling,
         'init_sample.lower': FloatVector(lower_bound),
         'init_sample.upper': FloatVector(upper_bound)}
 
-    return np.array(flacco.createInitialSample(n_obs, dim, ListVector(pcontrol)))
+    return np.array(flacco.createInitialSample(n_obs, dim, ListVector(control)))
+
 
 # TODO: eventually one could add the objective function and pass is down to R.
 def create_feature_object(x, y, minimize=True, lower=0, upper=1, blocks=None, fun=None):
@@ -139,7 +151,7 @@ def create_feature_object(x, y, minimize=True, lower=0, upper=1, blocks=None, fu
 
     """
     numpy2ri.activate()
-    x = R.r.matrix(x, nrow = len(x))
+    x = R.r.matrix(x, nrow=len(x))
     numpy2ri.deactivate()
     y = FloatVector(y)
 
@@ -154,74 +166,84 @@ def create_feature_object(x, y, minimize=True, lower=0, upper=1, blocks=None, fu
     if blocks:
         blocks = IntVector(blocks) if isinstance(blocks, list) else IntVector([blocks])
         return flacco.createFeatureObject(X=x, y=y, fun=fun, minimize=minimize, lower=lower, upper=upper, force=False,
-                                            blocks=blocks)
+                                          blocks=blocks)
     else:
         return flacco.createFeatureObject(X=x, y=y, fun=fun, minimize=minimize, lower=lower, upper=upper, force=False)
 
-def list_available_feature_sets(allow_cellmapping = True, allow_additional_costs = True):
+
+def list_available_feature_sets(allow_cellmapping=True, allow_additional_costs=True):
     """
     Lists all available feature sets w.r.t. certain restrictions.
 
     Args:
       allow_cellmapping: Determines whether cell maping features should be considered or not (Default value = True)
-      allow_additional_costs: Determines whether feature sets which induce additional function evaluations should be considered or not (Default value = True)
+      allow_additional_costs: Determines whether feature sets which induce additional function evaluations should be
+      considered or not (Default value = True)
 
     Returns:
 
     """
-    feature_sets = flacco.listAvailableFeatureSets(allow_cellmapping=allow_cellmapping,
-                                                   allow_additional_costs=allow_additional_costs)
+    # feature_sets =
     # print(feature_sets)
-    return feature_sets
+    return flacco.listAvailableFeatureSets(
+        allow_cellmapping=allow_cellmapping, allow_additional_costs=allow_additional_costs)
 
-def plot_barrier_tree_2d():
-    """ 
-    Creates a 2D image containing the barrier tree of this cell mapping.
 
-    """
-    control = _translate_control(control)
-    flacco.plotBarrierTree2D(feat_object, control)
-    input("Press Enter to continue...")
+# def plot_barrier_tree_2d():
+#     """
+#     Creates a 2D image containing the barrier tree of this cell mapping.
+#
+#     """
+#     control = _translate_control(control)
+#     flacco.plotBarrierTree2D(feat_object, control)
+#     input("Press Enter to continue...")
+#
+#
+# def plot_barrier_tree_3d():
+#     """
+#     Creates a 3D surface plot containing the barrier tree of this cell mapping.
+#
+#     """
+#     control = _translate_control(control)
+#     flacco.plotBarrierTree3D(feat_object, control)
+#     input("Press Enter to continue...")
 
-def plot_barrier_tree_3d():
-    """ 
-    Creates a 3D surface plot containing the barrier tree of this cell mapping.
 
-    """
-    control = _translate_control(control)
-    flacco.plotBarrierTree3D(feat_object, control)
-    input("Press Enter to continue...")
+# def plot_cell_mapping(feat_object, control={}):
+#     """
+#     Visualizes the transitions among the cells in the General Cell Mapping approach.
+#
+#     Args:
+#       feat_object: R feature objected as created by create_feature_object()
+#       control: python dict containing various control arguments. For more details see the section about
+#       'plotCellMapping' https://cran.r-project.org/web/packages/flacco/flacco.pdf. (Default value = {})
+#
+#     """
+#     control = _translate_control(control)
+#     flacco.plotCellMapping(feat_object, control)
+#     input("Press Enter to continue...")
 
-def plot_cell_mapping(feat_object, control = {}):
-    """
-    Visualizes the transitions among the cells in the General Cell Mapping approach.
 
-    Args:
-      feat_object: R feature objected as created by create_feature_object()
-      control: python dict containing various control arguments. For more details see the section about 'plotCellMapping' https://cran.r-project.org/web/packages/flacco/flacco.pdf. (Default value = {})
-
-    """
-    control = _translate_control(control)
-    flacco.plotCellMapping(feat_object, control)
-    input("Press Enter to continue...")
-
-def plot_information_content(feat_object, control = {}):
-    """
-    Creates a plot of the Information Content Features.
-
-    Args:
-      feat_object: R feature objected as created by create_feature_object()
-      control:  python dict containing various control arguments. For more details see the section about 'plotInformationContent' https://cran.r-project.org/web/packages/flacco/flacco.pdf. (Default value = {})
-    Returns:
-
-    """
-    control = _translate_control(control)
-    flacco.plotInformationContent(feat_object, control)
-    input("Press Enter to continue...")
-
-def run_flacco_gui():
-    """ 
-    Starts a shiny application, which allows the user to compute the flacco features and also visualize the underlying functions with an graphical user interface.
-
-    """
-    flacco.runFlaccoGUI()
+# def plot_information_content(feat_object, control={}):
+#     """
+#     Creates a plot of the Information Content Features.
+#
+#     Args:
+#       feat_object: R feature objected as created by create_feature_object()
+#       control:  python dict containing various control arguments. For more details see the section about
+#       'plotInformationContent' https://cran.r-project.org/web/packages/flacco/flacco.pdf. (Default value = {})
+#     Returns:
+#
+#     """
+#     control = _translate_control(control)
+#     flacco.plotInformationContent(feat_object, control)
+#     input("Press Enter to continue...")
+#
+#
+# def run_flacco_gui():
+#     """
+#     Starts a shiny application, which allows the user to compute the flacco features and also visualize the
+#     underlying functions with an graphical user interface.
+#
+#     """
+#     flacco.runFlaccoGUI()
