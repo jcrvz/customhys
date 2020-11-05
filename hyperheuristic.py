@@ -7,6 +7,7 @@ Created on Thu Jan  9 15:36:43 2020
 @author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
 """
 import numpy as np
+import random
 import scipy.stats as st
 from metaheuristic import Metaheuristic
 from datetime import datetime
@@ -71,6 +72,7 @@ class Hyperheuristic:
         # Assign default values
         if parameters is None:
             parameters = dict(cardinality=3,                # Max. numb. of SOs in MHs, lvl:1
+                              cardinality_min=1,            # Min. numb. of SOs in MHs, lvl:1 ** new
                               num_iterations=100,           # Iterations a MH performs, lvl:1
                               num_agents=30,                # Agents in population,     lvl:1
                               num_replicas=50,              # Replicas per each MH,     lvl:2
@@ -94,6 +96,132 @@ class Hyperheuristic:
         self.parameters = parameters
         self.file_label = file_label
 
+    def _choose_action(self, current_cardinality):
+        # First read the available actions. Those could be ...
+        available_options = ['Add', 'Remove', 'Shift', 'LocalShift', 'Swap', 'Restart', 'Mirror', 'Roll']
+
+        # Disregard those that could be considered if the cardinality is fixed
+        if self.parameters['cardinality'] == self.parameters['cardinality_min']:
+            available_options.remove('Add')
+            available_options.remove('Remove')
+
+        # Do the same but with respect to the current cardinality
+        else:
+            if current_cardinality <= self.parameters['cardinality_min']:
+                available_options.remove('Remove')
+
+                if current_cardinality <= 1:
+                    available_options.remove('Swap')
+
+            elif current_cardinality >= self.parameters['cardinality']:
+                available_options.remove('Add')
+
+        # Decide (randomly) which action to do
+        return np.random.choice(available_options)
+
+    def _obtain_candidate_solution(self, sol=None, repeat=False):
+        """
+        This method selects a new candidate solution for a given candidate solution ``sol``. To do so, it
+        adds, deletes, or perturbate a randomly chosen operator index from the current sequence. If this sequence
+        is None, the method returns a new 1-cardinality sequence at random.
+
+        :param list|int sol: Optional.
+            Sequence of heuristic indices (or encoded solution). If `sol` is an integer, it is assumed that this is
+            the cardinality required for initial random sequence. The default is None, which means that there is no
+            current sequence, so an initial one is required.
+
+        :return: list.
+        """
+        # Create a new 1-MH from scratch by using a weights array (if so)
+        if sol is None:
+            encoded_neighbour = np.random.choice(self.num_operators, 1, replace=repeat, p=self.weights_array)
+
+        # If sol is an integer, assume that it refers to the cardinality
+        elif isinstance(sol, int):
+            encoded_neighbour = np.random.choice(self.num_operators, sol, replace=repeat, p=self.weights_array)
+
+        elif isinstance(sol, np.ndarray):
+            current_cardinality = len(sol)
+
+            # Choose (randomly) which action to do
+            action = self._choose_action(current_cardinality)
+
+            # print(action)
+
+            # Perform the corresponding action
+            if action == 'Add':
+                # Select an operator excluding the ones in the current solution
+                selected_operator = np.random.choice(
+                    np.setdiff1d(np.arange(self.num_operators), sol) if not repeat else self.num_operators)
+
+                # Select where to add such an operator, since ``operator_location`` value represents:
+                #       0 - left side of the first operator
+                #       1 - right side of the first operator or left side of the second one,
+                #       ..., and so forth.
+                #
+                #       | operator 1 | operator 2 | operator 3 |     ...      |  operator N  |
+                #       0 <--------> 1 <--------> 2 <--------> 3 <-- ... --> N-1 <---------> N
+                operator_location = np.random.randint(current_cardinality + 1)
+
+                # Add the selected operator
+                encoded_neighbour = np.array((*sol[:operator_location], selected_operator, *sol[operator_location:]))
+
+            elif action == 'Remove':
+                # Delete an operator randomly selected
+                encoded_neighbour = np.delete(sol, np.random.randint(current_cardinality))
+
+            elif action == 'Shift':
+                # Perturbate an operator randomly selected excluding the existing ones
+                encoded_neighbour = np.copy(sol)
+                encoded_neighbour[np.random.randint(current_cardinality)] = np.random.choice(
+                    np.setdiff1d(np.arange(self.num_operators), sol) if not repeat else self.num_operators)
+
+            elif action == 'LocalShift':
+                # Perturbate an operator randomly selected +/- 1 excluding the existing ones
+                encoded_neighbour = np.copy(sol)
+                operator_location = np.random.randint(current_cardinality)
+                neighbour_direction = 1 if random.random() < 0.5 else -1  # +/- 1
+                selected_operator = (encoded_neighbour[operator_location] + neighbour_direction) % self.num_operators
+
+                # If repeat is true and the selected_operator is repeated, then apply +/- 1 until it is not repeated
+                while (not repeat) and (selected_operator in encoded_neighbour):
+                    selected_operator = (selected_operator + neighbour_direction) % self.num_operators
+
+                encoded_neighbour[operator_location] = selected_operator
+
+            elif action == 'Swap':
+                # Swap two elements randomly chosen
+                if current_cardinality == 2:
+                    encoded_neighbour = np.copy(sol)[::-1]
+
+                elif current_cardinality > 2:
+                    encoded_neighbour = np.copy(sol)
+                    ind1, ind2 = np.random.choice(current_cardinality, 2, replace=False)
+                    encoded_neighbour[ind1], encoded_neighbour[ind2] = encoded_neighbour[ind2], encoded_neighbour[ind1]
+
+                else:
+                    raise HyperheuristicError('Swap cannot be applied! current_cardinality < 2')
+
+            elif action == 'Mirror':
+                # Mirror the sequence of the encoded_neighbour
+                encoded_neighbour = np.copy(sol)[::-1]
+
+            elif action == 'Roll':
+                # Move a step forward or backward, depending on a random variable, all the sequence
+                wrap_direction = 1 if random.random() < 0.5 else -1  # +/- 1
+                encoded_neighbour = np.roll(sol, wrap_direction)
+
+            else:  # action == 'Restart':
+                encoded_neighbour, _ = self._obtain_candidate_solution(current_cardinality)
+        else:
+            raise HyperheuristicError('Invalid type of current solution!')
+
+        # Decode the neighbour solution
+        neighbour = [self.heuristic_space[index] for index in encoded_neighbour]
+
+        # Return the neighbour sequence and its decoded equivalent
+        return encoded_neighbour, neighbour
+
     def run(self):
         """
         Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each meatheuristic is
@@ -109,71 +237,7 @@ class Hyperheuristic:
         :returns: solution (list), performance (float), encoded_solution (list)
         """
         # Read the cardinality (which is the maximum allowed one)
-        max_cardinality = self.parameters['cardinality']
-
-        def obtain_neighbour_solution(sol=None):
-            """
-            This method selects a neighbour candidate solution for a given candidate solution ``sol``. To do so, it
-            adds, deletes, or perturbate a randomly chosen operator index from the current sequence. If this sequence
-            is None, the method returns a new 1-cardinality sequence at random.
-
-            :param list sol: Optional.
-                Sequence of heuristic indices (or encoded solution). The default is None, which means that there is no
-                current sequence, so an initial one is required.
-
-            :return: list.
-            """
-            if sol is None:
-                # Create a new 1-MH from scratch by using a weights array (if so)
-                encoded_neighbour = np.random.choice(self.num_operators, 1, replace=False, p=self.weights_array)
-            elif isinstance(sol, np.ndarray):
-                current_cardinality = len(sol)
-
-                # First read the available actions. Those could be 'Add', 'Del', an 'Per'
-                if current_cardinality >= max_cardinality:
-                    available_options = ['Del', 'Per']
-                elif current_cardinality <= 1:
-                    available_options = ['Add', 'Per']
-                else:
-                    available_options = ['Add', 'Del', 'Per']
-
-                # Decide (randomly) which action to do
-                action = np.random.choice(available_options)
-
-                # Perform the corresponding action
-                if action == 'Add':
-                    # Select an operator excluding the ones in the current solution
-                    new_operator = np.random.choice(np.setdiff1d(np.arange(self.num_operators), sol))
-
-                    # Select where to add such an operator, since ``operator_location`` value represents:
-                    #       0 - left side of the first operator
-                    #       1 - right side of the first operator or left side of the second one,
-                    #       ..., and so forth.
-                    #
-                    #       | operator 1 | operator 2 | operator 3 |     ...      |  operator N  |
-                    #       0 <--------> 1 <--------> 2 <--------> 3 <-- ... --> N-1 <---------> N
-                    operator_location = np.random.randint(current_cardinality + 1)
-
-                    # Add the selected operator
-                    encoded_neighbour = np.array((*sol[:operator_location], new_operator, *sol[operator_location:]))
-                elif action == 'Del':
-                    # Delete an operator randomly selected
-                    encoded_neighbour = np.delete(sol, np.random.randint(current_cardinality))
-                else:
-                    # Copy the current solution
-                    encoded_neighbour = np.copy(sol)
-
-                    # Perturbate an operator randomly selected excluding the existing ones
-                    encoded_neighbour[np.random.randint(current_cardinality)] = np.random.choice(
-                        np.setdiff1d(np.arange(self.num_operators), sol))
-            else:
-                raise HyperheuristicError('Invalid type of current solution!')
-
-            # Decode the neighbour solution
-            neighbour = [self.heuristic_space[index] for index in encoded_neighbour]
-
-            # Return the neighbour sequence and its decoded equivalent
-            return encoded_neighbour, neighbour
+        # max_cardinality = self.parameters['cardinality']
 
         def obtain_temperature(step_val, function='boltzmann'):
             """
@@ -216,7 +280,7 @@ class Hyperheuristic:
                 return (delta_energy <= 0) or (np.random.rand() < 1. / (1. + np.exp(delta / temp)))
 
         # Create the initial solution
-        current_encoded_solution, current_solution = obtain_neighbour_solution()
+        current_encoded_solution, current_solution = self._obtain_candidate_solution()
 
         # Evaluate this solution
         current_performance, current_details = self.evaluate_metaheuristic(current_solution)
@@ -247,7 +311,7 @@ class Hyperheuristic:
             step += 1
 
             # Generate a neighbour solution (just indices-codes)
-            candidate_encoded_solution, candidate_solution = obtain_neighbour_solution(current_encoded_solution)
+            candidate_encoded_solution, candidate_solution = self._obtain_candidate_solution(current_encoded_solution)
 
             # Evaluate this candidate solution
             candidate_performance, candidate_details = self.evaluate_metaheuristic(candidate_solution)
