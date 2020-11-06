@@ -70,16 +70,19 @@ class Hyperheuristic:
             raise HyperheuristicError('Invalid heuristic_space')
 
         # Assign default values
-        if parameters is None:
+        if not parameters:
             parameters = dict(cardinality=3,                # Max. numb. of SOs in MHs, lvl:1
                               cardinality_min=1,            # Min. numb. of SOs in MHs, lvl:1 ** new
                               num_iterations=100,           # Iterations a MH performs, lvl:1
                               num_agents=30,                # Agents in population,     lvl:1
+                              as_mh=False,                   # HH sequence as a MH?,     lvl:2 ** new
                               num_replicas=50,              # Replicas per each MH,     lvl:2
-                              num_steps=100,                # Trials per HH step,       lvl:2
+                              num_steps=500,                # Trials per HH step,       lvl:2
                               stagnation_percentage=0.3,    # Stagnation percentage,    lvl:2
                               max_temperature=200,          # Initial temperature (SA), lvl:2
-                              cooling_rate=0.05)            # Cooling rate (SA),        lvl:2
+                              cooling_rate=0.05,            # Cooling rate (SA),        lvl:2
+                              repeat_operators=True,        # Allow repeating SOs inSeq,lvl:2
+                              verbose=True)                 # Verbose process,          lvl:2 ** new
         # Read the problem
         if problem:
             self.problem = problem
@@ -96,30 +99,47 @@ class Hyperheuristic:
         self.parameters = parameters
         self.file_label = file_label
 
-    def _choose_action(self, current_cardinality):
+        self.max_cardinality = None
+        self.min_cardinality = None
+        self.num_iterations = None
+        self.toggle_seq_as_meta(parameters['as_mh'])
+
+    def toggle_seq_as_meta(self, as_mh=None):
+        if as_mh is None:
+            self.toggle_seq_as_meta(not self.parameters['as_mh'])
+        else:
+            if as_mh:
+                self.max_cardinality = self.parameters['cardinality']
+                self.min_cardinality = self.parameters['cardinality_min']
+                self.num_iterations = self.parameters['num_iterations']
+            else:
+                self.max_cardinality = self.parameters['num_iterations']
+                self.min_cardinality = self.parameters['cardinality_min']
+                self.num_iterations = 1
+
+    def _choose_action(self, current_cardinality, previous_action=None):
         # First read the available actions. Those could be ...
         available_options = ['Add', 'Remove', 'Shift', 'LocalShift', 'Swap', 'Restart', 'Mirror', 'Roll']
 
-        # Disregard those that could be considered if the cardinality is fixed
-        if self.parameters['cardinality'] == self.parameters['cardinality_min']:
-            available_options.remove('Add')
+        # Black list (to avoid repeating the some actions in a row)
+        if previous_action and (previous_action in ['Mirror']):
+            available_options.remove('Mirror')
+
+        # Disregard those with respect to the current cardinality. It also considers the case of fixed cardinality
+        if current_cardinality <= self.min_cardinality:
             available_options.remove('Remove')
 
-        # Do the same but with respect to the current cardinality
-        else:
-            if current_cardinality <= self.parameters['cardinality_min']:
-                available_options.remove('Remove')
+            if current_cardinality <= 1:
+                available_options.remove('Swap')
+                available_options.remove('Mirror')  # not an error, but to prevent wasting time
 
-                if current_cardinality <= 1:
-                    available_options.remove('Swap')
-
-            elif current_cardinality >= self.parameters['cardinality']:
-                available_options.remove('Add')
+        if current_cardinality >= self.max_cardinality:
+            available_options.remove('Add')
 
         # Decide (randomly) which action to do
         return np.random.choice(available_options)
 
-    def _obtain_candidate_solution(self, sol=None, repeat=False):
+    def _obtain_candidate_solution(self, sol=None, action=None):
         """
         This method selects a new candidate solution for a given candidate solution ``sol``. To do so, it
         adds, deletes, or perturbate a randomly chosen operator index from the current sequence. If this sequence
@@ -132,27 +152,30 @@ class Hyperheuristic:
 
         :return: list.
         """
-        # Create a new 1-MH from scratch by using a weights array (if so)
+        # Create a new MH with min_cardinality from scratch by using a weights array (if so)
         if sol is None:
-            encoded_neighbour = np.random.choice(self.num_operators, 1, replace=repeat, p=self.weights_array)
+            encoded_neighbour = np.random.choice(self.num_operators, self.min_cardinality,
+                                                 replace=self.parameters['repeat_operators'], p=self.weights_array)
 
         # If sol is an integer, assume that it refers to the cardinality
         elif isinstance(sol, int):
-            encoded_neighbour = np.random.choice(self.num_operators, sol, replace=repeat, p=self.weights_array)
+            encoded_neighbour = np.random.choice(self.num_operators, sol, replace=self.parameters['repeat_operators'],
+                                                 p=self.weights_array)
 
         elif isinstance(sol, np.ndarray):
             current_cardinality = len(sol)
 
             # Choose (randomly) which action to do
-            action = self._choose_action(current_cardinality)
+            if not action:
+                action = self._choose_action(current_cardinality)
 
             # print(action)
 
             # Perform the corresponding action
-            if action == 'Add':
+            if (action == 'Add') and (current_cardinality < self.max_cardinality):
                 # Select an operator excluding the ones in the current solution
-                selected_operator = np.random.choice(
-                    np.setdiff1d(np.arange(self.num_operators), sol) if not repeat else self.num_operators)
+                selected_operator = np.random.choice(np.setdiff1d(np.arange(self.num_operators), sol)
+                                                     if not self.parameters['repeat_operators'] else self.num_operators)
 
                 # Select where to add such an operator, since ``operator_location`` value represents:
                 #       0 - left side of the first operator
@@ -166,7 +189,7 @@ class Hyperheuristic:
                 # Add the selected operator
                 encoded_neighbour = np.array((*sol[:operator_location], selected_operator, *sol[operator_location:]))
 
-            elif action == 'Remove':
+            elif (action == 'Remove') and (current_cardinality > self.min_cardinality):
                 # Delete an operator randomly selected
                 encoded_neighbour = np.delete(sol, np.random.randint(current_cardinality))
 
@@ -174,7 +197,8 @@ class Hyperheuristic:
                 # Perturbate an operator randomly selected excluding the existing ones
                 encoded_neighbour = np.copy(sol)
                 encoded_neighbour[np.random.randint(current_cardinality)] = np.random.choice(
-                    np.setdiff1d(np.arange(self.num_operators), sol) if not repeat else self.num_operators)
+                    np.setdiff1d(np.arange(self.num_operators), sol)
+                    if not self.parameters['repeat_operators'] else self.num_operators)
 
             elif action == 'LocalShift':
                 # Perturbate an operator randomly selected +/- 1 excluding the existing ones
@@ -184,12 +208,12 @@ class Hyperheuristic:
                 selected_operator = (encoded_neighbour[operator_location] + neighbour_direction) % self.num_operators
 
                 # If repeat is true and the selected_operator is repeated, then apply +/- 1 until it is not repeated
-                while (not repeat) and (selected_operator in encoded_neighbour):
+                while (not self.parameters['repeat_operators']) and (selected_operator in encoded_neighbour):
                     selected_operator = (selected_operator + neighbour_direction) % self.num_operators
 
                 encoded_neighbour[operator_location] = selected_operator
 
-            elif action == 'Swap':
+            elif (action == 'Swap') and (current_cardinality > 1):
                 # Swap two elements randomly chosen
                 if current_cardinality == 2:
                     encoded_neighbour = np.copy(sol)[::-1]
@@ -211,8 +235,12 @@ class Hyperheuristic:
                 wrap_direction = 1 if random.random() < 0.5 else -1  # +/- 1
                 encoded_neighbour = np.roll(sol, wrap_direction)
 
-            else:  # action == 'Restart':
+            elif action == 'Restart':
+                # Restart the entire sequence
                 encoded_neighbour, _ = self._obtain_candidate_solution(current_cardinality)
+
+            else:
+                raise Hyperheuristic(f'Invalid action = {action} to perform!')
         else:
             raise HyperheuristicError('Invalid type of current solution!')
 
@@ -236,8 +264,9 @@ class Hyperheuristic:
 
         :returns: solution (list), performance (float), encoded_solution (list)
         """
+
         # Read the cardinality (which is the maximum allowed one)
-        # max_cardinality = self.parameters['cardinality']
+        # max_cardinality = self.max_cardinality
 
         def obtain_temperature(step_val, function='boltzmann'):
             """
@@ -283,7 +312,7 @@ class Hyperheuristic:
         current_encoded_solution, current_solution = self._obtain_candidate_solution()
 
         # Evaluate this solution
-        current_performance, current_details = self.evaluate_metaheuristic(current_solution)
+        current_performance, current_details = self.evaluate_candidate_solution(current_solution)
 
         # Initialise the best solution and its performance
         best_solution = np.copy(current_solution)
@@ -299,11 +328,15 @@ class Hyperheuristic:
                            details=current_details), self.file_label)
 
         # Print the first status update, step = 0
-        print('{} :: Step: {}, Perf: {}, e-Sol: {}'.format(self.file_label, 0, best_performance, best_encoded_solution))
+        if self.parameters['verbose']:
+            print('{} :: Step: {}, Action: {}, Temp: {}, Perf: {}, e-Sol: {}'.format(
+                self.file_label, 0, 'None', self.parameters['max_temperature'], current_performance,
+                current_encoded_solution))
 
         # Step, stagnation counter and its maximum value
         step = 0
         stag_counter = 0
+        action = None
         max_stag = round(self.parameters['stagnation_percentage'] * self.parameters['num_steps'])
 
         # Perform the annealing simulation as hyper-heuristic process
@@ -311,26 +344,36 @@ class Hyperheuristic:
             step += 1
 
             # Generate a neighbour solution (just indices-codes)
-            candidate_encoded_solution, candidate_solution = self._obtain_candidate_solution(current_encoded_solution)
+            # cardinality = len(current_encoded_solution)
+            action = self._choose_action(len(current_encoded_solution), action)
+            candidate_encoded_solution, candidate_solution = self._obtain_candidate_solution(
+                sol=current_encoded_solution, action=action)
 
             # Evaluate this candidate solution
-            candidate_performance, candidate_details = self.evaluate_metaheuristic(candidate_solution)
+            candidate_performance, candidate_details = self.evaluate_candidate_solution(candidate_solution)
 
             # Determine the energy (performance) change
             delta_energy = candidate_performance - current_performance
 
             # Update temperature
-            temperature = obtain_temperature(step)
+            temperature = obtain_temperature(step, 'exponential')
 
-            # Accept the current solution via Metropolis criterion
-            if check_acceptance(delta_energy, temperature):
+            # Print update
+            if self.parameters['verbose']:
+                print('{} :: Step: {}, Action: {}, Temp: {}, Perf: {}, e-Sol: {}'.format(
+                    self.file_label, step, action, temperature, candidate_performance, candidate_encoded_solution),
+                    end=' ')
+
+            # Accept the current solution via Metropolis criterion 'exponential'
+            if check_acceptance(delta_energy, temperature, 'boltzmann'):
                 # Update the current solution and its performance
                 current_encoded_solution = np.copy(candidate_encoded_solution)
                 # current_solution = np.copy(candidate_solution)
                 current_performance = candidate_performance
-                # if delta_energy > 0:
-                #     print('{} :: Step: {}, Perf: {}, e-Sol: {} [Accepted]'.format(
-                #         self.file_label, step, current_performance, current_encoded_solution))
+
+                # Add acceptance mark
+                if self.parameters['verbose']:
+                    print('A', end='')
 
             # If the candidate solution is better or equal than the current best solution
             if candidate_performance < best_performance:
@@ -349,17 +392,25 @@ class Hyperheuristic:
                     'details': candidate_details
                 }, self.file_label)
 
-                # Print update
-                print('{} :: Step: {}, Perf: {}, e-Sol: {}'.format(
-                    self.file_label, step, best_performance, best_encoded_solution))
+                # Add improvement mark
+                if self.parameters['verbose']:
+                    print('+', end='')
             else:
                 # Update the stagnation counter
                 stag_counter += 1
 
+            # Add improvement mark
+            if self.parameters['verbose']:
+                print('')
+
+        # Print the best one
+        if self.parameters['verbose']:
+            print('\nBEST --> Perf: {}, e-Sol: {}'.format(best_performance, best_encoded_solution))
+
         # Return the best solution found and its details
         return best_solution, best_performance, best_encoded_solution
 
-    def evaluate_metaheuristic(self, search_operators):
+    def evaluate_candidate_solution(self, search_operators):
         """
         Evaluate the current sequence of ``search_operators`` as a metaheuristic. This process is repeated
         ``parameters['num_replicas']`` times and, then, the performance is determined. In the end, the method returns
@@ -379,8 +430,7 @@ class Hyperheuristic:
         # Run the metaheuristic several times
         for rep in range(1, self.parameters['num_replicas'] + 1):
             # Call the metaheuristic
-            mh = Metaheuristic(self.problem, search_operators, self.parameters['num_agents'],
-                               self.parameters['num_iterations'])
+            mh = Metaheuristic(self.problem, search_operators, self.parameters['num_agents'], self.num_iterations)
 
             # Run this metaheuristic
             mh.run()
@@ -415,7 +465,7 @@ class Hyperheuristic:
             operator = [self.heuristic_space[operator_id]]
 
             # Evaluate it within the metaheuristic structure
-            operator_performance, operator_details = self.evaluate_metaheuristic(operator)
+            operator_performance, operator_details = self.evaluate_candidate_solution(operator)
 
             # Save information
             _save_step(operator_id, {
@@ -445,7 +495,7 @@ class Hyperheuristic:
                 operator = [operator]
 
             # Evaluate it within the metaheuristic structure
-            operator_performance, operator_details = self.evaluate_metaheuristic(operator)
+            operator_performance, operator_details = self.evaluate_candidate_solution(operator)
 
             # Save information
             _save_step(operator_id, {
@@ -503,7 +553,7 @@ class Hyperheuristic:
                     Kur=dst.kurtosis,
                     IQR=st.iqr(raw_data),
                     Med=np.median(raw_data),
-                    MAD=st.median_absolute_deviation(raw_data))
+                    MAD=st.median_abs_deviation(raw_data))
 
 
 # %% ADDITIONAL TOOLS
@@ -545,3 +595,14 @@ class HyperheuristicError(Exception):
     Simple HyperheuristicError to manage exceptions.
     """
     pass
+
+
+if __name__ == '__main__':
+    # import hyperheuristic as hh
+    import benchmark_func as bf
+
+    problem = bf.Sphere(2)
+    problem.set_search_range(-10, 10)
+
+    q = Hyperheuristic(problem=problem.get_formatted_problem())
+    q.run()
