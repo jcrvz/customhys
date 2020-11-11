@@ -403,11 +403,11 @@ class Hyperheuristic:
                     print('A', end='')
 
             # If the candidate solution is better or equal than the current best solution
-            if (current_performance <= best_performance) and (len(current_encoded_solution) < len(best_encoded_solution)):
+            if (candidate_performance <= best_performance) and (len(candidate_encoded_solution) < len(best_encoded_solution)):
                 # Update the best solution and its performance
-                best_encoded_solution = np.copy(current_encoded_solution)
-                best_solution = np.copy(current_solution)
-                best_performance = current_performance
+                best_encoded_solution = np.copy(candidate_encoded_solution)
+                best_solution = np.copy(candidate_solution)
+                best_performance = candidate_performance
 
                 # Reset the stagnation counter
                 stag_counter = 0
