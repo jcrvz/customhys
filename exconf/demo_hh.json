@@ -1,6 +1,6 @@
 {
   "ex_config": {
-    "experiment_name": "short_test1",
+    "experiment_name": "demo_test2",
     "experiment_type": "default",
     "heuristic_collection_file": "default.txt",
     "weights_dataset_file": "operators_weights.json"
@@ -15,10 +15,10 @@
   },
   "prob_config": {
     "dimensions": [
-      2,
-      50
+      2
     ],
     "functions": [
+      "<choose_randomly>",
       "<choose_randomly>"
     ]
   }
