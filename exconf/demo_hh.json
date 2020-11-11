@@ -1,18 +1,22 @@
 {
   "ex_config": {
-    "experiment_name": "demo_test",
+    "experiment_name": "short_test1",
     "experiment_type": "default",
     "heuristic_collection_file": "default.txt",
     "weights_dataset_file": "operators_weights.json"
   },
   "hh_config": {
     "cardinality": 3,
-    "num_replicas": 30
+    "cardinality_min": 1,
+    "num_replicas": 50,
+    "as_mh": false,
+    "verbose": true,
+    "repeat_operators": true
   },
   "prob_config": {
     "dimensions": [
       2,
-      5
+      50
     ],
     "functions": [
       "<choose_randomly>"

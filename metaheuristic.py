@@ -21,7 +21,7 @@ class Metaheuristic:
         This is the Metaheuristic class, each object corresponds to a metaheuristic implemented with a sequence of
         search operators from Operators, and it is based on a population from Population.
     """
-    def __init__(self, problem, search_operators, num_agents=30, num_iterations=100):
+    def __init__(self, problem, search_operators, num_agents=30, num_iterations=100, initial_scheme='random'):
         """
         Create a population-based metaheuristic by employing different simple search operators.
 
@@ -69,6 +69,9 @@ class Metaheuristic:
         # Set additional variables
         self.verbose = False
 
+        # Set the initial scheme
+        self.initial_scheme = initial_scheme
+
     def run(self):
         """
         Run the metaheuristic for solving the defined problem.
@@ -80,7 +83,7 @@ class Metaheuristic:
         self.pop.iteration = 0
 
         # Initialise the population
-        self.pop.initialise_positions()  # Default: random
+        self.pop.initialise_positions(self.initial_scheme)  # Default: random
 
         # Evaluate fitness values
         self.pop.evaluate_fitness(self._problem_function)

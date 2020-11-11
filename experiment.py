@@ -120,8 +120,8 @@ class Experiment:
         :return: None.
 
         """
-        self.exp_config, self.hh_config, self.prob_config = read_config_file(config_file=None, exp_config=None,
-                                                                             hh_config=None, prob_config=None)
+        self.exp_config, self.hh_config, self.prob_config = read_config_file(config_file, exp_config, hh_config,
+                                                                             prob_config)
 
         # Check if the heuristic collection exists
         if not path.isfile('./collections/' + self.exp_config['heuristic_collection_file']):
@@ -274,6 +274,7 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
             'cooling_rate': 0.05,
             'cardinality_min': 1,
             'repeat_operators': True,
+            'initial_scheme': 'vertex',
             'as_mh': True,
             'verbose': False
         }, hh_config)

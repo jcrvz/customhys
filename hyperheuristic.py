@@ -75,7 +75,8 @@ class Hyperheuristic:
                               cardinality_min=1,            # Min. numb. of SOs in MHs, lvl:1 ** new
                               num_iterations=100,           # Iterations a MH performs, lvl:1
                               num_agents=30,                # Agents in population,     lvl:1
-                              as_mh=False,                   # HH sequence as a MH?,     lvl:2 ** new
+                              initial_scheme='vertex',      # Initial scheme for pop,   lvl:1 ** new
+                              as_mh=False,                   # HH sequence as a MH?,    lvl:2 ** new
                               num_replicas=50,              # Replicas per each MH,     lvl:2
                               num_steps=500,                # Trials per HH step,       lvl:2
                               stagnation_percentage=0.3,    # Stagnation percentage,    lvl:2
@@ -129,17 +130,21 @@ class Hyperheuristic:
                 available_options.remove('Mirror')
 
         # Disregard those with respect to the current cardinality. It also considers the case of fixed cardinality
-        if current_cardinality <= self.min_cardinality:
-            available_options.remove('Remove')
+        if current_cardinality <= self.min_cardinality + 1:
             available_options.remove('RemoveMany')
 
-            if current_cardinality <= 1:
-                available_options.remove('Swap')
-                available_options.remove('Mirror')  # not an error, but to prevent wasting time
+            if current_cardinality <= self.min_cardinality:
+                available_options.remove('Remove')
 
-        if current_cardinality >= self.max_cardinality:
-            available_options.remove('Add')
+        if current_cardinality <= 1:
+            available_options.remove('Swap')
+            available_options.remove('Mirror')  # not an error, but to prevent wasting time
+
+        if current_cardinality >= self.max_cardinality - 1:
             available_options.remove('AddMany')
+
+            if current_cardinality >= self.max_cardinality:
+                available_options.remove('Add')
 
         # Decide (randomly) which action to do
         return np.random.choice(available_options)
@@ -197,19 +202,19 @@ class Hyperheuristic:
                 # Add the selected operator
                 encoded_neighbour = np.array((*sol[:operator_location], selected_operator, *sol[operator_location:]))
 
-            elif (action == 'AddMany') and (self.max_cardinality - current_cardinality > 1):
+            elif (action == 'AddMany') and (current_cardinality < self.max_cardinality - 1):
                 encoded_neighbour = np.copy(sol)
-                for _ in range(np.random.randint(self.max_cardinality - current_cardinality)):
-                    encoded_neighbour, _ = self._obtain_candidate_solution(encoded_neighbour, 'Add')
+                for _ in range(np.random.randint(1, self.max_cardinality - current_cardinality + 1)):
+                    encoded_neighbour, _ = self._obtain_candidate_solution(sol=encoded_neighbour, action='Add')
 
             elif (action == 'Remove') and (current_cardinality > self.min_cardinality):
                 # Delete an operator randomly selected
                 encoded_neighbour = np.delete(sol, np.random.randint(current_cardinality))
 
-            elif (action == 'RemoveMany') and (current_cardinality - self.min_cardinality > 1):
+            elif (action == 'RemoveMany') and (current_cardinality > self.min_cardinality + 1):
                 encoded_neighbour = np.copy(sol)
-                for _ in range(np.random.randint(current_cardinality - self.min_cardinality)):
-                    encoded_neighbour, _ = self._obtain_candidate_solution(encoded_neighbour, 'Remove')
+                for _ in range(np.random.randint(1, current_cardinality - self.min_cardinality + 1)):
+                    encoded_neighbour, _ = self._obtain_candidate_solution(sol=encoded_neighbour, action='Remove')
 
             elif action == 'Shift':
                 # Perturbate an operator randomly selected excluding the existing ones
@@ -452,7 +457,8 @@ class Hyperheuristic:
         # Run the metaheuristic several times
         for rep in range(1, self.parameters['num_replicas'] + 1):
             # Call the metaheuristic
-            mh = Metaheuristic(self.problem, search_operators, self.parameters['num_agents'], self.num_iterations)
+            mh = Metaheuristic(self.problem, search_operators, self.parameters['num_agents'], self.num_iterations,
+                               self.parameters['initial_scheme'])
 
             # Run this metaheuristic
             mh.run()
@@ -623,8 +629,12 @@ if __name__ == '__main__':
     # import hyperheuristic as hh
     import benchmark_func as bf
 
-    problem = bf.Sphere(10)
-    # problem.set_search_range(-10, 10)
+    problem = bf.Sphere(2)
+    problem.set_search_range(-10, 10)
 
     q = Hyperheuristic(problem=problem.get_formatted_problem())
-    q.run()
+    # q.run()
+
+    import numpy as np
+
+    qq, _ = q._obtain_candidate_solution(np.array(range(2)), 'RemoveMany')
