@@ -322,7 +322,7 @@ class Hyperheuristic:
                 stag_counter > (self.parameters['stagnation_percentage'] * self.parameters['num_steps'])) or (
                 any([var < self.parameters['cooling_rate']*1e-3 for var in args]))
 
-    def run(self, temperature_scheme='exponential', acceptance_scheme='boltzmann'):
+    def run(self, temperature_scheme='exponential', acceptance_scheme='exponential'):
         """
         Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each meatheuristic is
         run 'num_replicas' times to obtain statistics and then its performance. Once the process ends, it returns:
@@ -403,7 +403,7 @@ class Hyperheuristic:
                     print('A', end='')
 
             # If the candidate solution is better or equal than the current best solution
-            if candidate_performance < best_performance:
+            if candidate_performance <= best_performance:
                 # Update the best solution and its performance
                 best_encoded_solution = np.copy(candidate_encoded_solution)
                 best_solution = np.copy(candidate_solution)
