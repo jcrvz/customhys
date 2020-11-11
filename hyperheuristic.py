@@ -313,16 +313,16 @@ class Hyperheuristic:
         :return: bool
         """
         if function == 'exponential':
-            return (delta <= 0) or (np.random.rand() < np.exp(-delta / temp))
+            return np.random.rand() <= np.exp(-delta / temp)  # (delta <= 0) or
         else:  # boltzmann
-            return (delta <= 0) or (np.random.rand() < 1. / (1. + np.exp(delta / temp)))
+            return np.random.rand() <= 1. / (1. + np.exp(delta / temp))  # (delta <= 0) or
 
     def _check_finalisation(self, step, stag_counter, *args):
         return (step > self.parameters['num_steps']) or (
                 stag_counter > (self.parameters['stagnation_percentage'] * self.parameters['num_steps'])) or (
                 any([var < self.parameters['cooling_rate']*1e-3 for var in args]))
 
-    def run(self, temperature_scheme='exponential', acceptance_scheme='exponential'):
+    def run(self, temperature_scheme='exponential', acceptance_scheme='boltzmann'):
         """
         Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each meatheuristic is
         run 'num_replicas' times to obtain statistics and then its performance. Once the process ends, it returns:
