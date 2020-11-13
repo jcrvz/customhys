@@ -75,13 +75,13 @@ class Hyperheuristic:
                               cardinality_min=1,            # Min. numb. of SOs in MHs, lvl:1 ** new
                               num_iterations=100,           # Iterations a MH performs, lvl:1
                               num_agents=30,                # Agents in population,     lvl:1
-                              initial_scheme='vertex',      # Initial scheme for pop,   lvl:1 ** new
-                              as_mh=False,                   # HH sequence as a MH?,    lvl:2 ** new
-                              num_replicas=50,              # Replicas per each MH,     lvl:2
-                              num_steps=500,                # Trials per HH step,       lvl:2
+                              initial_scheme='random',      # Initial scheme for pop,   lvl:1 ** new
+                              as_mh=False,                  # HH sequence as a MH?,    lvl:2 ** new
+                              num_replicas=10,              # Replicas per each MH,     lvl:2
+                              num_steps=200,                # Trials per HH step,       lvl:2
                               stagnation_percentage=0.3,    # Stagnation percentage,    lvl:2
-                              max_temperature=200,          # Initial temperature (SA), lvl:2
-                              cooling_rate=0.05,            # Cooling rate (SA),        lvl:2
+                              max_temperature=1,           # Initial temperature (SA), lvl:2
+                              cooling_rate=1e-3,           # Cooling rate (SA),        lvl:2
                               repeat_operators=True,        # Allow repeating SOs inSeq,lvl:2 ** new
                               verbose=True)                 # Verbose process,          lvl:2 ** new
         # Read the problem
@@ -205,7 +205,7 @@ class Hyperheuristic:
             elif (action == 'AddMany') and (current_cardinality < self.max_cardinality - 1):
                 encoded_neighbour = np.copy(sol)
                 for _ in range(np.random.randint(1, self.max_cardinality - current_cardinality + 1)):
-                    encoded_neighbour, _ = self._obtain_candidate_solution(sol=encoded_neighbour, action='Add')
+                    encoded_neighbour = self._obtain_candidate_solution(sol=encoded_neighbour, action='Add')
 
             elif (action == 'Remove') and (current_cardinality > self.min_cardinality):
                 # Delete an operator randomly selected
@@ -214,7 +214,7 @@ class Hyperheuristic:
             elif (action == 'RemoveMany') and (current_cardinality > self.min_cardinality + 1):
                 encoded_neighbour = np.copy(sol)
                 for _ in range(np.random.randint(1, current_cardinality - self.min_cardinality + 1)):
-                    encoded_neighbour, _ = self._obtain_candidate_solution(sol=encoded_neighbour, action='Remove')
+                    encoded_neighbour = self._obtain_candidate_solution(sol=encoded_neighbour, action='Remove')
 
             elif action == 'Shift':
                 # Perturbate an operator randomly selected excluding the existing ones
@@ -264,7 +264,7 @@ class Hyperheuristic:
 
             elif action == 'Restart':
                 # Restart the entire sequence
-                encoded_neighbour, _ = self._obtain_candidate_solution(current_cardinality)
+                encoded_neighbour = self._obtain_candidate_solution(current_cardinality)
 
             else:
                 raise Hyperheuristic(f'Invalid action = {action} to perform!')
@@ -272,10 +272,10 @@ class Hyperheuristic:
             raise HyperheuristicError('Invalid type of current solution!')
 
         # Decode the neighbour solution
-        neighbour = [self.heuristic_space[index] for index in encoded_neighbour]
+        # neighbour = [self.heuristic_space[index] for index in encoded_neighbour]
 
         # Return the neighbour sequence and its decoded equivalent
-        return encoded_neighbour, neighbour
+        return encoded_neighbour
 
     def _obtain_temperature(self, step_val, function='boltzmann'):
         """
@@ -288,15 +288,29 @@ class Hyperheuristic:
             is 'boltzmann'.
         :return: float
         """
-        if function == 'exponential':
-            return self.parameters['max_temperature'] * np.power(1 - self.parameters['cooling_rate'], step_val)
-        elif function == 'fast':
+        if function == 'fast':
             return self.parameters['max_temperature'] / step_val
-        else:  # boltzmann
+
+        elif function == 'linear':
+            return self.parameters['max_temperature'] - (1 - self.parameters['cooling_rate']) * step_val
+
+        elif function == 'quadratic':
+            return self.parameters['max_temperature'] / (1 + (1 - self.parameters['cooling_rate']) * (step_val ** 2))
+
+        elif function == 'logarithmic':
+            return self.parameters['max_temperature'] / (1 + (1-self.parameters['cooling_rate']) * np.log(step_val + 1))
+
+        elif function == 'exponential':
+            return self.parameters['max_temperature'] * np.power(1 - self.parameters['cooling_rate'], step_val)
+
+        elif function == 'boltzmann':
             return self.parameters['max_temperature'] / np.log(step_val + 1)
 
+        else:
+            raise HyperheuristicError('Invalid temperature scheme')
+
     @staticmethod
-    def _check_acceptance(delta, temp, function='exponential'):
+    def _check_acceptance(delta, energy_zero, temp, function='exponential'):
         """
         Return a flag indicating if the current performance value can be accepted according to the ``function``.
 
@@ -312,17 +326,29 @@ class Hyperheuristic:
 
         :return: bool
         """
+
         if function == 'exponential':
-            return np.random.rand() <= np.exp(-delta / temp)  # (delta <= 0) or
+            probability = np.min([np.exp(-delta / (energy_zero * temp)), 1])
+            print('Prob: {} '.format(probability), end='')
+            return np.random.rand() < probability  # (delta <= 0) or
         else:  # boltzmann
-            return np.random.rand() <= 1. / (1. + np.exp(delta / temp))  # (delta <= 0) or
+            return (delta <= 0) or (np.random.rand() < 1. / (1. + np.exp(delta / (energy_zero * temp)))) #
 
     def _check_finalisation(self, step, stag_counter, *args):
         return (step > self.parameters['num_steps']) or (
                 stag_counter > (self.parameters['stagnation_percentage'] * self.parameters['num_steps'])) or (
                 any([var < self.parameters['cooling_rate']*1e-3 for var in args]))
 
-    def run(self, temperature_scheme='exponential', acceptance_scheme='boltzmann'):
+    # def _check_improvement(self, new_perf, best_perf, new_pos, best_pos):
+    #     if self.parameters['as_mh']:
+    #         return new_perf < best_perf
+    #     else:
+    #         return (new_perf <= best_perf) and (len(new_pos) <= len(best_pos))  # (new_perf < best_perf) or
+
+    def get_operators(self, sequence):
+        return [self.heuristic_space[index] for index in sequence]
+
+    def run(self, temperature_scheme='logarithmic', acceptance_scheme='exponential'):
         """
         Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each meatheuristic is
         run 'num_replicas' times to obtain statistics and then its performance. Once the process ends, it returns:
@@ -340,62 +366,61 @@ class Hyperheuristic:
         # %% INITIALISER PART
 
         # PERTURBATOR (GENERATOR): Create the initial solution
-        current_encoded_solution, current_solution = self._obtain_candidate_solution()
+        current_solution = self._obtain_candidate_solution()
 
         # Evaluate this solution
         current_performance, current_details = self.evaluate_candidate_solution(current_solution)
 
+        initial_performance = current_performance  # np.copy(current_performance)
+        c = [current_performance]; b = [current_performance]
+
         # SELECTOR: Initialise the best solution and its performance
         best_solution = np.copy(current_solution)
-        best_encoded_solution = np.copy(current_encoded_solution)
         best_performance = current_performance
 
         # Save this historical register, step = 0
-        _save_step(0, dict(encoded_solution=best_encoded_solution, performance=best_performance,
+        _save_step(0, dict(encoded_solution=best_solution, performance=best_performance,
                            details=current_details), self.file_label)
-
-        # Print the first status update, step = 0
-        if self.parameters['verbose']:
-            print('{} :: Step: {:4d}, Action: {:12s}, Temp: {:.2e}, Card: {:3d}, Perf: {:.2e}'.format(
-                self.file_label, 0, 'None', self.parameters['max_temperature'], len(current_encoded_solution),
-                current_performance))
-            # ''.join([chr(97 + round(x * 25 / self.num_operators)) for x in current_encoded_solution])))
 
         # Step, stagnation counter and its maximum value
         step = 0
         stag_counter = 0
         action = None
-        temperature = np.infty
+        temperature = self.parameters['max_temperature']
+
+        # Print the first status update, step = 0
+        if self.parameters['verbose']:
+            print('{} :: Step: {:4d}, Action: {:12s}, Temp: {:.2e}, Card: {:3d}, Perf: {:.2e}'.format(
+                self.file_label, step, 'None', temperature, len(current_solution), current_performance))
+            # ''.join([chr(97 + round(x * 25 / self.num_operators)) for x in current_solution])))
 
         # Perform the annealing simulation as hyper-heuristic process
         while not self._check_finalisation(step, stag_counter, temperature):
+            # Update step and temperature
             step += 1
+            temperature = self._obtain_temperature(step, temperature_scheme)
 
             # Generate a neighbour solution (just indices-codes)
-            # cardinality = len(current_encoded_solution)
-            action = self._choose_action(len(current_encoded_solution), action)
-            candidate_encoded_solution, candidate_solution = self._obtain_candidate_solution(
-                sol=current_encoded_solution, action=action)
+            action = self._choose_action(len(current_solution), action)
+            candidate_solution = self._obtain_candidate_solution(sol=current_solution, action=action)
 
             # Evaluate this candidate solution
             candidate_performance, candidate_details = self.evaluate_candidate_solution(candidate_solution)
 
-            # Update temperature
-            temperature = self._obtain_temperature(step, temperature_scheme)
-
             # Print update
             if self.parameters['verbose']:
-                print('{} :: Step: {:4d}, Action: {:12s}, Temp: {:.2e}, Card: {:3d}, Perf: {:.2e}'.format(
-                    self.file_label, step, action, temperature, len(candidate_encoded_solution),
-                    candidate_performance),
-                    # ''.join([chr(97 + round(x * 25 / self.num_operators)) for x in current_encoded_solution])),
+                print('{} :: Step: {:4d}, Action: {:12s}, Temp: {:.2e}, Card: {:3d}, Perf: {:.2e}, c {:.2e}, b {:.2e}'.format(
+                    self.file_label, step, action, temperature, len(candidate_solution), candidate_performance,
+                    current_performance, best_performance),
+                    # ''.join([chr(97 + round(x * 25 / self.num_operators)) for x in current_solution])),
                     end=' ')
 
             # Accept the current solution via Metropolis criterion 'exponential'
-            if self._check_acceptance(candidate_performance - current_performance, temperature, acceptance_scheme):
+            if self._check_acceptance(candidate_performance - current_performance, initial_performance, temperature,
+                                      acceptance_scheme):
+
                 # Update the current solution and its performance
-                current_encoded_solution = np.copy(candidate_encoded_solution)
-                # current_solution = np.copy(candidate_solution)
+                current_solution = np.copy(candidate_solution)
                 current_performance = candidate_performance
 
                 # Add acceptance mark
@@ -403,9 +428,9 @@ class Hyperheuristic:
                     print('A', end='')
 
             # If the candidate solution is better or equal than the current best solution
-            if (candidate_performance <= best_performance) and (len(candidate_encoded_solution) < len(best_encoded_solution)):
+            if candidate_performance <= best_performance:
+
                 # Update the best solution and its performance
-                best_encoded_solution = np.copy(candidate_encoded_solution)
                 best_solution = np.copy(candidate_solution)
                 best_performance = candidate_performance
 
@@ -414,7 +439,7 @@ class Hyperheuristic:
 
                 # Save this information
                 _save_step(step, {
-                    'encoded_solution': best_encoded_solution,
+                    'encoded_solution': best_solution,
                     'performance': best_performance,
                     'details': candidate_details
                 }, self.file_label)
@@ -426,33 +451,35 @@ class Hyperheuristic:
                 # Update the stagnation counter
                 stag_counter += 1
 
-            # Add improvement mark
+            c.append(current_performance); b.append(best_performance)
+            # Add ending mark
             if self.parameters['verbose']:
                 print('')
 
         # Print the best one
         if self.parameters['verbose']:
-            print('\nBEST --> Perf: {}, e-Sol: {}'.format(best_performance, best_encoded_solution))
+            print('\nBEST --> Perf: {}, e-Sol: {}'.format(best_performance, best_solution))
 
         # Return the best solution found and its details
-        return best_solution, best_performance, best_encoded_solution
+        return best_solution, best_performance, c, b
 
-    def evaluate_candidate_solution(self, search_operators):
+    def evaluate_candidate_solution(self, encoded_sequence):
         """
-        Evaluate the current sequence of ``search_operators`` as a metaheuristic. This process is repeated
-        ``parameters['num_replicas']`` times and, then, the performance is determined. In the end, the method returns
-        the performance value and the details for all the runs. These details are ``historical_data``, ``fitness_data``,
-        ``position_data``, and ``fitness_stats``.
+        Evaluate the current sequence as a hyper/meta-heuristic. This process is repeated ``parameters['num_replicas']``
+        times and, then, the performance is determined. In the end, the method returns the performance value and the
+        details for all the runs. These details are ``historical_data``, ``fitness_data``, ``position_data``, and
+        ``fitness_stats``. The elements from the ``encoded_sequence`` must be in the range of the ``num_operators``.
 
-        :param list search_operators:
+        :param list encoded_sequence:
             Sequence of search operators. These must be in the tuple form (decoded version). Check the ``metaheuristic``
             module for further information.
         :return: float, dict
         """
+        # Decode the sequence corresponding to the hyper/meta-heuristic
+        search_operators = self.get_operators(encoded_sequence)
+
         # Initialise the historical registers
-        historical_data = list()
-        fitness_data = list()
-        position_data = list()
+        historical_data = list();  fitness_data = list();  position_data = list()
 
         # Run the metaheuristic several times
         for rep in range(1, self.parameters['num_replicas'] + 1):
@@ -628,13 +655,20 @@ class HyperheuristicError(Exception):
 if __name__ == '__main__':
     # import hyperheuristic as hh
     import benchmark_func as bf
+    import matplotlib.pyplot as plt
 
     problem = bf.Sphere(2)
     problem.set_search_range(-10, 10)
 
-    q = Hyperheuristic(problem=problem.get_formatted_problem())
-    # q.run()
+    q = Hyperheuristic(problem=problem.get_formatted_problem(),
+                       file_label="{}-{}D".format(problem.func_name, problem.variable_num))
+    _, _, c, b = q.run()
 
-    import numpy as np
+    plt.figure()
+    plt.plot(b, 's')
+    plt.plot(c, 'o')
+    plt.show()
 
-    qq, _ = q._obtain_candidate_solution(np.array(range(2)), 'RemoveMany')
+    # import numpy as np
+    #
+    # qq, _ = q._obtain_candidate_solution(np.array(range(2)), 'RemoveMany')
