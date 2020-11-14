@@ -5,7 +5,7 @@
     "heuristic_collection_file": "default.txt",
     "weights_dataset_file": "operators_weights.json",
     "use_parallel": true,
-    "parallel_pool_size": 5
+    "parallel_pool_size": 7
   },
   "hh_config": {
     "num_steps": 200,
@@ -27,7 +27,9 @@
       5,
       10,
       20,
-      30
+      30,
+      40,
+      50
     ],
     "functions": [
       "Ackley1",
