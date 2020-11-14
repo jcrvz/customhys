@@ -268,13 +268,13 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
             'num_agents': 30,
             'num_iterations': 100,
             'num_replicas': 50,
-            'num_steps': 500,
-            'max_temperature': 200,
-            'stagnation_percentage': 0.3,
-            'cooling_rate': 0.05,
+            'num_steps': 200,
+            'max_temperature': 1,
+            'min_temperature': 1e-6,
+            'stagnation_percentage': 0.37,
+            'cooling_rate': 1e-3,
             'cardinality_min': 1,
             'repeat_operators': True,
-            'initial_scheme': 'vertex',
             'as_mh': True,
             'verbose': False
         }, hh_config)

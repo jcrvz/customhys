@@ -3,12 +3,20 @@
     "experiment_name": "short_test2",
     "experiment_type": "default",
     "heuristic_collection_file": "default.txt",
-    "weights_dataset_file": "operators_weights.json"
+    "weights_dataset_file": "operators_weights.json",
+    "use_parallel": true,
+    "parallel_pool_size": 5
   },
   "hh_config": {
+    "num_steps": 200,
+    "num_iterations": 100,
     "cardinality": 3,
     "cardinality_min": 1,
     "num_replicas": 50,
+    "stagnation_percentage": 0.37,
+    "max_temperature": 1,
+    "min_temperature": 1e-6,
+    "cooling_rate": 1e-3,
     "as_mh": false,
     "verbose": false,
     "repeat_operators": true
@@ -19,9 +27,7 @@
       5,
       10,
       20,
-      30,
-      40,
-      50
+      30
     ],
     "functions": [
       "Ackley1",

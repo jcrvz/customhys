@@ -75,13 +75,13 @@ class Hyperheuristic:
                               cardinality_min=1,            # Min. numb. of SOs in MHs, lvl:1 ** new
                               num_iterations=100,           # Iterations a MH performs, lvl:1
                               num_agents=30,                # Agents in population,     lvl:1
-                              initial_scheme='random',      # Initial scheme for pop,   lvl:1 ** new
-                              as_mh=False,                  # HH sequence as a MH?,    lvl:2 ** new
-                              num_replicas=10,              # Replicas per each MH,     lvl:2
+                              as_mh=False,                  # HH sequence as a MH?,     lvl:2 ** new
+                              num_replicas=50,              # Replicas per each MH,     lvl:2
                               num_steps=200,                # Trials per HH step,       lvl:2
-                              stagnation_percentage=0.3,    # Stagnation percentage,    lvl:2
-                              max_temperature=1,           # Initial temperature (SA), lvl:2
-                              cooling_rate=1e-3,           # Cooling rate (SA),        lvl:2
+                              stagnation_percentage=0.37,   # Stagnation percentage,    lvl:2
+                              max_temperature=1,            # Initial temperature (SA), lvl:2
+                              min_temperature=1e-6,         # Min temperature (SA),     lvl:2 ** new
+                              cooling_rate=1e-3,            # Cooling rate (SA),        lvl:2
                               repeat_operators=True,        # Allow repeating SOs inSeq,lvl:2 ** new
                               verbose=True)                 # Verbose process,          lvl:2 ** new
         # Read the problem
@@ -309,8 +309,7 @@ class Hyperheuristic:
         else:
             raise HyperheuristicError('Invalid temperature scheme')
 
-    @staticmethod
-    def _check_acceptance(delta, energy_zero, temp, function='exponential'):
+    def _check_acceptance(self, delta, energy_zero, temp, function='exponential'):
         """
         Return a flag indicating if the current performance value can be accepted according to the ``function``.
 
@@ -329,15 +328,18 @@ class Hyperheuristic:
 
         if function == 'exponential':
             probability = np.min([np.exp(-delta / (energy_zero * temp)), 1])
-            print('Prob: {} '.format(probability), end='')
+            if self.parameters['verbose']:
+                print(', [Delta: {:.2e}, ArgProb: {:.2e}, Prob: {:.2f}]'.format(
+                    delta, -delta / (energy_zero * temp), probability), end=' ')
             return np.random.rand() < probability  # (delta <= 0) or
         else:  # boltzmann
-            return (delta <= 0) or (np.random.rand() < 1. / (1. + np.exp(delta / (energy_zero * temp)))) #
+            probability = 1. / (1. + np.exp(delta / temp))
+            return (delta <= 0) or (np.random.rand() <= probability)
 
     def _check_finalisation(self, step, stag_counter, *args):
         return (step > self.parameters['num_steps']) or (
                 stag_counter > (self.parameters['stagnation_percentage'] * self.parameters['num_steps'])) or (
-                any([var < self.parameters['cooling_rate']*1e-3 for var in args]))
+                any([var < self.parameters['min_temperature'] for var in args]))
 
     # def _check_improvement(self, new_perf, best_perf, new_pos, best_pos):
     #     if self.parameters['as_mh']:
@@ -348,7 +350,7 @@ class Hyperheuristic:
     def get_operators(self, sequence):
         return [self.heuristic_space[index] for index in sequence]
 
-    def run(self, temperature_scheme='logarithmic', acceptance_scheme='exponential'):
+    def run(self, temperature_scheme='fast', acceptance_scheme='exponential'):
         """
         Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each meatheuristic is
         run 'num_replicas' times to obtain statistics and then its performance. Once the process ends, it returns:
@@ -371,7 +373,7 @@ class Hyperheuristic:
         # Evaluate this solution
         current_performance, current_details = self.evaluate_candidate_solution(current_solution)
 
-        initial_performance = current_performance  # np.copy(current_performance)
+        initial_energy = np.abs(current_performance) + 1  # np.copy(current_performance)
         c = [current_performance]; b = [current_performance]
 
         # SELECTOR: Initialise the best solution and its performance
@@ -390,7 +392,7 @@ class Hyperheuristic:
 
         # Print the first status update, step = 0
         if self.parameters['verbose']:
-            print('{} :: Step: {:4d}, Action: {:12s}, Temp: {:.2e}, Card: {:3d}, Perf: {:.2e}'.format(
+            print('{} :: Step: {:4d}, Action: {:12s}, Temp: {:.2e}, Card: {:3d}, Perf: {:.2e} [Initial]'.format(
                 self.file_label, step, 'None', temperature, len(current_solution), current_performance))
             # ''.join([chr(97 + round(x * 25 / self.num_operators)) for x in current_solution])))
 
@@ -409,14 +411,13 @@ class Hyperheuristic:
 
             # Print update
             if self.parameters['verbose']:
-                print('{} :: Step: {:4d}, Action: {:12s}, Temp: {:.2e}, Card: {:3d}, Perf: {:.2e}, c {:.2e}, b {:.2e}'.format(
-                    self.file_label, step, action, temperature, len(candidate_solution), candidate_performance,
-                    current_performance, best_performance),
-                    # ''.join([chr(97 + round(x * 25 / self.num_operators)) for x in current_solution])),
-                    end=' ')
+                print('{} :: Step: {:4d}, Action: {:12s}, Temp: {:.2e}, Card: {:3d}, '.format(
+                    self.file_label, step, action, temperature, len(candidate_solution)) +
+                      'candPerf: {:.2e}, currPerf: {:.2e}, bestPerf: {:.2e}'.format(
+                          candidate_performance, current_performance, best_performance), end=' ')
 
             # Accept the current solution via Metropolis criterion 'exponential'
-            if self._check_acceptance(candidate_performance - current_performance, initial_performance, temperature,
+            if self._check_acceptance(candidate_performance - current_performance, initial_energy, temperature,
                                       acceptance_scheme):
 
                 # Update the current solution and its performance
@@ -484,8 +485,7 @@ class Hyperheuristic:
         # Run the metaheuristic several times
         for rep in range(1, self.parameters['num_replicas'] + 1):
             # Call the metaheuristic
-            mh = Metaheuristic(self.problem, search_operators, self.parameters['num_agents'], self.num_iterations,
-                               self.parameters['initial_scheme'])
+            mh = Metaheuristic(self.problem, search_operators, self.parameters['num_agents'], self.num_iterations)
 
             # Run this metaheuristic
             mh.run()
@@ -657,17 +657,18 @@ if __name__ == '__main__':
     import benchmark_func as bf
     import matplotlib.pyplot as plt
 
-    problem = bf.Sphere(2)
+    # problem = bf.Sphere(2)
+    problem = bf.Stochastic(2)
     problem.set_search_range(-10, 10)
 
     q = Hyperheuristic(problem=problem.get_formatted_problem(),
                        file_label="{}-{}D".format(problem.func_name, problem.variable_num))
     _, _, c, b = q.run()
 
-    plt.figure()
+    fi = plt.figure()
     plt.plot(b, 's')
     plt.plot(c, 'o')
-    plt.show()
+    fi.show()
 
     # import numpy as np
     #
