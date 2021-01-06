@@ -129,8 +129,8 @@ class Metaheuristic:
                 # Update global position
                 self.pop.update_positions('global', 'greedy')
 
-            # Update historical variables
-            self._update_historicals()
+                # Update historical variables
+                self._update_historicals()
 
             # Verbose (if so) some information
             self._verbose('{}\npop. radius: {}'.format(iteration, self.historical['radius'][-1]))

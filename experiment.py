@@ -159,7 +159,8 @@ class Experiment:
         # Check if the experiment will be in parallel
         if self.exp_config['use_parallel']:
             pool = multiprocessing.Pool(self.exp_config['parallel_pool_size'])
-            pool.map(self._simple_run, all_problems)
+            # pool.map(self._simple_run, all_problems)
+            pool.imap_unordered(self._simple_run, all_problems)
         else:
             for prob_dim in all_problems:
                 self._simple_run(prob_dim)
@@ -295,6 +296,7 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
     return exp_config, hh_config, prob_config
 
 
+# TODO: Create a task function that read which config variable is a list
 def create_task_list(function_list, dimension_list):
     """
     Return a list of combinations (in tuple form) for problems from functions and dimensions.
