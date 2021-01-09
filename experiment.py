@@ -304,4 +304,4 @@ if __name__ == '__main__':
     print(exp.exp_config)
 
     # Run the experiment et voilà
-    # exp.run()
+    exp.run()
