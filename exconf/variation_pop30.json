@@ -1,19 +1,18 @@
 {
   "ex_config": {
-    "experiment_name": "short_CEC21_pop100",
+    "experiment_name": "variation_pop30",
     "experiment_type": "default",
     "heuristic_collection_file": "default.txt",
     "weights_dataset_file": "operators_weights.json",
     "use_parallel": true,
-    "parallel_pool_size": 5
+    "parallel_pool_size": 7
   },
   "hh_config": {
-    "num_steps": 200,
-    "num_agents": 100,
-    "num_iterations": 100,
+    "num_steps": 250,
+    "num_iterations": 500,
     "cardinality": 3,
     "cardinality_min": 1,
-    "num_replicas": 50,
+    "num_replicas": 30,
     "stagnation_percentage": 0.37,
     "max_temperature": 1,
     "min_temperature": 1e-6,
@@ -25,9 +24,12 @@
   "prob_config": {
     "dimensions": [
       2,
+      5,
       10,
+      20,
       30,
-      50
+      40,
+      50,
     ],
     "functions": [
       "Ackley1",

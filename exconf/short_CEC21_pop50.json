@@ -5,10 +5,11 @@
     "heuristic_collection_file": "default.txt",
     "weights_dataset_file": "operators_weights.json",
     "use_parallel": true,
-    "parallel_pool_size": 5
+    "parallel_pool_size": 2
   },
   "hh_config": {
     "num_steps": 200,
+    "num_agents": 50,
     "num_iterations": 100,
     "cardinality": 3,
     "cardinality_min": 1,

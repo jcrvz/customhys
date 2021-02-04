@@ -160,7 +160,7 @@ class Experiment:
         if self.exp_config['use_parallel']:
             pool = multiprocessing.Pool(self.exp_config['parallel_pool_size'])
             pool.map(self._simple_run, all_problems)
-            #pool.imap_unordered(self._simple_run, all_problems)
+            # pool.imap_unordered(self._simple_run, all_problems)
         else:
             for prob_dim in all_problems:
                 self._simple_run(prob_dim)
