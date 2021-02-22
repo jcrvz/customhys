@@ -173,4 +173,5 @@ Source: [``visualisation.py``](./visualisation.py)
 
 1. [Cruz-Duarte, J.M., Amaya, I., Ortiz-Bayliss, J.C., Connat-Pablos, S.E., and Terashima-Marín, H., A Primary Study on Hyper-Heuristics to Customise Metaheuristics for Continuous Optimisation. CEC'2020.](./docfiles/SearchOperators_CEC.pdf)
 1. [J. M. Cruz-Duarte, I. Amaya, J. C. Ortiz-Bayliss, H. Terashima-Marín, and Y. Shi, CUSTOMHyS: Customising Optimisation Metaheuristics via Hyper-heuristic Search, SoftwareX, vol. 12, p. 100628, 2020.](https://www.sciencedirect.com/science/article/pii/S2352711020303411)
+1. [J. M. Cruz-Duarte, J. C. Ortiz-Bayliss, I. Amaya, Y. Shi, H. Terashima-Marín, and N. Pillay, Towards a Generalised Metaheuristic Model for Continuous Optimisation Problems, Mathematics, vol. 8, no. 11, p. 2046, Nov. 2020.](https://www.mdpi.com/2227-7390/8/11/2046)
 1. Cruz-Duarte, J.M., Amaya, I., Ortiz-Bayliss, J.C., Connat-Pablos, S.E., Terashima-Marín, H., and Shi, Y., Hyper-Heuristics to Customise Metaheuristics for Continuous Optimisation. Submitted to SWEVO.
