@@ -260,7 +260,7 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
     save_json(data, file_name=main_folder.split('/')[0] + "/" + output_name)
 
     # Return only the data variable
-    return data
+    # return data
 
 
 def df2dict(df):
