@@ -244,10 +244,10 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
                 # Only save the historical fitness values when operator_id is the largest one
                 if only_laststep and operator_id == last_step:
                     file_data['hist_fitness'] = [x['fitness'] for x in temporal_data['details']['historical']]
-                    file_data['hist_positions'] = [x['positions'] for x in temporal_data['details']['historical']]
+                    file_data['hist_positions'] = [x['position'] for x in temporal_data['details']['historical']]
                 else:
                     file_data['hist_fitness'].append([x['fitness'] for x in temporal_data['details']['historical']])
-                    file_data['hist_positions'].append([x['positions'] for x in temporal_data['details']['historical']])
+                    file_data['hist_positions'].append([x['position'] for x in temporal_data['details']['historical']])
 
             # Following information can be included but resulting files will be larger
             # file_data['fitness'].append(temporal_data['details']['fitness'])
