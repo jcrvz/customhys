@@ -15,6 +15,7 @@ import json
 import tools as jt
 from os.path import exists as _check_path
 from os import makedirs as _create_path
+from deprecated import deprecated
 
 
 class Hyperheuristic:
@@ -72,18 +73,20 @@ class Hyperheuristic:
         # Assign default values
         if not parameters:
             parameters = dict(cardinality=3,                # Max. numb. of SOs in MHs, lvl:1
-                              cardinality_min=1,            # Min. numb. of SOs in MHs, lvl:1 ** new
+                              cardinality_min=1,            # Min. numb. of SOs in MHs, lvl:1
                               num_iterations=100,           # Iterations a MH performs, lvl:1
                               num_agents=30,                # Agents in population,     lvl:1
-                              as_mh=False,                  # HH sequence as a MH?,     lvl:2 ** new
+                              as_mh=False,                  # HH sequence as a MH?,     lvl:2
                               num_replicas=50,              # Replicas per each MH,     lvl:2
                               num_steps=200,                # Trials per HH step,       lvl:2
                               stagnation_percentage=0.37,   # Stagnation percentage,    lvl:2
                               max_temperature=1,            # Initial temperature (SA), lvl:2
-                              min_temperature=1e-6,         # Min temperature (SA),     lvl:2 ** new
+                              min_temperature=1e-6,         # Min temperature (SA),     lvl:2
                               cooling_rate=1e-3,            # Cooling rate (SA),        lvl:2
-                              repeat_operators=True,        # Allow repeating SOs inSeq,lvl:2 ** new
-                              verbose=True)                 # Verbose process,          lvl:2 ** new
+                              temperature_scheme='fast',    # Temperature updating (SA),lvl:2 *new
+                              acceptance_scheme='exponential',  # Acceptance mode,      lvl:2 *new
+                              repeat_operators=True,        # Allow repeating SOs inSeq,lvl:2
+                              verbose=True)                 # Verbose process,          lvl:2
         # Read the problem
         if problem:
             self.problem = problem
@@ -309,37 +312,47 @@ class Hyperheuristic:
         else:
             raise HyperheuristicError('Invalid temperature scheme')
 
-    def _check_acceptance(self, delta, energy_zero, temp, function='exponential'):
+    def _check_acceptance(self, delta, acceptation_scheme, temp, energy_zero=1.0):
         """
-        Return a flag indicating if the current performance value can be accepted according to the ``function``.
+        Return a flag indicating if the current performance value can be accepted according to ``acceptation_scheme``.
 
         :param float delta:
             Energy change for determining the acceptance probability.
 
-        :param float temp:
+        :param str acceptation_scheme: Optional.
+            Function for determining the acceptance probability. It can be 'exponential', 'boltzmann', or 'greedy'. The
+             default is 'greedy'.
+
+        :param float temp: Required for acceptation_scheme = ('exponential'|'boltzmann')
             Temperature value for determining the acceptance probability.
 
-        :param str function: Optional.
-            Function for determining the acceptance probability. It can be 'exponential' or 'boltzmann'. The default
-            is 'boltzmann'.
+        :param float energy_zero: Required for acceptation_scheme = ('exponential'|'boltzmann')
+            Energy value to scale the temperature measurement. The default value is 1.
 
         :return: bool
         """
 
-        if function == 'exponential':
+        if acceptation_scheme == 'exponential':
             probability = np.min([np.exp(-delta / (energy_zero * temp)), 1])
             if self.parameters['verbose']:
                 print(', [Delta: {:.2e}, ArgProb: {:.2e}, Prob: {:.2f}]'.format(
                     delta, -delta / (energy_zero * temp), probability), end=' ')
-            return np.random.rand() < probability  # (delta <= 0) or
-        else:  # boltzmann
+            return np.random.rand() < probability
+        elif acceptation_scheme == 'boltzmann':
             probability = 1. / (1. + np.exp(delta / temp))
-            return (delta <= 0) or (np.random.rand() <= probability)
+            return (delta <= 0.0) or (np.random.rand() <= probability)
+        else:  # Greedy
+            return delta <= 0.0
 
     def _check_finalisation(self, step, stag_counter, *args):
+        """ TODO: update this information and check if step should be here
+        General finalisation approach implemented for the methodology working as a hyper-heuristic. It mainly depends on
+        `step` (current iteration number) and `stag_counter` (current stagnation iteration number). There are other
+         variables that can be considered such as `temperature`. These additional variables must be args[0] <= 0.0.
+        """
         return (step > self.parameters['num_steps']) or (
                 stag_counter > (self.parameters['stagnation_percentage'] * self.parameters['num_steps'])) or (
-                any([var < self.parameters['min_temperature'] for var in args]))
+                any([var <= 0.0 for var in args]))
 
     # def _check_improvement(self, new_perf, best_perf, new_pos, best_pos):
     #     if self.parameters['as_mh']:
@@ -350,6 +363,7 @@ class Hyperheuristic:
     def get_operators(self, sequence):
         return [self.heuristic_space[index] for index in sequence]
 
+    @deprecated(version='1.0.1', reason="Use solve instead")
     def run(self, temperature_scheme='fast', acceptance_scheme='exponential'):
         """
         Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each meatheuristic is
@@ -363,6 +377,8 @@ class Hyperheuristic:
             iteration that the metaheuristic has performed), 'fitness', 'positions', and 'statistics'.
 
         :returns: solution (list), performance (float), encoded_solution (list)
+
+        TODO: Generalise this code using different blocks, now, it is pretty close to SA
         """
 
         # %% INITIALISER PART
@@ -373,8 +389,10 @@ class Hyperheuristic:
         # Evaluate this solution
         current_performance, current_details = self.evaluate_candidate_solution(current_solution)
 
+        # Initialise some additional variables
         initial_energy = np.abs(current_performance) + 1  # np.copy(current_performance)
-        c = [current_performance]; b = [current_performance]
+        historical_current = [current_performance]
+        historical_best = [current_performance]
 
         # SELECTOR: Initialise the best solution and its performance
         best_solution = np.copy(current_solution)
@@ -396,8 +414,9 @@ class Hyperheuristic:
                 self.file_label, step, 'None', temperature, len(current_solution), current_performance))
             # ''.join([chr(97 + round(x * 25 / self.num_operators)) for x in current_solution])))
 
-        # Perform the annealing simulation as hyper-heuristic process
-        while not self._check_finalisation(step, stag_counter, temperature):
+        # Perform a metaheuristic (now, Simulated Annealing) as hyper-heuristic process
+        while not self._check_finalisation(step, stag_counter,
+                                           temperature - self.parameters['min_temperature']):
             # Update step and temperature
             step += 1
             temperature = self._obtain_temperature(step, temperature_scheme)
@@ -416,9 +435,9 @@ class Hyperheuristic:
                       'candPerf: {:.2e}, currPerf: {:.2e}, bestPerf: {:.2e}'.format(
                           candidate_performance, current_performance, best_performance), end=' ')
 
-            # Accept the current solution via Metropolis criterion 'exponential'
-            if self._check_acceptance(candidate_performance - current_performance, initial_energy, temperature,
-                                      acceptance_scheme):
+            # Accept the current solution using a given acceptance_scheme
+            if self._check_acceptance(candidate_performance - current_performance, acceptance_scheme,
+                                      temperature, initial_energy):
 
                 # Update the current solution and its performance
                 current_solution = np.copy(candidate_solution)
@@ -452,7 +471,8 @@ class Hyperheuristic:
                 # Update the stagnation counter
                 stag_counter += 1
 
-            c.append(current_performance); b.append(best_performance)
+            historical_current.append(current_performance)
+            historical_best.append(best_performance)
             # Add ending mark
             if self.parameters['verbose']:
                 print('')
@@ -462,7 +482,137 @@ class Hyperheuristic:
             print('\nBEST --> Perf: {}, e-Sol: {}'.format(best_performance, best_solution))
 
         # Return the best solution found and its details
-        return best_solution, best_performance, c, b
+        return best_solution, best_performance, historical_current, historical_best
+
+    def solve(self, using='SA', mode='static'):
+        """
+        Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each meatheuristic is
+        run 'num_replicas' times to obtain statistics and then its performance. Once the process ends, it returns:
+            - solution: The sequence of search operators that compose the metaheuristic.
+            - performance: The metric value defined in ``get_performance``.
+            - encoded_solution: The sequence of indices that correspond to the search operators.
+            - historicals: A dictionary of information from each step. Its keys are: 'step', 'encoded_solution',
+            'solution', 'performances', and 'details'. The latter, 'details', is also a dictionary which contains
+            information about each replica carried out with the metaheuristic. Its fields are 'historical' (each
+            iteration that the metaheuristic has performed), 'fitness', 'positions', and 'statistics'.
+
+        :returns: solution (list), performance (float), encoded_solution (list)
+
+        TODO: Update
+        """
+
+        # %% INITIALISER PART
+
+        # PERTURBATOR (GENERATOR): Create the initial solution
+        if mode == 'static':
+            current_solution = self._obtain_candidate_solution()
+        else:  # mode == 'dynamic'
+            current_solution = self._obtain_candidate_solution(1)
+
+        # Evaluate this solution
+        current_performance, current_details = self.evaluate_candidate_solution(current_solution)
+
+        # SELECTOR: Initialise the best solution and its performance
+        best_solution = np.copy(current_solution)
+        best_performance = current_performance
+
+        # Save this historical register, step = 0
+        _save_step(0, dict(encoded_solution=best_solution, performance=best_performance,
+                           details=current_details), self.file_label)
+
+        # Initialise some additional variables
+        step = 0
+        stag_counter = 0
+        action = None
+        historical_current = [current_performance]
+        historical_best = [current_performance]
+        if using == 'SA':
+            initial_energy = np.abs(current_performance) + 1
+            temperature = self.parameters['max_temperature']
+
+        # Print the first status update, step = 0
+        if self.parameters['verbose']:
+            print('{} :: Step: {:4d}, Action: {:12s}, Temp: {:.2e}, Card: {:3d}, Perf: {:.2e} [Initial]'.format(
+                self.file_label, step, 'None', temperature, len(current_solution), current_performance))
+
+        # We assume that with only one operator, it never reaches the solution. So, we check finalisation ending iter
+
+        # Perform a metaheuristic (now, Simulated Annealing) as hyper-heuristic process
+        while step < self.parameters['num_steps']:  # for step in range(1, self.parameters['num_steps'] + 1):
+            # Update step and temperature
+            step += 1
+            temperature = self._obtain_temperature(step, self.parameters['temperature_scheme'])
+
+            # Generate a neighbour solution (just indices-codes)
+            action = self._choose_action(len(current_solution), action)
+            candidate_solution = self._obtain_candidate_solution(sol=current_solution, action=action)
+
+            # Evaluate this candidate solution
+            candidate_performance, candidate_details = self.evaluate_candidate_solution(candidate_solution)
+
+            # Print update
+            if self.parameters['verbose']:
+                print('{} :: Step: {:4d}, Action: {:12s}, Temp: {:.2e}, Card: {:3d}, '.format(
+                    self.file_label, step, action, temperature, len(candidate_solution)) +
+                      'candPerf: {:.2e}, currPerf: {:.2e}, bestPerf: {:.2e}'.format(
+                          candidate_performance, current_performance, best_performance), end=' ')
+
+            # Accept the current solution using a given acceptance_scheme
+            if self._check_acceptance(candidate_performance - current_performance, self.parameters['acceptance_scheme'],
+                                      temperature, initial_energy):
+
+                # Update the current solution and its performance
+                current_solution = np.copy(candidate_solution)
+                current_performance = candidate_performance
+
+                # Add acceptance mark
+                if self.parameters['verbose']:
+                    print('A', end='')
+
+            # If the candidate solution is better or equal than the current best solution
+            if candidate_performance <= best_performance:
+
+                # Update the best solution and its performance
+                best_solution = np.copy(candidate_solution)
+                best_performance = candidate_performance
+
+                # Reset the stagnation counter
+                stag_counter = 0
+
+                # Save this information
+                _save_step(step, {
+                    'encoded_solution': best_solution,
+                    'performance': best_performance,
+                    'details': candidate_details
+                }, self.file_label)
+
+                # Add improvement mark
+                if self.parameters['verbose']:
+                    print('+', end='')
+            else:
+                # Update the stagnation counter
+                stag_counter += 1
+
+            historical_current.append(current_performance)
+            historical_best.append(best_performance)
+
+            # Add ending mark
+            if self.parameters['verbose']:
+                print('')
+
+            # FINALISATOR (hard): Finalise due to other concepts
+            if (using == 'SA') and (
+                    self._check_finalisation(step, stag_counter, temperature - self.parameters['min_temperature'])):
+                break
+            elif (using != 'SA') and (self._check_finalisation(step, stag_counter)):
+                break
+
+        # Print the best one
+        if self.parameters['verbose']:
+            print('\nBEST --> Perf: {}, e-Sol: {}'.format(best_performance, best_solution))
+
+        # Return the best solution found and its details
+        return best_solution, best_performance, historical_current, historical_best
 
     def evaluate_candidate_solution(self, encoded_sequence):
         """
