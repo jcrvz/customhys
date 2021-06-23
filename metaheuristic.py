@@ -21,7 +21,7 @@ class Metaheuristic:
         This is the Metaheuristic class, each object corresponds to a metaheuristic implemented with a sequence of
         search operators from Operators, and it is based on a population from Population.
     """
-    def __init__(self, problem, search_operators, num_agents=30, num_iterations=100, initial_scheme='random'):
+    def __init__(self, problem, search_operators=None, num_agents=30, num_iterations=100, initial_scheme='random'):
         """
         Create a population-based metaheuristic by employing different simple search operators.
 
@@ -35,7 +35,8 @@ class Metaheuristic:
             the ``benchmark_func`` module.
         :param list search_operators:
             A list of available search operators. These operators must correspond to those available in the
-            ``operators`` module.
+            ``operators`` module. This parameter is mandatory for mataheuristic implementations, for using parts of this
+            class, these can be provided as a list of ``operators``.
         :param int num_agents: Optional.
             Number of agents or population size. The default is 30.
         :param int num_iterations: Optional.
@@ -50,9 +51,10 @@ class Metaheuristic:
         self.pop = Population(problem['boundaries'], num_agents, problem['is_constrained'])
 
         # Check and read the search_operators
-        if not isinstance(search_operators, list):
-            search_operators = [search_operators]
-        self.operators, self.selectors = Operators.process_operators(search_operators)
+        if search_operators:
+            if not isinstance(search_operators, list):
+                search_operators = [search_operators]
+            self.perturbators, self.selectors = Operators.process_operators(search_operators)
 
         # Define the maximum number of iterations
         self.num_iterations = num_iterations
@@ -72,13 +74,7 @@ class Metaheuristic:
         # Set the initial scheme
         self.initial_scheme = initial_scheme
 
-    def run(self):
-        """
-        Run the metaheuristic for solving the defined problem.
-
-        :return: None.
-
-        """
+    def apply_initialiser(self):
         # Set initial iteration
         self.pop.iteration = 0
 
@@ -93,14 +89,46 @@ class Metaheuristic:
         self.pop.update_positions('particular', 'all')
         self.pop.update_positions('global', 'greedy')
 
+    def apply_search_operator(self, perturbator, selector):
+        # Split operator
+        operator_name, operator_params = perturbator.split('(')
+
+        # Apply an operator
+        exec('Operators.' + operator_name + '(self.pop,' + operator_params)
+
+        # Evaluate fitness values
+        self.pop.evaluate_fitness(self._problem_function)
+
+        # Update population
+        if selector in __selectors__:
+            self.pop.update_positions('population', selector)
+        else:
+            self.pop.update_positions()
+
+        # Update global position
+        self.pop.update_positions('global', 'greedy')
+
+    def run(self):
+        """
+        Run the metaheuristic for solving the defined problem.
+
+        :return: None.
+
+        """
+        if (not self.perturbators) or (not self.selectors):
+            Operators.OperatorsError("There are not perturbator or selector!")
+
+        # Apply initialiser / Random Sampling
+        self.apply_initialiser()
+
         # Initialise and update historical variables
-        self._reset_historicals()
-        self._update_historicals()
+        self.reset_historicals()
+        self.update_historicals()
 
         # Report which operators are going to use
         self._verbose('\nSearch operators to employ:')
-        for operator, selector in zip(self.operators, self.selectors):
-            self._verbose("{} with {}".format(operator, selector))
+        for perturbator, selector in zip(self.perturbators, self.selectors):
+            self._verbose("{} with {}".format(perturbator, selector))
         self._verbose("{}".format('-' * 50))
 
         # TODO: Implement other stopping criteria
@@ -110,27 +138,13 @@ class Metaheuristic:
             self.pop.iteration = iteration
 
             # Implement the sequence of operators and selectors
-            for operator, selector in zip(self.operators, self.selectors):
-                # Split operator
-                operator_name, operator_params = operator.split('(')
+            for perturbator, selector in zip(self.perturbators, self.selectors):
 
-                # Apply an operator
-                exec('Operators.' + operator_name + '(self.pop,' + operator_params)
-
-                # Evaluate fitness values
-                self.pop.evaluate_fitness(self._problem_function)
-
-                # Update population
-                if selector in __selectors__:
-                    self.pop.update_positions('population', selector)
-                else:
-                    self.pop.update_positions()
-
-                # Update global position
-                self.pop.update_positions('global', 'greedy')
+                # Apply the corresponding search operator
+                self.apply_search_operator(perturbator, selector)
 
                 # Update historical variables
-                self._update_historicals()
+                self.update_historicals()
 
             # Verbose (if so) some information
             self._verbose('{}\npop. radius: {}'.format(iteration, self.historical['radius'][-1]))
@@ -179,7 +193,7 @@ class Metaheuristic:
     #     fig1.tight_layout()
     #     plt.show()
 
-    def _reset_historicals(self):
+    def reset_historicals(self):
         """
         Reset the ``historical`` variables.
 
@@ -187,7 +201,7 @@ class Metaheuristic:
         """
         self.historical = dict(fitness=list(), position=list(), centroid=list(), radius=list())
 
-    def _update_historicals(self):
+    def update_historicals(self):
         """
         Update the ``historical`` variables.
 

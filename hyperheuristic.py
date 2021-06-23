@@ -11,6 +11,7 @@ import random
 import scipy.stats as st
 from metaheuristic import Metaheuristic
 from datetime import datetime
+import operators as Operators
 import json
 import tools as jt
 from os.path import exists as _check_path
@@ -93,8 +94,9 @@ class Hyperheuristic:
         else:
             raise HyperheuristicError('Problem must be provided')
 
-        # Read the heuristic space size
+        # Read the heuristic space size and create the active set
         self.num_operators = len(self.heuristic_space)
+        self.current_space = np.arange(self.num_operators)
 
         # Read the weights (if it is entered)
         self.weights_array = weights_array
@@ -165,20 +167,24 @@ class Hyperheuristic:
 
         :return: list.
         """
+        # TODO: fix active set to all the possible candidate approaches
+
         # Create a new MH with min_cardinality from scratch by using a weights array (if so)
         if sol is None:
             initial_cardinality = self.min_cardinality if self.parameters['as_mh'] else \
                 (self.max_cardinality + self.min_cardinality) // 2
 
-            encoded_neighbour = np.random.choice(self.num_operators, initial_cardinality,
-                                                 replace=self.parameters['repeat_operators'], p=self.weights_array)
+            encoded_neighbour = np.random.choice(self.num_operators if self.weights_array else self.current_space,
+                                                 initial_cardinality, replace=self.parameters['repeat_operators'],
+                                                 p=self.weights_array)
 
         # If sol is an integer, assume that it refers to the cardinality
         elif isinstance(sol, int):
-            encoded_neighbour = np.random.choice(self.num_operators, sol, replace=self.parameters['repeat_operators'],
-                                                 p=self.weights_array)
+            encoded_neighbour = np.random.choice(self.num_operators if self.weights_array else self.current_space, sol,
+                                                 replace=self.parameters['repeat_operators'], p=self.weights_array)
 
-        elif isinstance(sol, np.ndarray):
+        elif isinstance(sol, (np.ndarray, list)):
+            sol = np.array(sol)
             current_cardinality = len(sol)
 
             # Choose (randomly) which action to do
@@ -190,8 +196,8 @@ class Hyperheuristic:
             # Perform the corresponding action
             if (action == 'Add') and (current_cardinality < self.max_cardinality):
                 # Select an operator excluding the ones in the current solution
-                selected_operator = np.random.choice(np.setdiff1d(np.arange(self.num_operators), sol)
-                                                     if not self.parameters['repeat_operators'] else self.num_operators)
+                selected_operator = np.random.choice(np.setdiff1d(self.current_space, sol)
+                                                     if not self.parameters['repeat_operators'] else self.current_space)
 
                 # Select where to add such an operator, since ``operator_location`` value represents:
                 #       0 - left side of the first operator
@@ -223,10 +229,10 @@ class Hyperheuristic:
                 # Perturbate an operator randomly selected excluding the existing ones
                 encoded_neighbour = np.copy(sol)
                 encoded_neighbour[np.random.randint(current_cardinality)] = np.random.choice(
-                    np.setdiff1d(np.arange(self.num_operators), sol)
+                    np.setdiff1d(self.current_space, sol)
                     if not self.parameters['repeat_operators'] else self.num_operators)
 
-            elif action == 'LocalShift':
+            elif action == 'LocalShift': # It only works with the full set
                 # Perturbate an operator randomly selected +/- 1 excluding the existing ones
                 encoded_neighbour = np.copy(sol)
                 operator_location = np.random.randint(current_cardinality)
@@ -270,7 +276,7 @@ class Hyperheuristic:
                 encoded_neighbour = self._obtain_candidate_solution(current_cardinality)
 
             else:
-                raise Hyperheuristic(f'Invalid action = {action} to perform!')
+                raise HyperheuristicError(f'Invalid action = {action} to perform!')
         else:
             raise HyperheuristicError('Invalid type of current solution!')
 
@@ -364,7 +370,20 @@ class Hyperheuristic:
         return [self.heuristic_space[index] for index in sequence]
 
     @deprecated(version='1.0.1', reason="Use solve instead")
-    def run(self, temperature_scheme='fast', acceptance_scheme='exponential'):
+    def run(self, temperature_scheme=None, acceptance_scheme=None):
+        if temperature_scheme:
+            self.parameters['temperature_scheme'] = temperature_scheme
+        if acceptance_scheme:
+            self.parameters['acceptance_scheme'] = acceptance_scheme
+        return self._solve_static()
+
+    def solve(self, mode='static'):
+        if mode == 'dynamic':
+            return self._solve_dynamic()
+        else:  # default: 'static'
+            return self._solve_static()
+
+    def _solve_static(self):
         """
         Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each meatheuristic is
         run 'num_replicas' times to obtain statistics and then its performance. Once the process ends, it returns:
@@ -417,128 +436,6 @@ class Hyperheuristic:
         # Perform a metaheuristic (now, Simulated Annealing) as hyper-heuristic process
         while not self._check_finalisation(step, stag_counter,
                                            temperature - self.parameters['min_temperature']):
-            # Update step and temperature
-            step += 1
-            temperature = self._obtain_temperature(step, temperature_scheme)
-
-            # Generate a neighbour solution (just indices-codes)
-            action = self._choose_action(len(current_solution), action)
-            candidate_solution = self._obtain_candidate_solution(sol=current_solution, action=action)
-
-            # Evaluate this candidate solution
-            candidate_performance, candidate_details = self.evaluate_candidate_solution(candidate_solution)
-
-            # Print update
-            if self.parameters['verbose']:
-                print('{} :: Step: {:4d}, Action: {:12s}, Temp: {:.2e}, Card: {:3d}, '.format(
-                    self.file_label, step, action, temperature, len(candidate_solution)) +
-                      'candPerf: {:.2e}, currPerf: {:.2e}, bestPerf: {:.2e}'.format(
-                          candidate_performance, current_performance, best_performance), end=' ')
-
-            # Accept the current solution using a given acceptance_scheme
-            if self._check_acceptance(candidate_performance - current_performance, acceptance_scheme,
-                                      temperature, initial_energy):
-
-                # Update the current solution and its performance
-                current_solution = np.copy(candidate_solution)
-                current_performance = candidate_performance
-
-                # Add acceptance mark
-                if self.parameters['verbose']:
-                    print('A', end='')
-
-            # If the candidate solution is better or equal than the current best solution
-            if candidate_performance <= best_performance:
-
-                # Update the best solution and its performance
-                best_solution = np.copy(candidate_solution)
-                best_performance = candidate_performance
-
-                # Reset the stagnation counter
-                stag_counter = 0
-
-                # Save this information
-                _save_step(step, {
-                    'encoded_solution': best_solution,
-                    'performance': best_performance,
-                    'details': candidate_details
-                }, self.file_label)
-
-                # Add improvement mark
-                if self.parameters['verbose']:
-                    print('+', end='')
-            else:
-                # Update the stagnation counter
-                stag_counter += 1
-
-            historical_current.append(current_performance)
-            historical_best.append(best_performance)
-            # Add ending mark
-            if self.parameters['verbose']:
-                print('')
-
-        # Print the best one
-        if self.parameters['verbose']:
-            print('\nBEST --> Perf: {}, e-Sol: {}'.format(best_performance, best_solution))
-
-        # Return the best solution found and its details
-        return best_solution, best_performance, historical_current, historical_best
-
-    def solve(self, using='SA', mode='static'):
-        """
-        Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each meatheuristic is
-        run 'num_replicas' times to obtain statistics and then its performance. Once the process ends, it returns:
-            - solution: The sequence of search operators that compose the metaheuristic.
-            - performance: The metric value defined in ``get_performance``.
-            - encoded_solution: The sequence of indices that correspond to the search operators.
-            - historicals: A dictionary of information from each step. Its keys are: 'step', 'encoded_solution',
-            'solution', 'performances', and 'details'. The latter, 'details', is also a dictionary which contains
-            information about each replica carried out with the metaheuristic. Its fields are 'historical' (each
-            iteration that the metaheuristic has performed), 'fitness', 'positions', and 'statistics'.
-
-        :returns: solution (list), performance (float), encoded_solution (list)
-
-        TODO: Update
-        """
-
-        # %% INITIALISER PART
-
-        # PERTURBATOR (GENERATOR): Create the initial solution
-        if mode == 'static':
-            current_solution = self._obtain_candidate_solution()
-        else:  # mode == 'dynamic'
-            current_solution = self._obtain_candidate_solution(1)
-
-        # Evaluate this solution
-        current_performance, current_details = self.evaluate_candidate_solution(current_solution)
-
-        # SELECTOR: Initialise the best solution and its performance
-        best_solution = np.copy(current_solution)
-        best_performance = current_performance
-
-        # Save this historical register, step = 0
-        _save_step(0, dict(encoded_solution=best_solution, performance=best_performance,
-                           details=current_details), self.file_label)
-
-        # Initialise some additional variables
-        step = 0
-        stag_counter = 0
-        action = None
-        historical_current = [current_performance]
-        historical_best = [current_performance]
-        if using == 'SA':
-            initial_energy = np.abs(current_performance) + 1
-            temperature = self.parameters['max_temperature']
-
-        # Print the first status update, step = 0
-        if self.parameters['verbose']:
-            print('{} :: Step: {:4d}, Action: {:12s}, Temp: {:.2e}, Card: {:3d}, Perf: {:.2e} [Initial]'.format(
-                self.file_label, step, 'None', temperature, len(current_solution), current_performance))
-
-        # We assume that with only one operator, it never reaches the solution. So, we check finalisation ending iter
-
-        # Perform a metaheuristic (now, Simulated Annealing) as hyper-heuristic process
-        while step < self.parameters['num_steps']:  # for step in range(1, self.parameters['num_steps'] + 1):
             # Update step and temperature
             step += 1
             temperature = self._obtain_temperature(step, self.parameters['temperature_scheme'])
@@ -595,17 +492,9 @@ class Hyperheuristic:
 
             historical_current.append(current_performance)
             historical_best.append(best_performance)
-
             # Add ending mark
             if self.parameters['verbose']:
                 print('')
-
-            # FINALISATOR (hard): Finalise due to other concepts
-            if (using == 'SA') and (
-                    self._check_finalisation(step, stag_counter, temperature - self.parameters['min_temperature'])):
-                break
-            elif (using != 'SA') and (self._check_finalisation(step, stag_counter)):
-                break
 
         # Print the best one
         if self.parameters['verbose']:
@@ -613,6 +502,140 @@ class Hyperheuristic:
 
         # Return the best solution found and its details
         return best_solution, best_performance, historical_current, historical_best
+
+    def _solve_dynamic(self):
+        """
+        Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each meatheuristic is
+        run 'num_replicas' times to obtain statistics and then its performance. Once the process ends, it returns:
+            - solution: The sequence of search operators that compose the metaheuristic.
+            - performance: The metric value defined in ``get_performance``.
+            - encoded_solution: The sequence of indices that correspond to the search operators.
+            - historicals: A dictionary of information from each step. Its keys are: 'step', 'encoded_solution',
+            'solution', 'performances', and 'details'. The latter, 'details', is also a dictionary which contains
+            information about each replica carried out with the metaheuristic. Its fields are 'historical' (each
+            iteration that the metaheuristic has performed), 'fitness', 'positions', and 'statistics'.
+
+        :returns: solution (list), performance (float), encoded_solution (list)
+
+        TODO: Update
+        """
+        # Call the metaheuristic
+        mh = Metaheuristic(self.problem, num_agents=self.parameters['num_agents'], num_iterations=self.num_iterations)
+
+        # %% INITIALISER PART
+        mh.apply_initialiser()
+
+        # Extract the population and fitness values, and their best values
+        current_fitness = np.copy(mh.pop.global_best_fitness)
+        current_position = np.copy(mh.pop.rescale_back(mh.pop.global_best_position))
+
+        # Heuristic sets
+        tabu_set = list()
+        active_set = list()
+
+        # Initialise some additional variables
+        candidate_enc_so = list()  # This is a list of up to 1-length
+        current_sequence = [-1]
+
+        best_fitness = [current_fitness]
+        best_position = [current_position]
+        fitness_data = [np.copy(mh.pop.fitness)]
+        positions_data = [np.copy(mh.pop.get_positions())]
+
+        step = 0
+        stag_counter = 0
+        temperature = self.parameters['max_temperature']
+
+        # # Print the first status update, step = 0
+        # if self.parameters['verbose']:
+        #     print('{} :: Step: {:4d}, Action: {:12s}, Temp: {:.2e}, Card: {:3d}, Perf: {:.2e} [Initial]'.format(
+        #         self.file_label, step, 'None', temperature, len(current_solution), current_performance))
+
+        # We assume that with only one operator, it never reaches the solution. So, we check finalisation ending iter
+
+        # FINALISATOR: Finalise due to other concepts
+        while not self._check_finalisation(step, stag_counter):
+            # Update the current set
+            self.current_space = np.union1d(np.setdiff1d(self.current_space, candidate_enc_so), active_set).astype(int)
+
+            # Pick randomly a simple heuristic, action = (next_action), initially 'Add'
+            if len(candidate_enc_so) == 0:
+                candidate_enc_so = self._obtain_candidate_solution(sol=1)
+            else:
+                candidate_enc_so = self._obtain_candidate_solution(sol=candidate_enc_so, action='Restart')
+
+            # Prepare before evaluate the last search operator and apply it
+            candidate_search_operator = self.get_operators([candidate_enc_so[-1]])
+            perturbators, selectors = Operators.process_operators(candidate_search_operator)
+
+            mh.apply_search_operator(perturbators[0], selectors[0])
+
+            # Extract the population and fitness values, and their best values
+            current_fitness = np.copy(mh.pop.global_best_fitness)
+            current_position = np.copy(mh.pop.rescale_back(mh.pop.global_best_position))
+
+            # Print update
+            if self.parameters['verbose']:
+                print('{} :: Step: {:3d}, Trial: {:3d}, SO: {:30s}, currPerf: {:.2e}, candPerf: {:.2e}, asl: {:3d}'.format(
+                    self.file_label, step, stag_counter,
+                    candidate_search_operator[0][0] + ' & ' + candidate_search_operator[0][2][:4],
+                    best_fitness[-1], current_fitness, len(self.current_space)), end=' ')
+
+            # If the candidate solution is better or equal than the current best solution
+            if current_fitness < best_fitness[-1]:
+
+                # Reward the selected search operator from the heuristic set
+                active_set.append(candidate_enc_so)
+
+                # Update the current sequence and its characteristics
+                current_sequence.append(candidate_enc_so[-1])
+
+                best_fitness.append(current_fitness)
+                best_position.append(current_position)
+                fitness_data.append(np.copy(mh.pop.fitness))
+                positions_data.append(np.copy(mh.pop.get_positions()))
+
+                # Update counters
+                step += 1
+                stag_counter = 0
+                candidate_enc_so = list()
+
+                # Add improvement mark
+                if self.parameters['verbose']:
+                    print('+', end='')
+
+            else:  # Then try another search operator
+
+                # Remove the selected search operator from the heuristic set
+                tabu_set.append(candidate_enc_so)
+
+                # Revert the modification to the population in the mh object
+                mh.pop.revert_positions()
+
+                # Update stagnation
+                stag_counter += 1
+
+            # Add ending mark
+            if self.parameters['verbose']:
+                print('')
+
+        # Save this historical register / instead of the step as prefix, we use the time
+        _save_step(datetime.now().strftime('%Hh%Mm%Ss'),
+                   dict(encoded_solution=np.array(current_sequence),
+                        best_positions=np.double(best_position),
+                        best_fitnesss=np.double(best_fitness),
+                        # details=dict(
+                        #     positions=np.double(positions_data),
+                        #     fitness=np.double(fitness_data))
+                        ),
+                   self.file_label)
+
+        # Print the best one
+        if self.parameters['verbose']:
+            print('\nBest fitness: {},\nBest position: {}'.format(current_fitness, current_position))
+
+        # Return the best solution found and its details
+        return current_position, current_fitness, current_sequence, best_fitness
 
     def evaluate_candidate_solution(self, encoded_sequence):
         """
@@ -630,7 +653,9 @@ class Hyperheuristic:
         search_operators = self.get_operators(encoded_sequence)
 
         # Initialise the historical registers
-        historical_data = list();  fitness_data = list();  position_data = list()
+        historical_data = list()
+        fitness_data = list()
+        position_data = list()
 
         # Run the metaheuristic several times
         for rep in range(1, self.parameters['num_replicas'] + 1):
@@ -767,7 +792,7 @@ def _save_step(step_number, variable_to_save, prefix=''):
     """
     This method saves all the information corresponding to specific step.
 
-    :param int step_number:
+    :param int|str step_number:
         Value of the current step in the hyper-heuristic procedure. If it is not a hyper-heuristic, this integer
         corresponds to operator index.
     :param dict variable_to_save:
@@ -791,7 +816,7 @@ def _save_step(step_number, variable_to_save, prefix=''):
         _create_path(folder_name)
 
     # Create a new file for this step
-    with open(folder_name + f'/{step_number}-' + now.strftime('%m_%d_%Y_%H_%M_%S') + '.json', 'w') as json_file:
+    with open(folder_name + f'/{str(step_number)}-' + now.strftime('%m_%d_%Y_%H_%M_%S') + '.json', 'w') as json_file:
         json.dump(variable_to_save, json_file, cls=jt.NumpyEncoder)
 
 
@@ -808,16 +833,18 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     # problem = bf.Sphere(2)
-    problem = bf.Stochastic(2)
+    problem = bf.Stochastic(10)
     problem.set_search_range(-10, 10)
 
     q = Hyperheuristic(problem=problem.get_formatted_problem(),
                        file_label="{}-{}D".format(problem.func_name, problem.variable_num))
-    _, _, c, b = q.run()
+    # q.parameters['num_steps'] = 10
+    # q.parameters['stagnation_percentage'] = 0.5
+    _, _, c, b = q.solve('dynamic')
 
     fi = plt.figure()
     plt.plot(b, 's')
-    plt.plot(c, 'o')
+    # plt.plot(c, 'o')
     fi.show()
 
     # import numpy as np
