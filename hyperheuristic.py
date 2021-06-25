@@ -174,14 +174,15 @@ class Hyperheuristic:
             initial_cardinality = self.min_cardinality if self.parameters['as_mh'] else \
                 (self.max_cardinality + self.min_cardinality) // 2
 
-            encoded_neighbour = np.random.choice(self.num_operators if self.weights_array else self.current_space,
-                                                 initial_cardinality, replace=self.parameters['repeat_operators'],
-                                                 p=self.weights_array)
+            encoded_neighbour = np.random.choice(
+                self.current_space if (self.weights_array is None) else self.num_operators ,
+                initial_cardinality, replace=self.parameters['repeat_operators'], p=self.weights_array)
 
         # If sol is an integer, assume that it refers to the cardinality
         elif isinstance(sol, int):
-            encoded_neighbour = np.random.choice(self.num_operators if self.weights_array else self.current_space, sol,
-                                                 replace=self.parameters['repeat_operators'], p=self.weights_array)
+            encoded_neighbour = np.random.choice(
+                self.current_space if (self.weights_array is None) else self.num_operators, sol,
+                replace=self.parameters['repeat_operators'], p=self.weights_array)
 
         elif isinstance(sol, (np.ndarray, list)):
             sol = np.array(sol)
@@ -519,123 +520,137 @@ class Hyperheuristic:
 
         TODO: Update
         """
-        # Call the metaheuristic
-        mh = Metaheuristic(self.problem, num_agents=self.parameters['num_agents'], num_iterations=self.num_iterations)
+        sequence_per_repetition = list()
+        fitness_per_repetition = list()
+        for rep in range(1, self.parameters['num_replicas'] + 1):
+            # Call the metaheuristic
+            # mh = None
+            mh = Metaheuristic(self.problem, num_agents=self.parameters['num_agents'], num_iterations=self.num_iterations)
 
-        # %% INITIALISER PART
-        mh.apply_initialiser()
-
-        # Extract the population and fitness values, and their best values
-        current_fitness = np.copy(mh.pop.global_best_fitness)
-        current_position = np.copy(mh.pop.rescale_back(mh.pop.global_best_position))
-
-        # Heuristic sets
-        tabu_set = list()
-        active_set = list()
-
-        # Initialise some additional variables
-        candidate_enc_so = list()  # This is a list of up to 1-length
-        current_sequence = [-1]
-
-        best_fitness = [current_fitness]
-        best_position = [current_position]
-        fitness_data = [np.copy(mh.pop.fitness)]
-        positions_data = [np.copy(mh.pop.get_positions())]
-
-        step = 0
-        stag_counter = 0
-        temperature = self.parameters['max_temperature']
-
-        # # Print the first status update, step = 0
-        # if self.parameters['verbose']:
-        #     print('{} :: Step: {:4d}, Action: {:12s}, Temp: {:.2e}, Card: {:3d}, Perf: {:.2e} [Initial]'.format(
-        #         self.file_label, step, 'None', temperature, len(current_solution), current_performance))
-
-        # We assume that with only one operator, it never reaches the solution. So, we check finalisation ending iter
-
-        # FINALISATOR: Finalise due to other concepts
-        while not self._check_finalisation(step, stag_counter):
-            # Update the current set
-            self.current_space = np.union1d(np.setdiff1d(self.current_space, candidate_enc_so), active_set).astype(int)
-
-            # Pick randomly a simple heuristic, action = (next_action), initially 'Add'
-            if len(candidate_enc_so) == 0:
-                candidate_enc_so = self._obtain_candidate_solution(sol=1)
-            else:
-                candidate_enc_so = self._obtain_candidate_solution(sol=candidate_enc_so, action='Restart')
-
-            # Prepare before evaluate the last search operator and apply it
-            candidate_search_operator = self.get_operators([candidate_enc_so[-1]])
-            perturbators, selectors = Operators.process_operators(candidate_search_operator)
-
-            mh.apply_search_operator(perturbators[0], selectors[0])
+            # %% INITIALISER PART
+            mh.apply_initialiser()
 
             # Extract the population and fitness values, and their best values
             current_fitness = np.copy(mh.pop.global_best_fitness)
             current_position = np.copy(mh.pop.rescale_back(mh.pop.global_best_position))
 
-            # Print update
-            if self.parameters['verbose']:
-                print('{} :: Step: {:3d}, Trial: {:3d}, SO: {:30s}, currPerf: {:.2e}, candPerf: {:.2e}, asl: {:3d}'.format(
-                    self.file_label, step, stag_counter,
-                    candidate_search_operator[0][0] + ' & ' + candidate_search_operator[0][2][:4],
-                    best_fitness[-1], current_fitness, len(self.current_space)), end=' ')
+            # Heuristic sets
+            # tabu_set = list()
+            # active_set = list()
+            self.current_space = np.arange(self.num_operators)
 
-            # If the candidate solution is better or equal than the current best solution
-            if current_fitness < best_fitness[-1]:
+            # Initialise some additional variables
+            candidate_enc_so = list()  # This is a list of up to 1-length
+            current_sequence = [-1]
 
-                # Reward the selected search operator from the heuristic set
-                active_set.append(candidate_enc_so)
+            best_fitness = [current_fitness]
+            best_position = [current_position]
+            fitness_data = [np.copy(mh.pop.fitness)]
+            positions_data = [np.copy(mh.pop.get_positions())]
 
-                # Update the current sequence and its characteristics
-                current_sequence.append(candidate_enc_so[-1])
+            step = 0
+            stag_counter = 0
+            temperature = self.parameters['max_temperature']
 
-                best_fitness.append(current_fitness)
-                best_position.append(current_position)
-                fitness_data.append(np.copy(mh.pop.fitness))
-                positions_data.append(np.copy(mh.pop.get_positions()))
+            # # Print the first status update, step = 0
+            # if self.parameters['verbose']:
+            #     print('{} :: Step: {:4d}, Action: {:12s}, Temp: {:.2e}, Card: {:3d}, Perf: {:.2e} [Initial]'.format(
+            #         self.file_label, step, 'None', temperature, len(current_solution), current_performance))
 
-                # Update counters
-                step += 1
-                stag_counter = 0
-                candidate_enc_so = list()
+            # We assume that with only one operator, it never reaches the solution. So, we check finalisation ending itr
 
-                # Add improvement mark
+            # FINALISATOR: Finalise due to other concepts
+            while not self._check_finalisation(step, stag_counter):
+                # Update the current set
+                # self.current_space = np.union1d(np.setdiff1d(self.current_space, tabu_set), active_set).astype(int)
+
+                # Pick randomly a simple heuristic, action = (next_action), initially 'Add'
+                if len(candidate_enc_so) == 0:
+                    candidate_enc_so = self._obtain_candidate_solution(sol=1)
+                else:
+                    candidate_enc_so = self._obtain_candidate_solution(sol=candidate_enc_so, action='Restart')
+
+                # Prepare before evaluate the last search operator and apply it
+                candidate_search_operator = self.get_operators([candidate_enc_so[-1]])
+                perturbators, selectors = Operators.process_operators(candidate_search_operator)
+
+                mh.apply_search_operator(perturbators[0], selectors[0])
+
+                # Extract the population and fitness values, and their best values
+                current_fitness = np.copy(mh.pop.global_best_fitness)
+                current_position = np.copy(mh.pop.rescale_back(mh.pop.global_best_position))
+
+                # Print update
                 if self.parameters['verbose']:
-                    print('+', end='')
+                    print('{} :: Step: {:3d}, Trial: {:3d}, SO: {:30s}, currPerf: {:.2e}, candPerf: {:.2e}, csl: {:3d}'.format(
+                        self.file_label, step, stag_counter,
+                        candidate_search_operator[0][0] + ' & ' + candidate_search_operator[0][2][:4],
+                        best_fitness[-1], current_fitness, len(self.current_space)), end=' ')
 
-            else:  # Then try another search operator
+                # If the candidate solution is better or equal than the current best solution
+                if current_fitness < best_fitness[-1]:
 
-                # Remove the selected search operator from the heuristic set
-                tabu_set.append(candidate_enc_so)
+                    # Reward the selected search operator from the heuristic set
+                    # active_set.append(candidate_enc_so)
 
-                # Revert the modification to the population in the mh object
-                mh.pop.revert_positions()
+                    # Update the current sequence and its characteristics
+                    current_sequence.append(candidate_enc_so[-1])
 
-                # Update stagnation
-                stag_counter += 1
+                    best_fitness.append(current_fitness)
+                    best_position.append(current_position)
+                    fitness_data.append(np.copy(mh.pop.fitness))
+                    positions_data.append(np.copy(mh.pop.get_positions()))
 
-            # Add ending mark
+                    # Update counters
+                    step += 1
+                    stag_counter = 0
+                    candidate_enc_so = list()
+
+                    # Add improvement mark
+                    if self.parameters['verbose']:
+                        print('+', end='')
+
+                else:  # Then try another search operator
+
+                    # Remove the selected search operator from the heuristic set
+                    # tabu_set.append(candidate_enc_so)
+                    # if len(tabu_set) > 100:
+                    #     del tabu_set[0]
+
+                    # Revert the modification to the population in the mh object
+                    mh.pop.revert_positions()
+
+                    # Update stagnation
+                    stag_counter += 1
+
+                # Add ending mark
+                if self.parameters['verbose']:
+                    print('')
+
+            # Save this historical register
+            _save_step(rep,  # datetime.now().strftime('%Hh%Mm%Ss'),
+                       dict(encoded_solution=np.array(current_sequence),
+                            best_fitness=np.double(best_fitness),
+                            best_positions=np.double(best_position),
+                            # details=dict(
+                            #     positions=np.double(positions_data),
+                            #     fitness=np.double(fitness_data))
+                            ),
+                       self.file_label)
+
+            # Print the best one
             if self.parameters['verbose']:
-                print('')
+                print('\nBest fitness: {},\nBest position: {}'.format(current_fitness, current_position))
 
-        # Save this historical register / instead of the step as prefix, we use the time
-        _save_step(datetime.now().strftime('%Hh%Mm%Ss'),
-                   dict(encoded_solution=np.array(current_sequence),
-                        best_positions=np.double(best_position),
-                        best_fitnesss=np.double(best_fitness),
-                        # details=dict(
-                        #     positions=np.double(positions_data),
-                        #     fitness=np.double(fitness_data))
-                        ),
-                   self.file_label)
+            #  Update the repetition register
+            sequence_per_repetition.append(np.double(current_sequence).astype(int).tolist())
+            fitness_per_repetition.append(np.double(best_fitness).tolist())
 
-        # Print the best one
-        if self.parameters['verbose']:
-            print('\nBest fitness: {},\nBest position: {}'.format(current_fitness, current_position))
+            # Update the weights for learning purposes
+            self._update_weights(sequence_per_repetition, fitness_per_repetition)
 
         # Return the best solution found and its details
-        return current_position, current_fitness, current_sequence, best_fitness
+        return fitness_per_repetition, sequence_per_repetition
 
     def evaluate_candidate_solution(self, encoded_sequence):
         """
@@ -785,6 +800,23 @@ class Hyperheuristic:
                     Med=np.median(raw_data),
                     MAD=st.median_abs_deviation(raw_data))
 
+    def _update_weights(self, sequences=None, fitness_values=None):
+        if self.weights_array is None:
+            # create the weights array using a uniform distribution
+            self.weights_array = np.ones(self.num_operators) / self.num_operators
+        else:
+            # update the array [q.count(x) for x in range(min(q), 1 + max(q))]
+            pre_weights = list()
+
+            for seq in (sequences if isinstance(sequences, list) and isinstance(sequences[0], list) else [sequences]):
+                pre_weights.append([seq.count(idseq) for idseq in range(self.num_operators)])
+
+            multipliers = np.exp(-np.argsort([y[-1] for y in (
+                fitness_values if isinstance(fitness_values, list) and isinstance(fitness_values[0], list) else
+                [fitness_values])])).reshape((len(fitness_values), 1))
+            weights = np.sum(np.exp(np.array(pre_weights)) * multipliers, axis=0)
+            self.weights_array = weights / weights.sum()
+
 
 # %% ADDITIONAL TOOLS
 
@@ -831,21 +863,37 @@ if __name__ == '__main__':
     # import hyperheuristic as hh
     import benchmark_func as bf
     import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+    import numpy as np
 
-    # problem = bf.Sphere(2)
-    problem = bf.Stochastic(10)
+    # problem = bf.Sphere(50)
+    problem = bf.Stochastic(50)
     problem.set_search_range(-10, 10)
 
     q = Hyperheuristic(problem=problem.get_formatted_problem(),
                        file_label="{}-{}D".format(problem.func_name, problem.variable_num))
-    # q.parameters['num_steps'] = 10
-    # q.parameters['stagnation_percentage'] = 0.5
-    _, _, c, b = q.solve('dynamic')
+    q.parameters['num_steps'] = 100
+    q.parameters['stagnation_percentage'] = 1
+    q.parameters['num_replicas'] = 50
+    fitprep, seqrep = q.solve('dynamic')
 
+    colours = plt.cm.hot_r(np.linspace(0, 1, len(fitprep)))
     fi = plt.figure()
-    plt.plot(b, 's')
+    plt.ion()
+    for x, c in zip(fitprep, colours):
+        plt.plot(x, '-o', color=c)
+    plt.ioff()
     # plt.plot(c, 'o')
     fi.show()
+
+    fig = plt.figure(figsize=(6, 6))
+    ax = fig.add_subplot(111, projection='3d')
+    plt.ion()
+    for x, y, c in zip(fitprep, seqrep, colours):
+        ax.plot3D(range(len(x)), y, x, 'o-', color=c)
+
+    plt.ioff()
+    plt.show()
 
     # import numpy as np
     #

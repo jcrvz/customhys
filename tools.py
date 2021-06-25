@@ -11,6 +11,7 @@ import json
 from subprocess import call
 import numpy as np
 from tqdm import tqdm
+import pandas as pd
 
 
 def printmsk(var, level=1, name=None):
@@ -330,6 +331,29 @@ def read_json(data_file):
     return data
 
 
+def merge_json(data_folder, list_of_fields=None):
+    # data_folder = './data_files/raw/Sphere-50D'
+
+    final_file_path = data_folder + '/' + data_folder.split('/')[-1] + '.csv'
+    file_names = [element for element in os.listdir(data_folder) if ((not element.startswith('.'))
+                                                                     and element.endswith('.json'))]
+
+    temporal_pretable = list()
+
+    for file_name in tqdm(file_names):
+
+        temporal_data = read_json(data_folder + '/' + file_name)
+
+        if (len(temporal_pretable) == 0) and (not list_of_fields):
+            list_of_fields = list(temporal_data.keys())
+
+        temporal_pretable.append({field: temporal_data[field] for field in list_of_fields})
+
+    table = pd.DataFrame(temporal_pretable).to_csv(final_file_path)
+    print('Merged file saved: {}'.format(final_file_path))
+
+
+
 class NumpyEncoder(json.JSONEncoder):
     """
     Numpy encoder
@@ -340,6 +364,6 @@ class NumpyEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-if __name__ == '__main__':
-    # preprocess_files(main_folder='data_files/raw/', output_name='brute_force')
-    preprocess_files(main_folder='data_files/raw/', output_name='first_test')
+# if __name__ == '__main__':
+#     # preprocess_files(main_folder='data_files/raw/', output_name='brute_force')
+#     preprocess_files(main_folder='data_files/raw/', output_name='first_test')
