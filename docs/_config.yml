@@ -1,3 +1,6 @@
+plugins:
+  - jekyll-readme-index
+
 theme: jekyll-theme-minimal
 readme_index:
   enabled:          true
