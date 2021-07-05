@@ -2899,6 +2899,9 @@ def choose_problem(problem_name=None, num_dimensions=None):
     :rtype:
     """
     if problem_name and num_dimensions:
-        return eval('{}({})'.format(problem_name, num_dimensions))
+        if problem_name == '<random>':
+            return eval('{}({})'.format(__all__[np.random.randint(0, len(__all__))], num_dimensions))
+        else:
+            return eval('{}({})'.format(problem_name, num_dimensions))
     else:
         print(f'You need to choose one problem. Available problems: {__all__}')

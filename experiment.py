@@ -290,7 +290,7 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
 
     # Check if there is a special case of function name: <choose_randomly>
     prob_config['functions'] = [
-        bf.__all__[hyp.np.random.randint(0, len(bf.__all__))] if fun == '<choose_randomly>' else fun
+        bf.__all__[hyp.np.random.randint(0, len(bf.__all__))] if fun in ['<choose_randomly>', '<random>'] else fun
         for fun in prob_config['functions']]
 
     return exp_config, hh_config, prob_config
