@@ -73,21 +73,22 @@ class Hyperheuristic:
 
         # Assign default values
         if not parameters:
-            parameters = dict(cardinality=3,  # Max. numb. of SOs in MHs, lvl:1
-                              cardinality_min=1,  # Min. numb. of SOs in MHs, lvl:1
-                              num_iterations=100,  # Iterations a MH performs, lvl:1
-                              num_agents=30,  # Agents in population,     lvl:1
-                              as_mh=False,  # HH sequence as a MH?,     lvl:2
-                              num_replicas=50,  # Replicas per each MH,     lvl:2
-                              num_steps=200,  # Trials per HH step,       lvl:2
-                              stagnation_percentage=0.37,  # Stagnation percentage,    lvl:2
-                              max_temperature=1,  # Initial temperature (SA), lvl:2
-                              min_temperature=1e-6,  # Min temperature (SA),     lvl:2
-                              cooling_rate=1e-3,  # Cooling rate (SA),        lvl:2
-                              temperature_scheme='fast',  # Temperature updating (SA),lvl:2 *new
-                              acceptance_scheme='exponential',  # Acceptance mode,      lvl:2 *new
-                              repeat_operators=True,  # Allow repeating SOs inSeq,lvl:2
-                              verbose=True)  # Verbose process,          lvl:2
+            parameters = dict(cardinality=3,                    # Max. numb. of SOs in MHs, lvl:1
+                              cardinality_min=1,                # Min. numb. of SOs in MHs, lvl:1
+                              num_iterations=100,               # Iterations a MH performs, lvl:1
+                              num_agents=30,                    # Agents in population,     lvl:1
+                              as_mh=False,                      # HH sequence as a MH?,     lvl:2
+                              num_replicas=50,                  # Replicas per each MH,     lvl:2
+                              num_steps=200,                    # Trials per HH step,       lvl:2
+                              stagnation_percentage=0.37,       # Stagnation percentage,    lvl:2
+                              max_temperature=1,                # Initial temperature (SA), lvl:2
+                              min_temperature=1e-6,             # Min temperature (SA),     lvl:2
+                              cooling_rate=1e-3,                # Cooling rate (SA),        lvl:2
+                              temperature_scheme='fast',        # Temperature updating (SA),lvl:2 *new
+                              acceptance_scheme='exponential',  # Acceptance mode,          lvl:2 *new
+                              allow_weight_matrix=True,         # Weight matrix,            lvl:2 *new
+                              repeat_operators=True,            # Allow repeating SOs inSeq,lvl:2
+                              verbose=True)                     # Verbose process,          lvl:2
         # Read the problem
         if problem:
             self.problem = problem
@@ -99,7 +100,8 @@ class Hyperheuristic:
         self.current_space = np.arange(self.num_operators)
 
         # Read the weights (if it is entered)
-        self.weights_array = weights_array
+        self.weights = weights_array
+        self.transition_matrix = None
 
         # Initialise other parameters
         self.parameters = parameters
@@ -109,6 +111,8 @@ class Hyperheuristic:
         self.min_cardinality = None
         self.num_iterations = None
         self.toggle_seq_as_meta(parameters['as_mh'])
+
+        self._trial_overflow = False
 
     def toggle_seq_as_meta(self, as_mh=None):
         if as_mh is None:
@@ -154,7 +158,7 @@ class Hyperheuristic:
         # Decide (randomly) which action to do
         return np.random.choice(available_options)
 
-    def _obtain_candidate_solution(self, sol=None, action=None):
+    def _obtain_candidate_solution(self, sol=None, action=None, operators_weights=None):
         """
         This method selects a new candidate solution for a given candidate solution ``sol``. To do so, it
         adds, deletes, or perturbate a randomly chosen operator index from the current sequence. If this sequence
@@ -174,17 +178,22 @@ class Hyperheuristic:
             initial_cardinality = self.min_cardinality if self.parameters['as_mh'] else \
                 (self.max_cardinality + self.min_cardinality) // 2
 
+            operators_weights = operators_weights if operators_weights else self.weights
+
             encoded_neighbour = np.random.choice(
-                self.current_space if (self.weights_array is None) else self.num_operators,
-                initial_cardinality, replace=self.parameters['repeat_operators'], p=self.weights_array)
+                self.current_space if (operators_weights is None) else self.num_operators, initial_cardinality,
+                replace=self.parameters['repeat_operators'], p=operators_weights)
 
         # If sol is an integer, assume that it refers to the cardinality
         elif isinstance(sol, int):
+            operators_weights = self.weights if operators_weights is None else operators_weights
+
             encoded_neighbour = np.random.choice(
-                self.current_space if (self.weights_array is None) else self.num_operators, sol,
-                replace=self.parameters['repeat_operators'], p=self.weights_array)
+                self.current_space if (operators_weights is None) else self.num_operators, sol,
+                replace=self.parameters['repeat_operators'], p=operators_weights)
 
         elif isinstance(sol, (np.ndarray, list)):
+            # TODO: fix to consider the inputted weight array
             sol = np.array(sol)
             current_cardinality = len(sol)
 
@@ -352,15 +361,17 @@ class Hyperheuristic:
         else:  # Greedy
             return delta <= 0.0
 
+    def __stagnation_check(self, stag_counter):
+        return stag_counter > (self.parameters['stagnation_percentage'] * self.parameters['num_steps'])
+
     def _check_finalisation(self, step, stag_counter, *args):
         """ TODO: update this information and check if step should be here
         General finalisation approach implemented for the methodology working as a hyper-heuristic. It mainly depends on
         `step` (current iteration number) and `stag_counter` (current stagnation iteration number). There are other
          variables that can be considered such as `temperature`. These additional variables must be args[0] <= 0.0.
         """
-        return (step > self.parameters['num_steps']) or (
-                stag_counter > (self.parameters['stagnation_percentage'] * self.parameters['num_steps'])) or (
-                   any([var <= 0.0 for var in args]))
+        return (step > self.parameters['num_steps']) or self.__stagnation_check(stag_counter) or \
+               (any([var <= 0.0 for var in args]))
 
     # def _check_improvement(self, new_perf, best_perf, new_pos, best_pos):
     #     if self.parameters['as_mh']:
@@ -524,6 +535,7 @@ class Hyperheuristic:
         sequence_per_repetition = list()
         fitness_per_repetition = list()
         weights_per_repetition = list()
+
         for rep in range(1, self.parameters['num_replicas'] + 1):
             # Call the metaheuristic
             # mh = None
@@ -566,12 +578,21 @@ class Hyperheuristic:
             while not self._check_finalisation(step, stag_counter):
                 # Update the current set
                 # self.current_space = np.union1d(np.setdiff1d(self.current_space, tabu_set), active_set).astype(int)
-
-                # Pick randomly a simple heuristic, action = (next_action), initially 'Add'
-                if len(candidate_enc_so) == 0:
-                    candidate_enc_so = self._obtain_candidate_solution(sol=1)
+                if self._trial_overflow:
+                    possible_transitions = np.ones(self.num_operators) / self.num_operators
                 else:
-                    candidate_enc_so = self._obtain_candidate_solution(sol=candidate_enc_so, action='Restart')
+                    if not ((self.parameters['allow_weight_matrix'] is None) or (self.transition_matrix is None)):
+                        possible_transitions = self.transition_matrix[current_sequence[-1] + 1, 1:]
+                        transitions_sum = possible_transitions.sum()
+                        if transitions_sum > 0.0:
+                            possible_transitions = np.nan_to_num(possible_transitions / transitions_sum)
+                        else:
+                            possible_transitions = np.ones(self.num_operators) / self.num_operators
+                    else:
+                        possible_transitions = self.weights
+
+                # Pick randomly a simple heuristic
+                candidate_enc_so = self._obtain_candidate_solution(sol=1, operators_weights=possible_transitions)
 
                 # Prepare before evaluate the last search operator and apply it
                 candidate_search_operator = self.get_operators([candidate_enc_so[-1]])
@@ -586,9 +607,9 @@ class Hyperheuristic:
                 # Print update
                 if self.parameters['verbose']:
                     print(
-                        '{} :: Step: {:3d}, Trial: {:3d}, SO: {:30s}, currPerf: {:.2e}, candPerf: {:.2e}, '
+                        '{} :: Rep: {:3d}, Step: {:3d}, Trial: {:3d}, SO: {:30s}, currPerf: {:.2e}, candPerf: {:.2e}, '
                         'csl: {:3d}'.format(
-                            self.file_label, step, stag_counter,
+                            self.file_label, rep, step, stag_counter,
                             candidate_search_operator[0][0] + ' & ' + candidate_search_operator[0][2][:4],
                             best_fitness[-1], current_fitness, len(self.current_space)), end=' ')
 
@@ -609,7 +630,8 @@ class Hyperheuristic:
                     # Update counters
                     step += 1
                     stag_counter = 0
-                    candidate_enc_so = list()
+                    self._trial_overflow = False
+                    # candidate_enc_so = list()
 
                     # Add improvement mark
                     if self.parameters['verbose']:
@@ -627,6 +649,10 @@ class Hyperheuristic:
 
                     # Update stagnation
                     stag_counter += 1
+
+                    if self.__stagnation_check(stag_counter) and (not self._trial_overflow):
+                        stag_counter = 0
+                        self._trial_overflow = True
 
                 # Add ending mark
                 if self.parameters['verbose']:
@@ -653,8 +679,8 @@ class Hyperheuristic:
 
             # Update the weights for learning purposes
             weimatrix = self._update_weights(sequence_per_repetition, fitness_per_repetition, **kw_weighting_params)
-            weights_per_repetition.append(self.weights_array)
-            # print('w = ({})'.format(self.weights_array))
+            weights_per_repetition.append(self.weights)
+            # print('w = ({})'.format(self.weights))
 
         # Return the best solution found and its details
         return fitness_per_repetition, sequence_per_repetition, weights_per_repetition, weimatrix
@@ -807,7 +833,7 @@ class Hyperheuristic:
                     Med=np.median(raw_data),
                     MAD=st.median_abs_deviation(raw_data))
 
-    def _update_weights(self, sequences=None, fitness_values=None, include_fitness=False, sampling_portion=0.37):
+    def _update_weights(self, sequences=None, fitness_values=None, include_fitness=False, sample_portion=0.37):
         # *** uncomment when necessary
         # if not (isinstance(sequences, list) and isinstance(sequences[0], list)):
         #     sequences = [sequences]
@@ -815,18 +841,18 @@ class Hyperheuristic:
         # if not (isinstance(fitness_values, list) and isinstance(fitness_values[0], list)):
         #     fitness_values = [fitness_values]
 
-        if (self.weights_array is None) or (len(sequences) < int(self.parameters['num_replicas'] * sampling_portion
-                                                                 ) if sequences is not None else False):
+        if (self.weights is None) or (len(sequences) < int(self.parameters['num_replicas'] * sample_portion
+                                                           ) if sequences is not None else False):
             # create the weights array using a uniform distribution
-            self.weights_array = np.ones(self.num_operators) / self.num_operators
+            self.weights = np.ones(self.num_operators) / self.num_operators
             self.__total_count_weights = self.num_operators
         else:
             # update the array [q.count(x) for x in range(min(q), 1 + max(q))]
             pre_weights = list()
             weimat = np.zeros([self.num_operators + 1] * 2)
 
-            for seq in sequences:
-                pre_weights.append([seq.count(idseq) for idseq in range(self.num_operators)])
+            # for seq in sequences:
+            #     pre_weights.append([seq.count(idseq) for idseq in range(self.num_operators)])
             # seq = sequences[-1] if isinstance(sequences, list) and isinstance(sequences[0], list) else sequences
 
             if include_fitness:
@@ -835,25 +861,32 @@ class Hyperheuristic:
                 #     [fitness_values])])).reshape((len(fitness_values), 1))
                 # contribution = - np.exp(-fit[-1] / (fit[0] - fit[-1])) * np.diff(fit) / len(seq)
                 # contribution = - np.diff(fit) / ((1 + np.abs(fit[-1])) * len(seq) / self.parameters['num_steps'])
-                # weights = np.sum((np.array(pre_weights)) * multipliers, axis=0) #+ self.weights_array
-                ranking = np.exp(-np.argsort([fit[-1] for fit in fitness_values]))
+                # weights = np.sum((np.array(pre_weights)) * multipliers, axis=0) #+ self.weights
+
+                ranking = np.exp(1 - st.rankdata([fit[-1] for fit in fitness_values]))
                 contribution = [-np.diff(fit) / len(fit) for fit in fitness_values]
+                # contribution = [-np.diff(fit) for fit in fitness_values]
 
                 for seq, cont, rank in zip(sequences, contribution, ranking):
                     pre_weights.append(np.double([cont[jt.listfind(seq[1:], idseq)].sum() if idseq in seq else 0
-                                                  for idseq in range(self.num_operators)]) * rank / len(seq))
+                                                  for idseq in range(self.num_operators)]) * rank)
 
-                    for from_op, to_op in zip(seq[:-1], seq[1:]):
-                        weimat[from_op, to_op] += cont[seq[1:].index(to_op)] * rank / len(seq)
+                    for from_op, to_op, tran in zip(seq[:-1], seq[1:], cont):
+                        weimat[from_op + 1, to_op + 1] += tran * rank
 
             else:
-                # weights = np.sum(np.array(pre_weights), axis=0) #+ self.weights_array
+                # weights = np.sum(np.array(pre_weights), axis=0) #+ self.weights
                 for seq in sequences:
-                    pre_weights.append(np.double([seq.count(idseq) for idseq in range(self.num_operators)]))
+                    pre_weights.append(np.double([seq.count(idseq) for idseq in range(self.num_operators)]) / len(seq))
+                    # pre_weights.append(np.double([seq.count(idseq) for idseq in range(self.num_operators)]))
 
-            weights = np.array(pre_weights).sum(axis=0) + self.weights_array * self.__total_count_weights
-            self.__total_count_weights = weights.sum()
-            self.weights_array = weights / self.__total_count_weights
+                    for from_op, to_op in zip(seq[:-1], seq[1:]):
+                        weimat[from_op + 1, to_op + 1] += 1
+
+            weights_to_update = np.array(pre_weights).sum(axis=0) + self.weights * self.__total_count_weights
+            self.__total_count_weights = weights_to_update.sum()
+            self.weights = weights_to_update / self.__total_count_weights
+            self.transition_matrix = weimat
 
             return weimat
 
@@ -905,29 +938,36 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
     import numpy as np
+    import scipy.stats as st
+    from pprint import pprint
     from sklearn.preprocessing import normalize
 
-    # problem = bf.Sphere(50)
-    # problem = bf.choose_problem('<random>', 50)
-    problem = bf.Stochastic(50)
+    problem = bf.Sphere(50)
+    # problem = bf.Stochastic(50)
+    # problem = bf.choose_problem('<random>', np.random.randint(2, 50))
     problem.set_search_range(-10, 10)
 
     q = Hyperheuristic(problem=problem.get_formatted_problem(),
-                       heuristic_space='short_collection.txt',
-                       file_label="{}-{}D".format(problem.func_name, problem.variable_num))
+                       heuristic_space='short_collection.txt',  # 'default.txt',  #
+                       file_label="{}-{}D-ft-stag".format(problem.func_name, problem.variable_num))
     q.parameters['num_steps'] = 100
-    q.parameters['stagnation_percentage'] = 1
+    q.parameters['stagnation_percentage'] = 0.5
     q.parameters['num_replicas'] = 100
+    sampling_portion = 0.37
     fitprep, seqrep, weights, weimatrix = q.solve('dynamic', {
         'include_fitness': True,
-        'sampling_portion': 0.37
+        'sample_portion': sampling_portion
     })
+    q.parameters['allow_weight_matrix'] = True
 
     colours = plt.cm.rainbow(np.linspace(0, 1, len(fitprep)))
     fi = plt.figure()
     plt.ion()
     for x, c in zip(fitprep, colours):
         plt.plot(x, '-o', color=c)
+
+    plt.xlabel('Step')
+    plt.ylabel('Fitness')
     plt.ioff()
     # plt.plot(c, 'o')
     fi.show()
@@ -947,7 +987,7 @@ if __name__ == '__main__':
     new_colours = plt.cm.jet(np.linspace(0, 1, len(fitprep)))
     figu = plt.figure(figsize=(6, 6))
     ax = figu.add_subplot(111, projection='3d')
-    ax.view_init(elev=41, azim=28)
+    ax.view_init(elev=30, azim=30)
     plt.ion()
 
     for w, i, c in zip(weights, range(1, len(fitprep) + 1), new_colours):
@@ -966,6 +1006,23 @@ if __name__ == '__main__':
     plt.xlabel('(to) Search Operator')
     plt.show()
 
+    last_fitness_values = np.array([ff[-1] for ff in fitprep])
+    midpoint = int(q.parameters['num_replicas'] * sampling_portion)
+
+    plt.figure()
+    plt.boxplot([last_fitness_values[:midpoint], last_fitness_values[midpoint:], last_fitness_values],
+                showmeans=True)
+    plt.xticks(range(1, 4), ['Train', 'Test/Refine', 'All'])
+    plt.ylabel('Fitness')
+    plt.xlabel('Sample')
+    plt.show()
+
+
+    # print('Stats for all fitness values:')
+    pprint(st.describe(last_fitness_values)._asdict())
+    #
+    # print('Stats for train fitness values:')
+    # pprint(st.describe(last_fitness_values)._asdict())
     # import numpy as np
     #
     # qq, _ = q._obtain_candidate_solution(np.array(range(2)), 'RemoveMany')
