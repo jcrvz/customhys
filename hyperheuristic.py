@@ -87,6 +87,7 @@ class Hyperheuristic:
                               temperature_scheme='fast',        # Temperature updating (SA),lvl:2 *new
                               acceptance_scheme='exponential',  # Acceptance mode,          lvl:2 *new
                               allow_weight_matrix=True,         # Weight matrix,            lvl:2 *new
+                              trial_overflow=False,             # Trial overflow policy,    lvl:2 *new
                               repeat_operators=True,            # Allow repeating SOs inSeq,lvl:2
                               verbose=True)                     # Verbose process,          lvl:2
         # Read the problem
@@ -112,7 +113,6 @@ class Hyperheuristic:
         self.num_iterations = None
         self.toggle_seq_as_meta(parameters['as_mh'])
 
-        self._trial_overflow = False
 
     def toggle_seq_as_meta(self, as_mh=None):
         if as_mh is None:
@@ -370,7 +370,8 @@ class Hyperheuristic:
         `step` (current iteration number) and `stag_counter` (current stagnation iteration number). There are other
          variables that can be considered such as `temperature`. These additional variables must be args[0] <= 0.0.
         """
-        return (step > self.parameters['num_steps']) or self.__stagnation_check(stag_counter) or \
+        return (step > self.parameters['num_steps']) or (
+                self.__stagnation_check(stag_counter) and not self.parameters['trial_overflow']) or \
                (any([var <= 0.0 for var in args]))
 
     # def _check_improvement(self, new_perf, best_perf, new_pos, best_pos):
@@ -578,7 +579,7 @@ class Hyperheuristic:
             while not self._check_finalisation(step, stag_counter):
                 # Update the current set
                 # self.current_space = np.union1d(np.setdiff1d(self.current_space, tabu_set), active_set).astype(int)
-                if self._trial_overflow:
+                if self.parameters['trial_overflow'] and self.__stagnation_check(stag_counter):
                     possible_transitions = np.ones(self.num_operators) / self.num_operators
                 else:
                     if not ((self.parameters['allow_weight_matrix'] is None) or (self.transition_matrix is None)):
@@ -649,10 +650,6 @@ class Hyperheuristic:
 
                     # Update stagnation
                     stag_counter += 1
-
-                    if self.__stagnation_check(stag_counter) and (not self._trial_overflow):
-                        stag_counter = 0
-                        self._trial_overflow = True
 
                 # Add ending mark
                 if self.parameters['verbose']:
@@ -942,23 +939,24 @@ if __name__ == '__main__':
     from pprint import pprint
     from sklearn.preprocessing import normalize
 
-    problem = bf.Sphere(50)
-    # problem = bf.Stochastic(50)
+    # problem = bf.Sphere(50)
+    problem = bf.Stochastic(50)
     # problem = bf.choose_problem('<random>', np.random.randint(2, 50))
     problem.set_search_range(-10, 10)
 
     q = Hyperheuristic(problem=problem.get_formatted_problem(),
-                       heuristic_space='short_collection.txt',  # 'default.txt',  #
-                       file_label="{}-{}D-ft-stag".format(problem.func_name, problem.variable_num))
+                       heuristic_space='default.txt',  # 'short_collection.txt',
+                       file_label="{}-{}D-xx long".format(problem.func_name, problem.variable_num))
     q.parameters['num_steps'] = 100
     q.parameters['stagnation_percentage'] = 0.5
     q.parameters['num_replicas'] = 100
     sampling_portion = 0.37
     fitprep, seqrep, weights, weimatrix = q.solve('dynamic', {
-        'include_fitness': True,
+        'include_fitness': False,
         'sample_portion': sampling_portion
     })
-    q.parameters['allow_weight_matrix'] = True
+    q.parameters['allow_weight_matrix'] = False
+    q.parameters['trial_overflow'] = False
 
     colours = plt.cm.rainbow(np.linspace(0, 1, len(fitprep)))
     fi = plt.figure()
