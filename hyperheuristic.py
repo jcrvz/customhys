@@ -583,12 +583,17 @@ class Hyperheuristic:
                     possible_transitions = np.ones(self.num_operators) / self.num_operators
                 else:
                     if not ((self.parameters['allow_weight_matrix'] is None) or (self.transition_matrix is None)):
-                        possible_transitions = self.transition_matrix[current_sequence[-1] + 1, 1:]
-                        transitions_sum = possible_transitions.sum()
-                        if transitions_sum > 0.0:
-                            possible_transitions = np.nan_to_num(possible_transitions / transitions_sum)
+                        # possible_transitions = self.transition_matrix[current_sequence[-1] + 1, 1:]
+                        if step < self.transition_matrix.shape[0]:
+                            possible_transitions = self.transition_matrix[step]
+                            transitions_sum = possible_transitions.sum()
+                            if transitions_sum > 0.0:
+                                possible_transitions = np.nan_to_num(possible_transitions / transitions_sum)
+                            else:
+                                possible_transitions = np.ones(self.num_operators) / self.num_operators
                         else:
                             possible_transitions = np.ones(self.num_operators) / self.num_operators
+
                     else:
                         possible_transitions = self.weights
 
@@ -872,13 +877,30 @@ class Hyperheuristic:
                         weimat[from_op + 1, to_op + 1] += tran * rank
 
             else:
-                # weights = np.sum(np.array(pre_weights), axis=0) #+ self.weights
-                for seq in sequences:
-                    pre_weights.append(np.double([seq.count(idseq) for idseq in range(self.num_operators)]) / len(seq))
-                    # pre_weights.append(np.double([seq.count(idseq) for idseq in range(self.num_operators)]))
+                # Get the matrix from sequences of num_operators -by- num_steps. Empties are filled with -2
+                max_length = max([len(x) for x in sequences])
+                mat_seq = np.array([np.array([*seq, *[-2] * (max_length - len(seq))]) for seq in sequences],
+                                   dtype=object).T
 
-                    for from_op, to_op in zip(seq[:-1], seq[1:]):
-                        weimat[from_op + 1, to_op + 1] += 1
+                all_operators_including_empty = [-2.5, *np.arange(-2, self.num_operators) + 0.5]
+                current_hist = list()
+                for ii_step in range(max_length):
+                    # Disregard the -2 and -1 operators (empty and initialiser)
+                    densities, _ = np.histogram(mat_seq[ii_step].tolist(), bins=all_operators_including_empty)
+                    temp_hist = densities[2:]
+                    if np.sum(temp_hist) > 0.0:
+                        current_hist.append(np.ndarray.tolist(temp_hist / np.sum(temp_hist)))
+                    else:
+                        current_hist.append(np.ndarray.tolist(np.ones(self.num_operators) / self.num_operators))
+
+                weimat = np.array(current_hist)
+
+                # weights = np.sum(np.array(pre_weights), axis=0) #+ self.weights
+                # for seq in sequences:
+                #     pre_weights.append(np.double([seq.count(idseq) for idseq in range(self.num_operators)]) / len(seq))
+                #
+                #     for from_op, to_op in zip(seq[:-1], seq[1:]):
+                #         weimat[from_op + 1, to_op + 1] += 1
 
             weights_to_update = np.array(pre_weights).sum(axis=0) + self.weights * self.__total_count_weights
             self.__total_count_weights = weights_to_update.sum()
@@ -938,28 +960,59 @@ if __name__ == '__main__':
     import scipy.stats as st
     from pprint import pprint
     from sklearn.preprocessing import normalize
+    import seaborn as sns
 
     # problem = bf.Sphere(50)
-    problem = bf.Stochastic(50)
+    # problem = bf.Stochastic(50)
+    # problem = bf.CosineMixture(50)
+    # problem = bf.Whitley(50)
+    # problem = bf.Schwefel220(50)
+    problem = bf.Sargan(45)
+
     # problem = bf.choose_problem('<random>', np.random.randint(2, 50))
-    problem.set_search_range(-10, 10)
+    # problem.set_search_range(-10, 10)
 
     q = Hyperheuristic(problem=problem.get_formatted_problem(),
-                       heuristic_space='default.txt',  # 'short_collection.txt',
-                       file_label="{}-{}D-xx long".format(problem.func_name, problem.variable_num))
+                       heuristic_space='short_collection.txt',  # 'default.txt',  #
+                       file_label="{}-{}D".format(problem.func_name, problem.variable_num))
     q.parameters['num_steps'] = 100
     q.parameters['stagnation_percentage'] = 0.5
     q.parameters['num_replicas'] = 100
-    sampling_portion = 0.37
+    sampling_portion = 0.37  # 0.37
     fitprep, seqrep, weights, weimatrix = q.solve('dynamic', {
         'include_fitness': False,
         'sample_portion': sampling_portion
     })
-    q.parameters['allow_weight_matrix'] = False
-    q.parameters['trial_overflow'] = False
+    q.parameters['allow_weight_matrix'] = True
+    q.parameters['trial_overflow'] = True
 
     colours = plt.cm.rainbow(np.linspace(0, 1, len(fitprep)))
-    fi = plt.figure()
+
+    # ------- Figure 0
+    # fi0 = plt.figure()
+    # plt.ion()
+    #
+    # # Find max length
+    # max_length = max([x.__len__() for x in seqrep])
+    # mat_seq = np.array([np.array([*x, *[-2] * (max_length - len(x))]) for x in seqrep], dtype=object).T
+    #
+    # bins = np.arange(-2, 30 + 1)
+    # current_hist = list()
+    # for step in range(max_length):
+    #     dummy_hist = np.histogram(mat_seq[step, :], bins=bins, density=True)[0][2:]
+    #     current_hist.append(dummy_hist)
+    #
+    # sns.heatmap(np.array(current_hist).T, linewidths=.5, cmap='hot_r')
+    #
+    # plt.xlabel('Step')
+    # # plt.yticks(range(30, step=2), range(start=1, stop=31, step=2))
+    # plt.ylabel('Operator')
+    # plt.ioff()
+    # # plt.plot(c, 'o')
+    # plt.show()
+
+    # ------- Figure 1
+    fi1 = plt.figure()
     plt.ion()
     for x, c in zip(fitprep, colours):
         plt.plot(x, '-o', color=c)
@@ -968,10 +1021,11 @@ if __name__ == '__main__':
     plt.ylabel('Fitness')
     plt.ioff()
     # plt.plot(c, 'o')
-    fi.show()
+    fi1.show()
 
-    fig = plt.figure(figsize=(6, 6))
-    ax = fig.add_subplot(111, projection='3d')
+    # ------- Figure 2
+    fi2 = plt.figure(figsize=(6, 6))
+    ax = fi2.add_subplot(111, projection='3d')
     plt.ion()
     for x, y, c in zip(fitprep, seqrep, colours):
         ax.plot3D(range(1, 1 + len(x)), y, x, 'o-', color=c)
@@ -982,28 +1036,33 @@ if __name__ == '__main__':
     plt.ioff()
     plt.show()
 
+    # ------- Figure 3
     new_colours = plt.cm.jet(np.linspace(0, 1, len(fitprep)))
-    figu = plt.figure(figsize=(6, 6))
-    ax = figu.add_subplot(111, projection='3d')
-    ax.view_init(elev=30, azim=30)
-    plt.ion()
 
-    for w, i, c in zip(weights, range(1, len(fitprep) + 1), new_colours):
-        ax.plot3D([i] * len(w), range(1, len(w) + 1), w, '-', color=c)
+    # fi3 = plt.figure(figsize=(6, 6))
+    # ax = fi3.add_subplot(111, projection='3d')
+    # ax.view_init(elev=30, azim=30)
+    # plt.ion()
+    #
+    # for w, i, c in zip(weights, range(1, len(fitprep) + 1), new_colours):
+    #     ax.plot3D([i] * len(w), range(1, len(w) + 1), w, '-', color=c)
+    #
+    # plt.xlabel('Repetition')
+    # plt.ylabel('Search Operator')
+    # ax.set_zlabel('Weight')
+    #
+    # plt.ioff()
+    # plt.show()
 
-    plt.xlabel('Repetition')
-    plt.ylabel('Search Operator')
-    ax.set_zlabel('Weight')
+    # ------- Figure 4
+    if weimatrix is not None:
+        plt.figure()
+        plt.imshow(weimatrix.T, cmap="hot_r")
+        plt.xlabel('Step')
+        plt.ylabel('Search Operator')
+        plt.show()
 
-    plt.ioff()
-    plt.show()
-
-    plt.figure()
-    plt.imshow(normalize(weimatrix), cmap="hot_r")
-    plt.ylabel('(from) Search Operator')
-    plt.xlabel('(to) Search Operator')
-    plt.show()
-
+    # ------- Figure 5
     last_fitness_values = np.array([ff[-1] for ff in fitprep])
     midpoint = int(q.parameters['num_replicas'] * sampling_portion)
 
@@ -1015,9 +1074,8 @@ if __name__ == '__main__':
     plt.xlabel('Sample')
     plt.show()
 
-
     # print('Stats for all fitness values:')
-    pprint(st.describe(last_fitness_values)._asdict())
+    pprint(st.describe(last_fitness_values[:midpoint])._asdict())
     #
     # print('Stats for train fitness values:')
     # pprint(st.describe(last_fitness_values)._asdict())
