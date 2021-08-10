@@ -195,12 +195,17 @@ class Experiment:
                                 file_label=label, weights_array=weights)
 
         # Run the HH according to the specified type
-        if self.exp_config['experiment_type'] == 'brute_force':
+        if self.exp_config['experiment_type'] in ["brute_force", 'bf']:
             hh.brute_force()
-        elif self.exp_config['experiment_type'] == 'basic_metaheuristics':
+        elif self.exp_config['experiment_type'] == ["basic_metaheuristics", 'bmh']:
             hh.basic_metaheuristics()
-        else:
-            hh.run()
+        elif self.exp_config['experiment_type'] in ["online_learning", 'dynamic']:
+            _ = hh.solve('dynamic', {
+                'include_fitness': self.exp_config["include_fitness"],
+                'learning_portion': self.exp_config["learning_portion"]
+            })
+        else:  # 'static_run'
+            _ = hh.solve('static')
 
         # TODO: Add pre-label to know the current status
         print(label + ' done!')
@@ -259,7 +264,9 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
             'weights_dataset_file': None,  # 'operators_weights.json',
             'use_parallel': True,
             'parallel_pool_size': None,  # Default
-            'auto_collection_num_vals': 5
+            'auto_collection_num_vals': 5,
+            'learning_portion': 0.37,
+            'include_fitness': False
         }, exp_config)
 
     # Load the default hyper-heuristic configuration and compare it with hh_cfg
@@ -277,7 +284,9 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
             'cardinality_min': 1,
             'repeat_operators': True,
             'as_mh': True,
-            'verbose': False
+            'verbose': False,
+            'trial_overflow': True,
+            'allow_weight_matrix': True
         }, hh_config)
 
     # Load the default problem configuration and compare it with prob_config

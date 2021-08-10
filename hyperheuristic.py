@@ -660,17 +660,6 @@ class Hyperheuristic:
                 if self.parameters['verbose']:
                     print('')
 
-            # Save this historical register
-            _save_step(rep,  # datetime.now().strftime('%Hh%Mm%Ss'),
-                       dict(encoded_solution=np.array(current_sequence),
-                            best_fitness=np.double(best_fitness),
-                            best_positions=np.double(best_position),
-                            # details=dict(
-                            #     positions=np.double(positions_data),
-                            #     fitness=np.double(fitness_data))
-                            ),
-                       self.file_label)
-
             # Print the best one
             if self.parameters['verbose']:
                 print('\nBest fitness: {},\nBest position: {}'.format(current_fitness, current_position))
@@ -680,12 +669,24 @@ class Hyperheuristic:
             fitness_per_repetition.append(np.double(best_fitness).tolist())
 
             # Update the weights for learning purposes
-            weimatrix = self._update_weights(sequence_per_repetition, fitness_per_repetition, **kw_weighting_params)
+            weight_matrix = self._update_weights(sequence_per_repetition, fitness_per_repetition, **kw_weighting_params)
             weights_per_repetition.append(self.weights)
             # print('w = ({})'.format(self.weights))
 
+            # Save this historical register
+            _save_step(rep,  # datetime.now().strftime('%Hh%Mm%Ss'),
+                       dict(encoded_solution=np.array(current_sequence),
+                            best_fitness=np.double(best_fitness),
+                            best_positions=np.double(best_position),
+                            details=dict(
+                                fitness_per_rep=fitness_per_repetition,
+                                sequence_per_rep=sequence_per_repetition,
+                                weight_matrix=weight_matrix
+                            )),
+                       self.file_label)
+
         # Return the best solution found and its details
-        return fitness_per_repetition, sequence_per_repetition, weights_per_repetition, weimatrix
+        return fitness_per_repetition, sequence_per_repetition, weights_per_repetition, weight_matrix
 
     def evaluate_candidate_solution(self, encoded_sequence):
         """
@@ -835,7 +836,7 @@ class Hyperheuristic:
                     Med=np.median(raw_data),
                     MAD=st.median_abs_deviation(raw_data))
 
-    def _update_weights(self, sequences=None, fitness_values=None, include_fitness=False, sample_portion=0.37):
+    def _update_weights(self, sequences=None, fitness_values=None, include_fitness=False, learning_portion=0.37):
         # *** uncomment when necessary
         # if not (isinstance(sequences, list) and isinstance(sequences[0], list)):
         #     sequences = [sequences]
@@ -843,7 +844,7 @@ class Hyperheuristic:
         # if not (isinstance(fitness_values, list) and isinstance(fitness_values[0], list)):
         #     fitness_values = [fitness_values]
 
-        if (self.weights is None) or (len(sequences) < int(self.parameters['num_replicas'] * sample_portion
+        if (self.weights is None) or (len(sequences) < int(self.parameters['num_replicas'] * learning_portion
                                                            ) if sequences is not None else False):
             # create the weights array using a uniform distribution
             self.weights = np.ones(self.num_operators) / self.num_operators
@@ -981,7 +982,7 @@ if __name__ == '__main__':
     sampling_portion = 0.37  # 0.37
     fitprep, seqrep, weights, weimatrix = q.solve('dynamic', {
         'include_fitness': False,
-        'sample_portion': sampling_portion
+        'learning_portion': sampling_portion
     })
     q.parameters['allow_weight_matrix'] = True
     q.parameters['trial_overflow'] = True
