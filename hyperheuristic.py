@@ -960,22 +960,29 @@ if __name__ == '__main__':
     import numpy as np
     import scipy.stats as st
     from pprint import pprint
+    import tikzplotlib as ptx
     from sklearn.preprocessing import normalize
     import seaborn as sns
+    plt.rcParams.update({'font.size': 18,
+                         "text.usetex": True,
+                         "font.family": "serif"})
 
-    # problem = bf.Sphere(50)
+    problem = bf.Sphere(50)
     # problem = bf.Stochastic(50)
     # problem = bf.CosineMixture(50)
     # problem = bf.Whitley(50)
     # problem = bf.Schwefel220(50)
-    problem = bf.Sargan(45)
+    # problem = bf.Sargan(45)
 
     # problem = bf.choose_problem('<random>', np.random.randint(2, 50))
     # problem.set_search_range(-10, 10)
 
+    file_label = "{}-{}D".format(problem.func_name, problem.variable_num)
+
     q = Hyperheuristic(problem=problem.get_formatted_problem(),
                        heuristic_space='short_collection.txt',  # 'default.txt',  #
-                       file_label="{}-{}D".format(problem.func_name, problem.variable_num))
+                       file_label=file_label)
+    q.parameters['num_agents'] = 30
     q.parameters['num_steps'] = 100
     q.parameters['stagnation_percentage'] = 0.5
     q.parameters['num_replicas'] = 100
@@ -1012,16 +1019,18 @@ if __name__ == '__main__':
     # # plt.plot(c, 'o')
     # plt.show()
 
+    folder_name = './figures-to-export/'
+
     # ------- Figure 1
-    fi1 = plt.figure()
+    fi1 = plt.figure(figsize=(8, 3))
     plt.ion()
     for x, c in zip(fitprep, colours):
         plt.plot(x, '-o', color=c)
-
     plt.xlabel('Step')
     plt.ylabel('Fitness')
     plt.ioff()
     # plt.plot(c, 'o')
+    plt.savefig(folder_name + file_label + "_FitnesStep" + ".svg", dpi=333, transparent=True)
     fi1.show()
 
     # ------- Figure 2
@@ -1035,6 +1044,7 @@ if __name__ == '__main__':
     plt.ylabel('Search Operator')
     ax.set_zlabel('Fitness')
     plt.ioff()
+    plt.savefig(folder_name + file_label + "_SOStepFitness" + ".svg", dpi=333, transparent=True)
     plt.show()
 
     # ------- Figure 3
@@ -1057,10 +1067,12 @@ if __name__ == '__main__':
 
     # ------- Figure 4
     if weimatrix is not None:
-        plt.figure()
+        # plt.figure()
+        plt.figure(figsize=(8, 3))
         plt.imshow(weimatrix.T, cmap="hot_r")
         plt.xlabel('Step')
         plt.ylabel('Search Operator')
+        plt.savefig(folder_name + file_label + "_SOStep" + ".svg", dpi=333, transparent=True)
         plt.show()
 
     # ------- Figure 5
@@ -1068,11 +1080,13 @@ if __name__ == '__main__':
     midpoint = int(q.parameters['num_replicas'] * sampling_portion)
 
     plt.figure()
+    plt.figure(figsize=(8, 3))
     plt.boxplot([last_fitness_values[:midpoint], last_fitness_values[midpoint:], last_fitness_values],
                 showmeans=True)
     plt.xticks(range(1, 4), ['Train', 'Test/Refine', 'All'])
     plt.ylabel('Fitness')
     plt.xlabel('Sample')
+    plt.savefig(folder_name + file_label + "FitnessSample" + ".svg", dpi=333, transparent=True)
     plt.show()
 
     # print('Stats for all fitness values:')

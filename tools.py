@@ -182,7 +182,9 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
 
     for subfolder in subfolder_names:
         # Extract the problem name and the number of dimensions
-        problem_name, dimensions, date_str = subfolder.split('-')
+        subfolder_splitted_name = subfolder.split('-')
+        problem_name = subfolder_splitted_name[0]
+        dimensions = subfolder_splitted_name[1]
 
         # Store information about this subfolder
         data['problem'].append(problem_name)
@@ -210,6 +212,10 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
             # Initialise iteration data
             file_data = {'operator_id': list(), 'performance': list(), 'statistics': list(),
                          'fitness': list(), 'hist_fitness': list()}  # !remove -> 'hist_fitness': list()
+        elif kind == "unknown":
+            last_step = int(file_names[-1].split('-')[0])
+            label_operator = 'step'
+            file_data = dict()
         else:
             last_step = int(file_names[-1].split('-')[0])
             label_operator = 'step'
@@ -218,8 +224,7 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
                          'encoded_solution': list(), 'hist_fitness': list(), 'hist_positions': list()}
 
         # Walk on the subfolder's files
-        for file_name in tqdm(file_names, desc='{} {}, last={}'.format(
-                problem_name, dimensions, last_step)):
+        for file_name in tqdm(file_names, desc='{} {}, last={}'.format(problem_name, dimensions, last_step)):
 
             # Extract the iteration number and time
             operator_id = int(file_name.split('-')[0])
@@ -228,27 +233,43 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
             with open(temporal_full_path + '/' + file_name, 'r') as json_file:
                 temporal_data = json.load(json_file)
 
-            # Store information in the corresponding variables
-            file_data[label_operator].append(operator_id)
-            file_data['performance'].append(temporal_data['performance'])
-            if kind == 'brute_force':
-                file_data['statistics'].append(temporal_data['statistics'])
-                file_data['fitness'].append(temporal_data['fitness'])
-            elif kind == 'basic_metaheuristic':
-                file_data['statistics'].append(temporal_data['statistics'])
-                file_data['fitness'].append(temporal_data['fitness'])
-                file_data['hist_fitness'].append(temporal_data['historical'])
-            else:
-                file_data['encoded_solution'].append(temporal_data['encoded_solution'])
-                file_data['statistics'].append(temporal_data['details']['statistics'])
-
-                # Only save the historical fitness values when operator_id is the largest one
+            if kind == "unknown":
                 if only_laststep and operator_id == last_step:
-                    file_data['hist_fitness'] = [x['fitness'] for x in temporal_data['details']['historical']]
-                    file_data['hist_positions'] = [x['position'] for x in temporal_data['details']['historical']]
+                    for field in list(temporal_data.keys()):
+                        file_data[field] = temporal_data[field]
                 else:
-                    file_data['hist_fitness'].append([x['fitness'] for x in temporal_data['details']['historical']])
-                    file_data['hist_positions'].append([x['position'] for x in temporal_data['details']['historical']])
+                    if len(file_data) == 0:  # The first entering
+                        # Read the available fields from the first file and create the corresponding lists
+                        fields_to_fill = list(temporal_data.keys())
+                        for field in fields_to_fill:
+                            file_data[field] = list()
+
+                    # Fill the file_data
+                    for field in fields_to_fill:
+                            file_data[field].append(temporal_data[field])
+
+            else:
+                # Store information in the corresponding variables
+                file_data[label_operator].append(operator_id)
+                file_data['performance'].append(temporal_data['performance'])
+                if kind == 'brute_force':
+                    file_data['statistics'].append(temporal_data['statistics'])
+                    file_data['fitness'].append(temporal_data['fitness'])
+                elif kind == 'basic_metaheuristic':
+                    file_data['statistics'].append(temporal_data['statistics'])
+                    file_data['fitness'].append(temporal_data['fitness'])
+                    file_data['hist_fitness'].append(temporal_data['historical'])
+                else:
+                    file_data['encoded_solution'].append(temporal_data['encoded_solution'])
+                    file_data['statistics'].append(temporal_data['details']['statistics'])
+
+                    # Only save the historical fitness values when operator_id is the largest one
+                    if only_laststep and operator_id == last_step:
+                        file_data['hist_fitness'] = [x['fitness'] for x in temporal_data['details']['historical']]
+                        file_data['hist_positions'] = [x['position'] for x in temporal_data['details']['historical']]
+                    else:
+                        file_data['hist_fitness'].append([x['fitness'] for x in temporal_data['details']['historical']])
+                        file_data['hist_positions'].append([x['position'] for x in temporal_data['details']['historical']])
 
             # Following information can be included but resulting files will be larger
             # file_data['fitness'].append(temporal_data['details']['fitness'])
