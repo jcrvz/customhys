@@ -1312,7 +1312,6 @@ if __name__ == '__main__':
     last_fitness_values_nn = get_last_fitness(fitprep_nn)
     last_fitness_values_dyn = get_last_fitness(fitprep_dyn)
     midpoint = int(q.parameters['num_replicas'] * sampling_portion)
-    
 
     fi4 = plt.figure(figsize=(8, 3))
     plt.boxplot([last_fitness_values_nn, last_fitness_values_dyn[:midpoint], last_fitness_values_dyn[midpoint:], last_fitness_values],
