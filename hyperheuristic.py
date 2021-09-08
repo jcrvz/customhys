@@ -1174,7 +1174,7 @@ if __name__ == '__main__':
     q.parameters['num_agents'] = 30
     q.parameters['num_steps'] = 100
     q.parameters['stagnation_percentage'] = 0.5
-    q.parameters['num_replicas'] = 20
+    q.parameters['num_replicas'] = 200
     sampling_portion = 0.37  # 0.37
     
     # fitprep, seqrep, weights, weimatrix = q.solve('dynamic', {
@@ -1184,7 +1184,7 @@ if __name__ == '__main__':
     # q.parameters['allow_weight_matrix'] = True
     # q.parameters['trial_overflow'] = True
 
-    num_models_nn = 1
+    num_models_nn = 10
     num_replicas_nn = 10
     weimatrix = None
     fitprep_nn, seqrep_nn = q.solve('neural_network', {
