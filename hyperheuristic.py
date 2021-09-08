@@ -1306,6 +1306,7 @@ if __name__ == '__main__':
     #plt.boxplot([last_fitness_values[:midpoint], last_fitness_values[midpoint:], last_fitness_values],
     #            showmeans=True)
     #plt.xticks(range(1, 4), ['Train', 'Test/Refine', 'All'])
+    
     get_last_fitness = lambda fitlist: np.array([ff[-1] for ff in fitlist])
     last_fitness_values = get_last_fitness(fitprep)
     last_fitness_values_nn = get_last_fitness(fitprep_nn)
