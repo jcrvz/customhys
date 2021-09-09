@@ -698,6 +698,7 @@ class Hyperheuristic:
 
         sequence_per_repetition = list()
         fitness_per_repetition = list()
+        weights_per_repetition = list()
 
         for rep_model in range(1, kw_nn_params['num_models']+1):
             # Neural network
@@ -792,7 +793,25 @@ class Hyperheuristic:
                 sequence_per_repetition.append(np.double(current_sequence).astype(int).tolist())
                 fitness_per_repetition.append(np.double(best_fitness).tolist())
 
-        return fitness_per_repetition, sequence_per_repetition
+
+                # Update the weights for learning purposes
+                weight_matrix = self._update_weights(sequence_per_repetition, learning_portion=0)
+                weights_per_repetition.append(self.weights)
+                # print('w = ({})'.format(self.weights))
+
+                # Save this historical register
+                _save_step(rep,  # datetime.now().strftime('%Hh%Mm%Ss'),
+                        dict(encoded_solution=np.array(current_sequence),
+                                best_fitness=np.double(best_fitness),
+                                best_positions=np.double(best_position),
+                                details=dict(
+                                    fitness_per_rep=fitness_per_repetition,
+                                    sequence_per_rep=sequence_per_repetition,
+                                    weight_matrix=weight_matrix
+                                )),
+                        f"{self.file_label}-model_nn_{rep_model}")
+
+        return fitness_per_repetition, sequence_per_repetition, weights_per_repetition, weight_matrix
     
     def one_hot_encoding_sequence(self, seq):        
         if seq and seq[0] == -1:
@@ -1176,9 +1195,9 @@ if __name__ == '__main__':
                        heuristic_space='short_collection.txt',  # 'default.txt',  #
                        file_label=file_label)
     q.parameters['num_agents'] = 30
-    q.parameters['num_steps'] = 200
+    q.parameters['num_steps'] = 100
     q.parameters['stagnation_percentage'] = 0.8
-    q.parameters['num_replicas'] = 6
+    q.parameters['num_replicas'] = 20
     sampling_portion = 0.37  # 0.37
     
     # fitprep, seqrep, weights, weimatrix = q.solve('dynamic', {
@@ -1191,7 +1210,7 @@ if __name__ == '__main__':
     num_models_nn = 1
     num_replicas_nn = 10
     weimatrix = None
-    fitprep_nn, seqrep_nn = q.solve('neural_network', {
+    fitprep_nn, seqrep_nn, weights, weimatrix = q.solve('neural_network', {
         'num_models': num_models_nn,
         'num_replicas': num_replicas_nn, 
         'delete_idx': 4,
@@ -1213,11 +1232,9 @@ if __name__ == '__main__':
             'learning_portion': sampling_portion
         })
 
-    #fitprep = np.concatenate((fitprep_dyn, fitprep_nn))
     fitprep = fitprep_dyn.copy()
     for seq in fitprep_nn:
         fitprep.append(seq)
-    #seqrep = np.concatenate((seqrep_dyn, seqrep_nn))
     seqrep = seqrep_dyn.copy()
     for seq in seqrep_nn:
         seqrep.append(seq)
@@ -1277,21 +1294,22 @@ if __name__ == '__main__':
 
     # ------- Figure 3
     new_colours = plt.cm.jet(np.linspace(0, 1, len(fitprep)))
-
-    # fi3 = plt.figure(figsize=(6, 6))
-    # ax = fi3.add_subplot(111, projection='3d')
-    # ax.view_init(elev=30, azim=30)
-    # plt.ion()
-    #
-    # for w, i, c in zip(weights, range(1, len(fitprep) + 1), new_colours):
-    #     ax.plot3D([i] * len(w), range(1, len(w) + 1), w, '-', color=c)
-    #
-    # plt.xlabel('Repetition')
-    # plt.ylabel('Search Operator')
-    # ax.set_zlabel('Weight')
-    #
-    # plt.ioff()
-    # plt.show()
+    
+    """
+    fi3 = plt.figure(figsize=(6, 6))
+    ax = fi3.add_subplot(111, projection='3d')
+    ax.view_init(elev=30, azim=30)
+    plt.ion()
+    
+    for w, i, c in zip(weights, range(1, len(fitprep) + 1), new_colours):
+        ax.plot3D([i] * len(w), range(1, len(w) + 1), w, '-', color=c)
+    plt.xlabel('Repetition')
+    plt.ylabel('Search Operator')
+    ax.set_zlabel('Weight')
+    
+    plt.ioff()
+    fi3.show()
+    """
 
     # ------- Figure 4
     if weimatrix is not None:
