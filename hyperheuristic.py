@@ -19,6 +19,7 @@ from os import makedirs as _create_path
 from deprecated import deprecated
 import tensorflow as tf
 
+
 class Hyperheuristic:
     """
     This is the Hyperheuristic class, each object corresponds to a hyper-heuristic process implemented with a heuristic
@@ -73,23 +74,23 @@ class Hyperheuristic:
 
         # Assign default values
         if not parameters:
-            parameters = dict(cardinality=3,                    # Max. numb. of SOs in MHs, lvl:1
-                              cardinality_min=1,                # Min. numb. of SOs in MHs, lvl:1
-                              num_iterations=100,               # Iterations a MH performs, lvl:1
-                              num_agents=30,                    # Agents in population,     lvl:1
-                              as_mh=False,                      # HH sequence as a MH?,     lvl:2
-                              num_replicas=50,                  # Replicas per each MH,     lvl:2
-                              num_steps=200,                    # Trials per HH step,       lvl:2
-                              stagnation_percentage=0.37,       # Stagnation percentage,    lvl:2
-                              max_temperature=1,                # Initial temperature (SA), lvl:2
-                              min_temperature=1e-6,             # Min temperature (SA),     lvl:2
-                              cooling_rate=1e-3,                # Cooling rate (SA),        lvl:2
-                              temperature_scheme='fast',        # Temperature updating (SA),lvl:2 *new
+            parameters = dict(cardinality=3,  # Max. numb. of SOs in MHs, lvl:1
+                              cardinality_min=1,  # Min. numb. of SOs in MHs, lvl:1
+                              num_iterations=100,  # Iterations a MH performs, lvl:1
+                              num_agents=30,  # Agents in population,     lvl:1
+                              as_mh=False,  # HH sequence as a MH?,     lvl:2
+                              num_replicas=50,  # Replicas per each MH,     lvl:2
+                              num_steps=200,  # Trials per HH step,       lvl:2
+                              stagnation_percentage=0.37,  # Stagnation percentage,    lvl:2
+                              max_temperature=1,  # Initial temperature (SA), lvl:2
+                              min_temperature=1e-6,  # Min temperature (SA),     lvl:2
+                              cooling_rate=1e-3,  # Cooling rate (SA),        lvl:2
+                              temperature_scheme='fast',  # Temperature updating (SA),lvl:2 *new
                               acceptance_scheme='exponential',  # Acceptance mode,          lvl:2 *new
-                              allow_weight_matrix=True,         # Weight matrix,            lvl:2 *new
-                              trial_overflow=False,             # Trial overflow policy,    lvl:2 *new
-                              repeat_operators=True,            # Allow repeating SOs inSeq,lvl:2
-                              verbose=True)                     # Verbose process,          lvl:2
+                              allow_weight_matrix=True,  # Weight matrix,            lvl:2 *new
+                              trial_overflow=False,  # Trial overflow policy,    lvl:2 *new
+                              repeat_operators=True,  # Allow repeating SOs inSeq,lvl:2
+                              verbose=True)  # Verbose process,          lvl:2
         # Read the problem
         if problem:
             self.problem = problem
@@ -112,7 +113,6 @@ class Hyperheuristic:
         self.min_cardinality = None
         self.num_iterations = None
         self.toggle_seq_as_meta(parameters['as_mh'])
-
 
     def toggle_seq_as_meta(self, as_mh=None):
         if as_mh is None:
@@ -318,7 +318,7 @@ class Hyperheuristic:
 
         elif function == 'logarithmic':
             return self.parameters['max_temperature'] / (
-                        1 + (1 - self.parameters['cooling_rate']) * np.log(step_val + 1))
+                    1 + (1 - self.parameters['cooling_rate']) * np.log(step_val + 1))
 
         elif function == 'exponential':
             return self.parameters['max_temperature'] * np.power(1 - self.parameters['cooling_rate'], step_val)
@@ -690,9 +690,17 @@ class Hyperheuristic:
         # Return the best solution found and its details
         return fitness_per_repetition, sequence_per_repetition, weights_per_repetition, weight_matrix
 
-
     def _solve_neural_network(self, kw_nn_params):
+        """
+        This method perform the implementation using a previously trained nn
+
+        @requires:
+
+        @return:
+        TODO: Complete it
+        """
         # Reproducible
+        # TODO: Consider if this a good option. We need to think that these parameters must be defined outside
         tf.random.set_seed(1)
         np.random.seed(1)
 
@@ -700,14 +708,13 @@ class Hyperheuristic:
         fitness_per_repetition = list()
         weights_per_repetition = list()
 
-        for rep_model in range(1, kw_nn_params['num_models']+1):
+        for rep_model in range(1, kw_nn_params['num_models'] + 1):
             # Neural network
-            model = self.get_neural_network_model(kw_nn_params['model_params']);
+            model = self.get_neural_network_model(kw_nn_params['model_params'])
 
-            for rep in range(1, kw_nn_params['num_replicas']+1):
+            for rep in range(1, kw_nn_params['num_replicas'] + 1):
                 # Metaheuristic
-                mh = Metaheuristic(self.problem, num_agents=self.parameters['num_agents'], 
-                                    num_iterations=self.num_iterations)
+                mh = Metaheuristic(self.problem, num_agents=self.parameters['num_agents'], num_iterations=self.num_iterations)
 
                 # Initialiser
                 mh.apply_initialiser()
@@ -722,7 +729,7 @@ class Hyperheuristic:
                 # Initialise additional variables
                 candidate_enc_so = list()
                 current_sequence = [-1]
-                
+
                 best_fitness = [current_fitness]
                 best_position = [current_position]
 
@@ -734,7 +741,7 @@ class Hyperheuristic:
                 while not self._check_finalisation(step, stag_counter):
                     # Use model to predict ooperator weights
                     output_weights = self.predict_operator_weights(model, current_sequence.copy(), exclude_idx)
-                    
+
                     # Pick a simple heuristic and apply it
                     candidate_enc_so = self._obtain_candidate_solution(sol=1, operators_weights=output_weights)
                     candidate_search_operator = self.get_operators([candidate_enc_so[-1]])
@@ -793,7 +800,6 @@ class Hyperheuristic:
                 sequence_per_repetition.append(np.double(current_sequence).astype(int).tolist())
                 fitness_per_repetition.append(np.double(best_fitness).tolist())
 
-
                 # Update the weights for learning purposes
                 weight_matrix = self._update_weights(sequence_per_repetition, learning_portion=0)
                 weights_per_repetition.append(self.weights)
@@ -801,7 +807,7 @@ class Hyperheuristic:
 
                 # Save this historical register
                 _save_step(rep,  # datetime.now().strftime('%Hh%Mm%Ss'),
-                        dict(encoded_solution=np.array(current_sequence),
+                           dict(encoded_solution=np.array(current_sequence),
                                 best_fitness=np.double(best_fitness),
                                 best_positions=np.double(best_position),
                                 details=dict(
@@ -809,39 +815,40 @@ class Hyperheuristic:
                                     sequence_per_rep=sequence_per_repetition,
                                     weight_matrix=weight_matrix
                                 )),
-                        f"{self.file_label}-model_nn_{rep_model}")
+                           f"{self.file_label}-model_nn_{rep_model}")
 
         return fitness_per_repetition, sequence_per_repetition, weights_per_repetition, weight_matrix
-    
-    def one_hot_encoding_sequence(self, seq):        
+
+    def one_hot_encoding_sequence(self, seq):
         if seq and seq[0] == -1:
             seq.pop(0)
 
-        flatten = lambda arr: [item for list_arr in arr for item in list_arr] 
+        flatten = lambda arr: [item for list_arr in arr for item in list_arr]
 
         return flatten(tf.one_hot(indices=seq, depth=self.num_operators).numpy())
 
-    def get_neural_network_model(self, kw_model_params={}):
+    def get_neural_network_model(self, kw_model_params):
         """
             Params:
                 - load_model : Boolean that says if we want to load or not a model
-                - sequencesSize : The maximum lenght admisible for a dynamic sequence
-                - model_path : Directoy where the model will be saved
+                - sequencesSize : The maximum length admissible for a dynamic sequence
+                - model_path : Directory where the model will be saved
                 - kw_weighting_params : Params for _solve_dynamic
                 - save_model : Boolean that says if we want to save or not the model
         """
 
         model_directory = './ml_models/'
         model_path = '/'.join([model_directory, kw_model_params['model_path']])
+
+        # If there is a model, use it
         if kw_model_params['load_model'] and _check_path(model_path):
             return tf.keras.models.load_model(model_path)
 
-
-
         # Data generation
+        # TODO: Consider the fitness value for the training
         _, seqrep, _, _ = self._solve_dynamic(kw_model_params['kw_weighting_params'])
 
-        input_size = self.parameters['num_steps']*self.num_operators
+        input_size = self.parameters['num_steps'] * self.num_operators
 
         X, y = [], []
         for seq in seqrep:
@@ -850,14 +857,15 @@ class Hyperheuristic:
             while seq:
                 y.append(self.one_hot_encoding_sequence([seq.pop()]))
                 one_hot_encoded_sequence = self.one_hot_encoding_sequence(seq)
-                X.append(np.pad(one_hot_encoded_sequence, 
-                                (0, input_size-len(one_hot_encoded_sequence)), 
+                X.append(np.pad(one_hot_encoded_sequence,
+                                (0, input_size - len(one_hot_encoded_sequence)),
                                 'constant'))
         X, y = tf.constant(X), tf.constant(y)
 
         # Model
 
         # Create the model
+        # TODO: Add to the kwargs a field to specify the model somehow
         model = tf.keras.models.Sequential([
             tf.keras.Input(shape=input_size),
             tf.keras.layers.Dense(100, activation='relu'),
@@ -865,14 +873,14 @@ class Hyperheuristic:
             tf.keras.layers.Dense(100, activation='relu'),
             tf.keras.layers.Dense(self.num_operators, activation='softmax')
         ])
-        
+
         # Compile the model
         model.compile(loss=tf.keras.losses.CategoricalCrossentropy(),
-                    optimizer=tf.keras.optimizers.Adam(),
-                    metrics=['accuracy'])
+                      optimizer=tf.keras.optimizers.Adam(),
+                      metrics=['accuracy'])
 
         # Fit the model
-        model.fit(X, y, epochs = 100)
+        model.fit(X, y, epochs=100)
 
         # Save model
         if kw_model_params['save_model']:
@@ -881,14 +889,14 @@ class Hyperheuristic:
             model.save(model_path)
 
         return model
-    
+
     def predict_operator_weights(self, model, sequence, exclude_idx):
         # Use model to predict weights
         one_hot_encoded_sequence = self.one_hot_encoding_sequence(sequence)
-        model_input_size = self.parameters['num_steps']*self.num_operators
+        model_input_size = self.parameters['num_steps'] * self.num_operators
 
-        input_sequence = np.pad(one_hot_encoded_sequence, 
-                                (0, model_input_size-len(one_hot_encoded_sequence)), 
+        input_sequence = np.pad(one_hot_encoded_sequence,
+                                (0, model_input_size - len(one_hot_encoded_sequence)),
                                 'constant')
         output_weights = model.predict(tf.constant([input_sequence]))[0]
 
@@ -900,7 +908,7 @@ class Hyperheuristic:
         if sum(output_weights) > 0:
             output_weights /= sum(output_weights)
         else:
-            output_weights = np.ones(self.num_operators)/self.num_operators
+            output_weights = np.ones(self.num_operators) / self.num_operators
 
         return output_weights
 
@@ -1175,6 +1183,7 @@ if __name__ == '__main__':
     import numpy as np
     import scipy.stats as st
     from pprint import pprint
+
     plt.rcParams.update({'font.size': 18,
                          "text.usetex": True,
                          "font.family": "serif"})
@@ -1199,7 +1208,7 @@ if __name__ == '__main__':
     q.parameters['stagnation_percentage'] = 0.8
     q.parameters['num_replicas'] = 20
     sampling_portion = 0.37  # 0.37
-    
+
     # fitprep, seqrep, weights, weimatrix = q.solve('dynamic', {
     #     'include_fitness': False,
     #     'learning_portion': sampling_portion
@@ -1212,7 +1221,7 @@ if __name__ == '__main__':
     weimatrix = None
     fitprep_nn, seqrep_nn, weights, weimatrix = q.solve('neural_network', {
         'num_models': num_models_nn,
-        'num_replicas': num_replicas_nn, 
+        'num_replicas': num_replicas_nn,
         'delete_idx': 4,
         'model_params': {
             'load_model': False,
@@ -1226,11 +1235,11 @@ if __name__ == '__main__':
     })
 
     q.parameters['num_replicas'] = 10
-    #sampling_portion = 0.37  # 0.37
+    # sampling_portion = 0.37  # 0.37
     fitprep_dyn, seqrep_dyn, _, _ = q.solve('dynamic', {
-            'include_fitness': False,
-            'learning_portion': sampling_portion
-        })
+        'include_fitness': False,
+        'learning_portion': sampling_portion
+    })
 
     fitprep = fitprep_dyn.copy()
     for seq in fitprep_nn:
@@ -1294,7 +1303,7 @@ if __name__ == '__main__':
 
     # ------- Figure 3
     new_colours = plt.cm.jet(np.linspace(0, 1, len(fitprep)))
-    
+
     """
     fi3 = plt.figure(figsize=(6, 6))
     ax = fi3.add_subplot(111, projection='3d')
@@ -1322,15 +1331,15 @@ if __name__ == '__main__':
         fi3.show()
 
     # ------- Figure 5
-    #last_fitness_values = np.array([ff[-1] for ff in fitprep])
-    #midpoint = int(q.parameters['num_replicas'] * sampling_portion)
+    # last_fitness_values = np.array([ff[-1] for ff in fitprep])
+    # midpoint = int(q.parameters['num_replicas'] * sampling_portion)
 
-    #plt.figure()
-    #plt.figure(figsize=(8, 3))
-    #plt.boxplot([last_fitness_values[:midpoint], last_fitness_values[midpoint:], last_fitness_values],
+    # plt.figure()
+    # plt.figure(figsize=(8, 3))
+    # plt.boxplot([last_fitness_values[:midpoint], last_fitness_values[midpoint:], last_fitness_values],
     #            showmeans=True)
-    #plt.xticks(range(1, 4), ['Train', 'Test/Refine', 'All'])
-    
+    # plt.xticks(range(1, 4), ['Train', 'Test/Refine', 'All'])
+
     get_last_fitness = lambda fitlist: np.array([ff[-1] for ff in fitlist])
     last_fitness_values = get_last_fitness(fitprep)
     last_fitness_values_nn = get_last_fitness(fitprep_nn)
@@ -1338,11 +1347,11 @@ if __name__ == '__main__':
     midpoint = int(q.parameters['num_replicas'] * sampling_portion)
 
     fi4 = plt.figure(figsize=(8, 3))
-    plt.boxplot([last_fitness_values_nn, last_fitness_values_dyn[:midpoint], last_fitness_values_dyn[midpoint:], last_fitness_values],
+    plt.boxplot([last_fitness_values_nn, last_fitness_values_dyn[:midpoint], last_fitness_values_dyn[midpoint:],
+                 last_fitness_values],
                 showmeans=True)
     plt.xticks(range(1, 5), ['Neural network', 'Train', 'Test/Refine', 'All'])
-    
-    
+
     plt.ylabel('Fitness')
     plt.xlabel('Sample')
     plt.savefig(folder_name + file_label + "FitnessSample" + ".svg", dpi=333, transparent=True)
