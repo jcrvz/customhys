@@ -397,7 +397,7 @@ class Hyperheuristic:
         elif mode == 'neural_network':
             return self._solve_neural_network(kw_parameters)
         else:  # default: 'static'
-            return self._solve_static(kw_parameters)
+            return self._solve_static()
 
     def _solve_static(self):
         """
