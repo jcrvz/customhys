@@ -701,8 +701,13 @@ class Hyperheuristic:
         """
         # Reproducible
         # TODO: Consider if this a good option. We need to think that these parameters must be defined outside
-        tf.random.set_seed(1)
-        np.random.seed(1)
+        if kw_nn_params['reproduce_results']:
+            tf.random.set_seed(1)
+            np.random.seed(1)
+
+        encoder = None
+        if kw_nn_params['encoder'] == 'one_hot_encoder':
+            encoder = self.one_hot_encoding_sequence
 
         sequence_per_repetition = list()
         fitness_per_repetition = list()
@@ -710,7 +715,7 @@ class Hyperheuristic:
 
         for rep_model in range(1, kw_nn_params['num_models'] + 1):
             # Neural network
-            model = self.get_neural_network_model(kw_nn_params['model_params'])
+            model = self.get_neural_network_model(kw_nn_params['model_params'], encoder)
 
             for rep in range(1, kw_nn_params['num_replicas'] + 1):
                 # Metaheuristic
@@ -740,7 +745,7 @@ class Hyperheuristic:
                 # Finalisator
                 while not self._check_finalisation(step, stag_counter):
                     # Use model to predict ooperator weights
-                    output_weights = self.predict_operator_weights(model, current_sequence.copy(), exclude_idx)
+                    output_weights = self.predict_operator_weights(model, current_sequence.copy(), encoder, exclude_idx)
 
                     # Pick a simple heuristic and apply it
                     candidate_enc_so = self._obtain_candidate_solution(sol=1, operators_weights=output_weights)
@@ -827,18 +832,17 @@ class Hyperheuristic:
 
         return flatten(tf.one_hot(indices=seq, depth=self.num_operators).numpy())
 
-    def get_neural_network_model(self, kw_model_params):
+    def get_neural_network_model(self, kw_model_params, encoder):
         """
             Params:
                 - load_model : Boolean that says if we want to load or not a model
-                - sequencesSize : The maximum length admissible for a dynamic sequence
                 - model_path : Directory where the model will be saved
                 - kw_weighting_params : Params for _solve_dynamic
                 - save_model : Boolean that says if we want to save or not the model
         """
 
-        model_directory = './ml_models/'
-        model_path = '/'.join([model_directory, kw_model_params['model_path']])
+        model_directory = './ml_models'
+        model_path = '/'.join([model_directory, f"{self.file_label}-{kw_model_params['model_path']}.h5"])
 
         # If there is a model, use it
         if kw_model_params['load_model'] and _check_path(model_path):
@@ -846,33 +850,51 @@ class Hyperheuristic:
 
         # Data generation
         # TODO: Consider the fitness value for the training
-        _, seqrep, _, _ = self._solve_dynamic(kw_model_params['kw_weighting_params'])
+        seqfitness, seqrep, _, _ = self._solve_dynamic(kw_model_params['kw_weighting_params'])
+        
+        # Set a limit for sequences
+        dummy_sequence = [0] * self.parameters['num_steps']
+        input_size = len(encoder(dummy_sequence))
 
-        input_size = self.parameters['num_steps'] * self.num_operators
-
-        X, y = [], []
-        for seq in seqrep:
+        X, y, sample_fitness = [], [], []
+        for fitness, seq in zip(seqfitness, seqrep):
             if seq and seq[0] == -1:
                 seq.pop(0)
+                fitness.pop(0)
             while seq:
-                y.append(self.one_hot_encoding_sequence([seq.pop()]))
-                one_hot_encoded_sequence = self.one_hot_encoding_sequence(seq)
-                X.append(np.pad(one_hot_encoded_sequence,
-                                (0, input_size - len(one_hot_encoded_sequence)),
+                y.append(encoder([seq.pop()]))
+                encoded_sequence = encoder(seq)
+                X.append(np.pad(encoded_sequence,
+                                (0, input_size - len(encoded_sequence)),
                                 'constant'))
-        X, y = tf.constant(X), tf.constant(y)
+                sample_fitness.append(fitness.pop())
+        X, y = tf.constant(X), tf.constant(y)\
+
+        if kw_model_params['include_fitness']:
+            min_fitness = min(sample_fitness)
+            max_fitness = max(sample_fitness)
+            # Weight conversion
+            #   Using decreasing functions to give more priority to samples with less fitness
+            #   - f: [min, max] -> (0, 1]
+            #     lambda fitness: min_fitness / fitness
+            #   - f: [min, max] -> [1, max-min+1]
+            #     lambda fitness: min_fitness * max_fitness / fitness - min_fitness + 1
+            #   - f: [min, max] -> [1, 100]
+            #     lambda fitness: 100 * (max_fitness - fitness) / (max_fitness - min_fitness) + 1
+            weight_conversion = lambda fitness: min_fitness / fitness
+            sample_fitness = tf.constant(list(map(weight_conversion, sample_fitness)))
+        else:
+            sample_fitness = None
 
         # Model
 
         # Create the model
         # TODO: Add to the kwargs a field to specify the model somehow
-        model = tf.keras.models.Sequential([
-            tf.keras.Input(shape=input_size),
-            tf.keras.layers.Dense(100, activation='relu'),
-            tf.keras.layers.Dense(100, activation='relu'),
-            tf.keras.layers.Dense(100, activation='relu'),
-            tf.keras.layers.Dense(self.num_operators, activation='softmax')
-        ])
+        model = tf.keras.Sequential()
+        model.add(tf.keras.Input(shape=input_size))
+        for layer_size, layer_activation in kw_model_params['model_architecture']:
+            model.add(tf.keras.layers.Dense(layer_size, activation=layer_activation))
+        model.add(tf.keras.layers.Dense(self.num_operators, activation='softmax'))
 
         # Compile the model
         model.compile(loss=tf.keras.losses.CategoricalCrossentropy(),
@@ -880,7 +902,7 @@ class Hyperheuristic:
                       metrics=['accuracy'])
 
         # Fit the model
-        model.fit(X, y, epochs=100)
+        model.fit(X, y, epochs=kw_model_params['epochs'], sample_weight=sample_fitness)
 
         # Save model
         if kw_model_params['save_model']:
@@ -890,13 +912,13 @@ class Hyperheuristic:
 
         return model
 
-    def predict_operator_weights(self, model, sequence, exclude_idx):
+    def predict_operator_weights(self, model, sequence, encoder, exclude_idx):
         # Use model to predict weights
-        one_hot_encoded_sequence = self.one_hot_encoding_sequence(sequence)
+        encoded_sequence = encoder(sequence)
         model_input_size = self.parameters['num_steps'] * self.num_operators
 
-        input_sequence = np.pad(one_hot_encoded_sequence,
-                                (0, model_input_size - len(one_hot_encoded_sequence)),
+        input_sequence = np.pad(encoded_sequence,
+                                (0, model_input_size - len(encoded_sequence)),
                                 'constant')
         output_weights = model.predict(tf.constant([input_sequence]))[0]
 
@@ -1205,8 +1227,8 @@ if __name__ == '__main__':
                        file_label=file_label)
     q.parameters['num_agents'] = 30
     q.parameters['num_steps'] = 100
-    q.parameters['stagnation_percentage'] = 0.8
-    q.parameters['num_replicas'] = 20
+    q.parameters['stagnation_percentage'] = 0.6
+    q.parameters['num_replicas'] = 100
     sampling_portion = 0.37  # 0.37
 
     # fitprep, seqrep, weights, weimatrix = q.solve('dynamic', {
@@ -1216,21 +1238,28 @@ if __name__ == '__main__':
     # q.parameters['allow_weight_matrix'] = True
     # q.parameters['trial_overflow'] = True
 
-    num_models_nn = 1
-    num_replicas_nn = 10
     weimatrix = None
     fitprep_nn, seqrep_nn, weights, weimatrix = q.solve('neural_network', {
-        'num_models': num_models_nn,
-        'num_replicas': num_replicas_nn,
-        'delete_idx': 4,
+        'reproduce_results': True,
+        'num_models': 1,
+        'num_replicas': 15,
+        'delete_idx': 5,
+        'encoder' : 'one_hot_encoder',
         'model_params': {
             'load_model': False,
-            'save_model': False,
+            'save_model': True,
             'model_path': 'model_nn',
             'kw_weighting_params': {
                 'include_fitness': False,
                 'learning_portion': sampling_portion
-            }
+            },
+            'include_fitness': True,
+            'model_architecture': [
+                [1000, 'relu'],
+                [500, 'relu'],
+                [100, 'relu']
+            ],
+            'epochs': 60
         }
     })
 

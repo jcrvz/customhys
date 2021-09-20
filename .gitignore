@@ -119,6 +119,9 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+# Tensorflow models
+ml_models/
+
 # Pyre type checker
 .pyre/
 *.xml
