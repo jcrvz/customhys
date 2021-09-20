@@ -205,7 +205,7 @@ class Experiment:
                 'learning_portion': self.exp_config["learning_portion"]
             })
         elif self.exp_config['experiment_type'] in ["machine_learning", 'neural_network']:
-            _ = hh.solve('neural_network', self.exp_config["machine_learning_paremeters"])
+            _ = hh.solve('neural_network', self.exp_config["machine_learning_params"])
         else:  # 'static_run'
             _ = hh.solve('static')
 
@@ -269,7 +269,7 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
             'auto_collection_num_vals': 5,
             'learning_portion': 0.37,
             'include_fitness': False,
-            'machine_learning_paremeters': dict()
+            'machine_learning_params': dict()
         }, exp_config)
 
     # Load the default hyper-heuristic configuration and compare it with hh_cfg

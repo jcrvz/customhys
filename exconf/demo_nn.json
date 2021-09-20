@@ -5,10 +5,12 @@
     "heuristic_collection_file": "short_collection.txt",
     "use_parallel": true,
     "parallel_pool_size": 10,
-    "machine_learning_paremeters": {
+    "machine_learning_params": {
+      "reproduce_results": true,
       "num_models": 1,
       "num_replicas": 5,
       "delete_idx": 4,
+      "encoder" : "one_hot_encoder",
       "model_params": {
           "load_model": false,
           "save_model": false,
@@ -16,7 +18,16 @@
           "kw_weighting_params": {
               "include_fitness": false,
               "learning_portion": 0.37
-          }
+          },
+          "include_fitness": true,
+          "model_architecture": [
+            [2000, "relu"],
+            [1000, "relu"],
+            [500, "relu"],
+            [250, "relu"],
+            [100, "relu"]
+          ],
+          "epochs": 100
       }
     }
   },
