@@ -18,6 +18,7 @@ from os.path import exists as _check_path
 from os import makedirs as _create_path
 from deprecated import deprecated
 import tensorflow as tf
+from machine_learning import create_autoencoder as _create_autoencoder
 
 
 class Hyperheuristic:
@@ -113,6 +114,7 @@ class Hyperheuristic:
         self.min_cardinality = None
         self.num_iterations = None
         self.toggle_seq_as_meta(parameters['as_mh'])
+        self.autoencoder = None
 
     def toggle_seq_as_meta(self, as_mh=None):
         if as_mh is None:
@@ -705,17 +707,13 @@ class Hyperheuristic:
             tf.random.set_seed(1)
             np.random.seed(1)
 
-        encoder = None
-        if kw_nn_params['encoder'] == 'one_hot_encoder':
-            encoder = self.one_hot_encoding_sequence
-
         sequence_per_repetition = list()
         fitness_per_repetition = list()
         weights_per_repetition = list()
 
         for rep_model in range(1, kw_nn_params['num_models'] + 1):
             # Neural network
-            model = self.get_neural_network_model(kw_nn_params['model_params'], encoder)
+            model, encoder = self._get_neural_network_model(kw_nn_params['model_params'])
 
             for rep in range(1, kw_nn_params['num_replicas'] + 1):
                 # Metaheuristic
@@ -744,11 +742,11 @@ class Hyperheuristic:
 
                 # Finalisator
                 while not self._check_finalisation(step, stag_counter):
-                    # Use model to predict ooperator weights
-                    output_weights = self.predict_operator_weights(model, current_sequence.copy(), encoder, exclude_idx)
+                    # Use model to predict operator weights
+                    operators_weights = self._predict_operator_weights(model, encoder, current_sequence, exclude_idx)
 
                     # Pick a simple heuristic and apply it
-                    candidate_enc_so = self._obtain_candidate_solution(sol=1, operators_weights=output_weights)
+                    candidate_enc_so = self._obtain_candidate_solution(sol=1, operators_weights=operators_weights)
                     candidate_search_operator = self.get_operators([candidate_enc_so[-1]])
                     perturbators, selectors = Operators.process_operators(candidate_search_operator)
 
@@ -778,6 +776,7 @@ class Hyperheuristic:
                         # Update counters
                         step += 1
                         stag_counter = 0
+                        # Reset tabu list
                         exclude_idx = []
 
                         # Add improvement mark
@@ -791,6 +790,7 @@ class Hyperheuristic:
                         # Update stagnation
                         stag_counter += 1
                         if stag_counter % kw_nn_params['delete_idx'] == 0:
+                            # Include last search operator's index to the tabu list
                             exclude_idx.append(candidate_enc_so[-1])
 
                     # Add ending mark
@@ -808,10 +808,9 @@ class Hyperheuristic:
                 # Update the weights for learning purposes
                 weight_matrix = self._update_weights(sequence_per_repetition, learning_portion=0)
                 weights_per_repetition.append(self.weights)
-                # print('w = ({})'.format(self.weights))
 
                 # Save this historical register
-                _save_step(rep,  # datetime.now().strftime('%Hh%Mm%Ss'),
+                _save_step(rep,
                            dict(encoded_solution=np.array(current_sequence),
                                 best_fitness=np.double(best_fitness),
                                 best_positions=np.double(best_position),
@@ -824,71 +823,167 @@ class Hyperheuristic:
 
         return fitness_per_repetition, sequence_per_repetition, weights_per_repetition, weight_matrix
 
-    def one_hot_encoding_sequence(self, seq):
-        if seq and seq[0] == -1:
-            seq.pop(0)
+    def _fill_sequence(self, sequence):
+        "Fill a sequence with dump elements to the maximum number of steps"
+        return np.array(np.pad(sequence, 
+                           (0, self.parameters['num_steps'] - len(sequence)), 
+                           constant_values=self.num_operators).astype(int))
+    
+    def _one_hot_encoding_sequence(self, sequence):
+        "One-Hot encoding a sequence of search operator's indices"
+        flatten = lambda arr: [int(item) for list_arr in arr for item in list_arr]
+        return flatten(tf.one_hot(indices=sequence, depth=self.num_operators).numpy())
 
-        flatten = lambda arr: [item for list_arr in arr for item in list_arr]
+    def _identity_encoder(self, sequence):
+        "Clean and fill a sequence to encode it"
+        sequence_copy = sequence.copy()
+        if len(sequence_copy) > 0 and sequence_copy[0] == -1:
+            sequence_copy.pop(0)
+        return self._fill_sequence(sequence_copy)
+    
+    def _one_hot_encoder(self, sequence):
+        "Fill sequence and apply one-hot encoding to encode the sequence"
+        return self._one_hot_encoding_sequence(self._identity_encoder(sequence))
 
-        return flatten(tf.one_hot(indices=seq, depth=self.num_operators).numpy())
+    def _autoencoder_encoder(self, sequence):
+        "Use encoder from autoencoder model to encode the sequence"
+        if self.autoencoder is None:
+            raise HyperheuristicError('Autoencoder does not exists')
+        sequence = self._identity_encoder(sequence) / self.num_operators
+        return self.autoencoder(tf.constant([sequence])).numpy()[0]
 
-    def get_neural_network_model(self, kw_model_params, encoder):
+    def _get_encoder(self, encoder_name):
+        if encoder_name == 'one_hot_encoder':
+            return self._one_hot_encoder
+        if encoder_name == 'autoencoder':
+            return self._autoencoder_encoder
+        else:
+            # Default encoder
+            return self._identity_encoder
+    
+    def _obtain_sample_weight_from_fitness(self, sample_fitness, fitness_to_weight):
         """
-            Params:
-                - load_model : Boolean that says if we want to load or not a model
-                - model_path : Directory where the model will be saved
-                - kw_weighting_params : Params for _solve_dynamic
-                - save_model : Boolean that says if we want to save or not the model
+        Using decreasing functions to give more priority to samples with less fitness
+
+        :param list sample_fitness:
+            The fitness associated value for each sample
+        
+        :param str fitness_to_weight:
+            Specify which function use to convert fitness to weight
+        
+        :return: An array that associates a weight to each sample
+        """
+        a = min(sample_fitness)
+        b = max(sample_fitness)
+        if fitness_to_weight == 'linear_reciprocal':
+            # f: [a, b] -> (0, 1]
+            weight_conversion = lambda fitness: a / fitness
+        elif fitness_to_weight == 'linear_reciprocal_translated':
+            # f: [a, b] -> [1, b-a+1]
+            weight_conversion = lambda fitness: a * b / fitness - a + 1
+        elif fitness_to_weight == 'linear_percentage':
+            # f: [a, b] -> [1, 100]
+            weight_conversion = lambda fitness: 100 * (b - fitness) / (b - a) + 1
+        else:
+            # Default linear conversion
+            # f: [a, b] -> [a, b]
+            weight_conversion = lambda fitness: a + b - fitness
+        
+        return tf.constant([weight_conversion(fitness) for fitness in sample_fitness])
+
+    def _get_neural_network_model(self, kw_model_params):
+        """
+        Generates a model that learns patterns to predict which search operator applies.
+
+        :param dict kw_model_params:
+            Parameters to load or train a neural network model to predict search operators
+            
+                :param bool load_model : Load a pre-trained model if true
+                    
+                :param bool save_model : Save trained model if true
+
+                :param str model_path : Directory where the model will be saved
+
+                :param str encoder : Encoder used for the dynamic sequence
+
+                :param dict autoencoder_architecture : Param only required if encoder is 'autoencoder'
+                                    Requires 'latent_dim' variable, the number of epochs and the 
+                                    architecture for the encoder and decoder
+
+                :param dict kw_weighting_params : Params for _solve_dynamic
+
+                :param bool include_fitness : Generates sample_weights if true
+
+                :param str fitness_to_weight : Param only required if include_fitness is true
+                                    Name of function that would be used to transform fitness to
+                                    weight for each fitness sample
+                
+                :param dict model_architecture : Array with size and activaction function for each
+                                    layer that would be included in the model, besides the input 
+                                    and output layer
+                
+                :param int epochs: Number of epochs to train the neural network model
+
+        :return: Return a trained model and an encoder function that transform a dynamic sequence of
+            search operators to the input of the trained model
         """
 
         model_directory = './ml_models'
-        model_path = '/'.join([model_directory, f"{self.file_label}-{kw_model_params['model_path']}.h5"])
+        model_label = f"{self.file_label}-{kw_model_params['model_path']}"
+        model_path = '/'.join([model_directory, f"{model_label}.h5"])
+        autoencoder_path = '/'.join([model_directory, f"{model_label}-autoencoder.h5"])
 
         # If there is a model, use it
         if kw_model_params['load_model'] and _check_path(model_path):
-            return tf.keras.models.load_model(model_path)
+            # Check if needs an autoencoder and if it exists or not
+            if kw_model_params['encoder'] != 'autoencoder' or _check_path(autoencoder_path):
+                if kw_model_params['encoder'] == 'autoencoder':
+                    self.autoencoder = tf.keras.models.load_model(autoencoder_path)
+                model = tf.keras.models.load_model(model_path)
+                encoder = self._get_encoder(kw_model_params['encoder'])
+                return model, encoder
 
         # Data generation
         # TODO: Consider the fitness value for the training
         seqfitness, seqrep, _, _ = self._solve_dynamic(kw_model_params['kw_weighting_params'])
         
-        # Set a limit for sequences
-        dummy_sequence = [0] * self.parameters['num_steps']
-        input_size = len(encoder(dummy_sequence))
-
+        # Process sequences to generate data for training
         X, y, sample_fitness = [], [], []
-        for fitness, seq in zip(seqfitness, seqrep):
-            if seq and seq[0] == -1:
-                seq.pop(0)
+        for fitness, sequence in zip(seqfitness, seqrep):
+            if len(sequence) > 0 and sequence[0] == -1:
+                sequence.pop(0)
                 fitness.pop(0)
-            while seq:
-                y.append(encoder([seq.pop()]))
-                encoded_sequence = encoder(seq)
-                X.append(np.pad(encoded_sequence,
-                                (0, input_size - len(encoded_sequence)),
-                                'constant'))
+            while len(sequence) > 0:
+                y.append(self._one_hot_encoding_sequence([sequence.pop()]))
+                X.append(sequence)
                 sample_fitness.append(fitness.pop())
-        X, y = tf.constant(X), tf.constant(y)\
+        
+        if kw_model_params['encoder'] == 'autoencoder':
+            # Prepare parameters for autoencoder
+            kw_model_params['autoencoder_architecture']['input_shape'] = self.parameters['num_steps']
 
+            # Prepare training data for autoencoder
+            X_train = [self._identity_encoder(sequence) / self.num_operators for sequence in X]
+
+            # Get encoder 
+            autoencoder = _create_autoencoder(X_train, kw_model_params['autoencoder_architecture'])
+            self.autoencoder = autoencoder.encoder
+        
+        # Encode training data
+        encoder = self._get_encoder(kw_model_params['encoder'])
+        X = [encoder(sequence) for sequence in X]
+        input_size = len(X[0])
+        X, y = tf.constant(X), tf.constant(y)
+
+        # Include fitness for training
         if kw_model_params['include_fitness']:
-            min_fitness = min(sample_fitness)
-            max_fitness = max(sample_fitness)
-            # Weight conversion
-            #   Using decreasing functions to give more priority to samples with less fitness
-            #   - f: [min, max] -> (0, 1]
-            #     lambda fitness: min_fitness / fitness
-            #   - f: [min, max] -> [1, max-min+1]
-            #     lambda fitness: min_fitness * max_fitness / fitness - min_fitness + 1
-            #   - f: [min, max] -> [1, 100]
-            #     lambda fitness: 100 * (max_fitness - fitness) / (max_fitness - min_fitness) + 1
-            weight_conversion = lambda fitness: min_fitness / fitness
-            sample_fitness = tf.constant(list(map(weight_conversion, sample_fitness)))
+            sample_weight = self._obtain_sample_weight_from_fitness(sample_fitness, kw_model_params['fitness_to_weight'])
         else:
-            sample_fitness = None
+            sample_weight = None
 
         # Model
 
-        # Create the model
+        # Create model
         # TODO: Add to the kwargs a field to specify the model somehow
         model = tf.keras.Sequential()
         model.add(tf.keras.Input(shape=input_size))
@@ -896,31 +991,45 @@ class Hyperheuristic:
             model.add(tf.keras.layers.Dense(layer_size, activation=layer_activation))
         model.add(tf.keras.layers.Dense(self.num_operators, activation='softmax'))
 
-        # Compile the model
+        # Compile model
         model.compile(loss=tf.keras.losses.CategoricalCrossentropy(),
                       optimizer=tf.keras.optimizers.Adam(),
                       metrics=['accuracy'])
 
-        # Fit the model
-        model.fit(X, y, epochs=kw_model_params['epochs'], sample_weight=sample_fitness)
+        # Train model
+        model.fit(X, y, epochs=kw_model_params['epochs'], sample_weight=sample_weight)
 
         # Save model
         if kw_model_params['save_model']:
             if not _check_path(model_directory):
                 _create_path(model_directory)
             model.save(model_path)
+            if kw_model_params['encoder'] == 'autoencoder':
+                autoencoder.encoder.save(autoencoder_path)
 
-        return model
+        return model, encoder
 
-    def predict_operator_weights(self, model, sequence, encoder, exclude_idx):
+    def _predict_operator_weights(self, model, encoder, sequence, exclude_idx):
+        """
+        Given a state of dynamic sequence, generate an array of probabilities to choose the next search operator
+
+        :param tf.keras.model model:
+            Trained model to predict a weighted array
+
+        :param function encoder:
+            Encoder from a sequence to a valid input for the trained model
+
+        :param list sequence:
+            List of search operator's indices that represents the dynamic sequence
+
+        :param list exclude_idx:
+            Tabu list of indices that need to be excluded
+        
+        :return: List of probabilities to choose the next search operator
+        """
         # Use model to predict weights
         encoded_sequence = encoder(sequence)
-        model_input_size = self.parameters['num_steps'] * self.num_operators
-
-        input_sequence = np.pad(encoded_sequence,
-                                (0, model_input_size - len(encoded_sequence)),
-                                'constant')
-        output_weights = model.predict(tf.constant([input_sequence]))[0]
+        output_weights = model.predict(tf.constant([encoded_sequence]))[0]
 
         # Exclude bad indices
         for idx in exclude_idx:
@@ -928,11 +1037,11 @@ class Hyperheuristic:
 
         # Set probability weights 
         if sum(output_weights) > 0:
-            output_weights /= sum(output_weights)
+            operators_weights = output_weights / sum(output_weights)
         else:
-            output_weights = np.ones(self.num_operators) / self.num_operators
+            operators_weights = np.ones(self.num_operators) / self.num_operators
 
-        return output_weights
+        return operators_weights
 
     def evaluate_candidate_solution(self, encoded_sequence):
         """
@@ -1223,12 +1332,12 @@ if __name__ == '__main__':
     file_label = "{}-{}D".format(problem.func_name, problem.variable_num)
 
     q = Hyperheuristic(problem=problem.get_formatted_problem(),
-                       heuristic_space='short_collection.txt',  # 'default.txt',  #
+                       heuristic_space='short_collection.txt',  # 'default.txt',  #short_collection  automatic
                        file_label=file_label)
     q.parameters['num_agents'] = 30
     q.parameters['num_steps'] = 100
     q.parameters['stagnation_percentage'] = 0.6
-    q.parameters['num_replicas'] = 100
+    q.parameters['num_replicas'] = 20
     sampling_portion = 0.37  # 0.37
 
     # fitprep, seqrep, weights, weimatrix = q.solve('dynamic', {
@@ -1244,22 +1353,35 @@ if __name__ == '__main__':
         'num_models': 1,
         'num_replicas': 15,
         'delete_idx': 5,
-        'encoder' : 'one_hot_encoder',
         'model_params': {
             'load_model': False,
             'save_model': True,
             'model_path': 'model_nn',
+            'encoder': 'autoencoder',
+            'autoencoder_architecture': {
+                'latent_dim': 500,
+                'encoder': [
+                    [1000, 'relu'],
+                    [500, 'relu']
+                ],
+                'decoder': [
+                    [500, 'relu'],
+                    [1000, 'relu']
+                ],
+                'epochs': 100
+            },
             'kw_weighting_params': {
                 'include_fitness': False,
                 'learning_portion': sampling_portion
             },
             'include_fitness': True,
+            'fitness_to_weight': 'linear_reciprocal',
             'model_architecture': [
                 [1000, 'relu'],
                 [500, 'relu'],
                 [100, 'relu']
             ],
-            'epochs': 60
+            'epochs': 100
         }
     })
 

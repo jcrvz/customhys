@@ -14,7 +14,19 @@
           "load_model": false,
           "save_model": false,
           "model_path": "model_nn",
-          "encoder" : "default",
+          "encoder" : "autoencoder",
+          "autoencoder_architecture": {
+              "latent_dim": 500,
+              "encoder": [
+                [1000, "relu"],
+                [500, "relu"]
+              ],
+              "decoder": [
+                [500, "relu"],
+                [1000, "relu"]
+              ],
+              "epochs": 100
+          },
           "kw_weighting_params": {
               "include_fitness": false,
               "learning_portion": 0.37
