@@ -521,7 +521,7 @@ class Hyperheuristic:
         # Return the best solution found and its details
         return best_solution, best_performance, historical_current, historical_best
 
-    def _solve_dynamic(self, kw_weighting_params):
+    def _solve_dynamic(self, kw_weighting_params, save_steps = True):
         """
         Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each meatheuristic is
         run 'num_replicas' times to obtain statistics and then its performance. Once the process ends, it returns:
@@ -678,16 +678,17 @@ class Hyperheuristic:
             # print('w = ({})'.format(self.weights))
 
             # Save this historical register
-            _save_step(rep,  # datetime.now().strftime('%Hh%Mm%Ss'),
-                       dict(encoded_solution=np.array(current_sequence),
-                            best_fitness=np.double(best_fitness),
-                            best_positions=np.double(best_position),
-                            details=dict(
-                                fitness_per_rep=fitness_per_repetition,
-                                sequence_per_rep=sequence_per_repetition,
-                                weight_matrix=weight_matrix
-                            )),
-                       self.file_label)
+            if save_steps:
+                _save_step(rep,  # datetime.now().strftime('%Hh%Mm%Ss'),
+                        dict(encoded_solution=np.array(current_sequence),
+                                best_fitness=np.double(best_fitness),
+                                best_positions=np.double(best_position),
+                                details=dict(
+                                    fitness_per_rep=fitness_per_repetition,
+                                    sequence_per_rep=sequence_per_repetition,
+                                    weight_matrix=weight_matrix
+                                )),
+                        self.file_label)
 
         # Return the best solution found and its details
         return fitness_per_repetition, sequence_per_repetition, weights_per_repetition, weight_matrix
@@ -884,12 +885,72 @@ class Hyperheuristic:
         elif fitness_to_weight == 'linear_percentage':
             # f: [a, b] -> [1, 100]
             weight_conversion = lambda fitness: 100 * (b - fitness) / (b - a) + 1
+        elif fitness_to_weight == 'rank':
+            # f: [fitness] -> [0, n-1]
+            indices = list(range(len(sample_fitness)))
+            indices.sort(key = lambda idx: -sample_fitness[idx])
+            return tf.constant(indices)
         else:
             # Default linear conversion
             # f: [a, b] -> [a, b]
             weight_conversion = lambda fitness: a + b - fitness
         
         return tf.constant([weight_conversion(fitness) for fitness in sample_fitness])
+    
+    def _get_stored_sample_sequences(self, model_label):
+        folder_name = 'data_files/sequences/'
+        if not _check_path(folder_name):
+            return [], []
+    
+        with open(folder_name + f'{model_label}.json', 'r') as json_file:
+            sequences_stored = json.load(json_file)
+            seqfitness, seqrep = [], []
+            for key in sequences_stored:
+                fitness, sequence = sequences_stored[key]
+                seqfitness.append(fitness)
+                seqrep.append(sequence)
+            return seqfitness, seqrep
+
+    def _get_sample_sequences(self, model_label, kw_sequences_params):
+        # Initialize variables
+        seqfitness_retrieved, seqrep_retrieved = [], []
+        seqfitness_generated, seqrep_generated = [], []
+        
+        # Obtain sequences from previous generations
+        if kw_sequences_params['retrieve_sequences']:
+            seqfitness_retrieved, seqrep_retrieved = self._get_stored_sample_sequences(model_label)
+
+        # Generate sequences from dynamic solver
+        if kw_sequences_params['generate_sequences']:
+            seqfitness_generated, seqrep_generated, _, _ = self._solve_dynamic(kw_sequences_params['kw_weighting_params'], save_steps=False)        
+        
+        # Join sequences
+        seqfitness = seqfitness_retrieved + seqfitness_generated
+        seqrep = seqrep_retrieved + seqrep_generated
+        
+        # Verify that would exists sequences
+        if len(seqfitness) == 0 or len(seqrep) == 0:
+            raise HyperheuristicError('There is no sample sequences to train the ML model')
+
+        # Store sequences if requested
+        if kw_sequences_params['store_sequences']:        
+            sequences_to_save = dict()
+            for idx, fitness_and_sequence in enumerate(zip(seqfitness, seqrep)):
+                sequences_to_save[idx] = fitness_and_sequence
+            _save_sequences(model_label, sequences_to_save)
+
+        # Process sequences to generate data for training
+        X, y, sample_fitness = [], [], []
+        for fitness, sequence in zip(seqfitness, seqrep):
+            if len(sequence) > 0 and sequence[0] == -1:
+                sequence.pop(0)
+                fitness.pop(0)
+            while len(sequence) > 0:
+                y.append(self._one_hot_encoding_sequence([sequence.pop()]))
+                X.append(sequence)
+                sample_fitness.append(fitness.pop())
+
+        return X, y, sample_fitness
 
     def _get_neural_network_model(self, kw_model_params):
         """
@@ -944,19 +1005,7 @@ class Hyperheuristic:
                 return model, encoder
 
         # Data generation
-        # TODO: Consider the fitness value for the training
-        seqfitness, seqrep, _, _ = self._solve_dynamic(kw_model_params['kw_weighting_params'])
-        
-        # Process sequences to generate data for training
-        X, y, sample_fitness = [], [], []
-        for fitness, sequence in zip(seqfitness, seqrep):
-            if len(sequence) > 0 and sequence[0] == -1:
-                sequence.pop(0)
-                fitness.pop(0)
-            while len(sequence) > 0:
-                y.append(self._one_hot_encoding_sequence([sequence.pop()]))
-                X.append(sequence)
-                sample_fitness.append(fitness.pop())
+        X, y, sample_fitness = self._get_sample_sequences(model_label, kw_model_params['sample_sequences_params'])
         
         if kw_model_params['encoder'] == 'autoencoder':
             # Prepare parameters for autoencoder
@@ -1299,6 +1348,27 @@ def _save_step(step_number, variable_to_save, prefix=''):
     with open(folder_name + f'/{str(step_number)}-' + now.strftime('%m_%d_%Y_%H_%M_%S') + '.json', 'w') as json_file:
         json.dump(variable_to_save, json_file, cls=jt.NumpyEncoder)
 
+def _save_sequences(model_label, sequences_to_save):
+    """
+    Save encoded sequences along its fitness to train ML models. 
+
+    :param list sequences_fitness 
+    :param list sequences_encoded_solutions
+    :param str writting_mode
+    :param prefix
+
+    :return:
+    """
+    # Define the folder name
+    folder_name = 'data_files/sequences/'
+    
+    # Check if this path exists
+    if not _check_path(folder_name):
+        _create_path(folder_name)
+    
+    # Overwrite or create file to store the sequences along its respective fitness
+    with open(folder_name + f'{model_label}.json', 'w') as json_file:
+        json.dump(sequences_to_save, json_file, cls=jt.NumpyEncoder)
 
 class HyperheuristicError(Exception):
     """
@@ -1352,40 +1422,46 @@ if __name__ == '__main__':
         'reproduce_results': True,
         'num_models': 1,
         'num_replicas': 15,
-        'delete_idx': 5,
+        'delete_idx': 10,
         'model_params': {
             'load_model': False,
             'save_model': True,
             'model_path': 'model_nn',
+            'sample_sequences_params': {
+                'retrieve_sequences': True,
+                'generate_sequences': False,
+                'store_sequences': False,
+                'kw_weighting_params': {
+                    'include_fitness': False,
+                    'learning_portion': sampling_portion
+                }
+            },
             'encoder': 'autoencoder',
             'autoencoder_architecture': {
-                'latent_dim': 500,
+                'latent_dim': 300,
                 'encoder': [
-                    [1000, 'relu'],
-                    [500, 'relu']
+                    [600, 'relu'],
+                    [300, 'relu']
                 ],
                 'decoder': [
-                    [500, 'relu'],
-                    [1000, 'relu']
+                    [300, 'relu'],
+                    [600, 'relu']
                 ],
                 'epochs': 100
             },
-            'kw_weighting_params': {
-                'include_fitness': False,
-                'learning_portion': sampling_portion
-            },
             'include_fitness': True,
-            'fitness_to_weight': 'linear_reciprocal',
+            'fitness_to_weight': 'rank',
             'model_architecture': [
-                [1000, 'relu'],
+                [700, 'relu'],
                 [500, 'relu'],
+                [300, 'relu'],
                 [100, 'relu']
             ],
             'epochs': 100
         }
     })
 
-    q.parameters['num_replicas'] = 10
+    q.parameters['num_replicas'] = 20
     # sampling_portion = 0.37  # 0.37
     fitprep_dyn, seqrep_dyn, _, _ = q.solve('dynamic', {
         'include_fitness': False,
