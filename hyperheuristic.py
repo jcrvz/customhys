@@ -1352,10 +1352,8 @@ def _save_sequences(model_label, sequences_to_save):
     """
     Save encoded sequences along its fitness to train ML models. 
 
-    :param list sequences_fitness 
-    :param list sequences_encoded_solutions
-    :param str writting_mode
-    :param prefix
+    :param str model_label
+    :param dict sequences_to_save
 
     :return:
     """
@@ -1407,7 +1405,7 @@ if __name__ == '__main__':
     q.parameters['num_agents'] = 30
     q.parameters['num_steps'] = 100
     q.parameters['stagnation_percentage'] = 0.6
-    q.parameters['num_replicas'] = 20
+    q.parameters['num_replicas'] = 30
     sampling_portion = 0.37  # 0.37
 
     # fitprep, seqrep, weights, weimatrix = q.solve('dynamic', {
@@ -1417,35 +1415,34 @@ if __name__ == '__main__':
     # q.parameters['allow_weight_matrix'] = True
     # q.parameters['trial_overflow'] = True
 
-    weimatrix = None
-    fitprep_nn, seqrep_nn, weights, weimatrix = q.solve('neural_network', {
+    kw_neural_network_params = dict({
         'reproduce_results': True,
         'num_models': 1,
-        'num_replicas': 15,
-        'delete_idx': 10,
+        'num_replicas': 30,
+        'delete_idx': 5,
         'model_params': {
             'load_model': False,
             'save_model': True,
-            'model_path': 'model_nn',
+            'model_path': 'self_trained_model',
             'sample_sequences_params': {
-                'retrieve_sequences': True,
-                'generate_sequences': False,
-                'store_sequences': False,
+                'retrieve_sequences': False,
+                'generate_sequences': True,
+                'store_sequences': True,
                 'kw_weighting_params': {
                     'include_fitness': False,
-                    'learning_portion': sampling_portion
+                    'learning_portion': 1.0#sampling_portion
                 }
             },
-            'encoder': 'autoencoder',
+            'encoder': 'one_hot_encoder',
             'autoencoder_architecture': {
-                'latent_dim': 300,
+                'latent_dim': 30,
                 'encoder': [
-                    [600, 'relu'],
-                    [300, 'relu']
+                    [50, 'relu'],
+                    [30, 'relu']
                 ],
                 'decoder': [
-                    [300, 'relu'],
-                    [600, 'relu']
+                    [30, 'relu'],
+                    [70, 'relu']
                 ],
                 'epochs': 100
             },
@@ -1460,6 +1457,26 @@ if __name__ == '__main__':
             'epochs': 100
         }
     })
+
+    """
+    self_train = 3
+    model_label = 'Sphere-50D-self_trained_model'
+    for _ in range(self_train):
+        
+        fitprep_nn, seqrep_nn, _, _ = q.solve('neural_network', kw_neural_network_params)
+
+        fitprep_prev, seqrep_prev = q._get_stored_sample_sequences(model_label)
+
+        sequences_to_save = dict()
+        for idx, fitness_and_sequence in enumerate(zip(fitprep_nn + fitprep_prev, seqrep_nn + seqrep_prev)):
+            sequences_to_save[idx] = fitness_and_sequence
+        _save_sequences(model_label, sequences_to_save)
+        
+        kw_neural_network_params['model_params']['sample_sequences_params']['retrieve_sequences'] = True
+        kw_neural_network_params['model_params']['sample_sequences_params']['generate_sequences'] = False
+    """
+
+    fitprep_nn, seqrep_nn, weights, weimatrix = q.solve('neural_network', kw_neural_network_params)
 
     q.parameters['num_replicas'] = 20
     # sampling_portion = 0.37  # 0.37
