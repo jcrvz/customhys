@@ -20,6 +20,7 @@
     "verbose": false,
     "repeat_operators": true,
     "allow_weight_matrix": true,
+    "learnt_dataset": "./data_files/translearn_dataset",
     "trial_overflow": true
   },
   "prob_config": {
@@ -137,6 +138,7 @@
       "YaoLiu09",
       "Zakharov",
       "ZeroSum"
-    ]
+    ],
+    "features": ["Unimodal"]
   }
 }

@@ -6,8 +6,11 @@ Created on Thu Jan  9 15:36:43 2020
 
 @author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
 """
+
 import numpy as np
 import random
+from itertools import product
+import pandas as pd
 import scipy.stats as st
 from metaheuristic import Metaheuristic
 from datetime import datetime
@@ -88,6 +91,7 @@ class Hyperheuristic:
                               acceptance_scheme='exponential',  # Acceptance mode,          lvl:2 *new
                               allow_weight_matrix=True,  # Weight matrix,            lvl:2 *new
                               trial_overflow=False,  # Trial overflow policy,    lvl:2 *new
+                              learnt_dataset=None,  # If it is a learnt dataset related with the heuristic space
                               repeat_operators=True,  # Allow repeating SOs inSeq,lvl:2
                               verbose=True)  # Verbose process,          lvl:2
         # Read the problem
@@ -536,6 +540,16 @@ class Hyperheuristic:
         fitness_per_repetition = list()
         weights_per_repetition = list()
 
+        # Check if there is a previous weight matrix stored
+        if self.parameters['learnt_dataset']:
+            weight_matrix = self._get_weight_matrix(
+                category=self.problem['features'],
+                values_dict={'Pop': self.parameters['num_agents'],
+                             'Dim': self.problem['dimensions']},
+                file_path=self.parameters['learnt_dataset'])
+        else:
+            weight_matrix = None
+
         for rep in range(1, self.parameters['num_replicas'] + 1):
             # Call the metaheuristic
             # mh = None
@@ -644,11 +658,6 @@ class Hyperheuristic:
 
                 else:  # Then try another search operator
 
-                    # Remove the selected search operator from the heuristic set
-                    # tabu_set.append(candidate_enc_so)
-                    # if len(tabu_set) > 100:
-                    #     del tabu_set[0]
-
                     # Revert the modification to the population in the mh object
                     mh.pop.revert_positions()
 
@@ -668,7 +677,8 @@ class Hyperheuristic:
             fitness_per_repetition.append(np.double(best_fitness).tolist())
 
             # Update the weights for learning purposes
-            weight_matrix = self._update_weights(sequence_per_repetition, fitness_per_repetition, **kw_weighting_params)
+            weight_matrix = self._update_weights(sequence_per_repetition, fitness_per_repetition,
+                                                 **kw_weighting_params)
             weights_per_repetition.append(self.weights)
             # print('w = ({})'.format(self.weights))
 
@@ -834,6 +844,86 @@ class Hyperheuristic:
                     IQR=st.iqr(raw_data),
                     Med=np.median(raw_data),
                     MAD=st.median_abs_deviation(raw_data))
+
+    # Script for interpolating matrices
+    @staticmethod
+    def __interpolate_matrices(matrix1, matrix2, blend_factor=0.5):
+        return matrix1 * (1 - blend_factor) + matrix2 * blend_factor
+
+    # Script for determining the dimensionless point to interpolate
+    @staticmethod
+    def __get_blend_factor(extrema, point):
+        return (point - extrema[0]) / (extrema[1] - extrema[0])
+
+    def _get_weight_matrix(self, category, values_dict, file_path="./data_files/translearn_dataset"):
+
+        # Load the datafile
+        dataset = pd.read_json(file_path)
+        # category = 0, values_dict = {"Dim": 3, "Pop": 31}
+
+        # Check if the values are in the list, then return a list with its neighbours
+        limits = dict()
+        for key, val in values_dict.items():
+            available_values = dataset[key].unique().tolist()
+            if val not in available_values:
+                # TODO: improve for extrapolations
+                available_values.append(val)
+                available_values.sort()
+                index = available_values.index(val)
+                limits_values = available_values[index - 1:index + 2:2]
+            else:
+                limits_values = [val]
+
+            limits[key] = limits_values
+            print(limits)
+
+        comb = [*product(*limits.values())]
+        num_comb = len(comb)
+        # Read matrices
+        matrices = list()
+        for dim_val, pop_val in comb:
+            matrices.append(np.array(*dataset[
+                (dataset['Dim'] == dim_val) &
+                (dataset['Pop'] == pop_val) &
+                (dataset['Cat'] == category)]['weights'].tolist()))
+            print(dim_val, pop_val)
+
+        if num_comb == 1:
+            # Just pick up the corresponding matrix
+            out_matrix = matrices[0]
+        elif num_comb == 2:
+            # Find the intermediate factor to interpolate
+            if len(limits['Pop']) == 2:
+                factor = self.__get_blend_factor(limits['Pop'], values_dict['Pop'])
+            elif len(limits['Dim']) == 2:
+                factor = self.__get_blend_factor(limits['Dim'], values_dict['Dim'])
+            else:
+                factor = None
+                raise HyperheuristicError("Invalid case for determining factor")
+
+            # Perform one interpolation
+            out_matrix = self.__interpolate_matrices(matrices[0], matrices[1], factor)
+
+        elif num_comb == 4:
+            # Find the corresponding factors
+            pop_factor = self.__get_blend_factor(limits['Pop'], values_dict['Pop'])
+            dim_factor = self.__get_blend_factor(limits['Dim'], values_dict['Dim'])
+
+            # Perform two pre-interpolations with pop values
+            prematrix_pop1 = self.__interpolate_matrices(matrices[0], matrices[1], pop_factor)
+            prematrix_pop2 = self.__interpolate_matrices(matrices[2], matrices[3], pop_factor)
+
+            # Perform the last interpolation with dim values
+            out_matrix = self.__interpolate_matrices(prematrix_pop1, prematrix_pop2, dim_factor)
+        else:
+            out_matrix = None
+            raise HyperheuristicError("Invalid case for the number of combinations")
+
+        # Adjusting the matrix to avoid values out of range
+        total_count_per_step = out_matrix.sum(1)
+        out_weights = (out_matrix.T / total_count_per_step).T
+
+        return out_weights
 
     def _update_weights(self, sequences=None, fitness_values=None, include_fitness=False, learning_portion=0.37):
         # *** uncomment when necessary
