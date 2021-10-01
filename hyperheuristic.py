@@ -1258,54 +1258,23 @@ class Hyperheuristic:
             pre_weights = list()
             weimat = np.zeros([self.num_operators + 1] * 2)
 
-            # for seq in sequences:
-            #     pre_weights.append([seq.count(idseq) for idseq in range(self.num_operators)])
-            # seq = sequences[-1] if isinstance(sequences, list) and isinstance(sequences[0], list) else sequences
+            # Get the matrix from sequences of num_operators -by- num_steps. Empties are filled with -2
+            max_length = max([len(seq) for seq in sequences])
+            mat_seq = np.array([np.array([*seq, *[-2] * (max_length - len(seq))]) for seq in sequences],
+                               dtype=object).T
 
-            if include_fitness:
-                # multipliers = np.exp(-np.argsort([y[-1] for y in (
-                #     fitness_values if isinstance(fitness_values, list) and isinstance(fitness_values[0], list) else
-                #     [fitness_values])])).reshape((len(fitness_values), 1))
-                # contribution = - np.exp(-fit[-1] / (fit[0] - fit[-1])) * np.diff(fit) / len(seq)
-                # contribution = - np.diff(fit) / ((1 + np.abs(fit[-1])) * len(seq) / self.parameters['num_steps'])
-                # weights = np.sum((np.array(pre_weights)) * multipliers, axis=0) #+ self.weights
+            all_operators_including_empty = [-2.5, *np.arange(-2, self.num_operators) + 0.5]
+            current_hist = list()
+            for ii_step in range(max_length):
+                # Disregard the -2 and -1 operators (empty and initialiser)
+                densities, _ = np.histogram(mat_seq[ii_step].tolist(), bins=all_operators_including_empty)
+                temp_hist = densities[2:]
+                if np.sum(temp_hist) > 0.0:
+                    current_hist.append(np.ndarray.tolist(temp_hist / np.sum(temp_hist)))
+                else:
+                    current_hist.append(np.ndarray.tolist(np.ones(self.num_operators) / self.num_operators))
 
-                ranking = np.exp(1 - st.rankdata([fit[-1] for fit in fitness_values]))
-                contribution = [-np.diff(fit) / len(fit) for fit in fitness_values]
-                # contribution = [-np.diff(fit) for fit in fitness_values]
-
-                for seq, cont, rank in zip(sequences, contribution, ranking):
-                    pre_weights.append(np.double([cont[jt.listfind(seq[1:], idseq)].sum() if idseq in seq else 0
-                                                  for idseq in range(self.num_operators)]) * rank)
-
-                    for from_op, to_op, tran in zip(seq[:-1], seq[1:], cont):
-                        weimat[from_op + 1, to_op + 1] += tran * rank
-
-            else:
-                # Get the matrix from sequences of num_operators -by- num_steps. Empties are filled with -2
-                max_length = max([len(x) for x in sequences])
-                mat_seq = np.array([np.array([*seq, *[-2] * (max_length - len(seq))]) for seq in sequences],
-                                   dtype=object).T
-
-                all_operators_including_empty = [-2.5, *np.arange(-2, self.num_operators) + 0.5]
-                current_hist = list()
-                for ii_step in range(max_length):
-                    # Disregard the -2 and -1 operators (empty and initialiser)
-                    densities, _ = np.histogram(mat_seq[ii_step].tolist(), bins=all_operators_including_empty)
-                    temp_hist = densities[2:]
-                    if np.sum(temp_hist) > 0.0:
-                        current_hist.append(np.ndarray.tolist(temp_hist / np.sum(temp_hist)))
-                    else:
-                        current_hist.append(np.ndarray.tolist(np.ones(self.num_operators) / self.num_operators))
-
-                weimat = np.array(current_hist)
-
-                # weights = np.sum(np.array(pre_weights), axis=0) #+ self.weights
-                # for seq in sequences:
-                #     pre_weights.append(np.double([seq.count(idseq) for idseq in range(self.num_operators)]) / len(seq))
-                #
-                #     for from_op, to_op in zip(seq[:-1], seq[1:]):
-                #         weimat[from_op + 1, to_op + 1] += 1
+            weimat = np.array(current_hist)
 
             weights_to_update = np.array(pre_weights).sum(axis=0) + self.weights * self.__total_count_weights
             self.__total_count_weights = weights_to_update.sum()
@@ -1382,6 +1351,9 @@ if __name__ == '__main__':
     import numpy as np
     import scipy.stats as st
     from pprint import pprint
+    import tikzplotlib as ptx
+    from sklearn.preprocessing import normalize
+    import seaborn as sns
 
     plt.rcParams.update({'font.size': 18,
                          "text.usetex": True,
