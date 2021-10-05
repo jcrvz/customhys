@@ -66,8 +66,10 @@ class Hyperheuristic:
         """
         # Read the heuristic space
         if isinstance(heuristic_space, list):
+            self.heuristic_space_label = f'custom_heuristic_space_len_{len(heuristic_space)}'
             self.heuristic_space = heuristic_space
         elif isinstance(heuristic_space, str):
+            self.heuristic_space_label = heuristic_space[:heuristic_space.rfind('.')]
             with open('collections/' + heuristic_space, 'r') as operators_file:
                 self.heuristic_space = [eval(line.rstrip('\n')) for line in operators_file]
         else:
@@ -693,7 +695,7 @@ class Hyperheuristic:
         # Return the best solution found and its details
         return fitness_per_repetition, sequence_per_repetition, weights_per_repetition, weight_matrix
 
-    def _solve_neural_network(self, kw_nn_params):
+    def _solve_neural_network(self, kw_nn_params, save_steps = True):
         """
         This method perform the implementation using a previously trained nn
 
@@ -711,6 +713,8 @@ class Hyperheuristic:
         sequence_per_repetition = list()
         fitness_per_repetition = list()
         weights_per_repetition = list()
+
+        need_ragged_tensor = True if kw_nn_params['model_params']['model_architecture'] == 'LSTM_Ragged' else False
 
         for rep_model in range(1, kw_nn_params['num_models'] + 1):
             # Neural network
@@ -739,12 +743,12 @@ class Hyperheuristic:
 
                 step = 0
                 stag_counter = 0
-                exclude_idx = []
+                exclude_indices = []
 
                 # Finalisator
                 while not self._check_finalisation(step, stag_counter):
                     # Use model to predict operator weights
-                    operators_weights = self._predict_operator_weights(model, encoder, current_sequence, exclude_idx)
+                    operators_weights = self._predict_operator_weights(model, encoder, current_sequence, exclude_indices, need_ragged_tensor)
 
                     # Pick a simple heuristic and apply it
                     candidate_enc_so = self._obtain_candidate_solution(sol=1, operators_weights=operators_weights)
@@ -778,7 +782,7 @@ class Hyperheuristic:
                         step += 1
                         stag_counter = 0
                         # Reset tabu list
-                        exclude_idx = []
+                        exclude_indices = []
 
                         # Add improvement mark
                         if self.parameters['verbose']:
@@ -792,7 +796,7 @@ class Hyperheuristic:
                         stag_counter += 1
                         if stag_counter % kw_nn_params['delete_idx'] == 0:
                             # Include last search operator's index to the tabu list
-                            exclude_idx.append(candidate_enc_so[-1])
+                            exclude_indices.append(candidate_enc_so[-1])
 
                     # Add ending mark
                     if self.parameters['verbose']:
@@ -811,56 +815,93 @@ class Hyperheuristic:
                 weights_per_repetition.append(self.weights)
 
                 # Save this historical register
-                _save_step(rep,
-                           dict(encoded_solution=np.array(current_sequence),
-                                best_fitness=np.double(best_fitness),
-                                best_positions=np.double(best_position),
-                                details=dict(
-                                    fitness_per_rep=fitness_per_repetition,
-                                    sequence_per_rep=sequence_per_repetition,
-                                    weight_matrix=weight_matrix
-                                )),
-                           f"{self.file_label}-model_nn_{rep_model}")
+                if save_steps:
+                    _save_step(rep,
+                               dict(encoded_solution=np.array(current_sequence),
+                                    best_fitness=np.double(best_fitness),
+                                    best_positions=np.double(best_position),
+                                    details=dict(
+                                        fitness_per_rep=fitness_per_repetition,
+                                        sequence_per_rep=sequence_per_repetition,
+                                        weight_matrix=weight_matrix
+                                    )),
+                               f'{self.file_label}-model_nn_{rep_model}')
 
         return fitness_per_repetition, sequence_per_repetition, weights_per_repetition, weight_matrix
 
-    def _fill_sequence(self, sequence):
-        "Fill a sequence with dump elements to the maximum number of steps"
+    def __fill_sequence(self, sequence):
+        "Fill a sequence with a dummy value until a fixed length"
         return np.array(np.pad(sequence, 
-                           (0, self.parameters['num_steps'] - len(sequence)), 
-                           constant_values=self.num_operators).astype(int))
-    
-    def _one_hot_encoding_sequence(self, sequence):
-        "One-Hot encoding a sequence of search operator's indices"
-        flatten = lambda arr: [int(item) for list_arr in arr for item in list_arr]
-        return flatten(tf.one_hot(indices=sequence, depth=self.num_operators).numpy())
+                               (self.parameters['num_steps'] - len(sequence), 0), 
+                               constant_values=self.num_operators).astype(int))
 
-    def _identity_encoder(self, sequence):
-        "Clean and fill a sequence to encode it"
+    def __identity_encoder(self, sequence):
+        "Clean a sequence to encode it"
         sequence_copy = sequence.copy()
         if len(sequence_copy) > 0 and sequence_copy[0] == -1:
             sequence_copy.pop(0)
-        return self._fill_sequence(sequence_copy)
+        return sequence_copy
     
-    def _one_hot_encoder(self, sequence):
-        "Fill sequence and apply one-hot encoding to encode the sequence"
-        return self._one_hot_encoding_sequence(self._identity_encoder(sequence))
+    def __padded_identity_encoder(self, sequence):
+        "Clean and fill a sequence to encode it"
+        return self.__fill_sequence(self.__identity_encoder(sequence))
 
-    def _autoencoder_encoder(self, sequence):
-        "Use encoder from autoencoder model to encode the sequence"
+    def __one_hot_encoding_sequence(self, sequence):
+        "One-Hot encoding a sequence of search operator's indices"
+        flatten = lambda arr: [int(item) for list_arr in arr for item in list_arr]
+        return flatten(tf.one_hot(indices=sequence, depth=self.num_operators).numpy())
+    
+    def __one_hot_encoder(self, sequence):
+        "Fill sequence and apply one-hot encoding to encode a sequence"
+        return self.__one_hot_encoding_sequence(self.__padded_identity_encoder(sequence))
+
+    def __autoencoder_encoder(self, sequence):
+        "Use encoder from autoencoder model to encode a sequence"
         if self.autoencoder is None:
             raise HyperheuristicError('Autoencoder does not exists')
-        sequence = self._identity_encoder(sequence) / self.num_operators
+        sequence = self.__padded_identity_encoder(sequence) / self.num_operators
         return self.autoencoder(tf.constant([sequence])).numpy()[0]
 
+    def __lstm_identity_encoder(self, sequence):
+        "Reshape sequence to use it in the LSTM model"
+        padded_sequence = self.__padded_identity_encoder(sequence)
+        return [[x] for x in padded_sequence]
+
+    def __lstm_one_hot_encoder(self, sequence):
+        "Reshape one-hot encoded sequence to use it in the LSTM model"
+        one_hot_sequence = self.__one_hot_encoder(sequence)
+        return [[x] for x in one_hot_sequence]
+
+    def __lstm_ragged_identity_encoder(self, sequence):
+        "Processing sequence to use it in a LSTM model based on ragged tensors"
+        cleaned_sequence = self.__identity_encoder(sequence)
+        # LSTM Ragged tensor needs a non-empty tensor to predict an operator
+        if len(cleaned_sequence) == 0:
+            cleaned_sequence.append(self.num_operators)
+        return cleaned_sequence
+
+    def __lstm_ragged_one_hot_encoder(self, sequence):
+        "One-Hot encoding processed sequence for LSTM model based on ragged tensor"
+        return self.__one_hot_encoding_sequence(self.__lstm_ragged_identity_encoder(sequence))
+
     def _get_encoder(self, encoder_name):
-        if encoder_name == 'one_hot_encoder':
-            return self._one_hot_encoder
-        if encoder_name == 'autoencoder':
-            return self._autoencoder_encoder
+        if encoder_name == 'identity':
+            return self.__identity_encoder
+        elif encoder_name == 'one_hot_encoder':
+            return self.__one_hot_encoder
+        elif encoder_name == 'autoencoder':
+            return self.__autoencoder_encoder
+        elif encoder_name in ['LSTM', 'LSTM_identity']:
+            return self.__lstm_identity_encoder
+        elif encoder_name in ['LSTM_one_hot']:
+            return self.__lstm_one_hot_encoder
+        elif encoder_name in ['LSTM_Ragged', 'LSTM_Ragged_identity', 'Ragged']:
+            return self.__lstm_ragged_identity_encoder
+        elif encoder_name in ['LSTM_Ragged_one_hot']:
+            return self.__lstm_ragged_one_hot_encoder
         else:
             # Default encoder
-            return self._identity_encoder
+            return self.__padded_identity_encoder
     
     def _obtain_sample_weight_from_fitness(self, sample_fitness, fitness_to_weight):
         """
@@ -898,11 +939,13 @@ class Hyperheuristic:
         return tf.constant([weight_conversion(fitness) for fitness in sample_fitness])
     
     def _get_stored_sample_sequences(self, model_label):
+        "Retrieve stored sequences"
         folder_name = 'data_files/sequences/'
-        if not _check_path(folder_name):
+        sequences_file = folder_name + f'{model_label}.json'
+        if not _check_path(folder_name) or not _check_path(sequences_file):
             return [], []
     
-        with open(folder_name + f'{model_label}.json', 'r') as json_file:
+        with open(sequences_file, 'r') as json_file:
             sequences_stored = json.load(json_file)
             seqfitness, seqrep = [], []
             for key in sequences_stored:
@@ -912,6 +955,8 @@ class Hyperheuristic:
             return seqfitness, seqrep
 
     def _get_sample_sequences(self, model_label, kw_sequences_params):
+        "Retrieve or generate sequences to use them as data train for ML models"
+
         # Initialize variables
         seqfitness_retrieved, seqrep_retrieved = [], []
         seqfitness_generated, seqrep_generated = [], []
@@ -928,7 +973,7 @@ class Hyperheuristic:
         seqfitness = seqfitness_retrieved + seqfitness_generated
         seqrep = seqrep_retrieved + seqrep_generated
         
-        # Verify that would exists sequences
+        # Verify that there is sequences for training
         if len(seqfitness) == 0 or len(seqrep) == 0:
             raise HyperheuristicError('There is no sample sequences to train the ML model')
 
@@ -946,8 +991,9 @@ class Hyperheuristic:
                 sequence.pop(0)
                 fitness.pop(0)
             while len(sequence) > 0:
-                y.append(self._one_hot_encoding_sequence([sequence.pop()]))
-                X.append(sequence)
+                # Per each prefix, predict the next operator
+                y.append(self.__one_hot_encoding_sequence([sequence.pop()]))
+                X.append(sequence.copy())
                 sample_fitness.append(fitness.pop())
 
         return X, y, sample_fitness
@@ -963,9 +1009,9 @@ class Hyperheuristic:
                     
                 :param bool save_model : Save trained model if true
 
-                :param str model_path : Directory where the model will be saved
+                :param str model_id : Identificator for the model
 
-                :param str encoder : Encoder used for the dynamic sequence
+                :param str encoder : Encoder used to encode each sequence
 
                 :param dict autoencoder_architecture : Param only required if encoder is 'autoencoder'
                                     Requires 'latent_dim' variable, the number of epochs and the 
@@ -979,7 +1025,9 @@ class Hyperheuristic:
                                     Name of function that would be used to transform fitness to
                                     weight for each fitness sample
                 
-                :param dict model_architecture : Array with size and activaction function for each
+                :param str model_architeture : Architecture that would be used for the model (MLP or LSTM)
+
+                :param dict model_architecture_layers : Array with size and activaction function for each
                                     layer that would be included in the model, besides the input 
                                     and output layer
                 
@@ -988,41 +1036,51 @@ class Hyperheuristic:
         :return: Return a trained model and an encoder function that transform a dynamic sequence of
             search operators to the input of the trained model
         """
+        # TODO: Update above description
+
+        architecture_name = kw_model_params['model_architecture']
+        encoder_name = kw_model_params['encoder']
 
         model_directory = './ml_models'
-        model_label = f"{self.file_label}-{kw_model_params['model_path']}"
-        model_path = '/'.join([model_directory, f"{model_label}.h5"])
-        autoencoder_path = '/'.join([model_directory, f"{model_label}-autoencoder.h5"])
+        model_label = f'{self.file_label}-{kw_model_params["model_id"]}-{encoder_name}-{architecture_name}-{self.heuristic_space_label}'
+        model_path = '/'.join([model_directory, f'{model_label}.h5'])
+        autoencoder_path = '/'.join([model_directory, f'{model_label}-autoencoder.h5'])
 
         # If there is a model, use it
         if kw_model_params['load_model'] and _check_path(model_path):
             # Check if needs an autoencoder and if it exists or not
-            if kw_model_params['encoder'] != 'autoencoder' or _check_path(autoencoder_path):
-                if kw_model_params['encoder'] == 'autoencoder':
+            if encoder_name != 'autoencoder' or _check_path(autoencoder_path):
+                if encoder_name == 'autoencoder':
                     self.autoencoder = tf.keras.models.load_model(autoencoder_path)
                 model = tf.keras.models.load_model(model_path)
-                encoder = self._get_encoder(kw_model_params['encoder'])
+                encoder = self._get_encoder(encoder_name)
                 return model, encoder
 
         # Data generation
         X, y, sample_fitness = self._get_sample_sequences(model_label, kw_model_params['sample_sequences_params'])
         
-        if kw_model_params['encoder'] == 'autoencoder':
+        if encoder_name == 'autoencoder':
             # Prepare parameters for autoencoder
             kw_model_params['autoencoder_architecture']['input_shape'] = self.parameters['num_steps']
 
             # Prepare training data for autoencoder
-            X_train = [self._identity_encoder(sequence) / self.num_operators for sequence in X]
+            X_train = [self.__padded_identity_encoder(sequence) / self.num_operators for sequence in X]
 
             # Get encoder 
             autoencoder = _create_autoencoder(X_train, kw_model_params['autoencoder_architecture'])
             self.autoencoder = autoencoder.encoder
         
         # Encode training data
-        encoder = self._get_encoder(kw_model_params['encoder'])
+        encoder = self._get_encoder(encoder_name)
         X = [encoder(sequence) for sequence in X]
         input_size = len(X[0])
-        X, y = tf.constant(X), tf.constant(y)
+
+        # Tensor conversion
+        if architecture_name in ['LSTM_Ragged']:
+            X = tf.ragged.constant(X)
+        else:
+            X = tf.constant(X)
+        y = tf.constant(y)
 
         # Include fitness for training
         if kw_model_params['include_fitness']:
@@ -1030,21 +1088,54 @@ class Hyperheuristic:
         else:
             sample_weight = None
 
-        # Model
+
+        # TensorFlow Artificial Neural Network Model
 
         # Create model
-        # TODO: Add to the kwargs a field to specify the model somehow
         model = tf.keras.Sequential()
-        model.add(tf.keras.Input(shape=input_size))
-        for layer_size, layer_activation in kw_model_params['model_architecture']:
-            model.add(tf.keras.layers.Dense(layer_size, activation=layer_activation))
+        hidden_layers = kw_model_params['model_architecture_layers']
+        if architecture_name in ['MLP', 'Multi-Layer Perceptron', 'default']:
+            # Multi-Layer Perceptron model
+
+            # Input layer
+            model.add(tf.keras.Input(shape=input_size))
+            
+            # Hidden layers
+            for layer_size, layer_activation in hidden_layers:
+                model.add(tf.keras.layers.Dense(units=layer_size,
+                                                activation=layer_activation))
+        
+        elif architecture_name in ['RNN', 'LSTM', 'Long Short-Term Memory', 'LSTM_Ragged']:
+            # Long Short-Term Memory model
+
+            # Input layer
+            if architecture_name in ['LSTM_Ragged']:
+                # Input with variable length, supported using ragged tensors
+                max_length_sequence = X.bounding_shape()[-1].numpy()
+                model.add(tf.keras.Input(shape=(max_length_sequence,)))
+
+                # Embedding layer
+                first_layer_size, _ = hidden_layers[0] if len(hidden_layers) > 0 else (self.num_operators, None)
+                model.add(tf.keras.layers.Embedding(self.num_operators + 1, first_layer_size))
+            else:
+                # Input with fixed length, sequences padded with dummy values
+                model.add(tf.keras.Input(shape=(input_size, 1)))
+
+            # Hidden layers
+            num_layers = len(hidden_layers)
+            for idx, (layer_size, layer_activation) in enumerate(hidden_layers):
+                model.add(tf.keras.layers.LSTM(units=layer_size, 
+                                               activation=layer_activation, 
+                                               return_sequences=True if idx + 1 < num_layers else False))
+
+        # Output layer
         model.add(tf.keras.layers.Dense(self.num_operators, activation='softmax'))
 
         # Compile model
         model.compile(loss=tf.keras.losses.CategoricalCrossentropy(),
                       optimizer=tf.keras.optimizers.Adam(),
                       metrics=['accuracy'])
-
+        
         # Train model
         model.fit(X, y, epochs=kw_model_params['epochs'], sample_weight=sample_weight)
 
@@ -1053,12 +1144,12 @@ class Hyperheuristic:
             if not _check_path(model_directory):
                 _create_path(model_directory)
             model.save(model_path)
-            if kw_model_params['encoder'] == 'autoencoder':
+            if encoder_name == 'autoencoder':
                 autoencoder.encoder.save(autoencoder_path)
 
         return model, encoder
 
-    def _predict_operator_weights(self, model, encoder, sequence, exclude_idx):
+    def _predict_operator_weights(self, model, encoder, sequence, exclude_indices, ragged=False):
         """
         Given a state of dynamic sequence, generate an array of probabilities to choose the next search operator
 
@@ -1071,17 +1162,22 @@ class Hyperheuristic:
         :param list sequence:
             List of search operator's indices that represents the dynamic sequence
 
-        :param list exclude_idx:
+        :param list exclude_indices:
             Tabu list of indices that need to be excluded
         
         :return: List of probabilities to choose the next search operator
         """
         # Use model to predict weights
-        encoded_sequence = encoder(sequence)
-        output_weights = model.predict(tf.constant([encoded_sequence]))[0]
+        encoded_sequence = []
+        if ragged:
+            encoded_sequence = tf.ragged.constant([encoder(sequence)])
+        else:
+            encoded_sequence = tf.constant([encoder(sequence)])
+
+        output_weights = model.predict(encoded_sequence)[0]
 
         # Exclude bad indices
-        for idx in exclude_idx:
+        for idx in exclude_indices:
             output_weights[idx] = 0
 
         # Set probability weights 
@@ -1366,13 +1462,13 @@ if __name__ == '__main__':
     # problem = bf.Schwefel220(50)
     # problem = bf.Sargan(45)
 
-    # problem = bf.choose_problem('<random>', np.random.randint(2, 50))
+    problem = bf.choose_problem('<random>', np.random.randint(2, 50))
     # problem.set_search_range(-10, 10)
 
     file_label = "{}-{}D".format(problem.func_name, problem.variable_num)
 
     q = Hyperheuristic(problem=problem.get_formatted_problem(),
-                       heuristic_space='short_collection.txt',  # 'default.txt',  #short_collection  automatic
+                       heuristic_space='medium_collection.txt',  # 'default.txt',  #short_collection  automatic medium_collection
                        file_label=file_label)
     q.parameters['num_agents'] = 30
     q.parameters['num_steps'] = 100
@@ -1390,12 +1486,12 @@ if __name__ == '__main__':
     kw_neural_network_params = dict({
         'reproduce_results': True,
         'num_models': 1,
-        'num_replicas': 30,
+        'num_replicas': 10,
         'delete_idx': 5,
         'model_params': {
             'load_model': False,
             'save_model': True,
-            'model_path': 'self_trained_model',
+            'model_id': 'NN_Model',
             'sample_sequences_params': {
                 'retrieve_sequences': False,
                 'generate_sequences': True,
@@ -1405,28 +1501,14 @@ if __name__ == '__main__':
                     'learning_portion': 1.0#sampling_portion
                 }
             },
-            'encoder': 'one_hot_encoder',
-            'autoencoder_architecture': {
-                'latent_dim': 30,
-                'encoder': [
-                    [50, 'relu'],
-                    [30, 'relu']
-                ],
-                'decoder': [
-                    [30, 'relu'],
-                    [70, 'relu']
-                ],
-                'epochs': 100
-            },
+            'encoder': 'Ragged', 
             'include_fitness': True,
             'fitness_to_weight': 'rank',
-            'model_architecture': [
-                [700, 'relu'],
-                [500, 'relu'],
-                [300, 'relu'],
-                [100, 'relu']
+            'model_architecture': 'LSTM_Ragged',
+            'model_architecture_layers': [
+                [700, 'relu']
             ],
-            'epochs': 100
+            'epochs': 10
         }
     })
 
@@ -1490,6 +1572,8 @@ if __name__ == '__main__':
     # plt.show()
 
     folder_name = './figures-to-export/'
+    if not _check_path(folder_name):
+        _create_path(folder_name)
 
     # ------- Figure 1
     fi1 = plt.figure(figsize=(8, 3))

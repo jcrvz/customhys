@@ -8,31 +8,29 @@
     "machine_learning_params": {
       "reproduce_results": true,
       "num_models": 1,
-      "num_replicas": 5,
-      "delete_idx": 4,
+      "num_replicas": 100,
+      "delete_idx": 5,
       "model_params": {
         "load_model": false,
         "save_model": false,
-        "model_path": "model_nn",
-        "encoder" : "one_hot_encoder",
+        "model_id": "demo_nn",
         "sample_sequences_params": {
-          "retrieve_sequences": true,
+          "retrieve_sequences": false,
           "generate_sequences": true,
           "store_sequences": false,
           "kw_weighting_params": {
             "include_fitness": false,
-            "learning_portion": 0.37
+            "learning_portion": 1
           }
         },
+        "encoder" : "default",
         "include_fitness": true,
         "fitness_to_weight": "rank",
-        "model_architecture": [
-          [600, "relu"],
-          [2000, "relu"],
-          [1000, "relu"],
-          [500, "relu"],
-          [250, "relu"],
-          [100, "relu"]
+        "model_architecture": "MLP",
+        "model_architecture_layers": [
+          [200, "relu"],
+          [200, "relu"],
+          [200, "relu"]
         ],
         "epochs": 100
       }
@@ -40,11 +38,11 @@
   },
   "hh_config": {
     "num_steps": 100,
-    "num_agents": 50,
+    "num_agents": 30,
     "num_iterations": 100,
     "cardinality": 3,
     "cardinality_min": 1,
-    "num_replicas": 10,
+    "num_replicas": 100,
     "stagnation_percentage": 0.50,
     "as_mh": false,
     "verbose": true,
@@ -54,7 +52,8 @@
   },
   "prob_config": {
     "dimensions": [
-      2
+      2,
+      50
     ],
     "functions": [
       "<choose_randomly>",
