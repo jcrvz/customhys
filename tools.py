@@ -149,7 +149,7 @@ def read_subfolders(foldername):
 
 
 def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_laststep=True,
-                     output_name='processed_data',):
+                     output_name='processed_data', experiment=''):
     """
     Return data from results saved in the main folder. This method save the summary file in json format. Take in account
     that ``output_name = 'brute_force'`` has a special behaviour due to each json file stored in sub-folders correspond
@@ -175,8 +175,13 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
     raw_folders = read_subfolders(main_folder)
 
     # Sort subfolder names by problem name & dimensions
-    subfolder_names = sorted(raw_folders, key=lambda x: int(x.split('-')[1].strip('D')))
+    subfolder_names_raw = sorted(raw_folders, key=lambda x: int(x.split('-')[1].strip('D')))
 
+    if len(experiment) > 0:
+        subfolder_names = filter(lambda name: name.split('-')[2] == experiment, subfolder_names_raw)
+    else:
+        subfolder_names = subfolder_names_raw
+        
     # Define the basic data structure
     data = {'problem': list(), 'dimensions': list(), 'results': list()}
 
@@ -216,6 +221,11 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
             last_step = int(file_names[-1].split('-')[0])
             label_operator = 'step'
             file_data = dict()
+        elif kind == 'dynamic_metaheuristic':
+            last_step = int(file_names[-1].split('-')[0])
+            label_operator = 'rep'
+            file_data = {'rep': list(), 'best_fitness': list(),
+                         'encoded_solution': list(), 'weight_matrix': list()}
         else:
             last_step = int(file_names[-1].split('-')[0])
             label_operator = 'step'
@@ -233,7 +243,15 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
             with open(temporal_full_path + '/' + file_name, 'r') as json_file:
                 temporal_data = json.load(json_file)
 
-            if kind == "unknown":
+            if kind == "dynamic_metaheuristic":
+                file_data[label_operator].append(operator_id)
+                for field in ['best_fitness', 'encoded_solution']:
+                    file_data[field].append(temporal_data[field])
+                
+                if operator_id == last_step:
+                    file_data['weight_matrix'] = temporal_data['details']['weight_matrix']
+                
+            elif kind == "unknown":
                 if only_laststep and operator_id == last_step:
                     for field in list(temporal_data.keys()):
                         file_data[field] = temporal_data[field]
@@ -385,6 +403,6 @@ class NumpyEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-# if __name__ == '__main__':
-#     # preprocess_files(main_folder='data_files/raw/', output_name='brute_force')
-#     preprocess_files(main_folder='data_files/raw/', output_name='first_test')
+if __name__ == '__main__':
+    # preprocess_files(main_folder='data_files/raw/', output_name='brute_force')
+    preprocess_files(main_folder='data_files/raw/', kind = 'dynamic_metaheuristic', experiment = 'medium_nn_mlp_learning', output_name='first_test')
