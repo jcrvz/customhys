@@ -6,7 +6,7 @@
     "use_parallel": true,
     "parallel_pool_size": 10,
     "machine_learning_params": {
-      "num_replicas": 100,
+      "num_replicas": 10,
       "delete_idx": 5,
       "model_params": {
         "load_model": false,
@@ -35,7 +35,7 @@
     }
   },
   "hh_config": {
-    "num_steps": 100,
+    "num_steps": 20,
     "num_agents": 30,
     "num_iterations": 150,
     "cardinality": 3,
@@ -43,7 +43,7 @@
     "num_replicas": 100,
     "stagnation_percentage": 0.50,
     "as_mh": false,
-    "verbose": false,
+    "verbose": true,
     "repeat_operators": true,
     "allow_weight_matrix": true,
     "trial_overflow": false

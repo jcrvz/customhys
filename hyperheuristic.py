@@ -21,6 +21,7 @@ from os.path import exists as _check_path
 from os import makedirs as _create_path
 from deprecated import deprecated
 import tensorflow as tf
+import keras
 from machine_learning import create_autoencoder as _create_autoencoder
 
 
@@ -998,6 +999,11 @@ class Hyperheuristic:
             search operators to the input of the trained model
         """
         # TODO: Update above description
+        core_config = tf.compat.v1.ConfigProto()
+        core_config.gpu_options.allow_growth = True
+        session = tf.compat.v1.Session(config=core_config)
+        keras.backend.set_session(session)
+
 
         architecture_name = kw_model_params['model_architecture']
         encoder_name = kw_model_params['encoder']
@@ -1116,6 +1122,9 @@ class Hyperheuristic:
             model.save(model_path)
             if encoder_name == 'autoencoder':
                 autoencoder.encoder.save(autoencoder_path)
+
+        session.close()
+        keras.backend.clear_session()
 
         return model, encoder
 
@@ -1667,7 +1676,7 @@ def _get_problems_in_classification(classification):
         for category in process_list:
             if '-' in category:
                 # {func_name}-{variable_num}D
-                func_name, _ = category.split('-')
+                func_name = category.split('-')
                 problems_list.append(func_name)
             elif category in bf.__all__:
                 # func_name
