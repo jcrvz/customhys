@@ -21,7 +21,7 @@ from os.path import exists as _check_path
 from os import makedirs as _create_path
 from deprecated import deprecated
 import tensorflow as tf
-import keras
+from tensorflow.compat.v1 import keras
 from machine_learning import create_autoencoder as _create_autoencoder
 
 
@@ -1549,14 +1549,14 @@ class Hyperheuristic:
 
     def __fill_sequence(self, sequence):
         "Fill a sequence with a dummy value until a fixed length"
-        return np.array(np.pad(sequence, 
-                               (self.parameters['num_steps'] - len(sequence), 0), 
+        return np.array(np.pad(sequence[:self.parameters['num_steps']], 
+                               (max(0, self.parameters['num_steps'] - len(sequence)), 0), 
                                constant_values=self.num_operators).astype(int))
 
     def __identity_encoder(self, sequence):
         "Clean a sequence to encode it"
         sequence_copy = sequence.copy()
-        if len(sequence_copy) > 0 and sequence_copy[0] == -1:
+        while len(sequence_copy) > 0 and sequence_copy[0] == -1:
             sequence_copy.pop(0)
         return sequence_copy
     
