@@ -1695,10 +1695,10 @@ def _get_stored_sample_sequences(classification):
     if not _check_path(folder_name):
         return [], []
 
-    problems_in_classification = _get_problems_in_classification(classification)
-    file_names = _get_problems_in_classification(classification)
+    #problems_in_classification = _get_problems_in_classification(classification)
+    #file_names = _get_problems_in_classification(classification)
 
-    sequences_file = folder_name + f'{classification}.json'
+    sequences_file = folder_name + f'{classification}'
     if not _check_path(folder_name) or not _check_path(sequences_file):
         return [], []
 
