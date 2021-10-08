@@ -6,18 +6,16 @@
     "use_parallel": true,
     "parallel_pool_size": 10,
     "machine_learning_params": {
-      "reproduce_results": true,
-      "num_models": 1,
       "num_replicas": 100,
       "delete_idx": 5,
       "model_params": {
         "load_model": false,
-        "save_model": false,
-        "model_id": "demo_nn",
+        "save_model": true,
         "sample_sequences_params": {
+          "classification": "",
           "retrieve_sequences": false,
           "generate_sequences": true,
-          "store_sequences": false,
+          "store_sequences": true,
           "kw_weighting_params": {
             "include_fitness": false,
             "learning_portion": 1
@@ -28,9 +26,9 @@
         "fitness_to_weight": "rank",
         "model_architecture": "MLP",
         "model_architecture_layers": [
-          [200, "relu"],
-          [200, "relu"],
-          [200, "relu"]
+          [100, "relu"],
+          [75, "relu"],
+          [50, "relu"]
         ],
         "epochs": 100
       }
@@ -39,7 +37,7 @@
   "hh_config": {
     "num_steps": 100,
     "num_agents": 30,
-    "num_iterations": 100,
+    "num_iterations": 150,
     "cardinality": 3,
     "cardinality_min": 1,
     "num_replicas": 100,
