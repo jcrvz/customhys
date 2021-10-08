@@ -1,8 +1,8 @@
 {
   "ex_config": {
-    "experiment_name": "demo_nn",
+    "experiment_name": "demo_nn_mlp_small_learning",
     "experiment_type": "neural_network",
-    "heuristic_collection_file": "short_collection.txt",
+    "heuristic_collection_file": "medium_collection.txt",
     "use_parallel": true,
     "parallel_pool_size": 10,
     "machine_learning_params": {
@@ -13,9 +13,9 @@
         "save_model": true,
         "sample_sequences_params": {
           "classification": "",
-          "retrieve_sequences": false,
-          "generate_sequences": true,
-          "store_sequences": true,
+          "retrieve_sequences": true,
+          "generate_sequences": false,
+          "store_sequences": false,
           "kw_weighting_params": {
             "include_fitness": false,
             "learning_portion": 1
@@ -43,7 +43,7 @@
     "num_replicas": 100,
     "stagnation_percentage": 0.50,
     "as_mh": false,
-    "verbose": true,
+    "verbose": false,
     "repeat_operators": true,
     "allow_weight_matrix": true,
     "trial_overflow": false
@@ -54,8 +54,10 @@
       50
     ],
     "functions": [
-      "<choose_randomly>",
-      "<choose_randomly>"
+      "Ackley1",
+      "Ackley4",
+      "Alpine1",
+      "Alpine2"
     ]
   }
 }

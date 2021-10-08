@@ -1360,10 +1360,16 @@ class Hyperheuristic:
         
         # Obtain sequences from previous generations
         if kw_sequences_params['retrieve_sequences']:
-            seqfitness_retrieved, seqrep_retrieved = _get_stored_sample_sequences(kw_sequences_params['classification'])
-
+            if kw_sequences_params['classification'] != '':
+                seqfitness_retrieved, seqrep_retrieved = _get_stored_sample_sequences(kw_sequences_params['classification'])
+            else:
+                # Temporal fix to run third experiment
+                sections_labels = self.file_label.split('-')
+                sequences_folder = '-'.join(sections_labels[:2]+['short_nn_mlp_learning.json'])
+                seqfitness_retrieved, seqrep_retrieved = _get_stored_sample_sequences(sequences_folder)
+            
         # Generate sequences from dynamic solver
-        if kw_sequences_params['generate_sequences']:
+        if kw_sequences_params['generate_sequences'] or len(seqfitness_retrieved) == 0:
             seqfitness_generated, seqrep_generated, _, _ = self._solve_dynamic(kw_sequences_params['kw_weighting_params'], save_steps=False)        
         
         # Join sequences

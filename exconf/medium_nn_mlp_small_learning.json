@@ -1,8 +1,8 @@
 {
   "ex_config": {
-    "experiment_name": "short_nn_mlp_learning",
+    "experiment_name": "medium_nn_mlp_small_learning",
     "experiment_type": "neural_network",
-    "heuristic_collection_file": "short_collection.txt",
+    "heuristic_collection_file": "medium_collection.txt",
     "use_parallel": true,
     "parallel_pool_size": 10,
     "machine_learning_params": {
@@ -13,9 +13,9 @@
         "save_model": true,
         "sample_sequences_params": {
           "classification": "",
-          "retrieve_sequences": false,
-          "generate_sequences": true,
-          "store_sequences": true,
+          "retrieve_sequences": true,
+          "generate_sequences": false,
+          "store_sequences": false,
           "kw_weighting_params": {
             "include_fitness": false,
             "learning_portion": 1
