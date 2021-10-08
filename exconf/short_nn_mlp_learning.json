@@ -1,8 +1,8 @@
 {
   "ex_config": {
-    "experiment_name": "medium_nn_mlp_simpler_learning",
+    "experiment_name": "short_nn_mlp_simpler_learning",
     "experiment_type": "neural_network",
-    "heuristic_collection_file": "medium_collection.txt",
+    "heuristic_collection_file": "short_collection.txt",
     "use_parallel": true,
     "parallel_pool_size": 10,
     "machine_learning_params": {
