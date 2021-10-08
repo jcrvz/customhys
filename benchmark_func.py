@@ -379,7 +379,7 @@ class BasicProblem:
         self.plot_object.savefig(self.save_dir + self.func_name + '.' + ext)
         plt.show()
 
-    def get_formatted_problem(self, is_constrained=True):
+    def get_formatted_problem(self, is_constrained=True, fts=None):
         """
         Return the problem in a simple format to be used in a solving procedure. This format contains the ``function``
         in lambda form, the ``boundaries`` as a tuple with the lower and upper boundaries, and the ``is_constrained``
@@ -388,12 +388,19 @@ class BasicProblem:
         :param bool is_constrained: Optional.
             Flag indicating if the problem domain has hard boundaries.
 
+        :param list fts: Optional.
+            List of features to be processed.
+
         :return: dict.
         """
+
         # TODO: Include additional parameters to build the formatted problem, e.g., length scale feature.
         return dict(function=lambda x: self.get_function_value(x),
                     boundaries=(self.min_search_range, self.max_search_range),
-                    is_constrained=is_constrained)
+                    is_constrained=is_constrained,
+                    features=self.get_features(fts=fts),
+                    dimensions=self.variable_num
+                    )
 
 
 # %% SPECIFIC PROBLEM FUNCTIONS

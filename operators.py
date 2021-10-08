@@ -18,6 +18,27 @@ __all__ = ['local_random_walk', 'random_search', 'random_sample', 'random_flight
            'genetic_mutation', 'genetic_crossover']
 
 
+# Search operator aliases
+def get_operator_aliases():
+    """
+    Return two dictionaries with the perturbator and selector aliases for better naming the metaheuristics
+    @return: dict, dict
+    """
+    return {
+        'random_search': 'RS',
+        'central_force_dynamic': 'CF',
+        'differential_mutation': 'DM',
+        'firefly_dynamic': 'FD',
+        'genetic_crossover': 'GC',
+        'genetic_mutation': 'GM',
+        'gravitational_search': 'GS',
+        'random_flight': 'RF',
+        'local_random_walk': 'RW',
+        'random_sample': 'RX',
+        'spiral_dynamic': 'SD',
+        'swarm_dynamic': 'PS'}, {
+        'greedy': 'g', 'all': 'd', 'metropolis': 'm', 'probabilistic': 'p'}
+
 # %% SEARCH OPERATORS
 
 def central_force_dynamic(pop, gravity=0.001, alpha=0.01, beta=1.5, dt=1.0):

@@ -183,7 +183,8 @@ class Experiment:
         # Get and format the problem
         # problem = eval('bf.{}({})'.format(function_string, num_dimensions))
         problem = bf.choose_problem(function_string, num_dimensions)
-        problem_to_solve = problem.get_formatted_problem(self.prob_config['is_constrained'])
+        problem_to_solve = problem.get_formatted_problem(self.prob_config['is_constrained'],
+                                                         self.prob_config['features'])
 
         # Read the particular weights array (if so)
         weights = self.weights_data[str(num_dimensions)][problem.get_features(fmt='string', wrd='1')] \
@@ -289,6 +290,7 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
             'as_mh': True,
             'verbose': False,
             'trial_overflow': True,
+            'learnt_dataset': None,
             'allow_weight_matrix': True
         }, hh_config)
 
@@ -297,7 +299,8 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
         {
             'dimensions': [2, 5, *range(10, 50 + 1, 10)],
             'functions': bf.__all__,
-            'is_constrained': True
+            'is_constrained': True,
+            'features': ['Differentiable', 'Separable', 'Unimodal']
         }, prob_config)
 
     # Check if there is a special case of function name: <choose_randomly>
