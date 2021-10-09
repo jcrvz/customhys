@@ -7,6 +7,7 @@ Created on Thu Jan  9 15:36:43 2020
 @author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
 """
 
+import benchmark_func as bf
 import numpy as np
 import random
 from itertools import product
@@ -758,7 +759,7 @@ class Hyperheuristic:
                     print(
                         '{} :: Rep: {:3d}, Step: {:3d}, Trial: {:3d}, SO: {:30s}, currPerf: {:.2e}, candPerf: {:.2e}, '
                         'csl: {:3d}'.format(
-                            self.file_label, rep, step, stag_counter,
+                            self.file_label, rep + 1, step + 1, stag_counter,
                             candidate_search_operator[0][0] + ' & ' + candidate_search_operator[0][2][:4],
                             best_fitness[-1], current_fitness, len(self.current_space)), end=' ')
 
@@ -842,7 +843,7 @@ class Hyperheuristic:
         weights_per_repetition = list()
 
         # Neural network model that predicts operators
-        model, encoder = self._get_neural_network_model(kw_nn_params['model_params'])
+        model, encoder = self.__get_neural_network_model(kw_nn_params['model_params'])
 
         need_ragged_tensor = True if kw_nn_params['model_params']['model_architecture'] == 'LSTM_Ragged' else False
 
@@ -874,7 +875,7 @@ class Hyperheuristic:
             # Finalisator
             while not self._check_finalisation(step, stag_counter):
                 # Use the trained model to predict operators weights
-                operators_weights = self._predict_operator_weights(model, 
+                operators_weights = self.__predict_operator_weights(model, 
                                                                    encoder,
                                                                    current_sequence,
                                                                    exclude_indices,
@@ -896,7 +897,7 @@ class Hyperheuristic:
                     print(
                         '{} :: Neural Network, Rep: {:3d}, Step: {:3d}, Trial: {:3d}, SO: {:30s}, currPerf: {:.2e}, candPerf: {:.2e}, '
                         'csl: {:3d}'.format(
-                            self.file_label, rep, step, stag_counter,
+                            self.file_label, rep + 1, step + 1, stag_counter,
                             candidate_search_operator[0][0] + ' & ' + candidate_search_operator[0][2][:4],
                             best_fitness[-1], current_fitness, len(self.current_space)), end=' ')
 
@@ -958,9 +959,8 @@ class Hyperheuristic:
                            self.file_label)
 
         return fitness_per_repetition, sequence_per_repetition, weights_per_repetition, weight_matrix
-    
 
-    def _get_neural_network_model(self, kw_model_params):
+    def __get_neural_network_model(self, kw_model_params):
         """
         Generates a model that learns patterns to predict which search operator applies.
 
@@ -999,44 +999,43 @@ class Hyperheuristic:
             search operators to the input of the trained model
         """
         # TODO: Update above description
+        
+        # Support multiprocessing + TensorFlow
         core_config = tf.compat.v1.ConfigProto()
         core_config.gpu_options.allow_growth = True
         session = tf.compat.v1.Session(config=core_config)
         keras.backend.set_session(session)
 
-
+        # Variables
         architecture_name = kw_model_params['model_architecture']
         encoder_name = kw_model_params['encoder']
-
-        model_directory = './ml_models'
-
-        if isinstance(kw_model_params['sample_sequences_params']['classification'], str):
-            model_label = kw_model_params['sample_sequences_params']['classification']
-            if model_label == '':
-                model_label = self.file_label
-        else:
-            now = datetime.now()
-            model_label = f'Exp-{now.strftime("%m_%d_%Y")}'
+        features_list = kw_model_params['sample_sequences_params']['features']
+        feature_neural_network = False
+        if features_list is None:
+            features_list = []
+        elif not kw_model_params['sample_sequences_params']['generate_sequences']:
+            feature_neural_network = True
+        features_list.sort()
         
-        model_path = '/'.join([model_directory, f'{model_label}.h5'])
-        autoencoder_path = '/'.join([model_directory, f'{model_label}_autoencoder.h5'])
+        
+        # Folder names
+        model_directory = './data_files/ml_models/'
+        model_label = self.file_label + '-'.join(features_list) if not feature_neural_network else '-'.join(['FeatureBased'] + features_list)
+        model_path = model_directory + f'{model_label}.h5'
+        autoencoder_path = model_directory + f'{model_label}_autoencoder.h5'
 
-        # If there is a model, use it
-        if kw_model_params['load_model'] and _check_path(model_path):
-            # Check if needs an autoencoder and if it exists or not
-            if encoder_name != 'autoencoder' or _check_path(autoencoder_path):
-                if encoder_name == 'autoencoder':
-                    self.autoencoder = tf.keras.models.load_model(autoencoder_path)
-                model = tf.keras.models.load_model(model_path)
-                encoder = self._get_encoder(encoder_name)
+        # Load stored model
+        if kw_model_params['load_model']:
+            model, encoder = self.__load_neural_network_model(model_path, encoder_name, autoencoder_path)
+            if model is not None:
                 return model, encoder
 
-        # Data generation
+        # Obtain training data
         seqfitness, seqrep = self._get_sample_sequences(kw_model_params['sample_sequences_params']) 
         X, y, sample_fitness = self.__process_sample_sequences(seqfitness, seqrep)
         
         if encoder_name == 'autoencoder':
-            # Prepare parameters for autoencoder
+            # Set parameters for autoencoder
             kw_model_params['autoencoder_architecture']['input_shape'] = self.parameters['num_steps']
 
             # Prepare training data for autoencoder
@@ -1058,7 +1057,7 @@ class Hyperheuristic:
             X = tf.constant(X)
         y = tf.constant(y)
 
-        # Include fitness for training
+        # Include fitness
         if kw_model_params['include_fitness']:
             sample_weight = tf.constant(self._obtain_sample_weight_from_fitness(sample_fitness, kw_model_params['fitness_to_weight']))
         else:
@@ -1119,10 +1118,10 @@ class Hyperheuristic:
         if kw_model_params['save_model']:
             if not _check_path(model_directory):
                 _create_path(model_directory)
-            model.save(model_path)
             if encoder_name == 'autoencoder':
                 autoencoder.encoder.save(autoencoder_path)
-
+            model.save(model_path)
+            
         session.close()
         keras.backend.clear_session()
 
@@ -1130,7 +1129,6 @@ class Hyperheuristic:
 
     def __process_sample_sequences(self, seqfitness, seqrep):        
         "Process sequences to generate data for training"
-        
         X, y, sample_fitness = [], [], []
         for fitness, sequence in zip(seqfitness, seqrep):
             if len(sequence) > 0 and sequence[0] == -1:
@@ -1141,10 +1139,9 @@ class Hyperheuristic:
                 y.append(self.__one_hot_encoding_sequence([sequence.pop()]))
                 X.append(sequence.copy())
                 sample_fitness.append(fitness.pop())
-
         return X, y, sample_fitness
 
-    def _predict_operator_weights(self, model, encoder, sequence, exclude_indices, ragged=False):
+    def __predict_operator_weights(self, model, encoder, sequence, exclude_indices, ragged=False):
         """
         Given the state of a dynamic sequence, generate an array of probabilities to choose the next search operator
 
@@ -1354,7 +1351,7 @@ class Hyperheuristic:
             
             :param bool generate_sequences: True if would generate sequences for the given problem
             
-            :param str classification: Specify which kind of sequences would be retrived
+            :param str features: Specify which kind of sequences would be retrived
             
             :param dict kw_weighting_params: Specify the parameters to run the dynamic solver over the given problem
             
@@ -1369,17 +1366,15 @@ class Hyperheuristic:
         
         # Obtain sequences from previous generations
         if kw_sequences_params['retrieve_sequences']:
-            if isinstance(kw_sequences_params['classification'], str) and len(kw_sequences_params['classification']) == 0:
-                # Temporal fix to run third experiment
-                sections_labels = self.file_label.split('-')
-                sequences_folder = '-'.join(sections_labels[:2]+['short_nn_mlp_learning.json'])
-                seqfitness_retrieved, seqrep_retrieved = _get_stored_sample_sequences(sequences_folder)
+            if kw_sequences_params['features'] is None:
+                problem_name = self.file_label.split('-')[0]
+                seqfitness_retrieved, seqrep_retrieved = _get_stored_sample_sequences(additional_problems=[problem_name])
             else:
-                seqfitness_retrieved, seqrep_retrieved = _get_stored_sample_sequences(kw_sequences_params['classification'])
+                seqfitness_retrieved, seqrep_retrieved = _get_stored_sample_sequences(features=kw_sequences_params['features'])
                 
             
         # Generate sequences from dynamic solver
-        if kw_sequences_params['generate_sequences'] or len(seqfitness_retrieved) == 0:
+        if kw_sequences_params['generate_sequences']:
             seqfitness_generated, seqrep_generated, _, _ = self._solve_dynamic(kw_sequences_params['kw_weighting_params'], save_steps=False)        
         
         # Join sequences
@@ -1395,6 +1390,7 @@ class Hyperheuristic:
             sequences_to_save = dict()
             for idx, fitness_and_sequence in enumerate(zip(seqfitness, seqrep)):
                 sequences_to_save[idx] = fitness_and_sequence
+            # Store sequence without identificator of experiment : '-'.join(self.file_label.split('-')[:2]
             _save_sequences(self.file_label, sequences_to_save)
     
         return seqfitness, seqrep
@@ -1468,6 +1464,26 @@ class Hyperheuristic:
         out_weights = (out_matrix.T / total_count_per_step).T
 
         return out_weights
+
+    def __load_neural_network_model(self, model_path, encoder_name = 'default', autoencoder_path = ''):
+        "Return neural network model saved and its respective encoder"
+        # Load neural network model
+        if _check_path(model_path):
+            model = tf.keras.models.load_model(model_path)
+        else:
+            return None, None
+
+        if encoder_name == 'autoencoder':
+            # Load autoencoder
+            if _check_path(autoencoder_path):
+                self.autoencoder = tf.keras.models.load_model(autoencoder_path)
+            else:
+                return None, None
+    
+        # Get encoder    
+        encoder = self._get_encoder(encoder_name)                   
+
+        return model, encoder
 
     def _obtain_sample_weight_from_fitness(self, sample_fitness, fitness_to_weight):
         """
@@ -1549,8 +1565,10 @@ class Hyperheuristic:
 
     def __fill_sequence(self, sequence):
         "Fill a sequence with a dummy value until a fixed length"
-        return np.array(np.pad(sequence[:self.parameters['num_steps']], 
-                               (max(0, self.parameters['num_steps'] - len(sequence)), 0), 
+        sequence_copy = sequence[:self.parameters['num_steps']]
+        left_pad = self.parameters['num_steps'] - len(sequence_copy)
+        return np.array(np.pad(sequence_copy, 
+                               (left_pad, 0), 
                                constant_values=self.num_operators).astype(int))
 
     def __identity_encoder(self, sequence):
@@ -1653,60 +1671,48 @@ def _save_step(step_number, variable_to_save, prefix=''):
     # Create a new file for this step
     with open(folder_name + f'/{str(step_number)}-' + now.strftime('%m_%d_%Y_%H_%M_%S') + '.json', 'w') as json_file:
         json.dump(variable_to_save, json_file, cls=jt.NumpyEncoder)
-
-def _get_problems_in_classification(classification):
-    "Return a list of problems that satifies such classification"
-    #TODO: Consider move this function to benchmark_func.py
-    #TODO: Support differentiation between problem and dimension
-    import benchmark_func as bf
-
-    process_list = []
-    problems_list = []
-
-    if isinstance(classification, str):
-        process_list = [classification]
-    elif isinstance(classification, list):
-        process_list = classification
-    elif isinstance(classification, dict):
-        # Dict with keys 'func_names', 'dim', 'features'
-        # Not supported yet
-        return []
-        
-    if len(process_list) > 0:
-        for category in process_list:
-            if '-' in category:
-                # {func_name}-{variable_num}D
-                func_name = category.split('-')
-                problems_list.append(func_name)
-            elif category in bf.__all__:
-                # func_name
-                problems_list.append(category)
-            else:
-                # Feature list
-                
-                return []
-                    
-    return problems_list
     
-def _get_stored_sample_sequences(classification):
-    "Retrieve stored sequences"
-    # TODO: Fix function : Currently broken until fix classification
-    folder_name = 'data_files/sequences/'
+def _get_stored_sample_sequences(features=None, additional_problems=[], suffix='.json', folder_name = './data_files/sequences/'):
+    """
+    Retrieve sequences stored in folder_name. 
+    Consider all the sequences generated by solving the problems that has certain features.
+    
+    :param list features: 
+        List of features requested for a valid problem. 
+        If features is an empty list, all the problems are valid. 
+        If features is None, there is no valid problems.
+    
+    :param list additional_problems:
+        List of additional problems that could not satisfy the features list required.
+    
+    :param str suffix: 
+        Only accept sequences files that ends with 'suffix'.
+    
+    :param str folder_name:
+        Folder that stores the sequences files.
+    
+    :return list, list: Return the list of sequences with their respective fitness. 
+    """
+    # TODO: Support dimension
     if not _check_path(folder_name):
         return [], []
 
-    #problems_in_classification = _get_problems_in_classification(classification)
-    #file_names = _get_problems_in_classification(classification)
+    # TODO: Verify that additional_problems does not have dimension
+    # Obtain list of valid problmes
+    filtred_problems = []
+    if features is not None:
+        filtred_problems = bf.filter_problems(features)
+    valid_problems = np.unique(filtred_problems + additional_problems)
 
-    sequences_file = folder_name + f'{classification}'
-    if not _check_path(folder_name) or not _check_path(sequences_file):
-        return [], []
+    # Filter stored sequences
+    is_valid_folder = lambda folder: folder.split('-')[0] in valid_problems and folder.endswith(suffix)
+    sequences_files = filter(is_valid_folder, jt.read_subfolders(folder_name))
 
-    with open(sequences_file, 'r') as json_file:
-        sequences_stored = json.load(json_file)
-        seqfitness, seqrep = [], []
-        for key in sequences_stored:
-            fitness, sequence = sequences_stored[key]
+    # Extract sequences from stored sequences files
+    seqfitness, seqrep = [], []
+    for sequences_file in sequences_files:
+        sequences_json = jt.read_json(folder_name + sequences_file)
+        for _, (fitness, sequence) in sequences_json.items():
             seqfitness.append(fitness)
             seqrep.append(sequence)
     return seqfitness, seqrep
@@ -1748,24 +1754,26 @@ if __name__ == '__main__':
     import tikzplotlib as ptx
     from sklearn.preprocessing import normalize
     import seaborn as sns
-
+    
+    # Reproducible for test purposes
+    tf.random.set_seed(1)
+    np.random.seed(1)
+    
     plt.rcParams.update({'font.size': 18,
                          "text.usetex": True,
                          "font.family": "serif"})
 
-    problem = bf.Sphere(50)
-    # problem = bf.Stochastic(50)
+    # problem = bf.Sphere(50)
+    problem = bf.Stochastic(50)
     # problem = bf.CosineMixture(50)
     # problem = bf.Whitley(50)
     # problem = bf.Schwefel220(50)
     # problem = bf.Sargan(45)
 
-    problem = bf.choose_problem('<random>', np.random.randint(2, 50))
+    # problem = bf.choose_problem('<random>', np.random.randint(2, 50))
     # problem.set_search_range(-10, 10)
 
-    # Reproducible for test purposes
-    tf.random.set_seed(1)
-    np.random.seed(1)
+    
 
     file_label = "{}-{}D".format(problem.func_name, problem.variable_num)
 
@@ -1775,7 +1783,7 @@ if __name__ == '__main__':
     q.parameters['num_agents'] = 30
     q.parameters['num_steps'] = 100
     q.parameters['stagnation_percentage'] = 0.6
-    q.parameters['num_replicas'] = 30
+    q.parameters['num_replicas'] = 20
     sampling_portion = 0.37  # 0.37
 
     # fitprep, seqrep, weights, weimatrix = q.solve('dynamic', {
@@ -1789,12 +1797,12 @@ if __name__ == '__main__':
         'num_replicas': 10,
         'delete_idx': 5,
         'model_params': {
-            'load_model': False,
+            'load_model': True,
             'save_model': True,
             'sample_sequences_params': {
-                'classification': '',
-                'retrieve_sequences': False,
-                'generate_sequences': True,
+                'features': [],
+                'retrieve_sequences': True,
+                'generate_sequences': False,
                 'store_sequences': False,
                 'kw_weighting_params': {
                     'include_fitness': False,
@@ -1835,7 +1843,7 @@ if __name__ == '__main__':
 
     fitprep_nn, seqrep_nn, weights, weimatrix = q.solve('neural_network', kw_neural_network_params)
 
-    q.parameters['num_replicas'] = 50
+    q.parameters['num_replicas'] = 20
     # sampling_portion = 0.37  # 0.37
     fitprep_dyn, seqrep_dyn, _, _ = q.solve('dynamic', {
         'include_fitness': False,
@@ -1971,3 +1979,5 @@ if __name__ == '__main__':
     # import numpy as np
     #
     # qq, _ = q._obtain_candidate_solution(np.array(range(2)), 'RemoveMany')
+
+# %%

@@ -2891,6 +2891,31 @@ def for_all(property, dimensions=2):
 
         return info
 
+def filter_problems(features=['Differentiable', 'Separable', 'Unimodal'], intersection=True):
+    """
+    Return a list of function names that have the features listed
+
+    :param list[str] features: 
+        List of features
+        
+    :param bool intersection: 
+        True if the problems needs to have all the features, false if at least one is needed
+    
+    :return: list        
+    """
+    functions_features = list_functions(rnp=True, fts=features)    
+    features_length = len(features)
+    
+    funct_names = []
+    for funct_name, values in functions_features.items():
+        good_features = sum(map(int, list(values['Code'])))
+        if intersection and good_features == features_length:
+            # Problem has all the features
+            funct_names.append(funct_name)
+        if not intersection and good_features > 0:
+            # Problem has at least one feature
+            funct_names.append(funct_name)
+    return funct_names
 
 def choose_problem(problem_name=None, num_dimensions=None):
     """
