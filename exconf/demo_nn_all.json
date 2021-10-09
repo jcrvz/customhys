@@ -1,0 +1,59 @@
+{
+  "ex_config": {
+    "experiment_name": "demo_nn_mlp_all_learning",
+    "experiment_type": "neural_network",
+    "heuristic_collection_file": "medium_collection.txt",
+    "use_parallel": true,
+    "parallel_pool_size": 1,
+    "machine_learning_params": {
+      "num_replicas": 10,
+      "delete_idx": 5,
+      "model_params": {
+        "load_model": true,
+        "save_model": true,
+        "sample_sequences_params": {
+          "features": [],
+          "retrieve_sequences": true,
+          "generate_sequences": false,
+          "store_sequences": false,
+          "kw_weighting_params": {
+            "include_fitness": false,
+            "learning_portion": 1
+          }
+        },
+        "encoder" : "Default",
+        "include_fitness": true,
+        "fitness_to_weight": "rank",
+        "model_architecture": "MLP",
+        "model_architecture_layers": [
+          [100, "relu"],
+          [75, "relu"],
+          [50, "relu"]
+        ],
+        "epochs": 150
+      }
+    }
+  },
+  "hh_config": {
+    "num_steps": 100,
+    "num_agents": 30,
+    "num_iterations": 150,
+    "cardinality": 3,
+    "cardinality_min": 1,
+    "num_replicas": 20,
+    "stagnation_percentage": 0.50,
+    "as_mh": false,
+    "verbose": true,
+    "repeat_operators": true,
+    "allow_weight_matrix": true,
+    "trial_overflow": false
+  },
+  "prob_config": {
+    "dimensions": [
+      2
+    ],
+    "functions": [
+      "<choose_randomly>"
+    ]
+  }
+}
