@@ -399,6 +399,7 @@ class BasicProblem:
                     boundaries=(self.min_search_range, self.max_search_range),
                     is_constrained=is_constrained,
                     features=self.get_features(fts=fts),
+                    func_name=self.func_name,
                     dimensions=self.variable_num
                     )
 
@@ -2937,3 +2938,11 @@ def choose_problem(problem_name=None, num_dimensions=None):
             return eval('{}({})'.format(problem_name, num_dimensions))
     else:
         print(f'You need to choose one problem. Available problems: {__all__}')
+
+
+if __name__ == '__main__':
+    
+    possible_subsets = [['Unimodal'], ['Differentiable'], ['Unimodal', 'Differentiable'], [], ['Separable']]
+
+    for subset in possible_subsets:
+        print(subset, len(filter_problems(features=subset)))

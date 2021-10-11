@@ -12,7 +12,10 @@
         "load_model": true,
         "save_model": true,
         "sample_sequences_params": {
-          "features": ["Unimodal"],
+          "filters": {
+            "features": ["Unimodal"],
+            "include_dimensions": true
+          },
           "retrieve_sequences": true,
           "generate_sequences": false,
           "store_sequences": false,
@@ -37,9 +40,9 @@
   "hh_config": {
     "num_steps": 1,
     "num_agents": 30,
-    "num_iterations": 100,
+    "num_iterations": 1,
     "num_replicas": 1,
-    "stagnation_percentage": 0.50,
+    "stagnation_percentage": 0.5,
     "as_mh": false,
     "verbose": true,
     "repeat_operators": true,
@@ -48,7 +51,10 @@
   },
   "prob_config": {
     "dimensions": [
-      2
+      2,
+      10,
+      30,
+      50
     ],
     "functions": [
       "<choose_randomly>"
