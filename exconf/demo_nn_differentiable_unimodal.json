@@ -2,7 +2,7 @@
   "ex_config": {
     "experiment_name": "demo_nn_mlp_differentiable_unimodal_learning",
     "experiment_type": "neural_network",
-    "heuristic_collection_file": "medium_collection.txt",
+    "heuristic_collection_file": "short_collection.txt",
     "use_parallel": true,
     "parallel_pool_size": 1,
     "machine_learning_params": {
@@ -30,20 +30,18 @@
           [75, "relu"],
           [50, "relu"]
         ],
-        "epochs": 150
+        "epochs": 200
       }
     }
   },
   "hh_config": {
-    "num_steps": 100,
+    "num_steps": 1,
     "num_agents": 30,
     "num_iterations": 100,
-    "cardinality": 3,
-    "cardinality_min": 1,
-    "num_replicas": 150,
+    "num_replicas": 1,
     "stagnation_percentage": 0.50,
     "as_mh": false,
-    "verbose": false,
+    "verbose": true,
     "repeat_operators": true,
     "allow_weight_matrix": true,
     "trial_overflow": false

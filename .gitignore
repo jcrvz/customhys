@@ -119,9 +119,6 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
-# Tensorflow models
-ml_models/
-
 # Pyre type checker
 .pyre/
 *.xml
@@ -129,8 +126,12 @@ ml_models/
 
 data_files/images/*
 data_files/images
+data_files/ml_models/*
+data_files/ml_models
 data_files/raw/*
 data_files/raw
+data_files/sequences/*
+data_files/sequences
 .DS_Store
 *.zip
 /defaultset_forLaTeX

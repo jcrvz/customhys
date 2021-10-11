@@ -1,20 +1,20 @@
 {
   "ex_config": {
-    "experiment_name": "demo_nn_mlp_features_learning",
+    "experiment_name": "demo_nn_learning",
     "experiment_type": "neural_network",
-    "heuristic_collection_file": "medium_collection.txt",
+    "heuristic_collection_file": "short_collection.txt",
     "use_parallel": true,
     "parallel_pool_size": 10,
     "machine_learning_params": {
       "num_replicas": 10,
       "delete_idx": 5,
       "model_params": {
-        "load_model": true,
-        "save_model": true,
+        "load_model": false,
+        "save_model": false,
         "sample_sequences_params": {
-          "features": ["Unimodal", "Differentiable"],
-          "retrieve_sequences": true,
-          "generate_sequences": false,
+          "features": null,
+          "retrieve_sequences": false,
+          "generate_sequences": true,
           "store_sequences": false,
           "kw_weighting_params": {
             "include_fitness": false,
@@ -37,10 +37,8 @@
   "hh_config": {
     "num_steps": 100,
     "num_agents": 30,
-    "num_iterations": 150,
-    "cardinality": 3,
-    "cardinality_min": 1,
-    "num_replicas": 20,
+    "num_iterations": 100,
+    "num_replicas": 100,
     "stagnation_percentage": 0.50,
     "as_mh": false,
     "verbose": true,
