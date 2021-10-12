@@ -25,16 +25,21 @@
             "learning_portion": 1
           }
         },
-        "encoder" : "default",
+        "encoder" : "Ragged",
         "include_fitness": true,
         "fitness_to_weight": "rank",
-        "model_architecture": "MLP",
+        "model_architecture": "LSTM_Ragged",
         "model_architecture_layers": [
-          [100, "relu"],
-          [75, "relu"],
-          [50, "relu"]
+          [15, "sigmoid"]
         ],
-        "epochs": 10
+        "epochs": 300, 
+        "include_early_stopping": true,
+        "early_stopping_params": {
+          "monitor": "accuracy",
+          "patience": 20,
+          "min_delta": 0.0025,
+          "mode": "max"
+        }
       }
     }
   },

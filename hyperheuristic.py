@@ -1131,22 +1131,23 @@ class Hyperheuristic:
                       optimizer=tf.keras.optimizers.Adam(),
                       metrics=['accuracy'])
         
-        """
         # Early stopping
-        early_stopping = tf.keras.callbacks.EarlyStopping(
-            monitor='loss',
-            patience=8,
-            min_delta=1000,
-            mode='min'
-        ) 
-        #callbacks=[early_stopping],
-        """
-        
+        callbacks = []
+        if kw_model_params.get('include_early_stopping', False):
+            early_stopping_params = kw_model_params['early_stopping_params']
+            early_stopping = tf.keras.callbacks.EarlyStopping(
+                monitor=early_stopping_params['monitor'],
+                patience=early_stopping_params['patience'],
+                mode=early_stopping_params['mode']
+            ) 
+            callbacks = [early_stopping]
+
         # Train model
         model.fit(X, y, 
                   epochs=kw_model_params['epochs'],
                   sample_weight=sample_weight, 
-                  verbose=self.parameters['verbose'])
+                  verbose=self.parameters['verbose'],
+                  callbacks=callbacks)
 
         # Save model
         if kw_model_params['save_model']:
@@ -1878,7 +1879,7 @@ if __name__ == '__main__':
                     'include_population': True
                 },
                 'retrieve_sequences': True,
-                'generate_sequences': False,
+                'generate_sequences': True,
                 'store_sequences': False,
                 'kw_weighting_params': {
                     'include_fitness': False,
@@ -1892,7 +1893,14 @@ if __name__ == '__main__':
             'model_architecture_layers': [
                 [10, 'relu']
             ],
-            'epochs': 100
+            'epochs': 100,
+            'include_early_stopping': True,
+            'early_stopping_params': {
+                'monitor': 'accuracy',
+                'patience': 20,
+                'min_delta': 0.0025,
+                'mode': 'max'
+            }
         }
     })
 
