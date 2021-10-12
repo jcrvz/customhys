@@ -4,7 +4,7 @@
     "experiment_type": "neural_network",
     "heuristic_collection_file": "short_collection.txt",
     "use_parallel": true,
-    "parallel_pool_size": 10,
+    "parallel_pool_size": 1,
     "machine_learning_params": {
       "num_replicas": 10,
       "delete_idx": 5,
@@ -12,16 +12,20 @@
         "load_model": false,
         "save_model": false,
         "sample_sequences_params": {
-          "features": null,
+          "filters": {
+            "features": null,
+            "include_dimensions": true,
+            "include_population": true
+          },
           "retrieve_sequences": false,
           "generate_sequences": true,
-          "store_sequences": false,
+          "store_sequences": true,
           "kw_weighting_params": {
             "include_fitness": false,
             "learning_portion": 1
           }
         },
-        "encoder" : "Default",
+        "encoder" : "default",
         "include_fitness": true,
         "fitness_to_weight": "rank",
         "model_architecture": "MLP",
@@ -30,7 +34,7 @@
           [75, "relu"],
           [50, "relu"]
         ],
-        "epochs": 100
+        "epochs": 10
       }
     }
   },
@@ -38,6 +42,8 @@
     "num_steps": 100,
     "num_agents": 30,
     "num_iterations": 100,
+    "cardinality": 3,
+    "cardinality_min": 1,
     "num_replicas": 100,
     "stagnation_percentage": 0.50,
     "as_mh": false,
@@ -48,7 +54,10 @@
   },
   "prob_config": {
     "dimensions": [
-      2
+      2,
+      10,
+      30,
+      50
     ],
     "functions": [
       "<choose_randomly>"

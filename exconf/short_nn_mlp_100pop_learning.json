@@ -1,6 +1,6 @@
 {
   "ex_config": {
-    "experiment_name": "short_nn_mlp_learning",
+    "experiment_name": "short_nn_mlp_100pop_learning",
     "experiment_type": "neural_network",
     "heuristic_collection_file": "short_collection.txt",
     "use_parallel": true,
@@ -12,7 +12,11 @@
         "load_model": false,
         "save_model": true,
         "sample_sequences_params": {
-          "classification": "",
+          "filters": {
+            "features": null,
+            "include_dimensions": true,
+            "include_population": true
+          },
           "retrieve_sequences": false,
           "generate_sequences": true,
           "store_sequences": true,
@@ -30,14 +34,14 @@
           [75, "relu"],
           [50, "relu"]
         ],
-        "epochs": 100
+        "epochs": 200
       }
     }
   },
   "hh_config": {
     "num_steps": 100,
-    "num_agents": 30,
-    "num_iterations": 150,
+    "num_agents": 100,
+    "num_iterations": 100,
     "cardinality": 3,
     "cardinality_min": 1,
     "num_replicas": 100,
