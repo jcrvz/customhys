@@ -1,6 +1,6 @@
 {
   "ex_config": {
-    "experiment_name": "short_nn_mlp_50pop_learning",
+    "experiment_name": "short_nn_lstm_30pop_learning",
     "experiment_type": "neural_network",
     "heuristic_collection_file": "short_collection.txt",
     "use_parallel": true,
@@ -25,22 +25,27 @@
             "learning_portion": 1
           }
         },
-        "encoder" : "default",
+        "encoder" : "Ragged",
         "include_fitness": true,
         "fitness_to_weight": "rank",
-        "model_architecture": "MLP",
+        "model_architecture": "LSTM_Ragged",
         "model_architecture_layers": [
-          [100, "relu"],
-          [75, "relu"],
-          [50, "relu"]
+          [15, "sigmoid"]
         ],
-        "epochs": 200
+        "epochs": 100, 
+        "include_early_stopping": true,
+        "early_stopping_params": {
+          "monitor": "accuracy",
+          "patience": 20,
+          "min_delta": 0.003,
+          "mode": "max"
+        }
       }
     }
   },
   "hh_config": {
     "num_steps": 100,
-    "num_agents": 50,
+    "num_agents": 100,
     "num_iterations": 100,
     "cardinality": 3,
     "cardinality_min": 1,
