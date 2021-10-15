@@ -132,31 +132,35 @@ class Hyperheuristic:
                 self.num_iterations = 1
 
     def _choose_action(self, current_cardinality, previous_action=None, available_options=None):
-        # First read the available actions. Those could be ...
+        # First read the available actions. Those can be ...
         if available_options is None:
             available_options = ['Add', 'AddMany', 'Remove', 'RemoveMany', 'Shift', 'LocalShift', 'Swap', 'Restart',
                                  'Mirror', 'Roll', 'RollMany']
 
         # Black list (to avoid repeating the some actions in a row)
         if previous_action:
-            if previous_action == 'Mirror':
+            if (previous_action == 'Mirror') and ('Mirror' in available_options):
                 available_options.remove('Mirror')
 
         # Disregard those with respect to the current cardinality. It also considers the case of fixed cardinality
         if current_cardinality <= self.min_cardinality + 1:
-            available_options.remove('RemoveMany')
+            if 'RemoveMany' in available_options:
+                available_options.remove('RemoveMany')
 
-            if current_cardinality <= self.min_cardinality:
+            if (current_cardinality <= self.min_cardinality) and ('Remove' in available_options):
                 available_options.remove('Remove')
 
         if current_cardinality <= 1:
-            available_options.remove('Swap')
-            available_options.remove('Mirror')  # not an error, but to prevent wasting time
+            if 'Swap' in available_options:
+                available_options.remove('Swap')
+            if 'Mirror' in available_options:
+                available_options.remove('Mirror')  # not an error, but to prevent wasting time
 
         if current_cardinality >= self.max_cardinality - 1:
-            available_options.remove('AddMany')
+            if 'AddMany' in available_options:
+                available_options.remove('AddMany')
 
-            if current_cardinality >= self.max_cardinality:
+            if (current_cardinality >= self.max_cardinality) and ('Add' in available_options):
                 available_options.remove('Add')
 
         # Decide (randomly) which action to do
@@ -241,6 +245,10 @@ class Hyperheuristic:
                 # Delete an operator randomly selected
                 encoded_neighbour = np.delete(sol, np.random.randint(current_cardinality))
 
+            elif (action == 'RemoveLast') and (current_cardinality > self.min_cardinality):
+                # Delete an operator randomly selected
+                encoded_neighbour = np.delete(sol, -1)
+
             elif (action == 'RemoveMany') and (current_cardinality > self.min_cardinality + 1):
                 encoded_neighbour = np.copy(sol)
                 for _ in range(np.random.randint(1, current_cardinality - self.min_cardinality + 1)):
@@ -252,6 +260,11 @@ class Hyperheuristic:
                 encoded_neighbour[np.random.randint(current_cardinality)] = np.random.choice(
                     np.setdiff1d(self.current_space, sol)
                     if not self.parameters['repeat_operators'] else self.num_operators)
+
+            elif action == 'ShiftMany':
+                encoded_neighbour = np.copy(sol)
+                for _ in range(np.random.randint(1, current_cardinality - self.min_cardinality + 1)):
+                    encoded_neighbour = self._obtain_candidate_solution(sol=encoded_neighbour, action='Shift')
 
             elif action == 'LocalShift':  # It only works with the full set
                 # Perturbate an operator randomly selected +/- 1 excluding the existing ones
@@ -265,6 +278,11 @@ class Hyperheuristic:
                     selected_operator = (selected_operator + neighbour_direction) % self.num_operators
 
                 encoded_neighbour[operator_location] = selected_operator
+
+            elif action == 'LocalShiftMany':
+                encoded_neighbour = np.copy(sol)
+                for _ in range(np.random.randint(1, current_cardinality - self.min_cardinality + 1)):
+                    encoded_neighbour = self._obtain_candidate_solution(sol=encoded_neighbour, action='LocalShift')
 
             elif (action == 'Swap') and (current_cardinality > 1):
                 # Swap two elements randomly chosen
@@ -340,7 +358,7 @@ class Hyperheuristic:
         else:
             raise HyperheuristicError('Invalid temperature scheme')
 
-    def _check_acceptance(self, delta, acceptation_scheme, temp, energy_zero=1.0):
+    def _check_acceptance(self, delta, acceptation_scheme='greedy', temp=1.0, energy_zero=1.0):
         """
         Return a flag indicating if the current performance value can be accepted according to ``acceptation_scheme``.
 
@@ -348,11 +366,12 @@ class Hyperheuristic:
             Energy change for determining the acceptance probability.
 
         :param str acceptation_scheme: Optional.
-            Function for determining the acceptance probability. It can be 'exponential', 'boltzmann', or 'greedy'. The
-             default is 'greedy'.
+            Function for determining the acceptance probability. It can be 'exponential', 'boltzmann', 'probabilistic',
+            or 'greedy'. The default is 'greedy'. For 'probabilistic' and 'greedy', temp and energy parameters are not
+            used.
 
         :param float temp: Required for acceptation_scheme = ('exponential'|'boltzmann')
-            Temperature value for determining the acceptance probability.
+            Temperature value for determining the acceptance probability. The default value is 1.
 
         :param float energy_zero: Required for acceptation_scheme = ('exponential'|'boltzmann')
             Energy value to scale the temperature measurement. The default value is 1.
@@ -369,6 +388,9 @@ class Hyperheuristic:
         elif acceptation_scheme == 'boltzmann':
             probability = 1. / (1. + np.exp(delta / temp))
             return (delta <= 0.0) or (np.random.rand() <= probability)
+        elif acceptation_scheme == 'probabilistic':
+            # TODO: fix the probability of 0.5 and assign a parameter to it.
+            return (delta <= 0.0) or (np.random.rand() <= 0.5)
         else:  # Greedy
             return delta <= 0.0
 
@@ -383,13 +405,7 @@ class Hyperheuristic:
         """
         return (step > self.parameters['num_steps']) or (
                 self.__stagnation_check(stag_counter) and not self.parameters['trial_overflow']) or \
-               (any([var <= 0.0 for var in args]))
-
-    # def _check_improvement(self, new_perf, best_perf, new_pos, best_pos):
-    #     if self.parameters['as_mh']:
-    #         return new_perf < best_perf
-    #     else:
-    #         return (new_perf <= best_perf) and (len(new_pos) <= len(best_pos))  # (new_perf < best_perf) or
+               (any([var < 0.0 for var in args]))
 
     def get_operators(self, sequence):
         return [self.heuristic_space[index] for index in sequence]
@@ -548,9 +564,6 @@ class Hyperheuristic:
         # Evaluate this candidate solution
         current_performance, current_details = self.evaluate_candidate_solution(current_solution)
 
-        # Update the current performance
-        current_performance *= len(current_solution)
-
         # Initialise some additional variables
         historical_current = [current_performance]
         historical_best = [current_performance]
@@ -563,44 +576,52 @@ class Hyperheuristic:
         _save_step(0, dict(encoded_solution=best_solution, performance=best_performance,
                            details=current_details), self.file_label)
 
-        # Step, stagnation counter and its maximum value
+        # Initialise final counter
+        fitness_per_repetition = list()
+        sequence_per_repetition = list()
+        weights_per_repetition = list()
+
+            # Step, stagnation counter and its maximum value
         step = 0
         stag_counter = 0
         action = None
 
         # Define the available actions to use in the process
-        actions = ['Remove', 'RemoveMany', 'Shift', 'LocalShift', 'Swap', 'Roll', 'RollMany']
+        actions = ['Add', 'AddMany', 'Remove', 'RemoveMany', 'Shift', 'LocalShift', 'Swap', 'RollMany']
+        actions = ['RemoveLast', 'LocalShiftMany']
+
+        # ['Add', 'AddMany', 'Remove', 'Shift', 'LocalShift', 'Swap', 'Restart',
+        #  'Mirror', 'Roll', 'RollMany']
 
         # Print the first status update, step = 0
         if self.parameters['verbose']:
-            print('{} :: Step: {:4d}, Action: {:12s}, Temp: {:.2e}, Card: {:3d}, Perf: {:.2e} [Initial]'.format(
-                self.file_label, step, 'None', temperature, len(current_solution), current_performance))
-            # ''.join([chr(97 + round(x * 25 / self.num_operators)) for x in current_solution])))
+            print('{} :: Step: {:4d}, Action: {:12s}, Card: {:3d}, Perf: {:.2e} [Initial]'.format(
+                self.file_label, step, 'None', len(current_solution), current_performance))
 
-        # Perform a metaheuristic (now, Simulated Annealing) as hyper-heuristic process
-        while not self._check_finalisation(step, stag_counter,
-                                           temperature - self.parameters['min_temperature']):
+        # Perform a metaheuristic as a hyper-heuristic process
+        while not self._check_finalisation(step, stag_counter):
             # Update step and temperature
             step += 1
-            temperature = self._obtain_temperature(step, self.parameters['temperature_scheme'])
+
+            weight_vector = weight_matrix[step-1, :] if step < weight_matrix.shape[0] else None
 
             # Generate a neighbour solution (just indices-codes)
-            action = self._choose_action(len(current_solution), action)
-            candidate_solution = self._obtain_candidate_solution(sol=current_solution, action=action)
+            action = self._choose_action(len(current_solution), action, available_options=actions)
+            candidate_solution = self._obtain_candidate_solution(
+                sol=current_solution, action=action, operators_weights=weight_vector)
 
             # Evaluate this candidate solution
             candidate_performance, candidate_details = self.evaluate_candidate_solution(candidate_solution)
 
             # Print update
             if self.parameters['verbose']:
-                print('{} :: Step: {:4d}, Action: {:12s}, Temp: {:.2e}, Card: {:3d}, '.format(
-                    self.file_label, step, action, temperature, len(candidate_solution)) +
+                print('{} :: Step: {:4d}, Action: {:12s}, Card: {:3d}, '.format(
+                    self.file_label, step, action, len(candidate_solution)) +
                       'candPerf: {:.2e}, currPerf: {:.2e}, bestPerf: {:.2e}'.format(
                           candidate_performance, current_performance, best_performance), end=' ')
 
-            # Accept the current solution using a given acceptance_scheme
-            if self._check_acceptance(candidate_performance - current_performance, self.parameters['acceptance_scheme'],
-                                      temperature, initial_energy):
+            # Accept the current solution using a given acceptance_scheme (= 'greedy' -> default option)
+            if self._check_acceptance(candidate_performance - current_performance):
 
                 # Update the current solution and its performance
                 current_solution = np.copy(candidate_solution)
@@ -610,15 +631,27 @@ class Hyperheuristic:
                 if self.parameters['verbose']:
                     print('A', end='')
 
-            # If the candidate solution is better or equal than the current best solution
-            if candidate_performance <= best_performance:
+                # If the candidate solution is better or equal than the current best solution
+                if candidate_performance < best_performance:
+                    # Add improvement mark
+                    if self.parameters['verbose']:
+                        print('+', end='')
+                    # Reset the stagnation counter
+                    stag_counter = 0
+                else:
+                    # Update the stagnation counter
+                    stag_counter += 1
 
                 # Update the best solution and its performance
                 best_solution = np.copy(candidate_solution)
                 best_performance = candidate_performance
 
-                # Reset the stagnation counter
-                stag_counter = 0
+                # Get new information into some lists
+                fitness_per_repetition.append(candidate_details["fitness"])
+                sequence_per_repetition.append(best_solution)
+
+                # Update weights
+                # self._update_weights()
 
                 # Save this information
                 _save_step(step, {
@@ -626,13 +659,6 @@ class Hyperheuristic:
                     'performance': best_performance,
                     'details': candidate_details
                 }, self.file_label)
-
-                # Add improvement mark
-                if self.parameters['verbose']:
-                    print('+', end='')
-            else:
-                # Update the stagnation counter
-                stag_counter += 1
 
             historical_current.append(current_performance)
             historical_best.append(best_performance)
@@ -645,9 +671,7 @@ class Hyperheuristic:
             print('\nBEST --> Perf: {}, e-Sol: {}'.format(best_performance, best_solution))
 
         # Return the best solution found and its details
-        return best_solution, best_performance, historical_current, historical_best
-
-
+        return fitness_per_repetition, sequence_per_repetition  #, weights_per_repetition  # to add weight_matrix
 
     def _solve_dynamic(self, kw_weighting_params):
         """
@@ -668,9 +692,6 @@ class Hyperheuristic:
         sequence_per_repetition = list()
         fitness_per_repetition = list()
         weights_per_repetition = list()
-
-        # Initialise the current performance from the initial guess sequence
-        current_performance = initial_guess_info['performance']
 
         for rep in range(self.parameters['num_replicas']):
             # Call the metaheuristic
@@ -977,10 +998,10 @@ class Hyperheuristic:
     def __get_blend_factor(extrema, point):
         return (point - extrema[0]) / (extrema[1] - extrema[0])
 
-    def _get_weight_matrix(self, category, values_dict, file_path="./data_files/translearn_dataset"):
+    def _get_weight_matrix(self, category, values_dict, file_path="./data_files/translearn_dataset.json"):
 
         # Load the datafile
-        dataset = pd.read_json(file_path)
+        dataset = pd.read_json(file_path, dtype=[int, int, str, np.ndarray])
         # category = 0, values_dict = {"Dim": 3, "Pop": 31}
 
         # Check if the values are in the list, then return a list with its neighbours
@@ -997,18 +1018,19 @@ class Hyperheuristic:
                 limits_values = [val]
 
             limits[key] = limits_values
-            print(limits)
+            # print(limits)
 
         comb = [*product(*limits.values())]
         num_comb = len(comb)
         # Read matrices
         matrices = list()
-        for dim_val, pop_val in comb:
+        # It is liaised to the ordering
+        for pop_val, dim_val in comb:
             matrices.append(np.array(*dataset[
                 (dataset['Dim'] == dim_val) &
                 (dataset['Pop'] == pop_val) &
                 (dataset['Cat'] == category)]['weights'].tolist()))
-            print(dim_val, pop_val)
+            # print(dim_val, pop_val)
 
         if num_comb == 1:
             # Just pick up the corresponding matrix
@@ -1045,7 +1067,7 @@ class Hyperheuristic:
         total_count_per_step = out_matrix.sum(1)
         out_weights = (out_matrix.T / total_count_per_step).T
 
-        return out_weights
+        return np.array(out_weights)
 
     def _update_weights(self, sequences=None, fitness_values=None, include_fitness=False, learning_portion=0.37):
         # *** uncomment when necessary
@@ -1148,9 +1170,9 @@ if __name__ == '__main__':
                          "text.usetex": True,
                          "font.family": "serif"})
 
-    problem = bf.Sphere(50)
+    # problem = bf.Sphere(45)
     # problem = bf.Stochastic(50)
-    # problem = bf.CosineMixture(50)
+    problem = bf.CosineMixture(35)
     # problem = bf.Whitley(50)
     # problem = bf.Schwefel220(50)
     # problem = bf.Sargan(45)
@@ -1158,24 +1180,25 @@ if __name__ == '__main__':
     # problem = bf.choose_problem('<random>', np.random.randint(2, 50))
     # problem.set_search_range(-10, 10)
 
-    file_label = "{}-{}D".format(problem.func_name, problem.variable_num)
+    file_label = "tl_{}-{}D".format(problem.func_name, problem.variable_num)
 
-    q = Hyperheuristic(problem=problem.get_formatted_problem(),
-                       heuristic_space='short_collection.txt',  # 'default.txt',  #
+    q = Hyperheuristic(problem=problem.get_formatted_problem(
+        fts=['Differentiable', 'Unimodal']),
+                       heuristic_space='default.txt',
                        file_label=file_label)
-    q.parameters['num_agents'] = 30
+    q.parameters['num_agents'] = 40
     q.parameters['num_steps'] = 100
     q.parameters['stagnation_percentage'] = 0.5
-    q.parameters['num_replicas'] = 100
+    q.parameters['num_replicas'] = 30
+    q.parameters['learnt_dataset'] = "./data_files/translearn_dataset.json"
     sampling_portion = 0.37  # 0.37
-    fitprep, seqrep, weights, weimatrix = q.solve('dynamic', {
-        'include_fitness': False,
-        'learning_portion': sampling_portion
-    })
     q.parameters['allow_weight_matrix'] = True
     q.parameters['trial_overflow'] = True
+    fitprep, seqrep = q.solve(mode='transfer_learning')
 
     colours = plt.cm.rainbow(np.linspace(0, 1, len(fitprep)))
+
+    # is there a way to update the weight matrix using the information provided from each run
 
     # ------- Figure 0
     # fi0 = plt.figure()
@@ -1200,81 +1223,81 @@ if __name__ == '__main__':
     # # plt.plot(c, 'o')
     # plt.show()
 
-    folder_name = './figures-to-export/'
-
-    # ------- Figure 1
-    fi1 = plt.figure(figsize=(8, 3))
-    plt.ion()
-    for x, c in zip(fitprep, colours):
-        plt.plot(x, '-o', color=c)
-    plt.xlabel('Step')
-    plt.ylabel('Fitness')
-    plt.ioff()
-    # plt.plot(c, 'o')
-    plt.savefig(folder_name + file_label + "_FitnesStep" + ".svg", dpi=333, transparent=True)
-    fi1.show()
-
-    # ------- Figure 2
-    fi2 = plt.figure(figsize=(6, 6))
-    ax = fi2.add_subplot(111, projection='3d')
-    plt.ion()
-    for x, y, c in zip(fitprep, seqrep, colours):
-        ax.plot3D(range(1, 1 + len(x)), y, x, 'o-', color=c)
-
-    plt.xlabel('Step')
-    plt.ylabel('Search Operator')
-    ax.set_zlabel('Fitness')
-    plt.ioff()
-    plt.savefig(folder_name + file_label + "_SOStepFitness" + ".svg", dpi=333, transparent=True)
-    plt.show()
-
-    # ------- Figure 3
-    new_colours = plt.cm.jet(np.linspace(0, 1, len(fitprep)))
-
-    # fi3 = plt.figure(figsize=(6, 6))
-    # ax = fi3.add_subplot(111, projection='3d')
-    # ax.view_init(elev=30, azim=30)
+    # folder_name = './figures-to-export/'
+    #
+    # # ------- Figure 1
+    # fi1 = plt.figure(figsize=(8, 3))
     # plt.ion()
-    #
-    # for w, i, c in zip(weights, range(1, len(fitprep) + 1), new_colours):
-    #     ax.plot3D([i] * len(w), range(1, len(w) + 1), w, '-', color=c)
-    #
-    # plt.xlabel('Repetition')
-    # plt.ylabel('Search Operator')
-    # ax.set_zlabel('Weight')
-    #
+    # for x, c in zip(fitprep, colours):
+    #     plt.plot(x, '-o', color=c)
+    # plt.xlabel('Step')
+    # plt.ylabel('Fitness')
     # plt.ioff()
+    # # plt.plot(c, 'o')
+    # plt.savefig(folder_name + file_label + "_FitnesStep" + ".svg", dpi=333, transparent=True)
+    # fi1.show()
+    #
+    # # ------- Figure 2
+    # fi2 = plt.figure(figsize=(6, 6))
+    # ax = fi2.add_subplot(111, projection='3d')
+    # plt.ion()
+    # for x, y, c in zip(fitprep, seqrep, colours):
+    #     ax.plot3D(range(1, 1 + len(x)), y, x, 'o-', color=c)
+    #
+    # plt.xlabel('Step')
+    # plt.ylabel('Search Operator')
+    # ax.set_zlabel('Fitness')
+    # plt.ioff()
+    # plt.savefig(folder_name + file_label + "_SOStepFitness" + ".svg", dpi=333, transparent=True)
     # plt.show()
-
-    # ------- Figure 4
-    if weimatrix is not None:
-        # plt.figure()
-        plt.figure(figsize=(8, 3))
-        plt.imshow(weimatrix.T, cmap="hot_r")
-        plt.xlabel('Step')
-        plt.ylabel('Search Operator')
-        plt.savefig(folder_name + file_label + "_SOStep" + ".svg", dpi=333, transparent=True)
-        plt.show()
-
-    # ------- Figure 5
-    last_fitness_values = np.array([ff[-1] for ff in fitprep])
-    midpoint = int(q.parameters['num_replicas'] * sampling_portion)
-
-    plt.figure()
-    plt.figure(figsize=(8, 3))
-    plt.boxplot([last_fitness_values[:midpoint], last_fitness_values[midpoint:], last_fitness_values],
-                showmeans=True)
-    plt.xticks(range(1, 4), ['Train', 'Test/Refine', 'All'])
-    plt.ylabel('Fitness')
-    plt.xlabel('Sample')
-    plt.savefig(folder_name + file_label + "FitnessSample" + ".svg", dpi=333, transparent=True)
-    plt.show()
-
-    # print('Stats for all fitness values:')
-    pprint(st.describe(last_fitness_values[:midpoint])._asdict())
     #
-    # print('Stats for train fitness values:')
-    # pprint(st.describe(last_fitness_values)._asdict())
-    # import numpy as np
+    # # ------- Figure 3
+    # new_colours = plt.cm.jet(np.linspace(0, 1, len(fitprep)))
     #
-    # qq, _ = q._obtain_candidate_solution(np.array(range(2)), 'RemoveMany')
+    # # fi3 = plt.figure(figsize=(6, 6))
+    # # ax = fi3.add_subplot(111, projection='3d')
+    # # ax.view_init(elev=30, azim=30)
+    # # plt.ion()
+    # #
+    # # for w, i, c in zip(weights, range(1, len(fitprep) + 1), new_colours):
+    # #     ax.plot3D([i] * len(w), range(1, len(w) + 1), w, '-', color=c)
+    # #
+    # # plt.xlabel('Repetition')
+    # # plt.ylabel('Search Operator')
+    # # ax.set_zlabel('Weight')
+    # #
+    # # plt.ioff()
+    # # plt.show()
+    #
+    # # ------- Figure 4
+    # if weimatrix is not None:
+    #     # plt.figure()
+    #     plt.figure(figsize=(8, 3))
+    #     plt.imshow(weimatrix.T, cmap="hot_r")
+    #     plt.xlabel('Step')
+    #     plt.ylabel('Search Operator')
+    #     plt.savefig(folder_name + file_label + "_SOStep" + ".svg", dpi=333, transparent=True)
+    #     plt.show()
+    #
+    # # ------- Figure 5
+    # last_fitness_values = np.array([ff[-1] for ff in fitprep])
+    # midpoint = int(q.parameters['num_replicas'] * sampling_portion)
+    #
+    # plt.figure()
+    # plt.figure(figsize=(8, 3))
+    # plt.boxplot([last_fitness_values[:midpoint], last_fitness_values[midpoint:], last_fitness_values],
+    #             showmeans=True)
+    # plt.xticks(range(1, 4), ['Train', 'Test/Refine', 'All'])
+    # plt.ylabel('Fitness')
+    # plt.xlabel('Sample')
+    # plt.savefig(folder_name + file_label + "FitnessSample" + ".svg", dpi=333, transparent=True)
+    # plt.show()
+    #
+    # # print('Stats for all fitness values:')
+    # pprint(st.describe(last_fitness_values[:midpoint])._asdict())
+    # #
+    # # print('Stats for train fitness values:')
+    # # pprint(st.describe(last_fitness_values)._asdict())
+    # # import numpy as np
+    # #
+    # # qq, _ = q._obtain_candidate_solution(np.array(range(2)), 'RemoveMany')

@@ -20,7 +20,7 @@
     "verbose": false,
     "repeat_operators": true,
     "allow_weight_matrix": true,
-    "learnt_dataset": "./data_files/translearn_dataset",
+    "learnt_dataset": "./data_files/translearn_dataset.json",
     "trial_overflow": true
   },
   "prob_config": {
@@ -139,6 +139,6 @@
       "Zakharov",
       "ZeroSum"
     ],
-    "features": ["Unimodal"]
+    "features": ["Differentiable", "Unimodal"]
   }
 }
