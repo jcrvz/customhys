@@ -1,6 +1,6 @@
 {
   "ex_config": {
-    "experiment_name": "medium_nn_mlp_small_learning",
+    "experiment_name": "medium_nn_mlp_small_30pop_learning",
     "experiment_type": "neural_network",
     "heuristic_collection_file": "medium_collection.txt",
     "use_parallel": true,
@@ -12,16 +12,20 @@
         "load_model": false,
         "save_model": true,
         "sample_sequences_params": {
-          "classification": "",
-          "retrieve_sequences": true,
-          "generate_sequences": false,
-          "store_sequences": false,
+          "filters": {
+            "features": null,
+            "include_dimensions": true,
+            "include_population": true
+          },
+          "retrieve_sequences": false,
+          "generate_sequences": true,
+          "store_sequences": true,
           "kw_weighting_params": {
             "include_fitness": false,
             "learning_portion": 1
           }
         },
-        "encoder" : "default",
+        "encoder" : "Default",
         "include_fitness": true,
         "fitness_to_weight": "rank",
         "model_architecture": "MLP",
@@ -30,14 +34,15 @@
           [75, "relu"],
           [50, "relu"]
         ],
-        "epochs": 100
+        "epochs": 100, 
+        "include_early_stopping": false
       }
     }
   },
   "hh_config": {
     "num_steps": 100,
     "num_agents": 30,
-    "num_iterations": 150,
+    "num_iterations": 100,
     "cardinality": 3,
     "cardinality_min": 1,
     "num_replicas": 100,
