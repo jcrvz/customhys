@@ -1,6 +1,6 @@
 {
   "ex_config": {
-    "experiment_name": "demo_nn_mlp_unimodal_learning",
+    "experiment_name": "demo_nn_mlp_unimodal_reload",
     "experiment_type": "neural_network",
     "heuristic_collection_file": "short_collection.txt",
     "use_parallel": true,
@@ -9,12 +9,14 @@
       "num_replicas": 1,
       "delete_idx": 5,
       "model_params": {
-        "load_model": true,
+        "load_model": false,
         "save_model": true,
         "sample_sequences_params": {
           "filters": {
             "features": ["Unimodal"],
-            "include_dimensions": true
+            "include_dimensions": true,
+            "include_population": true,
+            "sequence_limit": 200
           },
           "retrieve_sequences": true,
           "generate_sequences": false,

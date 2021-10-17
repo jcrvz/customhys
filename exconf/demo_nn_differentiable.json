@@ -1,6 +1,6 @@
 {
   "ex_config": {
-    "experiment_name": "demo_nn_mlp_differentiable_learning",
+    "experiment_name": "demo_nn_mlp_differentiable_reload",
     "experiment_type": "neural_network",
     "heuristic_collection_file": "short_collection.txt",
     "use_parallel": true,
@@ -9,12 +9,14 @@
       "num_replicas": 1,
       "delete_idx": 5,
       "model_params": {
-        "load_model": true,
+        "load_model": false,
         "save_model": true,
         "sample_sequences_params": {
           "filters": {
             "features": ["Differentiable"],
-            "include_dimensions": true
+            "include_dimensions": true,
+            "include_population": true,
+            "sequence_limit": 200
           },
           "retrieve_sequences": true,
           "generate_sequences": false,
@@ -41,10 +43,8 @@
     "num_steps": 1,
     "num_agents": 30,
     "num_iterations": 1,
-    "cardinality": 3,
-    "cardinality_min": 1,
     "num_replicas": 1,
-    "stagnation_percentage": 0.50,
+    "stagnation_percentage": 0.5,
     "as_mh": false,
     "verbose": true,
     "repeat_operators": true,
