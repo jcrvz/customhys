@@ -117,6 +117,8 @@ class Hyperheuristic:
         self.num_iterations = None
         self.toggle_seq_as_meta(parameters['as_mh'])
 
+        self.__current_sequence = None
+
     def toggle_seq_as_meta(self, as_mh=None):
         if as_mh is None:
             self.parameters['as_mh'] = not self.parameters['as_mh']
@@ -579,7 +581,10 @@ class Hyperheuristic:
         weight_matrix = self.__check_learnt_dataset()
 
         # Obtain an initial guess sequence by choosing the operators with the maximal likelihood for each step
-        current_solution = self._obtain_candidate_solution(action="max_frequency", operators_weights=weight_matrix)
+        if self.__current_sequence is None:
+            current_solution = self._obtain_candidate_solution(action="max_frequency", operators_weights=weight_matrix)
+        else:
+            current_solution = self.__current_sequence
 
         # Evaluate this candidate solution
         current_performance, current_details = self.evaluate_candidate_solution(current_solution)
@@ -608,7 +613,7 @@ class Hyperheuristic:
 
         # Define the available actions to use in the process
         # actions = ['Add', 'AddMany', 'Remove', 'RemoveMany', 'Shift', 'LocalShift', 'Swap', 'RollMany']
-        actions = ['RemoveLast', 'RemoveMany', 'Swap', 'ShiftMany', 'ShiftMany']
+        actions = ['RemoveLast', 'Add', 'RemoveMany', 'Swap', 'ShiftMany', 'ShiftMany']
 
         # ['Add', 'AddMany', 'Remove', 'Shift', 'LocalShift', 'Swap', 'Restart',
         #  'Mirror', 'Roll', 'RollMany']
@@ -713,10 +718,11 @@ class Hyperheuristic:
         sequence_per_repetition = list()
         fitness_per_repetition = list()
         weights_per_repetition = list()
+        unfolded_metaheuristic = list()
 
         weight_matrix = self.__check_learnt_dataset()
 
-        for rep in range(self.parameters['num_replicas']):
+        for rep in range(1):  # self.parameters['num_replicas']):
             # Call the metaheuristic
             # mh = None
             mh = Metaheuristic(self.problem, num_agents=self.parameters['num_agents'],
@@ -756,7 +762,9 @@ class Hyperheuristic:
 
                 # Update the current set
                 if not trial_overflow:
-                    candidate_operators_per_step = self.__get_argfrequencies(weight_matrix[step, :], 10)
+                    # candidate_operators_per_step = self.__get_argfrequenccies(weight_matrix[step, :], 20)
+                    candidate_operators_per_step = self._obtain_candidate_solution(
+                        sol=10, operators_weights=weight_matrix[step, :])
                 else:
                     # Pick randomly a simple heuristic
                     candidate_operators_per_step = self._obtain_candidate_solution(sol=10)
@@ -857,6 +865,15 @@ class Hyperheuristic:
             #                     weight_matrix=weight_matrix
             #                 )),
             #            self.file_label)
+
+        # Refine the achieved sequence
+        print(unfolded_metaheuristic)
+        self.__current_sequence = unfolded_metaheuristic
+        fitness_static, sequence_static = self._solve_static_translearn(kw_weighting_params)
+        # sequence_performance, sequence_details = self.evaluate_candidate_solution(unfolded_metaheuristic)
+        print(sequence_static)
+
+        print(f"Perf: {fitness_static}")
 
         # Return the best solution found and its details
         return fitness_per_repetition, sequence_per_repetition  #, weights_per_repetition, weight_matrix
@@ -1386,7 +1403,7 @@ if __name__ == '__main__':
         file_label=file_label)
     q.parameters['num_agents'] = 40
     q.parameters['num_steps'] = 100
-    q.parameters['stagnation_percentage'] = 0.5
+    q.parameters['stagnation_percentage'] = 0.75
     q.parameters['num_replicas'] = 30
     q.parameters['learnt_dataset'] = "./data_files/translearn_dataset.json"
     sampling_portion = 0.37  # 0.37
