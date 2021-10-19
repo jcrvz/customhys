@@ -383,7 +383,7 @@ class Hyperheuristic:
         else:
             raise HyperheuristicError('Invalid temperature scheme')
 
-    def _check_acceptance(self, delta, acceptation_scheme='greedy', temp=1.0, energy_zero=1.0):
+    def _check_acceptance(self, delta, acceptation_scheme='greedy', temp=1.0, energy_zero=1.0, prob=None):
         """
         Return a flag indicating if the current performance value can be accepted according to ``acceptation_scheme``.
 
@@ -405,17 +405,17 @@ class Hyperheuristic:
         """
 
         if acceptation_scheme == 'exponential':
-            probability = np.min([np.exp(-delta / (energy_zero * temp)), 1])
+            probability = np.min([np.exp(-delta / (energy_zero * temp)), 1]) if prob is None else prob
             if self.parameters['verbose']:
                 print(', [Delta: {:.2e}, ArgProb: {:.2e}, Prob: {:.2f}]'.format(
                     delta, -delta / (energy_zero * temp), probability), end=' ')
             return np.random.rand() < probability
         elif acceptation_scheme == 'boltzmann':
-            probability = 1. / (1. + np.exp(delta / temp))
+            probability = 1. / (1. + np.exp(delta / temp)) if prob is None else prob
             return (delta <= 0.0) or (np.random.rand() <= probability)
         elif acceptation_scheme == 'probabilistic':
-            # TODO: fix the probability of 0.5 and assign a parameter to it.
-            return (delta <= 0.0) or (np.random.rand() <= 0.5)
+            probability = 0.25 if prob is None else prob
+            return (delta <= 0.0) or (np.random.rand() <= probability)
         else:  # Greedy
             return delta <= 0.0
 
@@ -428,7 +428,7 @@ class Hyperheuristic:
         `step` (current iteration number) and `stag_counter` (current stagnation iteration number). There are other
          variables that can be considered such as `temperature`. These additional variables must be args[0] <= 0.0.
         """
-        return (step > self.parameters['num_steps']) or (
+        return (step >= self.parameters['num_steps']) or (
                 self.__stagnation_check(stag_counter) and not self.parameters['trial_overflow']) or \
                (any([var < 0.0 for var in args]))
 
@@ -601,7 +601,7 @@ class Hyperheuristic:
         sequence_per_repetition = list()
         weights_per_repetition = list()
 
-            # Step, stagnation counter and its maximum value
+        # Step, stagnation counter and its maximum value
         step = 0
         stag_counter = 0
         action = None
@@ -623,7 +623,7 @@ class Hyperheuristic:
             # Update step and temperature
             step += 1
 
-            weight_vector = weight_matrix[step-1, :] if step < weight_matrix.shape[0] else None
+            weight_vector = weight_matrix[step - 1, :] if step < weight_matrix.shape[0] else None
 
             # Generate a neighbour solution (just indices-codes)
             action = self._choose_action(len(current_solution), action, available_options=actions)
@@ -674,14 +674,12 @@ class Hyperheuristic:
                 # Update the stagnation counter
                 stag_counter += 1
 
-
             # Get new information into some lists
             fitness_per_repetition.append(candidate_details["fitness"])
             sequence_per_repetition.append(best_solution)
 
             # Update weights
             # self._update_weights()
-
 
             historical_current.append(current_performance)
             historical_best.append(best_performance)
@@ -694,7 +692,7 @@ class Hyperheuristic:
             print('\nBEST --> Perf: {}, e-Sol: {}'.format(best_performance, best_solution))
 
         # Return the best solution found and its details
-        return fitness_per_repetition, sequence_per_repetition  #, weights_per_repetition  # to add weight_matrix
+        return fitness_per_repetition, sequence_per_repetition  # , weights_per_repetition  # to add weight_matrix
 
     def _solve_dynamic_translearn(self, kw_weighting_params):
         """
@@ -735,33 +733,37 @@ class Hyperheuristic:
             self.current_space = np.arange(self.num_operators)
 
             # Initialise some additional variables
-            candidate_enc_so = list()  # This is a list of up to 1-length
-            current_sequence = [-1]
+            candidate_enc_so = -1  # This is a list of up to 1-length
+            unfolded_metaheuristic = [-1]
 
             best_fitness = [current_fitness]
             best_position = [current_position]
-            fitness_data = [np.copy(mh.pop.fitness)]
-            positions_data = [np.copy(mh.pop.get_positions())]
+            current_fitness_data = np.copy(mh.pop.fitness)
+            current_positions_data = np.copy(mh.pop.get_positions())
+            fitness_data = [current_fitness_data]
+            positions_data = [current_positions_data]
 
             step = 0
             stag_counter = 0
-
+            trial_overflow = False
             # FINALISATOR: Finalise due to other concepts
 
-            # <--- WORKING HERE!!!!!!!
-
             while not self._check_finalisation(step, stag_counter):
+                candidate_fitness_per_trial = list()
+                candidate_position_per_trial = list()
+                candidate_fitness_data_per_trial = list()
+                candidate_positions_data_per_trial = list()
+
                 # Update the current set
-                if self.parameters['trial_overflow'] and self.__stagnation_check(stag_counter):
-                    possible_transitions = np.ones(self.num_operators) / self.num_operators
-
-                    # Pick randomly a simple heuristic
-                    candidate_operators_per_step = [self._obtain_candidate_solution(
-                        sol=1, operators_weights=possible_transitions)]
+                if not trial_overflow:
+                    candidate_operators_per_step = self.__get_argfrequencies(weight_matrix[step, :], 10)
                 else:
-                    candidate_operators_per_step = self.__get_argfrequencies(weight_matrix, 3)
+                    # Pick randomly a simple heuristic
+                    candidate_operators_per_step = self._obtain_candidate_solution(sol=10)
 
-                for operator_to_test in candidate_operators_per_step:
+                # Try a few of search operators from the weight array for this step
+                trial_overflow = True
+                for trial, operator_to_test in enumerate(candidate_operators_per_step):
                     # Prepare before evaluate the last search operator and apply it
                     candidate_search_operator = self.get_operators([operator_to_test])
                     perturbators, selectors = Operators.process_operators(candidate_search_operator)
@@ -769,79 +771,95 @@ class Hyperheuristic:
                     mh.apply_search_operator(perturbators[0], selectors[0])
 
                     # Extract the population and fitness values, and their best values
-                    current_fitness = np.copy(mh.pop.global_best_fitness)
-                    current_position = np.copy(mh.pop.rescale_back(mh.pop.global_best_position))
+                    candidate_fitness_per_trial.append(np.copy(mh.pop.global_best_fitness))
+
+                    # Revert the modification to the population in the mh object
+                    mh.pop.revert_positions()
 
                     # Print update
+                    # if self.parameters['verbose']:
+                    #     print('\tTrial: {:3d}, candPerf: {:.2e}, currPerf: {:.2e}'.format(
+                    #         trial + 1, candidate_fitness_per_trial[-1], current_fitness))
+
+                # Check if there is a candidate that improves the current value (with a prob. acceptance)
+                if self._check_acceptance(min(candidate_fitness_per_trial) - current_fitness):
+                    # Pick the corresponding index
+                    chosen_trial = np.argmin(candidate_fitness_per_trial)
+                    current_fitness = np.min(candidate_fitness_per_trial)
+
+                    # Update the current variables
+                    candidate_enc_so = candidate_operators_per_step[chosen_trial]
+
+                # Print update
+                if self.parameters['verbose']:
+                    print(
+                        f"{self.file_label} :: Rep: {rep:3d}, Step: {step + 1:3d}, Stag: {stag_counter:3d}, " +
+                        f"SO: {candidate_enc_so:4d}, bestPerf: {best_fitness[-1]:.2e}, " +
+                        f"currPerf: {float(current_fitness):.2e}", end=' ')
+
+                # If the candidate solution is better or equal than the current best solution
+                if current_fitness < best_fitness[-1]:
+                    # Update the current sequence and its characteristics
+                    unfolded_metaheuristic.append(candidate_enc_so)
+
+                    # Apply permanently the search operator
+                    candidate_search_operator = self.get_operators([candidate_enc_so])
+                    perturbators, selectors = Operators.process_operators(candidate_search_operator)
+
+                    mh.apply_search_operator(perturbators[0], selectors[0])
+
+                    # Extract the population and fitness values, and their best values
+                    # May the fitness change? Oui. This is a probability trade-off
+                    best_fitness.append(np.copy(mh.pop.global_best_fitness))
+                    best_position.append(np.copy(mh.pop.rescale_back(mh.pop.global_best_position)))
+                    fitness_data.append(np.copy(mh.pop.fitness))
+                    positions_data.append(np.copy(mh.pop.get_positions()))
+
+                    # Update the overflow flag and reset stagnation counter
+                    trial_overflow = False
+                    stag_counter = 0
+                    step += 1
+
+                    # Add improvement mark
                     if self.parameters['verbose']:
-                        print(
-                            '{} :: Rep: {:3d}, Step: {:3d}, Trial: {:3d}, SO: {:30s}, currPerf: {:.2e}, candPerf: {:.2e}, '
-                            'csl: {:3d}'.format(
-                                self.file_label, rep, step, stag_counter,
-                                candidate_search_operator[0][0] + ' & ' + candidate_search_operator[0][2][:4],
-                                best_fitness[-1], current_fitness, len(self.current_space)), end=' ')
+                        print('✅', end='\n')
 
-                    # If the candidate solution is better or equal than the current best solution
-                    if current_fitness <= best_fitness[-1]:
+                else:
+                    # Update stagnation
+                    stag_counter += 1
 
-                        # Update the current sequence and its characteristics
-                        current_sequence.append(candidate_enc_so[-1])
-
-                        best_fitness.append(current_fitness)
-                        best_position.append(current_position)
-                        fitness_data.append(np.copy(mh.pop.fitness))
-                        positions_data.append(np.copy(mh.pop.get_positions()))
-
-                        # Update counters
-                        step += 1
-                        stag_counter = 0
-                        self._trial_overflow = False
-                        # candidate_enc_so = list()
-
-                        # Add improvement mark
-                        if self.parameters['verbose']:
-                            print('+', end='')
-
-                    else:  # Then try another search operator
-
-                        # Revert the modification to the population in the mh object
-                        mh.pop.revert_positions()
-
-                        # Update stagnation
-                        stag_counter += 1
-
-                    # Add ending mark
+                    # Add no improvement mark
                     if self.parameters['verbose']:
-                        print('')
+                        print('', end='\n')
 
             # Print the best one
             if self.parameters['verbose']:
                 print('\nBest fitness: {},\nBest position: {}'.format(current_fitness, current_position))
 
             #  Update the repetition register
-            sequence_per_repetition.append(np.double(current_sequence).astype(int).tolist())
+            sequence_per_repetition.append(np.double(unfolded_metaheuristic).astype(int).tolist())
             fitness_per_repetition.append(np.double(best_fitness).tolist())
 
             # Update the weights for learning purposes
-            weight_matrix = self._update_weights(sequence_per_repetition, fitness_per_repetition,
-                                                 **kw_weighting_params)
-            weights_per_repetition.append(self.weights)
-            # print('w = ({})'.format(self.weights))
-
-            # Save this historical register
-            _save_step(rep + 1,  # datetime.now().strftime('%Hh%Mm%Ss'),
-                       dict(encoded_solution=np.array(current_sequence),
-                            best_fitness=np.double(best_fitness),
-                            best_positions=np.double(best_position),
-                            details=dict(
-                                fitness_per_rep=fitness_per_repetition,
-                                sequence_per_rep=sequence_per_repetition,
-                                weight_matrix=weight_matrix
-                            )),
-                       self.file_label)
+            # weight_matrix = self._update_weights(sequence_per_repetition, fitness_per_repetition,
+            #                                      **kw_weighting_params)
+            # weights_per_repetition.append(self.weights)
+            # # print('w = ({})'.format(self.weights))
+            #
+            # # Save this historical register
+            # _save_step(rep + 1,  # datetime.now().strftime('%Hh%Mm%Ss'),
+            #            dict(encoded_solution=np.array(unfolded_metaheuristic),
+            #                 best_fitness=np.double(best_fitness),
+            #                 best_positions=np.double(best_position),
+            #                 details=dict(
+            #                     fitness_per_rep=fitness_per_repetition,
+            #                     sequence_per_rep=sequence_per_repetition,
+            #                     weight_matrix=weight_matrix
+            #                 )),
+            #            self.file_label)
 
         # Return the best solution found and its details
-        return fitness_per_repetition, sequence_per_repetition, weights_per_repetition, weight_matrix
+        return fitness_per_repetition, sequence_per_repetition  #, weights_per_repetition, weight_matrix
 
     def _solve_dynamic(self, kw_weighting_params):
         """
@@ -1364,8 +1382,8 @@ if __name__ == '__main__':
 
     q = Hyperheuristic(problem=problem.get_formatted_problem(
         fts=['Differentiable', 'Unimodal']),
-                       heuristic_space='default.txt',
-                       file_label=file_label)
+        heuristic_space='default.txt',
+        file_label=file_label)
     q.parameters['num_agents'] = 40
     q.parameters['num_steps'] = 100
     q.parameters['stagnation_percentage'] = 0.5
@@ -1373,8 +1391,9 @@ if __name__ == '__main__':
     q.parameters['learnt_dataset'] = "./data_files/translearn_dataset.json"
     sampling_portion = 0.37  # 0.37
     q.parameters['allow_weight_matrix'] = True
-    q.parameters['trial_overflow'] = True
-    fitprep, seqrep = q.solve(mode='transfer_learning')
+    q.parameters['trial_overflow'] = False
+    # fitprep, seqrep = q.solve(mode='static_transfer_learning')
+    fitprep, seqrep = q.solve(mode='dynamic_transfer_learning')
 
     colours = plt.cm.rainbow(np.linspace(0, 1, len(fitprep)))
 
