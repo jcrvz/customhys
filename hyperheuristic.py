@@ -1010,6 +1010,7 @@ class Hyperheuristic:
         encoder_name = kw_model_params['encoder']
 
         # Prepare attributes for model label
+        self.parameters['cut_sequences'] = kw_model_params.get('cut_sequences', self.parameters['num_steps'])
         sequences_filters = kw_model_params['sample_sequences_params']['filters']
         feature_labels = sequences_filters.get('features', None)
         include_dimensions = sequences_filters.get('include_dimensions', True)
@@ -1637,7 +1638,7 @@ class Hyperheuristic:
         left_pad = self.parameters['num_steps'] - len(sequence_copy)
         return np.array(np.pad(sequence_copy, 
                                (left_pad, 0), 
-                               constant_values=self.num_operators).astype(int))
+                               constant_values=self.num_operators).astype(int))[-self.parameters['cut_sequences']:]
 
     def __identity_encoder(self, sequence):
         "Clean a sequence to encode it"
@@ -1905,10 +1906,10 @@ if __name__ == '__main__':
             'save_model': True,
             'sample_sequences_params': {
                 'filters': {
-                    'features': ["Unimodal"],
+                    'features': None,
                     'include_dimensions': True,
                     'include_population': True,
-                    'sequence_limit': 50
+                    'sequence_limit': 200
                 },
                 'retrieve_sequences': True,
                 'generate_sequences': False,
@@ -1918,20 +1919,18 @@ if __name__ == '__main__':
                     'learning_portion': 1.0 #sampling_portion
                 }
             },
-            'encoder': 'Default', 
+            'encoder': 'Ragged', 
             'include_fitness': True,
             'fitness_to_weight': 'rank',
-            'model_architecture': 'MLP',
+            'model_architecture': 'LSTM_Ragged',
             'model_architecture_layers': [
-                [50, 'relu'],
-                [20, 'relu']
+                [15, 'sigmoid']
             ],
-            'epochs': 100,
+            'epochs': 60,
             'include_early_stopping': True,
             'early_stopping_params': {
                 'monitor': 'accuracy',
                 'patience': 20,
-                'min_delta': 0.0025,
                 'mode': 'max'
             }
         }

@@ -1,8 +1,8 @@
 {
   "ex_config": {
-    "experiment_name": "short_nn_lstm_100pop_learning",
+    "experiment_name": "medium_nn_lstm_50pop_learning",
     "experiment_type": "neural_network",
-    "heuristic_collection_file": "short_collection.txt",
+    "heuristic_collection_file": "medium_collection.txt",
     "use_parallel": true,
     "parallel_pool_size": 10,
     "machine_learning_params": {
@@ -44,7 +44,7 @@
   },
   "hh_config": {
     "num_steps": 100,
-    "num_agents": 100,
+    "num_agents": 50,
     "num_iterations": 100,
     "cardinality": 3,
     "cardinality_min": 1,

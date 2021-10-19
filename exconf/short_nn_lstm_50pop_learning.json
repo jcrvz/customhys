@@ -1,6 +1,6 @@
 {
   "ex_config": {
-    "experiment_name": "short_nn_lstm_30pop_learning",
+    "experiment_name": "short_nn_lstm_50pop_learning",
     "experiment_type": "neural_network",
     "heuristic_collection_file": "short_collection.txt",
     "use_parallel": true,
@@ -37,7 +37,6 @@
         "early_stopping_params": {
           "monitor": "accuracy",
           "patience": 20,
-          "min_delta": 0.003,
           "mode": "max"
         }
       }

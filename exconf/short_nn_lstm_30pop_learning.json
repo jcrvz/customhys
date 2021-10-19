@@ -37,7 +37,6 @@
         "early_stopping_params": {
           "monitor": "accuracy",
           "patience": 20,
-          "min_delta": 0.003,
           "mode": "max"
         }
       }
