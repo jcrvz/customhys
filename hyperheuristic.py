@@ -106,6 +106,7 @@ class Hyperheuristic:
 
         # Read the weights (if it is entered)
         self.weights = weights_array
+        self.weight_matrix = None
         self.transition_matrix = None
 
         # Initialise other parameters
@@ -417,7 +418,7 @@ class Hyperheuristic:
             return (delta <= 0.0) or (np.random.rand() <= probability)
         elif acceptation_scheme == 'probabilistic':
             probability = 0.25 if prob is None else prob
-            return (delta <= 0.0) or (np.random.rand() <= probability)
+            return (delta < 0.0) or (np.random.rand() <= probability)
         else:  # Greedy
             return delta <= 0.0
 
@@ -452,6 +453,8 @@ class Hyperheuristic:
             return self._solve_static_translearn(kw_parameters)
         if mode == 'dynamic_transfer_learning':
             return self._solve_dynamic_translearn(kw_parameters)
+        if mode == 'hybrid_transfer_learning':
+            return self._solve_hybrid_translearn(kw_parameters)
         else:  # default: 'static'
             return self._solve_static(kw_parameters)
 
@@ -578,7 +581,7 @@ class Hyperheuristic:
     def _solve_static_translearn(self, kw_weighting_params):
 
         # Check if there is a previous weight matrix stored
-        weight_matrix = self.__check_learnt_dataset()
+        self.weight_matrix = self.__check_learnt_dataset()
 
         # Obtain an initial guess sequence by choosing the operators with the maximal likelihood for each step
         if self.__current_sequence is None:
@@ -628,7 +631,7 @@ class Hyperheuristic:
             # Update step and temperature
             step += 1
 
-            weight_vector = weight_matrix[step - 1, :] if step < weight_matrix.shape[0] else None
+            weight_vector = self.weight_matrix[step - 1, :] if step < self.weight_matrix.shape[0] else None
 
             # Generate a neighbour solution (just indices-codes)
             action = self._choose_action(len(current_solution), action, available_options=actions)
@@ -700,6 +703,10 @@ class Hyperheuristic:
         return fitness_per_repetition, sequence_per_repetition  # , weights_per_repetition  # to add weight_matrix
 
     def _solve_dynamic_translearn(self, kw_weighting_params):
+        self.weight_matrix = self.__check_learnt_dataset()
+        return self._solve_dynamic(kw_weighting_params)
+
+    def _solve_hybrid_translearn(self, kw_weighting_params):
         """
         Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each meatheuristic is
         run 'num_replicas' times to obtain statistics and then its performance. Once the process ends, it returns:
@@ -912,8 +919,6 @@ class Hyperheuristic:
             current_position = np.copy(mh.pop.rescale_back(mh.pop.global_best_position))
 
             # Heuristic sets
-            # tabu_set = list()
-            # active_set = list()
             self.current_space = np.arange(self.num_operators)
 
             # Initialise some additional variables
@@ -942,21 +947,30 @@ class Hyperheuristic:
                 # self.current_space = np.union1d(np.setdiff1d(self.current_space, tabu_set), active_set).astype(int)
                 if self.parameters['trial_overflow'] and self.__stagnation_check(stag_counter):
                     possible_transitions = np.ones(self.num_operators) / self.num_operators
+                    which_matrix = 'random'
                 else:
                     if not ((self.parameters['allow_weight_matrix'] is None) or (self.transition_matrix is None)):
                         # possible_transitions = self.transition_matrix[current_sequence[-1] + 1, 1:]
                         if step < self.transition_matrix.shape[0]:
                             possible_transitions = self.transition_matrix[step]
                             transitions_sum = possible_transitions.sum()
+
                             if transitions_sum > 0.0:
                                 possible_transitions = np.nan_to_num(possible_transitions / transitions_sum)
                             else:
                                 possible_transitions = np.ones(self.num_operators) / self.num_operators
+
+                            which_matrix = 'transition'
                         else:
                             possible_transitions = np.ones(self.num_operators) / self.num_operators
 
                     else:
+                        if self.weight_matrix is not None:
+                            self.weights = self.weight_matrix[step]
+                            # self.weights = np.sum(self.weight_matrix, axis=0) / np.sum(self.weight_matrix)
                         possible_transitions = self.weights
+
+                        which_matrix = 'entered'
 
                 # Pick randomly a simple heuristic
                 candidate_enc_so = self._obtain_candidate_solution(sol=1, operators_weights=possible_transitions)
@@ -974,14 +988,14 @@ class Hyperheuristic:
                 # Print update
                 if self.parameters['verbose']:
                     print(
-                        '{} :: Rep: {:3d}, Step: {:3d}, Trial: {:3d}, SO: {:30s}, currPerf: {:.2e}, candPerf: {:.2e}, '
-                        'csl: {:3d}'.format(
-                            self.file_label, rep, step, stag_counter,
+                        '{} :: Rep: {:3d}, Step: {:3d}, Trial: {:3d}, SO: {:30s}, currPerf: {:.2e}, candPerf: {:.2e} '
+                        'which: {:10s}'.format(
+                            self.file_label, rep + 1, step + 1, stag_counter,
                             candidate_search_operator[0][0] + ' & ' + candidate_search_operator[0][2][:4],
-                            best_fitness[-1], current_fitness, len(self.current_space)), end=' ')
+                            best_fitness[-1], current_fitness, which_matrix), end=' ')
 
                 # If the candidate solution is better or equal than the current best solution
-                if current_fitness <= best_fitness[-1]:
+                if self._check_acceptance(current_fitness - best_fitness[-1], 'probabilistic', prob=0.2):
 
                     # Reward the selected search operator from the heuristic set
                     # active_set.append(candidate_enc_so)
@@ -1025,9 +1039,8 @@ class Hyperheuristic:
             fitness_per_repetition.append(np.double(best_fitness).tolist())
 
             # Update the weights for learning purposes
-            weight_matrix = self._update_weights(sequence_per_repetition, fitness_per_repetition,
-                                                 **kw_weighting_params)
-            weights_per_repetition.append(self.weights)
+            self._update_weights(sequence_per_repetition, fitness_per_repetition, **kw_weighting_params)
+            # weights_per_repetition.append(weight_array)
             # print('w = ({})'.format(self.weights))
 
             # Save this historical register
@@ -1038,12 +1051,12 @@ class Hyperheuristic:
                             details=dict(
                                 fitness_per_rep=fitness_per_repetition,
                                 sequence_per_rep=sequence_per_repetition,
-                                weight_matrix=weight_matrix
+                                weight_matrix=self.transition_matrix
                             )),
                        self.file_label)
 
         # Return the best solution found and its details
-        return fitness_per_repetition, sequence_per_repetition, weights_per_repetition, weight_matrix
+        return fitness_per_repetition, sequence_per_repetition, self.transition_matrix
 
     def evaluate_candidate_solution(self, encoded_sequence):
         """
@@ -1289,8 +1302,8 @@ class Hyperheuristic:
             self.__total_count_weights = self.num_operators
         else:
             # update the array [q.count(x) for x in range(min(q), 1 + max(q))]
-            pre_weights = list()
-            weimat = np.zeros([self.num_operators + 1] * 2)
+            # pre_weights = list()
+            # weimat = np.zeros([self.num_operators + 1] * 2)
 
             # Get the matrix from sequences of num_operators -by- num_steps. Empties are filled with -2
             max_length = max([len(seq) for seq in sequences])
@@ -1308,14 +1321,13 @@ class Hyperheuristic:
                 else:
                     current_hist.append(np.ndarray.tolist(np.ones(self.num_operators) / self.num_operators))
 
-            weimat = np.array(current_hist)
+            self.transition_matrix = np.array(current_hist)
 
-            weights_to_update = np.array(pre_weights).sum(axis=0) + self.weights * self.__total_count_weights
-            self.__total_count_weights = weights_to_update.sum()
-            self.weights = weights_to_update / self.__total_count_weights
-            self.transition_matrix = weimat
+            # weights_to_update = np.array(pre_weights).sum(axis=0) + self.weights * self.__total_count_weights
+            # self.__total_count_weights = weights_to_update.sum()
+            # weights_array = weights_to_update / self.__total_count_weights
 
-            return weimat
+            # return weights_array
 
     def __check_learnt_dataset(self):
         if self.parameters['learnt_dataset']:
@@ -1371,6 +1383,7 @@ class HyperheuristicError(Exception):
 
 if __name__ == '__main__':
     # import hyperheuristic as hh
+    import os
     import benchmark_func as bf
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
@@ -1403,117 +1416,120 @@ if __name__ == '__main__':
         file_label=file_label)
     q.parameters['num_agents'] = 40
     q.parameters['num_steps'] = 100
-    q.parameters['stagnation_percentage'] = 0.75
-    q.parameters['num_replicas'] = 30
+    q.parameters['stagnation_percentage'] = 0.2
+    q.parameters['num_replicas'] = 50
     q.parameters['learnt_dataset'] = "./data_files/translearn_dataset.json"
     sampling_portion = 0.37  # 0.37
     q.parameters['allow_weight_matrix'] = True
-    q.parameters['trial_overflow'] = False
-    # fitprep, seqrep = q.solve(mode='static_transfer_learning')
-    fitprep, seqrep = q.solve(mode='dynamic_transfer_learning')
+    q.parameters['trial_overflow'] = True
+    # fitprep, seqrep = q.solve('static_transfer_learning')
+    fitprep, seqrep, weight_matrix = q.solve('dynamic_transfer_learning',
+                                             dict(include_fitness=False, learning_portion=sampling_portion))
 
     colours = plt.cm.rainbow(np.linspace(0, 1, len(fitprep)))
 
     # is there a way to update the weight matrix using the information provided from each run
 
     # ------- Figure 0
-    # fi0 = plt.figure()
-    # plt.ion()
-    #
-    # # Find max length
-    # max_length = max([x.__len__() for x in seqrep])
-    # mat_seq = np.array([np.array([*x, *[-2] * (max_length - len(x))]) for x in seqrep], dtype=object).T
-    #
-    # bins = np.arange(-2, 30 + 1)
-    # current_hist = list()
-    # for step in range(max_length):
-    #     dummy_hist = np.histogram(mat_seq[step, :], bins=bins, density=True)[0][2:]
-    #     current_hist.append(dummy_hist)
-    #
-    # sns.heatmap(np.array(current_hist).T, linewidths=.5, cmap='hot_r')
-    #
-    # plt.xlabel('Step')
-    # # plt.yticks(range(30, step=2), range(start=1, stop=31, step=2))
-    # plt.ylabel('Operator')
-    # plt.ioff()
-    # # plt.plot(c, 'o')
-    # plt.show()
+    fi0 = plt.figure()
+    plt.ion()
 
-    # folder_name = './figures-to-export/'
-    #
-    # # ------- Figure 1
-    # fi1 = plt.figure(figsize=(8, 3))
-    # plt.ion()
-    # for x, c in zip(fitprep, colours):
-    #     plt.plot(x, '-o', color=c)
-    # plt.xlabel('Step')
-    # plt.ylabel('Fitness')
-    # plt.ioff()
-    # # plt.plot(c, 'o')
-    # plt.savefig(folder_name + file_label + "_FitnesStep" + ".svg", dpi=333, transparent=True)
-    # fi1.show()
-    #
-    # # ------- Figure 2
-    # fi2 = plt.figure(figsize=(6, 6))
-    # ax = fi2.add_subplot(111, projection='3d')
-    # plt.ion()
-    # for x, y, c in zip(fitprep, seqrep, colours):
-    #     ax.plot3D(range(1, 1 + len(x)), y, x, 'o-', color=c)
-    #
-    # plt.xlabel('Step')
-    # plt.ylabel('Search Operator')
-    # ax.set_zlabel('Fitness')
-    # plt.ioff()
-    # plt.savefig(folder_name + file_label + "_SOStepFitness" + ".svg", dpi=333, transparent=True)
-    # plt.show()
-    #
-    # # ------- Figure 3
+    # Find max length
+    max_length = max([x.__len__() for x in seqrep])
+    mat_seq = np.array([np.array([*x, *[-2] * (max_length - len(x))]) for x in seqrep], dtype=object).T
+
+    bins = np.arange(-2, 30 + 1)
+    current_hist = list()
+    for step in range(max_length):
+        dummy_hist = np.histogram(mat_seq[step, :], bins=bins, density=True)[0][2:]
+        current_hist.append(dummy_hist)
+
+    sns.heatmap(np.array(current_hist).T, linewidths=.5, cmap='hot_r')
+
+    plt.xlabel('Step')
+    # plt.yticks(range(30, step=2), range(start=1, stop=31, step=2))
+    plt.ylabel('Operator')
+    plt.ioff()
+    # plt.plot(c, 'o')
+    plt.show()
+
+    folder_name = './figures-to-export/'
+    if not os.path.isdir(folder_name):
+        os.mkdir(folder_name)
+
+    # ------- Figure 1
+    fi1 = plt.figure(figsize=(8, 3))
+    plt.ion()
+    for x, c in zip(fitprep, colours):
+        plt.plot(x, '-o', color=c)
+    plt.xlabel('Step')
+    plt.ylabel('Fitness')
+    plt.ioff()
+    # plt.plot(c, 'o')
+    plt.savefig(folder_name + file_label + "_FitnesStep" + ".svg", dpi=333, transparent=True)
+    fi1.show()
+
+    # ------- Figure 2
+    fi2 = plt.figure(figsize=(6, 6))
+    ax = fi2.add_subplot(111, projection='3d')
+    plt.ion()
+    for x, y, c in zip(fitprep, seqrep, colours):
+        ax.plot3D(range(1, 1 + len(x)), y, x, 'o-', color=c)
+
+    plt.xlabel('Step')
+    plt.ylabel('Search Operator')
+    ax.set_zlabel('Fitness')
+    plt.ioff()
+    plt.savefig(folder_name + file_label + "_SOStepFitness" + ".svg", dpi=333, transparent=True)
+    plt.show()
+
+    # ------- Figure 3
     # new_colours = plt.cm.jet(np.linspace(0, 1, len(fitprep)))
     #
-    # # fi3 = plt.figure(figsize=(6, 6))
-    # # ax = fi3.add_subplot(111, projection='3d')
-    # # ax.view_init(elev=30, azim=30)
-    # # plt.ion()
-    # #
-    # # for w, i, c in zip(weights, range(1, len(fitprep) + 1), new_colours):
-    # #     ax.plot3D([i] * len(w), range(1, len(w) + 1), w, '-', color=c)
-    # #
-    # # plt.xlabel('Repetition')
-    # # plt.ylabel('Search Operator')
-    # # ax.set_zlabel('Weight')
-    # #
-    # # plt.ioff()
-    # # plt.show()
+    # fi3 = plt.figure(figsize=(6, 6))
+    # ax = fi3.add_subplot(111, projection='3d')
+    # ax.view_init(elev=30, azim=30)
+    # plt.ion()
     #
-    # # ------- Figure 4
-    # if weimatrix is not None:
+    # for w, i, c in zip(weights[:,1:], range(1, len(fitprep) + 1), new_colours):
+    #     ax.plot3D([i] * len(w), range(1, len(w) + 1), w, '-', color=c)
+    #
+    # plt.xlabel('Repetition')
+    # plt.ylabel('Search Operator')
+    # ax.set_zlabel('Weight')
+    #
+    # plt.ioff()
+    # plt.show()
+
+    # ------- Figure 4
+    # if weight_matrix is not None:
     #     # plt.figure()
     #     plt.figure(figsize=(8, 3))
-    #     plt.imshow(weimatrix.T, cmap="hot_r")
+    #     plt.imshow(weight_matrix.T, cmap="hot_r")
     #     plt.xlabel('Step')
     #     plt.ylabel('Search Operator')
     #     plt.savefig(folder_name + file_label + "_SOStep" + ".svg", dpi=333, transparent=True)
     #     plt.show()
+
+    # ------- Figure 5
+    last_fitness_values = np.array([ff[-1] for ff in fitprep])
+    midpoint = int(q.parameters['num_replicas'] * sampling_portion)
+
+    plt.figure()
+    plt.figure(figsize=(8, 3))
+    plt.boxplot([last_fitness_values[:midpoint], last_fitness_values[midpoint:], last_fitness_values],
+                showmeans=True)
+    plt.xticks(range(1, 4), ['Train', 'Test/Refine', 'All'])
+    plt.ylabel('Fitness')
+    plt.xlabel('Sample')
+    plt.savefig(folder_name + file_label + "FitnessSample" + ".svg", dpi=333, transparent=True)
+    plt.show()
+
+    # print('Stats for all fitness values:')
+    pprint(st.describe(last_fitness_values[:midpoint])._asdict())
     #
-    # # ------- Figure 5
-    # last_fitness_values = np.array([ff[-1] for ff in fitprep])
-    # midpoint = int(q.parameters['num_replicas'] * sampling_portion)
+    # print('Stats for train fitness values:')
+    # pprint(st.describe(last_fitness_values)._asdict())
+    # import numpy as np
     #
-    # plt.figure()
-    # plt.figure(figsize=(8, 3))
-    # plt.boxplot([last_fitness_values[:midpoint], last_fitness_values[midpoint:], last_fitness_values],
-    #             showmeans=True)
-    # plt.xticks(range(1, 4), ['Train', 'Test/Refine', 'All'])
-    # plt.ylabel('Fitness')
-    # plt.xlabel('Sample')
-    # plt.savefig(folder_name + file_label + "FitnessSample" + ".svg", dpi=333, transparent=True)
-    # plt.show()
-    #
-    # # print('Stats for all fitness values:')
-    # pprint(st.describe(last_fitness_values[:midpoint])._asdict())
-    # #
-    # # print('Stats for train fitness values:')
-    # # pprint(st.describe(last_fitness_values)._asdict())
-    # # import numpy as np
-    # #
-    # # qq, _ = q._obtain_candidate_solution(np.array(range(2)), 'RemoveMany')
+    # qq, _ = q._obtain_candidate_solution(np.array(range(2)), 'RemoveMany')
