@@ -172,7 +172,7 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
     """
     # TODO: Revise this method to enhance its performance.
     # Get folders and exclude hidden ones
-    raw_folders = read_subfolders(main_folder)
+    raw_folders = filter(lambda name: len(name.split('-')) >= 2, read_subfolders(main_folder))
 
     # Sort subfolder names by problem name & dimensions
     subfolder_names_raw = sorted(raw_folders, key=lambda x: int(x.split('-')[1].strip('D')))
@@ -405,4 +405,4 @@ class NumpyEncoder(json.JSONEncoder):
 
 if __name__ == '__main__':
     # preprocess_files(main_folder='data_files/raw/', output_name='brute_force')
-    preprocess_files(main_folder='data_files/raw/', kind = 'dynamic_metaheuristic', experiment = 'medium_nn_mlp_learning', output_name='first_test')
+    preprocess_files(main_folder='data_files/raw/', kind = 'dynamic_metaheuristic', experiment = 'short_nn_mlp_30pop_performance_learning', output_name='short_mlp_30pop_performance')
