@@ -2031,17 +2031,20 @@ def _get_stored_sample_sequences(features=None, additional_problems=[], filters=
 
     # Filter stored sequences
     def is_valid_file(file_name):
-        file_name_splitted = file_name[:file_name.rfind('.')].split('-')
+        # Verify that its a valid problem
+        exists_name = False
+        for valid_name in valid_problems:
+            if valid_name in file_name:
+                exists_name = True
+                break
+
+        if exists_name is False:
+            return False
         
-        # TODO: Fix way to get the formatted problem name from a file name
-        #if file_name_splitted[0] not in valid_problems:
-        #    # Reject files that does not have the desired features
-        #    return False
-        
-        if 'dimensions' in filters and f'-{filters["dimensions"]}D-' not in file_name:
+        if 'dimensions' in filters and f'-{filters["dimensions"]}-' not in file_name:
             # Reject files that does not have the same dimension
             return False
-        if 'population' in filters and f'-{filters["population"]}pop-' not in file_name:
+        if 'population' in filters and f'-{filters["population"]}-' not in file_name:
             # Reject files that does not have the same population
             return False
         if 'collection' in filters and filters['collection'] not in file_name:
