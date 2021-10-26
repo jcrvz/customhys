@@ -2033,23 +2033,25 @@ def _get_stored_sample_sequences(features=None, additional_problems=[], filters=
     def is_valid_file(file_name):
         file_name_splitted = file_name[:file_name.rfind('.')].split('-')
         
-        if file_name_splitted[0] not in valid_problems:
-            # Reject files that does not have the desired features
-            return False
+        # TODO: Fix way to get the formatted problem name from a file name
+        #if file_name_splitted[0] not in valid_problems:
+        #    # Reject files that does not have the desired features
+        #    return False
         
-        if 'dimensions' in filters and filters['dimensions'] != file_name_splitted[1]:
+        if 'dimensions' in filters and f'-{filters["dimensions"]}D-' not in file_name:
             # Reject files that does not have the same dimension
             return False
-        if 'population' in filters and filters['population'] != file_name_splitted[2]:
+        if 'population' in filters and f'-{filters["population"]}pop-' not in file_name:
             # Reject files that does not have the same population
             return False
-        if 'collection' in filters and filters['collection'] not in file_name_splitted[3]:
+        if 'collection' in filters and filters['collection'] not in file_name:
             # Reject files that are genereated by a different collection
             return False
         return True
     files_in_folder = jt.read_subfolders(folder_name)
     sequences_files = [file_name for file_name in files_in_folder if is_valid_file(file_name)]
 
+    #print(len(sequences_files))
     # Limit the number of sequences retreived from a problem
     sequence_limit = filters['sequence_limit']
     sequences_per_problem = dict()
