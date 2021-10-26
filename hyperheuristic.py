@@ -1378,6 +1378,13 @@ class Hyperheuristic:
         
         # Early stopping
         callbacks = []
+        if kw_model_params['save_model']:
+            if not _check_path(model_directory):
+                _create_path(model_directory)
+            log_path = model_directory + f'{model_label}_log.csv'
+            history_logger = tf.keras.callbacks.CSVLogger(log_path, separator=',', append=True)
+            callbacks.append(history_logger)
+            
         if kw_model_params.get('include_early_stopping', False):
             early_stopping_params = kw_model_params['early_stopping_params']
             early_stopping = tf.keras.callbacks.EarlyStopping(
@@ -1385,7 +1392,7 @@ class Hyperheuristic:
                 patience=early_stopping_params['patience'],
                 mode=early_stopping_params['mode']
             ) 
-            callbacks = [early_stopping]
+            callbacks.append(early_stopping)
 
         # Train model
         model.fit(X, y, 
@@ -1672,7 +1679,7 @@ class Hyperheuristic:
             
         # Generate sequences from dynamic solver
         if kw_sequences_params['generate_sequences']:
-            seqfitness_generated, seqrep_generated, _, _ = self._solve_dynamic(kw_sequences_params['kw_weighting_params'],
+            seqfitness_generated, seqrep_generated, _ = self._solve_dynamic(kw_sequences_params['kw_weighting_params'],
                                                                                save_steps=False)        
         
         # Join sequences
@@ -2003,8 +2010,8 @@ def _get_stored_sample_sequences(features=None, additional_problems=[], filters=
     :param list additional_problems:
         List of additional problems that could not satisfy the features list required.
     
-    :param str suffix: 
-        Only accept sequences files that ends with 'suffix'.
+    :param str filters: 
+        Diccionary with additional constraints.
     
     :param str folder_name:
         Folder that stores the sequences files.
@@ -2118,10 +2125,10 @@ if __name__ == '__main__':
                          "text.usetex": True,
                          "font.family": "serif"})
 
-    problem = bf.Sphere(30)
+    # problem = bf.Sphere(30)
     # problem = bf.Stochastic(30)
     # problem = bf.CosineMixture(50)
-    # problem = bf.Sphere(45)
+    problem = bf.Sphere(45)
     # problem = bf.Stochastic(43)
     # problem = bf.CosineMixture(35)
     # problem = bf.Whitley(50)
@@ -2141,7 +2148,7 @@ if __name__ == '__main__':
     q.parameters['num_agents'] = 30
     q.parameters['num_steps'] = 100
     q.parameters['stagnation_percentage'] = 0.6
-    q.parameters['num_replicas'] = 100
+    q.parameters['num_replicas'] = 20
     sampling_portion = 0.37  # 0.37
 
     # fitprep, seqrep, weights, weimatrix = q.solve('dynamic', {
@@ -2164,20 +2171,20 @@ if __name__ == '__main__':
                     'include_population': True,
                     'sequence_limit': 200
                 },
-                'retrieve_sequences': True,
-                'generate_sequences': False,
+                'retrieve_sequences': False,
+                'generate_sequences': True,
                 'store_sequences': False,
                 'kw_weighting_params': {
                     'include_fitness': False,
                     'learning_portion': 1.0 #sampling_portion
                 }
             },
-            'encoder': 'Ragged', 
+            'encoder': 'default', 
             'include_fitness': True,
             'fitness_to_weight': 'rank',
-            'model_architecture': 'LSTM_Ragged',
+            'model_architecture': 'MLP',
             'model_architecture_layers': [
-                [15, 'sigmoid']
+                [15, 'relu']
             ],
             'epochs': 60,
             'include_early_stopping': True,
