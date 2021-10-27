@@ -1,34 +1,39 @@
 {
   "ex_config": {
-    "experiment_name": "medium_nn_lstm_ragged_learning",
+    "experiment_name": "medium_nn_mlp_learning",
     "experiment_type": "neural_network",
     "heuristic_collection_file": "medium_collection.txt",
     "use_parallel": true,
     "parallel_pool_size": 10,
     "machine_learning_params": {
-      "reproduce_results": true,
-      "num_models": 1,
       "num_replicas": 100,
       "delete_idx": 5,
       "model_params": {
         "load_model": false,
-        "save_model": false,
-        "model_id": "medium_nn_lstm_ragged_learning",
+        "save_model": true,
         "sample_sequences_params": {
-          "retrieve_sequences": false,
-          "generate_sequences": true,
+          "filters": {
+            "features": null,
+            "include_dimensions": true,
+            "include_population": true,
+            "sequence_limit": 100
+          },
+          "retrieve_sequences": true,
+          "generate_sequences": false,
           "store_sequences": false,
           "kw_weighting_params": {
             "include_fitness": false,
             "learning_portion": 1
           }
         },
-        "encoder" : "Ragged",
+        "encoder" : "Default",
         "include_fitness": true,
         "fitness_to_weight": "rank",
-        "model_architecture": "LSTM_Ragged",
+        "model_architecture": "MLP",
         "model_architecture_layers": [
-          [700, "relu"]
+          [500, "relu"],
+          [1500, "relu"],
+          [3000, "relu"]
         ],
         "epochs": 100
       }

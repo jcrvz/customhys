@@ -1,8 +1,8 @@
 {
   "ex_config": {
-    "experiment_name": "generate_sequences",
+    "experiment_name": "default_sequences",
     "experiment_type": "neural_network",
-    "heuristic_collection_file": "medium_collection.txt",
+    "heuristic_collection_file": "default.txt",
     "use_parallel": true,
     "parallel_pool_size": 10,
     "machine_learning_params": {
@@ -12,7 +12,12 @@
         "load_model": false,
         "save_model": false,
         "sample_sequences_params": {
-          "features": null,
+          "filters": {
+            "features": null,
+            "include_dimensions": true,
+            "include_population": true,
+            "sequence_limit": 100
+          },
           "retrieve_sequences": false,
           "generate_sequences": true,
           "store_sequences": true,
@@ -38,7 +43,7 @@
     "num_iterations": 100,
     "cardinality": 3,
     "cardinality_min": 1,
-    "num_replicas": 150,
+    "num_replicas": 100,
     "stagnation_percentage": 0.50,
     "as_mh": false,
     "verbose": false,
