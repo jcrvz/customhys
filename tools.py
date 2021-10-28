@@ -12,6 +12,7 @@ from subprocess import call
 import numpy as np
 from tqdm import tqdm
 import pandas as pd
+import scipy.stats as st
 
 
 def printmsk(var, level=1, name=None):
@@ -224,8 +225,8 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
         elif kind == 'dynamic_metaheuristic':
             last_step = int(file_names[-1].split('-')[0])
             label_operator = 'rep'
-            file_data = {'rep': list(), 'best_fitness': list(),
-                         'encoded_solution': list(), 'weight_matrix': list()}
+            file_data = {'rep': list(), 'hist_fitness': list(),
+                         'encoded_solution': list(), 'performance': list()}
         else:
             last_step = int(file_names[-1].split('-')[0])
             label_operator = 'step'
@@ -245,11 +246,8 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
 
             if kind == "dynamic_metaheuristic":
                 file_data[label_operator].append(operator_id)
-                for field in ['best_fitness', 'encoded_solution']:
-                    file_data[field].append(temporal_data[field])
-                
-                if operator_id == last_step:
-                    file_data['weight_matrix'] = temporal_data['details']['weight_matrix']
+                file_data['encoded_solution'].append(temporal_data['encoded_solution'])
+                file_data['hist_fitness'].append(temporal_data['best_fitness'])
                 
             elif kind == "unknown":
                 if only_laststep and operator_id == last_step:
@@ -292,7 +290,9 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
             # Following information can be included but resulting files will be larger
             # file_data['fitness'].append(temporal_data['details']['fitness'])
             # file_data['positions'].append(temporal_data['details']['positions'])
-
+        if kind == "dynamic_metaheuristic":
+            best_fitness = [x[-1] for x in file_data['hist_fitness']]
+            file_data['performance'] = st.iqr(best_fitness) + np.median(best_fitness)
         # Store results in the main data frame
         data['results'].append(file_data)
 
@@ -404,5 +404,29 @@ class NumpyEncoder(json.JSONEncoder):
 
 
 if __name__ == '__main__':
+    # Import module for calling this code from command-line
+    import argparse
+    
+    parser = argparse.ArgumentParser(
+        description='Process results for a given experiment to make comparisons and visualisation with other experiments.'
+    )
+    parser.add_argument('experiment', 
+                        metavar='experiment_filename', 
+                        type=str, nargs=1, 
+                        help='Name of finished experiment')
+    parser.add_argument('output_filename', 
+                        metavar='output_filename', 
+                        type=str, nargs=1, 
+                        default='experiment_results', 
+                        help='Name of processed results file')
+    parser.add_argument('experiment_kind', 
+                        metavar='experiment_kind', 
+                        type=str, nargs=1, 
+                        default='dynamic_metaheuristic', 
+                        help='Specify which type of experiment would be processed')    
     # preprocess_files(main_folder='data_files/raw/', output_name='brute_force')
-    preprocess_files(main_folder='data_files/raw/', kind = 'dynamic_metaheuristic', experiment = 'short_nn_mlp_30pop_performance_learning', output_name='short_mlp_30pop_performance')
+
+    preprocess_files(main_folder='data_files/raw/', 
+                     kind=parser.parse_args().experiment_kind[0], #'dynamic_metaheuristic', 
+                     experiment=parser.parse_args().experiment[0], #'short_nn_mlp_30pop_performance_learning', 
+                     output_name=parser.parse_args().output_filename[0])#'short_mlp_30pop_performance')
