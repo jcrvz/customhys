@@ -201,12 +201,9 @@ class Experiment:
         elif self.exp_config['experiment_type'] == ["basic_metaheuristics", 'bmh']:
             hh.basic_metaheuristics()
         elif self.exp_config['experiment_type'] in ["online_learning", 'dynamic']:
-            _ = hh.solve('dynamic', {
-                'include_fitness': self.exp_config["include_fitness"],
-                'learning_portion': self.exp_config["learning_portion"]
-            })
+            _ = hh.solve('dynamic')
         elif self.exp_config['experiment_type'] in ["transfer_learning"]:
-            _ = hh.solve(self.hh_config["solver"])
+            _ = hh.solve()
         else:  # 'static_run'
             _ = hh.solve('static')
 
@@ -267,9 +264,7 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
             'weights_dataset_file': None,  # 'operators_weights.json',
             'use_parallel': True,
             'parallel_pool_size': None,  # Default
-            'auto_collection_num_vals': 5,
-            'learning_portion': 0.37,
-            'include_fitness': False
+            'auto_collection_num_vals': 5
         }, exp_config)
 
     # Load the default hyper-heuristic configuration and compare it with hh_cfg
@@ -291,9 +286,6 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
             'trial_overflow': True,
             'learnt_dataset': None,
             'allow_weight_matrix': True,
-            # 'wp_sequences': None,
-            # 'wp_fitness_values': None,
-            # 'wp_include_fitness': False,
             'learning_portion': 0.37,
             'solver': 'static'
         }, hh_config)
