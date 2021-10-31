@@ -288,7 +288,11 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
             'verbose': False,
             'trial_overflow': True,
             'learnt_dataset': None,
-            'allow_weight_matrix': True
+            'allow_weight_matrix': True,
+            # 'wp_sequences': None,
+            # 'wp_fitness_values': None,
+            # 'wp_include_fitness': False,
+            'learning_portion': 0.37,
         }, hh_config)
 
     # Load the default problem configuration and compare it with prob_config
