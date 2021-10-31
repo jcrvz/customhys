@@ -591,7 +591,7 @@ class Hyperheuristic:
 
         # Obtain an initial guess sequence by choosing the operators with the maximal likelihood for each step
         if self.__current_sequence is None:
-            current_solution = self._obtain_candidate_solution(action="max_frequency", operators_weights=weight_matrix)
+            current_solution = self._obtain_candidate_solution(action="max_frequency", operators_weights=self.weight_matrix)
         else:
             current_solution = self.__current_sequence
 
