@@ -205,6 +205,8 @@ class Experiment:
                 'include_fitness': self.exp_config["include_fitness"],
                 'learning_portion': self.exp_config["learning_portion"]
             })
+        elif self.exp_config['experiment_type'] in ["transfer_learning"]:
+            _ = hh.solve(self.hh_config["solver"])
         else:  # 'static_run'
             _ = hh.solve('static')
 
@@ -293,6 +295,7 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
             # 'wp_fitness_values': None,
             # 'wp_include_fitness': False,
             'learning_portion': 0.37,
+            'solver': 'static'
         }, hh_config)
 
     # Load the default problem configuration and compare it with prob_config
