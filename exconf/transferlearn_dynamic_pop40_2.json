@@ -4,9 +4,7 @@
     "experiment_type": "transfer_learning",
     "heuristic_collection_file": "default.txt",
     "use_parallel": true,
-    "parallel_pool_size": 10,
-    "learning_portion": 0.37,
-    "include_fitness": false
+    "parallel_pool_size": 10
   },
   "hh_config": {
     "num_steps": 100,
