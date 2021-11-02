@@ -149,7 +149,7 @@ def read_subfolders(foldername):
 
 
 def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_laststep=True,
-                     output_name='processed_data',):
+                     output_name='processed_data'):
     """
     Return data from results saved in the main folder. This method save the summary file in json format. Take in account
     that ``output_name = 'brute_force'`` has a special behaviour due to each json file stored in sub-folders correspond
@@ -216,6 +216,14 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
             last_step = int(file_names[-1].split('-')[0])
             label_operator = 'step'
             file_data = dict()
+        elif kind == "dynamic_transfer_learning":
+            last_step = int(file_names[-1].split('-')[0])
+            label_operator = 'step'
+            file_data = dict()
+        elif kind == "static_transfer_learning":
+            last_step = int(file_names[-1].split('-')[0])
+            label_operator = 'step'
+            file_data = dict(step=[], encoded_solution=[], performance=[], hist_fitness=[], hist_positions=[])
         else:
             last_step = int(file_names[-1].split('-')[0])
             label_operator = 'step'
@@ -233,20 +241,24 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
             with open(temporal_full_path + '/' + file_name, 'r') as json_file:
                 temporal_data = json.load(json_file)
 
-            if kind == "unknown":
+            if kind in ["unknown", "dynamic_transfer_learning"]:
+                if len(file_data) != 0:
+                    keys_to_use = list(file_data.keys())
+                else:
+                    keys_to_use = list(temporal_data.keys())
+
                 if only_laststep and operator_id == last_step:
-                    for field in list(temporal_data.keys()):
+                    for field in keys_to_use:
                         file_data[field] = temporal_data[field]
                 else:
                     if len(file_data) == 0:  # The first entering
                         # Read the available fields from the first file and create the corresponding lists
-                        fields_to_fill = list(temporal_data.keys())
-                        for field in fields_to_fill:
+                        for field in keys_to_use:
                             file_data[field] = list()
 
                     # Fill the file_data
-                    for field in fields_to_fill:
-                            file_data[field].append(temporal_data[field])
+                    for field in list(keys_to_use):
+                        file_data[field].append(temporal_data[field])
 
             else:
                 # Store information in the corresponding variables
@@ -259,6 +271,18 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
                     file_data['statistics'].append(temporal_data['statistics'])
                     file_data['fitness'].append(temporal_data['fitness'])
                     file_data['hist_fitness'].append(temporal_data['historical'])
+
+                elif kind == "static_transfer_learning":
+                    file_data['encoded_solution'].append(temporal_data['encoded_solution'])
+                    file_data['performance'].append(temporal_data['performance'])
+
+                    if only_laststep and operator_id == last_step:
+                        file_data['hist_fitness'] = [x['fitness'] for x in temporal_data['details']['historical']]
+                        file_data['hist_positions'] = [x['position'] for x in temporal_data['details']['historical']]
+                    else:
+                        file_data['hist_fitness'].append([x['fitness'] for x in temporal_data['details']['historical']])
+                        file_data['hist_positions'].append([x['position'] for x in temporal_data['details']['historical']])
+
                 else:
                     file_data['encoded_solution'].append(temporal_data['encoded_solution'])
                     file_data['statistics'].append(temporal_data['details']['statistics'])
