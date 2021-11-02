@@ -337,7 +337,7 @@ if __name__ == '__main__':
     from tools import preprocess_files
 
     DATA_FOLDER = "./data_files/raw"
-    # OUTPUT_FOLDER = "exp_output"
+    OUTPUT_FOLDER = "./data_files/exp_output"
 
     # Only one argument is allowed: the code
     parser = argparse.ArgumentParser(
@@ -352,8 +352,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # if not os.path.exists(OUTPUT_FOLDER):
-    #     os.makedirs(OUTPUT_FOLDER)
+    if not os.path.exists(OUTPUT_FOLDER):
+        os.makedirs(OUTPUT_FOLDER)
 
     if args.batch:
         with open(args.exp_config) as configs:
@@ -367,13 +367,6 @@ if __name__ == '__main__':
             if args.batch else ""
 
         print(f"\nRunning {exp_filename.split('.')[0]}" + tail_message)
-
-        # print(exp_filename)
-
-        # Read the entered configuration
-        # ex_config = ex_configs[exp_ind]
-        # hh_config = hh_configs[exp_ind]
-        # pr_config = pr_configs[exp_ind]
 
         # Create the experiment to runs
         exp = Experiment(config_file=exp_filename)
@@ -396,9 +389,10 @@ if __name__ == '__main__':
         print(f"\nPreprocessing {exp_filename.split('.')[0]}" + tail_message)
         preprocess_files("data_files/raw/",
                          kind=exp.hh_config["solver"],
-                         output_name=exp.exp_config["experiment_name"])
+                         output_name=OUTPUT_FOLDER + "/" + exp.exp_config["experiment_name"])
 
         # Rename the raw folder to raw-$exp_name$
-        print(f"\nChanging folder name of raw results...", end=" ")
+        print(f"\nChanging folder name of raw results...")
         os.rename(DATA_FOLDER, DATA_FOLDER + "-" + exp.exp_config["experiment_name"])
-        print("[done]")
+
+    print("\nExperiment(s) finished!")

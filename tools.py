@@ -303,7 +303,8 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
         data['results'].append(file_data)
 
     # Save pre-processed data
-    save_json(data, file_name=main_folder.split('/')[0] + "/" + output_name)
+    # save_json(data, file_name=main_folder.split('/')[0] + "/" + output_name)
+    save_json(data, file_name=output_name)
 
     # Return only the data variable
     # return data
