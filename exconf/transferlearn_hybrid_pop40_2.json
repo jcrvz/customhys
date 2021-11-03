@@ -1,0 +1,68 @@
+{
+  "ex_config": {
+    "experiment_name": "transfer_learning_hybrid_pop40_exp2",
+    "experiment_type": "transfer_learning",
+    "heuristic_collection_file": "default.txt",
+    "use_parallel": true,
+    "parallel_pool_size": 10
+  },
+  "hh_config": {
+    "num_steps": 100,
+    "num_agents": 40,
+    "num_iterations": 100,
+    "cardinality": 3,
+    "cardinality_min": 1,
+    "num_replicas": 50,
+    "stagnation_percentage": 0.37,
+    "as_mh": false,
+    "verbose": false,
+    "repeat_operators": true,
+    "allow_weight_matrix": true,
+    "learnt_dataset": "./data_files/translearn_dataset.json",
+    "trial_overflow": true,
+    "learning_portion": 0.37,
+    "solver": "hybrid_transfer_learning"
+  },
+  "prob_config": {
+    "dimensions": [
+      5,
+      20,
+      40
+    ],
+    "functions": [
+      "Stochastic",
+      "ExpandedDecreasingMinima",
+      "Alpine1",
+      "ExpandedUnevenMinima",
+      "CrossLegTable",
+      "TypeII",
+      "LunacekN01",
+      "Price01",
+      "Step2",
+      "Step",
+      "Schwefel220",
+      "StepInt",
+      "Schwefel222",
+      "TypeI",
+      "Step3",
+      "Schwefel221",
+      "Bohachevsky",
+      "Weierstrass",
+      "WWavy",
+      "Trigonometric2",
+      "SchafferN1",
+      "SchafferN2",
+      "Griewank",
+      "F2",
+      "Sphere",
+      "Schwefel12",
+      "Cigar",
+      "Trid",
+      "PowellSum",
+      "Perm02",
+      "DixonPrice",
+      "Ellipsoid"
+    ],
+    "features": ["Differentiable", "Unimodal"]
+  }
+}

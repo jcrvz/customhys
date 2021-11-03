@@ -223,10 +223,19 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
             label_operator = 'step'
             file_data = dict()
         elif kind == 'dynamic_metaheuristic':
+            # TODO: Light conversion? - Verify compatibility with dynamic transfer learning
             last_step = int(file_names[-1].split('-')[0])
             label_operator = 'rep'
             file_data = {'rep': list(), 'hist_fitness': list(),
                          'encoded_solution': list(), 'performance': list()}
+        elif kind == "dynamic_transfer_learning":
+            last_step = int(file_names[-1].split('-')[0])
+            label_operator = 'step'
+            file_data = dict()
+        elif kind == "static_transfer_learning":
+            last_step = int(file_names[-1].split('-')[0])
+            label_operator = 'step'
+            file_data = dict(step=[], encoded_solution=[], performance=[], hist_fitness=[], hist_positions=[])
         else:
             last_step = int(file_names[-1].split('-')[0])
             label_operator = 'step'
@@ -249,20 +258,24 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
                 file_data['encoded_solution'].append(temporal_data['encoded_solution'])
                 file_data['hist_fitness'].append(temporal_data['best_fitness'])
                 
-            elif kind == "unknown":
+            elif kind in ["unknown", "dynamic_transfer_learning"]:
+                if len(file_data) != 0:
+                    keys_to_use = list(file_data.keys())
+                else:
+                    keys_to_use = list(temporal_data.keys())
+
                 if only_laststep and operator_id == last_step:
-                    for field in list(temporal_data.keys()):
+                    for field in keys_to_use:
                         file_data[field] = temporal_data[field]
                 else:
                     if len(file_data) == 0:  # The first entering
                         # Read the available fields from the first file and create the corresponding lists
-                        fields_to_fill = list(temporal_data.keys())
-                        for field in fields_to_fill:
+                        for field in keys_to_use:
                             file_data[field] = list()
 
                     # Fill the file_data
-                    for field in fields_to_fill:
-                            file_data[field].append(temporal_data[field])
+                    for field in list(keys_to_use):
+                        file_data[field].append(temporal_data[field])
 
             else:
                 # Store information in the corresponding variables
@@ -275,6 +288,18 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
                     file_data['statistics'].append(temporal_data['statistics'])
                     file_data['fitness'].append(temporal_data['fitness'])
                     file_data['hist_fitness'].append(temporal_data['historical'])
+
+                elif kind == "static_transfer_learning":
+                    file_data['encoded_solution'].append(temporal_data['encoded_solution'])
+                    file_data['performance'].append(temporal_data['performance'])
+
+                    if only_laststep and operator_id == last_step:
+                        file_data['hist_fitness'] = [x['fitness'] for x in temporal_data['details']['historical']]
+                        file_data['hist_positions'] = [x['position'] for x in temporal_data['details']['historical']]
+                    else:
+                        file_data['hist_fitness'].append([x['fitness'] for x in temporal_data['details']['historical']])
+                        file_data['hist_positions'].append([x['position'] for x in temporal_data['details']['historical']])
+
                 else:
                     file_data['encoded_solution'].append(temporal_data['encoded_solution'])
                     file_data['statistics'].append(temporal_data['details']['statistics'])
@@ -297,7 +322,8 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
         data['results'].append(file_data)
 
     # Save pre-processed data
-    save_json(data, file_name=main_folder.split('/')[0] + "/" + output_name)
+    # save_json(data, file_name=main_folder.split('/')[0] + "/" + output_name)
+    save_json(data, file_name=output_name)
 
     # Return only the data variable
     # return data

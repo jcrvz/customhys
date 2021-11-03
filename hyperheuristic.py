@@ -98,7 +98,11 @@ class Hyperheuristic:
                               trial_overflow=False,  # Trial overflow policy,    lvl:2 *new
                               learnt_dataset=None,  # If it is a learnt dataset related with the heuristic space
                               repeat_operators=True,  # Allow repeating SOs inSeq,lvl:2
-                              verbose=True)  # Verbose process,          lvl:2
+                              verbose=True,  # Verbose process,          lvl:2
+                              learning_portion=0.37,
+                              solver='static'
+                              )
+
         # Read the problem
         if problem:
             self.problem = problem
@@ -452,13 +456,19 @@ class Hyperheuristic:
             self.parameters['acceptance_scheme'] = acceptance_scheme
         return self._solve_static()
 
-    def solve(self, mode='static', kw_parameters={}):
+
+    def solve(self, mode=None, kw_parameters={}):
+        # TODO: Delete kw_parameters
+        mode = mode if mode is not None else self.parameters["solver"]
+
+        if mode == 'dynamic':
+            return self._solve_dynamic()
         if mode == 'static_transfer_learning':
-            return self._solve_static_translearn(kw_parameters)
+            return self._solve_static_translearn()
         if mode == 'dynamic_transfer_learning':
-            return self._solve_dynamic_translearn(kw_parameters)
+            return self._solve_dynamic_translearn()
         if mode == 'hybrid_transfer_learning':
-            return self._solve_hybrid_translearn(kw_parameters)
+            return self._solve_hybrid_translearn()
         elif mode == 'neural_network':
             return self._solve_neural_network(kw_parameters)
         else:  # default: 'static'
@@ -584,7 +594,7 @@ class Hyperheuristic:
         # Return the best solution found and its details
         return best_solution, best_performance, historical_current, historical_best
 
-    def _solve_static_translearn(self, kw_weighting_params):
+    def _solve_static_translearn(self):
     
         # Check if there is a previous weight matrix stored
         self.weight_matrix = self.__check_learnt_dataset()
@@ -710,11 +720,11 @@ class Hyperheuristic:
         # Return the best solution found and its details
         return fitness_per_repetition, sequence_per_repetition  # , weights_per_repetition  # to add weight_matrix
 
-    def _solve_dynamic_translearn(self, kw_weighting_params):
+    def _solve_dynamic_translearn(self):
         self.weight_matrix = self.__check_learnt_dataset()
-        return self._solve_dynamic(kw_weighting_params)
+        return self._solve_dynamic()
 
-    def _solve_hybrid_translearn(self, kw_weighting_params):
+    def _solve_hybrid_translearn(self):
         """
         Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each meatheuristic is
         run 'num_replicas' times to obtain statistics and then its performance. Once the process ends, it returns:
@@ -771,13 +781,13 @@ class Hyperheuristic:
 
             while not self._check_finalisation(step, stag_counter):
                 candidate_fitness_per_trial = list()
-                candidate_position_per_trial = list()
-                candidate_fitness_data_per_trial = list()
-                candidate_positions_data_per_trial = list()
+                # candidate_position_per_trial = list()
+                # candidate_fitness_data_per_trial = list()
+                # candidate_positions_data_per_trial = list()
 
                 # Update the current set
                 if not trial_overflow:
-                    # candidate_operators_per_step = self.__get_argfrequenccies(weight_matrix[step, :], 20)
+                    # candidate_operators_per_step = self.__get_argfrequencies(weight_matrix[step, :], 20)
                     candidate_operators_per_step = self._obtain_candidate_solution(
                         sol=10, operators_weights=weight_matrix[step, :])
                 else:
@@ -863,37 +873,14 @@ class Hyperheuristic:
             sequence_per_repetition.append(np.double(unfolded_metaheuristic).astype(int).tolist())
             fitness_per_repetition.append(np.double(best_fitness).tolist())
 
-            # Update the weights for learning purposes
-            # weight_matrix = self._update_weights(sequence_per_repetition, fitness_per_repetition,
-            #                                      **kw_weighting_params)
-            # weights_per_repetition.append(self.weights)
-            # # print('w = ({})'.format(self.weights))
-            #
-            # # Save this historical register
-            # _save_step(rep + 1,  # datetime.now().strftime('%Hh%Mm%Ss'),
-            #            dict(encoded_solution=np.array(unfolded_metaheuristic),
-            #                 best_fitness=np.double(best_fitness),
-            #                 best_positions=np.double(best_position),
-            #                 details=dict(
-            #                     fitness_per_rep=fitness_per_repetition,
-            #                     sequence_per_rep=sequence_per_repetition,
-            #                     weight_matrix=weight_matrix
-            #                 )),
-            #            self.file_label)
-
         # Refine the achieved sequence
-        print(unfolded_metaheuristic)
         self.__current_sequence = unfolded_metaheuristic
-        fitness_static, sequence_static = self._solve_static_translearn(kw_weighting_params)
-        # sequence_performance, sequence_details = self.evaluate_candidate_solution(unfolded_metaheuristic)
-        print(sequence_static)
-
-        print(f"Perf: {fitness_static}")
+        fitness_static, sequence_static = self._solve_static_translearn()
 
         # Return the best solution found and its details
         return fitness_per_repetition, sequence_per_repetition  #, weights_per_repetition, weight_matrix
 
-    def _solve_dynamic(self, kw_weighting_params, save_steps=True):
+    def _solve_dynamic(self, save_steps = True):
         """
         Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each meatheuristic is
         run 'num_replicas' times to obtain statistics and then its performance. Once the process ends, it returns:
@@ -1047,7 +1034,7 @@ class Hyperheuristic:
             fitness_per_repetition.append(np.double(best_fitness).tolist())
 
             # Update the weights for learning purposes
-            self._update_weights(sequence_per_repetition, fitness_per_repetition, **kw_weighting_params)
+            self._update_weights(sequence_per_repetition)
             # weights_per_repetition.append(weight_array)
             # print('w = ({})'.format(self.weights))
 
@@ -1836,7 +1823,7 @@ class Hyperheuristic:
         
         return [weight_conversion(fitness) for fitness in sample_fitness]
 
-    def _update_weights(self, sequences=None, fitness_values=None, include_fitness=False, learning_portion=0.37):
+    def _update_weights(self, sequences=None):
         # *** uncomment when necessary
         # if not (isinstance(sequences, list) and isinstance(sequences[0], list)):
         #     sequences = [sequences]
@@ -1844,7 +1831,8 @@ class Hyperheuristic:
         # if not (isinstance(fitness_values, list) and isinstance(fitness_values[0], list)):
         #     fitness_values = [fitness_values]
 
-        if (self.weights is None) or (len(sequences) < int(self.parameters['num_replicas'] * learning_portion
+        if (self.weights is None) or (len(sequences) < int(self.parameters['num_replicas'] *
+                                                           self.parameters['learning_portion']
                                                            ) if sequences is not None else False):
             # create the weights array using a uniform distribution
             self.weights = np.ones(self.num_operators) / self.num_operators
@@ -2217,7 +2205,7 @@ if __name__ == '__main__':
     for seq in seqrep_nn:
         seqrep.append(seq)
         
-    """
+
     # Transfer learning dynamic
     file_label = "tl_{}-{}D".format(problem.func_name, problem.variable_num)
 
@@ -2225,19 +2213,24 @@ if __name__ == '__main__':
         fts=['Differentiable', 'Unimodal']),
         heuristic_space='default.txt',
         file_label=file_label)
+    sampling_portion = 0.37  # 0.37
+
     q.parameters['num_agents'] = 40
     q.parameters['num_steps'] = 100
     q.parameters['stagnation_percentage'] = 0.2
     q.parameters['num_replicas'] = 50
     q.parameters['learnt_dataset'] = "./data_files/translearn_dataset.json"
-    sampling_portion = 0.37  # 0.37
     q.parameters['allow_weight_matrix'] = True
     q.parameters['trial_overflow'] = True
+    # q.parameters['wp_sequences'] = None
+    # q.parameters['wp_fitness_values'] = None
+    # q.parameters['wp_include_fitness'] = False
+    q.parameters['learning_portion'] = sampling_portion
+
     # fitprep, seqrep = q.solve('static_transfer_learning')
-    fitprep, seqrep, weight_matrix = q.solve('dynamic_transfer_learning',
-                                             dict(include_fitness=False, learning_portion=sampling_portion))
-    """
-    
+    # fitprep, seqrep, weight_matrix = q.solve('dynamic_transfer_learning',
+    fitprep, seqrep, weight_matrix = q.solve('dynamic_transfer_learning')
+
     colours = plt.cm.rainbow(np.linspace(0, 1, len(fitprep)))
 
     # is there a way to update the weight matrix using the information provided from each run
@@ -2361,3 +2354,7 @@ if __name__ == '__main__':
     # import numpy as np
     #
     # qq, _ = q._obtain_candidate_solution(np.array(range(2)), 'RemoveMany')
+
+
+
+

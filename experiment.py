@@ -201,10 +201,9 @@ class Experiment:
         elif self.exp_config['experiment_type'] == ["basic_metaheuristics", 'bmh']:
             hh.basic_metaheuristics()
         elif self.exp_config['experiment_type'] in ["online_learning", 'dynamic']:
-            _ = hh.solve('dynamic', {
-                'include_fitness': self.exp_config["include_fitness"],
-                'learning_portion': self.exp_config["learning_portion"]
-            })
+            _ = hh.solve('dynamic')
+        elif self.exp_config['experiment_type'] in ["transfer_learning"]:
+            _ = hh.solve()
         elif self.exp_config['experiment_type'] in ["machine_learning", 'neural_network']:
             _ = hh.solve('neural_network', self.exp_config["machine_learning_params"])
         else:  # 'static_run'
@@ -268,8 +267,6 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
             'use_parallel': True,
             'parallel_pool_size': None,  # Default
             'auto_collection_num_vals': 5,
-            'learning_portion': 0.37,
-            'include_fitness': False,
             'machine_learning_params': dict()
         }, exp_config)
 
@@ -291,7 +288,9 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
             'verbose': False,
             'trial_overflow': True,
             'learnt_dataset': None,
-            'allow_weight_matrix': True
+            'allow_weight_matrix': True,
+            'learning_portion': 0.37,
+            'solver': 'static'
         }, hh_config)
 
     # Load the default problem configuration and compare it with prob_config
@@ -328,33 +327,75 @@ def create_task_list(function_list, dimension_list):
     return [(x, y) for x in function_list for y in dimension_list]
 
 
+def __print_dic(dict_var):
+    for key, val in dict_var.items():
+        print(f"--> \"{key}\"", f"{val}", sep=": ", end=",\n")
+
+
 # %% Auto-run
 if __name__ == '__main__':
     # Import module for calling this code from command-line
     import argparse
+    import os
+    from tools import preprocess_files
+
+    DATA_FOLDER = "./data_files/raw"
+    OUTPUT_FOLDER = "./data_files/exp_output"
 
     # Only one argument is allowed: the code
     parser = argparse.ArgumentParser(
         description="Run certain experiment, default experiment is './exconf/demo.json'")
+    parser.add_argument('-b', '--batch', action='store_true', help="carry out a batch of experiments")
     parser.add_argument('exp_config', metavar='config_filename', type=str, nargs='?', default='demo',
-                        help="Name of the configuration file in './exconf/' or its full path. Only JSON files.")
+                        help='''Name of the configuration file in './exconf/' or its full path. Only JSON files.
+                                If --batch flag is given, it is assumed that the entered file contains a list of all the
+                                paths of experiment files (JSON) to carry out. It would be read as plain text.''')
     # choices = [x.split('.')[0] for x in listdir('./exconf') if x.split('.')[1] == 'json'],
     # exp_filename = list(vars(parser.parse_args()).values())[0]
-    exp_filename = parser.parse_args().exp_config
 
-    # print(exp_filename)
+    args = parser.parse_args()
 
-    # Read the entered configuration
-    # ex_config = ex_configs[exp_ind]
-    # hh_config = hh_configs[exp_ind]
-    # pr_config = pr_configs[exp_ind]
+    if not os.path.exists(OUTPUT_FOLDER):
+        os.makedirs(OUTPUT_FOLDER)
 
-    # Create the experiment to runs
-    exp = Experiment(config_file=exp_filename)
+    if args.batch:
+        with open(args.exp_config) as configs:
+            exp_filenames = configs.read()
+        exp_filenames = [filename.strip() for filename in exp_filenames.splitlines()]
+    else:
+        exp_filenames = [args.exp_config]
 
-    print(exp.prob_config)
-    print(exp.hh_config)
-    print(exp.exp_config)
+    for exp_filename in exp_filenames:
+        tail_message = f" - ({exp_filenames.index(exp_filename)+1}/{len(exp_filenames)})" + "\n" + ("=" * 50) \
+            if args.batch else ""
 
-    # Run the experiment et voilà
-    exp.run()
+        print(f"\nRunning {exp_filename.split('.')[0]}" + tail_message)
+
+        # Create the experiment to runs
+        exp = Experiment(config_file=exp_filename)
+
+        # print("* Experiment configuration: \n", "-" * 30 + "\n", json.dumps(exp.prob_config, indent=2, default=str))
+        # print("* Hyper-heuristic configuration: \n", "-" * 30 + "\n", json.dumps(exp.hh_config, indent=2, default=str))
+        # print("* Problem configuration: \n", "-" * 30 + "\n", json.dumps(exp.prob_config, indent=2, default=str))
+
+        # print("\n* Experiment configuration:")
+        # __print_dic(exp.prob_config)
+        # print("\n* Hyper-heuristic configuration:")
+        # __print_dic(exp.hh_config)
+        # print("\n* Problem configuration:")
+        # __print_dic(exp.prob_config)
+
+        # Run the experiment et voilà
+        exp.run()
+
+        # After run, it preprocesses all the raw data
+        print(f"\nPreprocessing {exp_filename.split('.')[0]}" + tail_message)
+        preprocess_files("data_files/raw/",
+                         kind=exp.hh_config["solver"],
+                         output_name=OUTPUT_FOLDER + "/" + exp.exp_config["experiment_name"])
+
+        # Rename the raw folder to raw-$exp_name$
+        print(f"\nChanging folder name of raw results...")
+        os.rename(DATA_FOLDER, DATA_FOLDER + "-" + exp.exp_config["experiment_name"])
+
+    print("\nExperiment(s) finished!")
