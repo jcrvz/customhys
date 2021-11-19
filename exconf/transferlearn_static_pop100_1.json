@@ -1,6 +1,6 @@
 {
   "ex_config": {
-    "experiment_name": "transfer_learning_static_pop50_exp1",
+    "experiment_name": "transfer_learning_static_pop100_exp1",
     "experiment_type": "transfer_learning",
     "heuristic_collection_file": "default.txt",
     "use_parallel": true,
