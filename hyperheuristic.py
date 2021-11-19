@@ -157,6 +157,9 @@ class Hyperheuristic:
             if (current_cardinality <= self.min_cardinality) and ('Remove' in available_options):
                 available_options.remove('Remove')
 
+            if (current_cardinality <= self.min_cardinality) and ('RemoveLast' in available_options):
+                available_options.remove('RemoveLast')
+
         if current_cardinality <= 1:
             if 'Swap' in available_options:
                 available_options.remove('Swap')
