@@ -392,6 +392,7 @@ if __name__ == '__main__':
         print(f"\nPreprocessing {exp_filename.split('.')[0]}" + tail_message)
         preprocess_files("data_files/raw/",
                          kind=exp.hh_config["solver"],
+                         experiment=exp_filename,
                          output_name=OUTPUT_FOLDER + "/" + exp.exp_config["experiment_name"])
 
         # Rename the raw folder to raw-$exp_name$

@@ -1167,9 +1167,10 @@ class Hyperheuristic:
             fitness_per_repetition.append(np.double(best_fitness).tolist())
 
             # Update the weights for learning purposes
-            weight_matrix = self._update_weights(sequence_per_repetition, learning_portion=0)
-            weights_per_repetition.append(self.weights)
-
+            #weight_matrix = self._update_weights(sequence_per_repetition, learning_portion=0)
+            #weights_per_repetition.append(self.weights)
+            self._update_weights(sequence_per_repetition)
+            
             # Save this historical register
             if save_steps:
                 _save_step(rep,
@@ -1179,11 +1180,11 @@ class Hyperheuristic:
                                 details=dict(
                                     fitness_per_rep=fitness_per_repetition,
                                     sequence_per_rep=sequence_per_repetition,
-                                    weight_matrix=weight_matrix
+                                    weight_matrix=self.transition_matrix
                                 )),
                            self.file_label)
 
-        return fitness_per_repetition, sequence_per_repetition, weights_per_repetition, weight_matrix
+        return fitness_per_repetition, sequence_per_repetition, self.transition_matrix
 
     def __get_neural_network_model(self, kw_model_params):
         """
@@ -1666,8 +1667,7 @@ class Hyperheuristic:
             
         # Generate sequences from dynamic solver
         if kw_sequences_params['generate_sequences']:
-            seqfitness_generated, seqrep_generated, _ = self._solve_dynamic(kw_sequences_params['kw_weighting_params'],
-                                                                               save_steps=False)        
+            seqfitness_generated, seqrep_generated, _ = self._solve_dynamic(save_steps=False)        
         
         # Join sequences
         seqfitness = seqfitness_retrieved + seqfitness_generated
