@@ -1,16 +1,18 @@
 {
   "ex_config": {
-    "experiment_name": "medium_nn_mlp_learning",
+    "experiment_name": "default_nn_mlp_30pop_verysmall_80",
     "experiment_type": "neural_network",
-    "heuristic_collection_file": "medium_collection.txt",
+    "heuristic_collection_file": "default.txt",
     "use_parallel": true,
     "parallel_pool_size": 10,
     "machine_learning_params": {
       "num_replicas": 100,
       "delete_idx": 5,
+      "cut_sequences": 80,
       "model_params": {
         "load_model": false,
         "save_model": true,
+        "cut_sequences": 80,
         "sample_sequences_params": {
           "filters": {
             "features": null,
@@ -31,11 +33,10 @@
         "fitness_to_weight": "rank",
         "model_architecture": "MLP",
         "model_architecture_layers": [
-          [500, "relu"],
-          [1500, "relu"],
-          [3000, "relu"]
+          [20, "relu", "Dense"]
         ],
-        "epochs": 100
+        "epochs": 100, 
+        "include_early_stopping": false
       }
     }
   },
@@ -51,7 +52,8 @@
     "verbose": false,
     "repeat_operators": true,
     "allow_weight_matrix": true,
-    "trial_overflow": false
+    "trial_overflow": false,
+    "solver": "dynamic_metaheuristic"
   },
   "prob_config": {
     "dimensions": [

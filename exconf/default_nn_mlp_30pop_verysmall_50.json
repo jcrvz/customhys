@@ -1,6 +1,6 @@
 {
   "ex_config": {
-    "experiment_name": "default_nn_lstm_30pop_performance_learning",
+    "experiment_name": "default_nn_mlp_30pop_verysmall_50",
     "experiment_type": "neural_network",
     "heuristic_collection_file": "default.txt",
     "use_parallel": true,
@@ -8,30 +8,32 @@
     "machine_learning_params": {
       "num_replicas": 100,
       "delete_idx": 5,
+      "cut_sequences": 50,
       "model_params": {
         "load_model": false,
         "save_model": true,
+        "cut_sequences": 50,
         "sample_sequences_params": {
           "filters": {
             "features": null,
             "include_dimensions": true,
             "include_population": true,
-            "sequence_limit":100
+            "sequence_limit": 100
           },
-          "retrieve_sequences": false,
-          "generate_sequences": true,
-          "store_sequences": true,
+          "retrieve_sequences": true,
+          "generate_sequences": false,
+          "store_sequences": false,
           "kw_weighting_params": {
             "include_fitness": false,
             "learning_portion": 1
           }
         },
-        "encoder" : "Ragged",
+        "encoder" : "Default",
         "include_fitness": true,
         "fitness_to_weight": "rank",
-        "model_architecture": "LSTM_Ragged",
+        "model_architecture": "MLP",
         "model_architecture_layers": [
-          [20, "sigmoid"]
+          [20, "relu", "Dense"]
         ],
         "epochs": 100, 
         "include_early_stopping": false
@@ -50,7 +52,8 @@
     "verbose": false,
     "repeat_operators": true,
     "allow_weight_matrix": true,
-    "trial_overflow": false
+    "trial_overflow": false,
+    "solver": "dynamic_metaheuristic"
   },
   "prob_config": {
     "dimensions": [

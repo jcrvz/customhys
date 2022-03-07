@@ -1322,39 +1322,38 @@ class Hyperheuristic:
         # Create model
         model = tf.keras.Sequential()
         hidden_layers = kw_model_params['model_architecture_layers']
-        if architecture_name in ['MLP', 'Multi-Layer Perceptron', 'default']:
-            # Multi-Layer Perceptron model
 
-            # Input layer
+
+        # Input layer
+        if architecture_name in ['MLP', 'Multi-Layer Perceptron', 'default']:
+            # MLP input
             model.add(tf.keras.Input(shape=input_size))
-            
-            # Hidden layers
-            for layer_size, layer_activation in hidden_layers:
+
+        elif architecture_name in ['LSTM_Ragged']:
+            # Variable length, supported using ragged tensors
+            max_length_sequence = X.bounding_shape()[-1].numpy()
+            model.add(tf.keras.Input(shape=(max_length_sequence,)))
+
+            # Embedding layer
+            first_layer_size, _ = hidden_layers[0] if len(hidden_layers) > 0 else (self.num_operators, None)
+            model.add(tf.keras.layers.Embedding(self.num_operators + 1, first_layer_size))
+
+        elif architecture_name in ['RNN', 'LSTM', 'Long Short-Term Memory']:
+            # LSTM input
+            model.add(tf.keras.Input(shape=(input_size, 1)))
+
+
+        # Hidden layers
+        num_lstm_layers = sum("LSTM" == layer_type for _, _, layer_type in hidden_layers)
+        for idx, (layer_size, layer_activation, layer_type) in enumerate(hidden_layers):
+            if layer_type == "Dense":
                 model.add(tf.keras.layers.Dense(units=layer_size,
                                                 activation=layer_activation))
-        
-        elif architecture_name in ['RNN', 'LSTM', 'Long Short-Term Memory', 'LSTM_Ragged']:
-            # Long Short-Term Memory model
+            elif layer_type == "LSTM":
+                model.add(tf.keras.layers.LSTM(units=layer_size,
+                                               activation=layer_activation,
+                                               return_sequences=idx + 1 < num_lstm_layers))        
 
-            # Input layer
-            if architecture_name in ['LSTM_Ragged']:
-                # Input with variable length, supported using ragged tensors
-                max_length_sequence = X.bounding_shape()[-1].numpy()
-                model.add(tf.keras.Input(shape=(max_length_sequence,)))
-
-                # Embedding layer
-                first_layer_size, _ = hidden_layers[0] if len(hidden_layers) > 0 else (self.num_operators, None)
-                model.add(tf.keras.layers.Embedding(self.num_operators + 1, first_layer_size))
-            else:
-                # Input with fixed length, sequences padded with dummy values
-                model.add(tf.keras.Input(shape=(input_size, 1)))
-
-            # Hidden layers
-            num_layers = len(hidden_layers)
-            for idx, (layer_size, layer_activation) in enumerate(hidden_layers):
-                model.add(tf.keras.layers.LSTM(units=layer_size, 
-                                               activation=layer_activation, 
-                                               return_sequences=True if idx + 1 < num_layers else False))
 
         # Output layer
         model.add(tf.keras.layers.Dense(self.num_operators, activation='softmax'))
@@ -1363,7 +1362,7 @@ class Hyperheuristic:
         model.compile(loss=tf.keras.losses.CategoricalCrossentropy(),
                       optimizer=tf.keras.optimizers.Adam(),
                       metrics=['accuracy'])
-        
+
         # Early stopping
         callbacks = []
         if kw_model_params['save_model']:
@@ -2141,7 +2140,7 @@ if __name__ == '__main__':
     q.parameters['num_agents'] = 30
     q.parameters['num_steps'] = 100
     q.parameters['stagnation_percentage'] = 0.6
-    q.parameters['num_replicas'] = 20
+    q.parameters['num_replicas'] = 5
     sampling_portion = 0.37  # 0.37
 
     # fitprep, seqrep, weights, weimatrix = q.solve('dynamic', {
@@ -2152,48 +2151,51 @@ if __name__ == '__main__':
     # q.parameters['trial_overflow'] = True
 
     kw_neural_network_params = dict({
-        'num_replicas': 10,
-        'delete_idx': 5,
-        'model_params': {
-            'load_model': False,
-            'save_model': True,
-            'sample_sequences_params': {
-                'filters': {
-                    'features': None,
-                    'include_dimensions': True,
-                    'include_population': True,
-                    'sequence_limit': 200
-                },
-                'retrieve_sequences': False,
-                'generate_sequences': True,
-                'store_sequences': False,
-                'kw_weighting_params': {
-                    'include_fitness': False,
-                    'learning_portion': 1.0 #sampling_portion
-                }
-            },
-            'encoder': 'default', 
-            'include_fitness': True,
-            'fitness_to_weight': 'rank',
-            'model_architecture': 'MLP',
-            'model_architecture_layers': [
-                [15, 'relu']
-            ],
-            'epochs': 60,
-            'include_early_stopping': True,
-            'early_stopping_params': {
-                'monitor': 'accuracy',
-                'patience': 20,
-                'mode': 'max'
-            }
-        }
+      "num_replicas": 10,
+      "delete_idx": 5,
+      "cut_sequences": 60,
+      "model_params": {
+        "load_model": False,
+        "save_model": True,
+        "cut_sequences": 60,
+        "sample_sequences_params": {
+          "filters": {
+            "features": None,
+            "include_dimensions": True,
+            "include_population": True,
+            "sequence_limit": 100
+          },
+          "retrieve_sequences": False,
+          "generate_sequences": True,
+          "store_sequences": True,
+          "kw_weighting_params": {
+            "include_fitness": False,
+            "learning_portion": 1
+          }
+        },
+        "encoder" : "LSTM",
+        "include_fitness": True,
+        "fitness_to_weight": "rank",
+        "model_architecture": "LSTM",
+        "model_architecture_layers": [
+          [20, "sigmoid", "LSTM"],
+          [20, "relu", "LSTM"]
+        ],
+        "epochs": 10, 
+        "include_early_stopping": False
+      }
     })
+#    'early_stopping_params': {
+#        'monitor': 'accuracy',
+#        'patience': 20,
+#        'mode': 'max'
+#    }
 
-    fitprep_nn, seqrep_nn, weights, weimatrix = q.solve('neural_network', kw_neural_network_params)
+    fitprep_nn, seqrep_nn, weimatrix = q.solve('neural_network', kw_neural_network_params)
 
     q.parameters['num_replicas'] = 20
     # sampling_portion = 0.37  # 0.37
-    fitprep_dyn, seqrep_dyn, _, _ = q.solve('dynamic', {
+    fitprep_dyn, seqrep_dyn, _ = q.solve('dynamic', {
         'include_fitness': False,
         'learning_portion': sampling_portion
     })

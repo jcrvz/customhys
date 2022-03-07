@@ -1,6 +1,6 @@
 {
   "ex_config": {
-    "experiment_name": "default_nn_mlp_50pop_small_performance_learning",
+    "experiment_name": "default_nn_lstm_unlimited_60",
     "experiment_type": "neural_network",
     "heuristic_collection_file": "default.txt",
     "use_parallel": true,
@@ -8,9 +8,11 @@
     "machine_learning_params": {
       "num_replicas": 100,
       "delete_idx": 5,
+      "cut_sequences": 60,
       "model_params": {
         "load_model": false,
         "save_model": true,
+        "cut_sequences": 60,
         "sample_sequences_params": {
           "filters": {
             "features": null,
@@ -26,12 +28,12 @@
             "learning_portion": 1
           }
         },
-        "encoder" : "Default",
+        "encoder" : "LSTM",
         "include_fitness": true,
         "fitness_to_weight": "rank",
-        "model_architecture": "MLP",
+        "model_architecture": "LSTM",
         "model_architecture_layers": [
-          [30, "relu"]
+          [20, "sigmoid", "LSTM"]
         ],
         "epochs": 100, 
         "include_early_stopping": false
@@ -39,8 +41,8 @@
     }
   },
   "hh_config": {
-    "num_steps": 100,
-    "num_agents": 50,
+    "num_steps": 400,
+    "num_agents": 30,
     "num_iterations": 100,
     "cardinality": 3,
     "cardinality_min": 1,
@@ -50,7 +52,8 @@
     "verbose": false,
     "repeat_operators": true,
     "allow_weight_matrix": true,
-    "trial_overflow": false
+    "trial_overflow": false,
+    "solver": "dynamic_metaheuristic"
   },
   "prob_config": {
     "dimensions": [
