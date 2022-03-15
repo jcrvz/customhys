@@ -274,7 +274,7 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
 
                 elif kind == "static_transfer_learning":
                     file_data['encoded_solution'].append(temporal_data['encoded_solution'])
-                    file_data['performance'].append(temporal_data['performance'])
+                    # file_data['performance'].append(temporal_data['performance'])
 
                     if only_laststep and operator_id == last_step:
                         file_data['hist_fitness'] = [x['fitness'] for x in temporal_data['details']['historical']]

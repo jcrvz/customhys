@@ -640,6 +640,7 @@ class Hyperheuristic:
             # Update step and temperature
             step += 1
 
+            # TODO: Check if this can be enhanced
             weight_vector = self.weight_matrix[step - 1, :] if step < self.weight_matrix.shape[0] else None
 
             # Generate a neighbour solution (just indices-codes)
@@ -691,6 +692,7 @@ class Hyperheuristic:
                 # Update the stagnation counter
                 stag_counter += 1
 
+            # TODO: Maybe some trash is being saved when there is no improvement
             # Get new information into some lists
             fitness_per_repetition.append(candidate_details["fitness"])
             sequence_per_repetition.append(best_solution)
