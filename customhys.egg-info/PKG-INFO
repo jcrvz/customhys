@@ -1,0 +1,14 @@
+Metadata-Version: 2.1
+Name: customhys
+Version: 1.0.0
+Summary: This framework provides tools for solving, but not limited to, continuous optimisation problems using a hyper-heuristic approach for customising metaheuristics. 
+Home-page: https://github.com/jcrvz/customhys
+Author: Jorge Mario Cruz-Duarte
+Author-email: jorge.cruz@tec.mx
+License: MIT License
+Keywords: metaheuristics,hyper-heuristic,optimization,automatic design,global optimization,evolutionary computation,bio-inspired,algorithm design
+Platform: UNKNOWN
+License-File: LICENSE
+
+UNKNOWN
+
