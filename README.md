@@ -13,7 +13,7 @@ Python 3.7 and higher. Packages: NumPy 1.18.5, SciPy 1.5.0, Matplotlib 3.2.2, js
 
 The modules that comprise this framework depend on some basic Python packages, as well as they liaise each other. The module dependency diagram is presented as follows:
 
-![Module Dependency Diagram](customhys/docfiles/dependency_diagram.png)
+![Module Dependency Diagram](docfiles/dependency_diagram.png)
 
 **NOTE:** Each module is briefly described below. If you require further information, please check the corresponding source code.
 
@@ -173,7 +173,7 @@ Source: [``visualisation.py``](customhys/visualisation.py)
 
 1. [J. M. Cruz-Duarte, I. Amaya, J. C. Ortiz-Bayliss, H. Terashima-Marín, and Y. Shi, CUSTOMHyS: Customising Optimisation Metaheuristics via Hyper-heuristic Search, SoftwareX, vol. 12, p. 100628, 2020.](https://www.sciencedirect.com/science/article/pii/S2352711020303411)
 1. [J. M. Cruz-Duarte, I. Amaya, J. C. Ortiz-Bayliss, S. E. Conant-Pablos, H. Terashima-Marín, H., and Y. Shi. _Hyper-Heuristics to Customise Metaheuristics for Continuous Optimisation_, *Swarm and Evolutionary Computation*, 100935.](https://doi.org/10.1016/j.swevo.2021.100935)
-1. [J. M. Cruz-Duarte, I. Amaya, J. C. Ortiz-Bayliss, S. E. Connat-Pablos, and H. Terashima-Marín, A Primary Study on Hyper-Heuristics to Customise Metaheuristics for Continuous Optimisation. CEC'2020.](customhys/docfiles/SearchOperators_CEC.pdf)
+1. [J. M. Cruz-Duarte, I. Amaya, J. C. Ortiz-Bayliss, S. E. Connat-Pablos, and H. Terashima-Marín, A Primary Study on Hyper-Heuristics to Customise Metaheuristics for Continuous Optimisation. CEC'2020.](docfiles/SearchOperators_CEC.pdf)
 1. [J. M. Cruz-Duarte, J. C. Ortiz-Bayliss, I. Amaya, Y. Shi, H. Terashima-Marín, and N. Pillay, Towards a Generalised Metaheuristic Model for Continuous Optimisation Problems, Mathematics, vol. 8, no. 11, p. 2046, Nov. 2020.](https://www.mdpi.com/2227-7390/8/11/2046)
 1. [J. M. Cruz-Duarte, J. C. Ortiz-Bayliss, I. Amaya, and N. Pillay, _Global Optimisation through Hyper-Heuristics: Unfolding Population-Based Metaheuristics_, *Appl. Sci.*, vol. 11, no. 12, p. 5620, 2021.](http://dx.doi.org/10.3390/app11125620)
 1. [J. M. Cruz-Duarte, I. Amaya, J. C. Ortiz-Bayliss, N. Pillay. Automated Design of Unfolded Metaheuristics and the Effect of Population Size. 2021 IEEE Congress on Evolutionary Computation (CEC), 1155–1162, 2021.](https://doi.org/10.1109/CEC45853.2021.9504879)
