@@ -94,15 +94,19 @@ class Population:
     # BASIC TOOLS
     # ===========
 
-    def get_state(self):
+    def get_state(self, as_string=True):
         """
+        TODO: update help
         Return a string containing the current state of the population, i.e.,
             str = 'x_best = ARRAY, f_best = VALUE'
 
         :returns: str
         """
-        return ('x_best = ' + str(self._rescale_back(self.global_best_position)) +
-                ', f_best = ' + str(self.global_best_fitness))
+        if as_string:
+            return ('x_best = ' + str(self._rescale_back(self.global_best_position)) +
+                    ', f_best = ' + str(self.global_best_fitness))
+        else:
+            return self._rescale_back(self.global_best_position), self.global_best_fitness
 
     def get_positions(self):
         """

@@ -191,8 +191,9 @@ class Metaheuristic:
         :return: None.
         """
         # Update historical variables
-        self.historical['fitness'].append(np.copy(self.pop.global_best_fitness))
-        self.historical['position'].append(np.copy(self.pop.global_best_position))
+        tmp_best_position, tmp_best_fitness = self.pop.get_state(as_string=False)
+        self.historical['fitness'].append(tmp_best_fitness)
+        self.historical['position'].append(tmp_best_position)
 
         # Update population centroid and radius
         current_centroid = np.array(self.pop.positions).mean(0)

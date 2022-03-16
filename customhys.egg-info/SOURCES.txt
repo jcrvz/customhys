@@ -1,9 +1,0 @@
-LICENSE
-README.md
-setup.cfg
-setup.py
-customhys/__init__.py
-customhys.egg-info/PKG-INFO
-customhys.egg-info/SOURCES.txt
-customhys.egg-info/dependency_links.txt
-customhys.egg-info/top_level.txt

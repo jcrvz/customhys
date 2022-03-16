@@ -140,5 +140,5 @@ data_files/raw
 *.txt
 *.svg
 .DS_Store
-!docfiles/
-!exconf/*
+!customhys/docfiles/
+!customhys/exconf/*
