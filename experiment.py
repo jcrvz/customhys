@@ -205,7 +205,7 @@ class Experiment:
         elif self.exp_config['experiment_type'] in ["transfer_learning"]:
             _ = hh.solve()
         elif self.exp_config['experiment_type'] in ["machine_learning", 'neural_network']:
-            _ = hh.solve('neural_network', self.exp_config["machine_learning_params"])
+            _ = hh.solve('neural_network')
         else:  # 'static_run'
             _ = hh.solve('static')
 
@@ -266,8 +266,7 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
             'weights_dataset_file': None,  # 'operators_weights.json',
             'use_parallel': True,
             'parallel_pool_size': None,  # Default
-            'auto_collection_num_vals': 5,
-            'machine_learning_params': dict()
+            'auto_collection_num_vals': 5
         }, exp_config)
 
     # Load the default hyper-heuristic configuration and compare it with hh_cfg
@@ -290,7 +289,9 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
             'learnt_dataset': None,
             'allow_weight_matrix': True,
             'learning_portion': 0.37,
-            'solver': 'static'
+            'solver': 'static',
+            'tabu_idx': None,
+            'model_params': None
         }, hh_config)
 
     # Load the default problem configuration and compare it with prob_config

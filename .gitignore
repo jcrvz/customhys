@@ -128,6 +128,8 @@ data_files/images/*
 data_files/images
 data_files/ml_models/*
 data_files/ml_models
+data_files/transformers_models/*
+data_files/transformers_models
 data_files/raw/*
 data_files/raw
 data_files/sequences/*

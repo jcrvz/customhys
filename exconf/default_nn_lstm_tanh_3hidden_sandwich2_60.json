@@ -1,6 +1,6 @@
 {
   "ex_config": {
-    "experiment_name": "default_nn_lstm_sigmoid_3hidden_sandwich2_60",
+    "experiment_name": "default_nn_lstm_tanh_3hidden_sandwich2_60",
     "experiment_type": "neural_network",
     "heuristic_collection_file": "default.txt",
     "use_parallel": true,
@@ -33,7 +33,7 @@
         "fitness_to_weight": "rank",
         "model_architecture": "LSTM",
         "model_architecture_layers": [
-          [30, "sigmoid", "LSTM"],
+          [30, "tanh", "LSTM"],
           [20, "relu", "Dense"],
           [50, "relu", "Dense"]
         ],
