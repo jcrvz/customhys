@@ -81,54 +81,6 @@ class DatasetSequences():
         return self._X, self._y, self._sample_weight
 
 
-class Autoencoder(tf.keras.models.Model):
-    def __init__(self, architecture):
-        super(Autoencoder, self).__init__()
-        self.latent_dim = architecture['latent_dim']
-        
-        # Verify latent_dim
-        layer_size, _ = architecture['encoder'][-1]
-        if layer_size != self.latent_dim:
-            raise Exception('Latent dim does not match with output size of autoencoder encoder')
-
-        # Check LSTM layers
-        exists_lstm = lambda hidden_layers: any("LSTM" == layer_type 
-                                                for _, _, layer_type in hidden_layers)
-        if exists_lstm(architecture['encoder']):
-            raise Exception('Exists LSTM layer on autoencoder encoder')
-        if exists_lstm(architecture['decoder']):
-            raise Exception('Exists LSTM layer on autoencoder decoder')
-        
-        # Encoder architecture
-        self.encoder = tf.keras.Sequential()
-        self.encoder.add(tf.keras.layers.Input(shape=architecture['input_shape']))
-        for layer_size, layer_activation, _ in architecture['encoder']:
-            self.encoder.add(tf.keras.layers.Dense(layer_size, activation=layer_activation))
-
-        # Decoder architecture
-        self.decoder = tf.keras.Sequential()
-        for layer_size, layer_activation, _ in architecture['decoder']:
-            self.decoder.add(tf.keras.layers.Dense(layer_size, activation=layer_activation))
-        self.decoder.add(tf.keras.layers.Dense(architecture['input_shape'], activation='sigmoid'))
-
-    def call(self, x):
-        encoded = self.encoder(x)
-        decoded = self.decoder(encoded)
-        return decoded
-
-
-def create_autoencoder(X_train, architecture):
-    # Create model
-    autoencoder = Autoencoder(architecture)
-    # Compile model
-    autoencoder.compile(optimizer='adam', loss=tf.keras.losses.MeanSquaredError())
-    # Train model
-    X_train = tf.constant(X_train)
-    autoencoder.fit(X_train, X_train,
-                    epochs=architecture['epochs'])
-    return autoencoder
-
-
 def retrieve_model_info(params):
     # Check essential attributes
     essential_attributes = ['file_label', 'model_architecture', 'encoder', 'num_steps']
@@ -151,8 +103,7 @@ def retrieve_model_info(params):
         'model_directory': model_directory,
         'model_label': model_label,
         'model_path': model_directory + f'{model_label}.h5',
-        'log_path': model_directory + f'{model_label}_log.csv',
-        'autoencoder_path': model_directory + f'{model_label}_autoencoder.h5',
+        'log_path': model_directory + f'{model_label}_log.csv'
     })
     
     return architecture_name, encoder_name, filename_dict
@@ -185,10 +136,6 @@ class Encoder():
         elif self._encoder_name in ['one_hot_encoder']:
             # Fix sequence, then one-hot encode it
             encoder = compose(one_hot_encode, self.__identity_encoder)
-        elif self._encoder_name in ['autoencoder']:
-            # Fix sequence, then uses autoencoder
-            self._autoencoder = None # TODO: Load NN            
-            encoder = self.__autoencoder_encoder
         else:
             raise Exception('Encoder name does not exists')
         
@@ -222,13 +169,6 @@ class Encoder():
     def __lstm_sequence(sequence):
         "Reshape sequence for LSTM architecture usage"
         return [[x] for x in sequence]
-        
-    def __autoencoder_encoder(self, sequence):
-        "Use encoder from autoencoder model to encode a sequence"
-        if self._autoencoder is None:
-            raise Exception('Autoencoder does not exists')
-        sequence = self.__identity_encoder(sequence) / self._num_operators
-        return self._autoencoder(tf.constant([sequence])).numpy()[0]
     
 
 class ModelPredictor():
@@ -303,9 +243,6 @@ class ModelPredictor():
         
     def fit(self, X, y, epochs=100, sample_weight=None, 
             verbose=False, early_stopping_params=None):
-        # Prepare autoencoder if needed
-        if self._params['encoder'] == 'autoencoder':
-            self.__build_autoencoder(X, self._params['autoencoder_architecture'])
 
         # Pre-process dataset
         X_encoded = [self._encoder(x) for x in X]
@@ -342,41 +279,20 @@ class ModelPredictor():
         tensor = self.__convert_tensor([self._encoder(sequence)])
         return self._model.predict(tensor)[0]
     
-    def __build_autoencoder(self, X, params):
-        params['input_shape'] = self._params['num_steps']
-        X_train = [self._encoder(x) / self._num_operators for x in X]
-        autoencoder = create_autoencoder(X_train, params)
-        self.__autoencoder = autoencoder.encoder
-    
     def load(self, model_path=None):
-        _, encoder_name, filename_dict = retrieve_model_info(self._params)
+        _, _, filename_dict = retrieve_model_info(self._params)
         if model_path is None:
             model_path = filename_dict['model_path']
-            autoencoder_path = filename_dict['autoencoder_path']
-        else:
-            autoencoder_path = model_path[:-3] + '_autoencoder.h5'
             
         if _check_path(model_path):
             self._model = tf.keras.models.load_model(model_path)
         else:
             raise Exception(f'model_path "{model_path}" does not exists')
 
-        if encoder_name == 'autoencoder':
-            # Load autoencoder
-            if _check_path(autoencoder_path):
-                self.__autoencoder = tf.keras.models.load_model(autoencoder_path)
-            else:
-                raise Exception(f'Autoencoder "{autoencoder_path}" does not exists')
-
     def save(self, model_path=None):
-        _, encoder_name, filename_dict = retrieve_model_info(self._params)
+        _, _, filename_dict = retrieve_model_info(self._params)
         if model_path is None:
             if not _check_path(filename_dict['model_directory']):
                 _create_path(filename_dict['model_directory'])
-            autoencoder_path = filename_dict['autoencoder_path']
             model_path = filename_dict['model_path']
-        else:
-            autoencoder_path = model_path[:-3] + '_autoencoder.h5'
-        if encoder_name == 'autoencoder':
-            self.__autoencoder.encoder.save(autoencoder_path)
         self._model.save(model_path)
