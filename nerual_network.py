@@ -350,13 +350,14 @@ class ModelPredictorTransformer():
         batch_size = 150
         training_args = TrainingArguments(
             output_dir=model_directory,
-            logging_dir=filename_dict['log_path'],
+            overwrite_output_dir=True,
             evaluation_strategy='epoch',
-            learning_rate=5e-5,
+            learning_rate=5e-4,
             per_device_train_batch_size=batch_size,
             eval_steps=1,
             num_train_epochs=epochs, 
             weight_decay=0.01,
+            save_strategy='epoch',
             logging_steps = 1,
             disable_tqdm=not verbose)
         data_collator = DataCollatorWithPadding(tokenizer=self._tokenizer, padding=True)

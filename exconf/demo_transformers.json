@@ -28,7 +28,7 @@
       "sample_params": {
         "retrieve_sequences": false,
         "limit_seqs": 100,
-        "get_bests": "first_quartile",
+        "filter": "first_quartile",
         "store_sequences": true
       }
     }

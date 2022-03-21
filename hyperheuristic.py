@@ -1415,13 +1415,18 @@ class Hyperheuristic:
             seqfitness, seqrep, _ = self._solve_dynamic(save_steps=False)
             self.parameters['num_replicas'] = prev_num_replicas
             self.parameters['learning_portion'] = prev_learning_portion
-            """ TODO: Only consider first quartile
-            zip_fit_rep = list(zip(seqfitness, seqrep))
-            zip_fit_rep.sort()
-            zip_fit_rep = zip_fit_rep[:40]
-            seqfitness = [a for (a, _) in zip_fit_rep]
-            seqrep = [b for (_, b) in zip_fit_rep]
-            """
+        
+        # Filter sequences with best performance
+        if 'filter' in sample_params:
+            seqfitness_last = [sequence[-1] for sequence in seqfitness]
+            if sample_params['filter'] == 'first_quartile':
+                top_value = np.quantile(seqfitness_last, 0.25)
+            else:
+                raise HyperheuristicError(f'"{sample_params["filter"]}" is not supported yet!')
+            valid_indices = np.array(seqfitness_last) <= top_value
+            seqfitness = (np.array(seqfitness)[valid_indices]).tolist()
+            seqrep = (np.array(seqrep)[valid_indices]).tolist()
+
         # Verify that there is sequences for training
         if len(seqfitness) == 0 or len(seqrep) == 0:
             raise HyperheuristicError('There is no sample sequences for training')
@@ -1741,24 +1746,25 @@ if __name__ == '__main__':
         "num_iterations": 100,
         "num_replicas": 100,
         "stagnation_percentage": 0.50,
-        "verbose": False,
+        "verbose": True,
         "repeat_operators": True,
         "allow_weight_matrix": True,
         "trial_overflow": False,
         "solver": "dynamic_metaheuristic",
         "tabu_idx": 5,
         "model_params": {
-        "load_model": False,
-        "save_model": True,
-        "encoder": "identity",
-        "model_architecture": "transformer",
-        "pretrained_model" : "distilbert-base-uncased",
-        "epochs": 3,
-        "sample_params": {
-            "retrieve_sequences": False,
-            "limit_seqs": 400,
-            "store_sequences": True
-        }
+            "load_model": False,
+            "save_model": True,
+            "encoder": "identity",
+            "model_architecture": "transformer",
+            "pretrained_model" : "distilbert-base-uncased",
+            "epochs": 3,
+            "sample_params": {
+                "retrieve_sequences": False,
+                "limit_seqs": 400,
+                "filter": "first_quartile",
+                "store_sequences": True
+            }
         }
     }
 
