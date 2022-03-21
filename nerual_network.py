@@ -1,4 +1,5 @@
 import tensorflow as tf
+import torch
 import numpy as np
 from datasets import Dataset as Dataset_hf
 from datasets import load_metric as load_metric_hf 
@@ -327,12 +328,15 @@ class ModelPredictorTransformer():
         model_directory = filename_dict['model_directory']
 
         # Prepare dataset
+        if sample_weight is None:
+            sample_weight = np.ones(len(y)) #/ len(y)
+        #else:
+        #    sample_weight = 100 * sample_weight / sum(sample_weight)
+        y_augmented = [[weight]+y_sample.tolist() for (y_sample, weight) in zip(y, sample_weight.numpy())]
         raw_dataset = Dataset_hf.from_dict({
-            "text": [' '.join(str(_x) for _x in x) for x in X],
-            "label": [np.where(y_one==1)[0][0] for y_one in y]
+            'text': [' '.join(str(_x) for _x in x) for x in X],
+            'label': y_augmented
         })
-        def preprocess_data(example):
-            return self._tokenizer(example["text"])
         train_dataset = raw_dataset.map(lambda w: self._tokenizer(w['text']),
                                         batched=True)
         train_dataset.set_format(type='torch', columns=['input_ids',
@@ -340,11 +344,15 @@ class ModelPredictorTransformer():
                                                         'attention_mask'])
         
         # Prepare 'accuracy' metric
-        metric = load_metric_hf("accuracy")
+        #metric = load_metric_hf('accuracy')
         def compute_metrics(eval_pred):
             logits, labels = eval_pred
+            weights = np.squeeze(labels[..., :1])
+            weights = weights / sum(weights)
+            reference = np.argmax(labels[..., 1:], axis=-1)
             predictions = np.argmax(logits, axis=-1)
-            return metric.compute(predictions=predictions, references=labels)
+            return {'accuracy': sum(weights * (predictions == reference))}
+            #return metric.compute(predictions=predictions, references=reference)
         
         # Training arguments
         batch_size = 150
@@ -358,10 +366,29 @@ class ModelPredictorTransformer():
             num_train_epochs=epochs, 
             weight_decay=0.01,
             save_strategy='epoch',
-            logging_steps = 1,
+            logging_steps=1,
             disable_tqdm=not verbose)
+
+        # Integrate sample_weights
+        def custom_weighted_loss(labels, logits):
+            shift_labels = labels[..., 1:].contiguous()
+            weights = torch.squeeze(labels[..., :1].contiguous())
+            shift_logits = logits[..., :].contiguous().softmax(dim=1)
+            # Categorical Cross Entropy Loss
+            loss_val = (-shift_logits.log() * shift_labels).sum(dim=1)
+            weighted_loss = (loss_val * weights).mean()
+            return weighted_loss
+        class WeightedTrainer(Trainer):
+            def compute_loss(self, model, inputs, return_outputs=False):
+                input_ids = inputs.get("input_ids")
+                labels = inputs.get("labels")
+                outputs = model(input_ids)
+                loss = custom_weighted_loss(labels, outputs.logits)
+                return (loss, outputs) if return_outputs else loss
+        
+        # Compile model
         data_collator = DataCollatorWithPadding(tokenizer=self._tokenizer, padding=True)
-        self._trainer = Trainer(
+        self._trainer = WeightedTrainer(
             model=self._model,
             args=training_args,
             train_dataset=train_dataset,

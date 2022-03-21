@@ -1751,7 +1751,7 @@ if __name__ == '__main__':
         "allow_weight_matrix": True,
         "trial_overflow": False,
         "solver": "dynamic_metaheuristic",
-        "tabu_idx": 5,
+        "tabu_idx": 3,
         "model_params": {
             "load_model": False,
             "save_model": True,
@@ -1759,10 +1759,11 @@ if __name__ == '__main__':
             "model_architecture": "transformer",
             "pretrained_model" : "distilbert-base-uncased",
             "epochs": 3,
+            "fitness_to_weight": "rank",
             "sample_params": {
                 "retrieve_sequences": False,
-                "limit_seqs": 400,
-                "filter": "first_quartile",
+                "limit_seqs": 50,
+                #"filter": "first_quartile",
                 "store_sequences": True
             }
         }

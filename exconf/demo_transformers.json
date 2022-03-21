@@ -25,10 +25,10 @@
       "model_architecture": "transformer",
       "pretrained_model" : "distilbert-base-uncased",
       "epochs": 3,
+      "fitness_to_weight": "rank",
       "sample_params": {
         "retrieve_sequences": false,
         "limit_seqs": 100,
-        "filter": "first_quartile",
         "store_sequences": true
       }
     }
