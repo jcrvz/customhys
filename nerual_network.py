@@ -1,7 +1,10 @@
 import tensorflow as tf
 import numpy as np
+from datasets import Dataset as Dataset_hf
+from datasets import load_metric as load_metric_hf 
 from os.path import exists as _check_path
 from os import makedirs as _create_path
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer, DataCollatorWithPadding
 
 def obtain_sample_weight(sample_fitness, fitness_to_weight='rank'):
     """
@@ -95,15 +98,21 @@ def retrieve_model_info(params):
     # Model label
     memory_length = params.get('memory_length', params['num_steps'])
     attribute_labels = [params['file_label'], f'mem{memory_length}']
+    if 'pretrained_model' in params:
+        attribute_labels.append(params['pretrained_model'])
     model_label = '-'.join(attribute_labels)
 
     # Filenames
     model_directory = './data_files/ml_models/'
+    model_filename = model_label
+    if architecture_name == 'transformer':
+        model_directory = model_directory +f'{model_label}_dir/'
+        model_filename = 'trained_model'
     filename_dict = dict({
         'model_directory': model_directory,
         'model_label': model_label,
-        'model_path': model_directory + f'{model_label}.h5',
-        'log_path': model_directory + f'{model_label}_log.csv'
+        'model_path': model_directory + f'{model_filename}.h5',
+        'log_path': model_directory + f'{model_filename}_log.csv'
     })
     
     return architecture_name, encoder_name, filename_dict
@@ -113,7 +122,7 @@ class Encoder():
     def __init__(self, params):
         self._encoder_name = params['encoder']
         self._architecture_name = params['model_architecture']
-        self._memory_length = params['memory_length']
+        self._memory_length = params.get('memory_length', 100)
         self._num_operators = params['num_operators']
 
         def one_hot_encode(sequence):
@@ -123,7 +132,7 @@ class Encoder():
             return lambda x: f(g(x))
         
         # Choice identity encoder
-        if self._architecture_name in ['LSTM_Ragged']:
+        if self._architecture_name in ['transformer', 'LSTM_Ragged']:
             # Keep original values but element -1
             self.__identity_encoder = self.__clean_sequence
         else:
@@ -171,16 +180,8 @@ class Encoder():
         return [[x] for x in sequence]
     
 
-class ModelPredictor():
+class ModelPredictorKeras():
     def __init__(self, params):
-        # Support multiprocessing + allow growth memory TensorFlow
-        """
-        core_config = tf.compat.v1.ConfigProto()
-        core_config.gpu_options.allow_growth = True
-        session = tf.compat.v1.Session(config=core_config)
-        tf.compat.v1.keras.backend.set_session(session)
-        tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-        """
         # Get encoder
         params['memory_length'] = params.get('memory_length', params['num_steps'])
         self._params = params.copy()
@@ -273,15 +274,18 @@ class ModelPredictor():
                   sample_weight=sample_weight, 
                   verbose=verbose,
                   callbacks=callbacks)
+        
+        # Save predict function
+        self._predict = self._model.predict
 
     def predict(self, sequence):
         # Use model to predict weights
         tensor = self.__convert_tensor([self._encoder(sequence)])
-        return self._model.predict(tensor)[0]
+        return self._predict(tensor)[0]
     
     def load(self, model_path=None):
-        _, _, filename_dict = retrieve_model_info(self._params)
         if model_path is None:
+            _, _, filename_dict = retrieve_model_info(self._params)
             model_path = filename_dict['model_path']
             
         if _check_path(model_path):
@@ -290,9 +294,136 @@ class ModelPredictor():
             raise Exception(f'model_path "{model_path}" does not exists')
 
     def save(self, model_path=None):
-        _, _, filename_dict = retrieve_model_info(self._params)
         if model_path is None:
+            _, _, filename_dict = retrieve_model_info(self._params)
             if not _check_path(filename_dict['model_directory']):
                 _create_path(filename_dict['model_directory'])
             model_path = filename_dict['model_path']
         self._model.save(model_path)
+
+class ModelPredictorTransformer():
+    def __init__(self, params):
+        self._checkpoint = params['pretrained_model']
+        self._num_operators = params['num_operators']
+        self._params = params.copy()
+        self._orig_encoder = Encoder(self._params).encode
+        self.__create_tokenizer()
+        self.__create_transformer_model()
+    
+    def __create_tokenizer(self):
+        self._tokenizer = AutoTokenizer.from_pretrained(self._checkpoint)
+    
+    def _encoder(self, sequence):
+        sequence_encoded = self._orig_encoder(sequence)
+        sequence_str = [' '.join(str(_x) for _x in sequence_encoded)]
+        return self._tokenizer(sequence_str)
+
+    def __create_transformer_model(self):
+        self._model = AutoModelForSequenceClassification.from_pretrained(self._checkpoint, num_labels=self._num_operators)
+    
+    def fit(self, X, y, epochs=3, sample_weight=None, 
+            verbose=False, early_stopping_params=None):
+        _, _, filename_dict = retrieve_model_info(self._params)
+        model_directory = filename_dict['model_directory']
+
+        # Prepare dataset
+        raw_dataset = Dataset_hf.from_dict({
+            "text": [' '.join(str(_x) for _x in x) for x in X],
+            "label": [np.where(y_one==1)[0][0] for y_one in y]
+        })
+        def preprocess_data(example):
+            return self._tokenizer(example["text"])
+        train_dataset = raw_dataset.map(lambda w: self._tokenizer(w['text']),
+                                        batched=True)
+        train_dataset.set_format(type='torch', columns=['input_ids',
+                                                        'label',
+                                                        'attention_mask'])
+        
+        # Prepare 'accuracy' metric
+        metric = load_metric_hf("accuracy")
+        def compute_metrics(eval_pred):
+            logits, labels = eval_pred
+            predictions = np.argmax(logits, axis=-1)
+            return metric.compute(predictions=predictions, references=labels)
+        
+        # Training arguments
+        batch_size = 150
+        training_args = TrainingArguments(
+            output_dir=model_directory,
+            logging_dir=filename_dict['log_path'],
+            evaluation_strategy='epoch',
+            learning_rate=5e-5,
+            per_device_train_batch_size=batch_size,
+            eval_steps=1,
+            num_train_epochs=epochs, 
+            weight_decay=0.01,
+            logging_steps = 1,
+            disable_tqdm=not verbose)
+        data_collator = DataCollatorWithPadding(tokenizer=self._tokenizer, padding=True)
+        self._trainer = Trainer(
+            model=self._model,
+            args=training_args,
+            train_dataset=train_dataset,
+            eval_dataset=train_dataset,
+            tokenizer=self._tokenizer,
+            data_collator=data_collator,
+            compute_metrics=compute_metrics
+        )
+
+        # Fit model
+        self._trainer.train()
+        
+        # Save predict function        
+        self._predict = self._trainer.predict
+    
+    @staticmethod
+    def __softmax(output):
+        return np.exp(output) / sum(np.exp(output))
+    
+    def predict(self, sequence):
+        sequence_tokenized = self._encoder(sequence)
+        sequence_dataset = Dataset_hf.from_dict(sequence_tokenized)
+        prediction, _, _ = self._predict(sequence_dataset)
+        return self.__softmax(prediction)[0]
+    
+    def load(self, model_path=None):
+        _, _, filename_dict = retrieve_model_info(self._params)
+        model_directory = filename_dict['model_directory']
+        if model_path is None:
+            model_path = filename_dict['model_path']
+            
+        
+        if _check_path(model_path):
+            self._model = AutoModelForSequenceClassification.from_pretrained(model_path, num_labels=self._num_operators)
+            training_args = TrainingArguments(output_dir=model_directory, disable_tqdm=True)
+            metric = load_metric_hf("accuracy")
+            def compute_metrics(eval_pred):
+                logits, labels = eval_pred
+                predictions = np.argmax(logits, axis=-1)
+                return metric.compute(predictions=predictions, references=labels)
+            self._trainer = Trainer(
+                model=self._model,
+                args=training_args,
+                tokenizer=self._tokenizer,
+                compute_metrics=compute_metrics
+            )        
+            #self._trainer = Trainer(self._model)
+            self._predict = self._trainer.predict
+        else:
+            raise Exception(f'model_path "{model_path}" does not exists')
+    
+    def save(self, model_path=None):
+        if model_path is None:
+            _, _, filename_dict = retrieve_model_info(self._params)
+            if not _check_path(filename_dict['model_directory']):
+                _create_path(filename_dict['model_directory'])
+            model_path = filename_dict['model_path']
+        self._trainer.save_model(model_path)
+
+
+def ModelPredictor(params):
+    architecture_name, _, _ = retrieve_model_info(params)
+    if architecture_name in ['transformer']:
+        return ModelPredictorTransformer(params)
+    else:
+        return ModelPredictorKeras(params)

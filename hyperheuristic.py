@@ -22,6 +22,11 @@ from os.path import exists as _check_path
 from os import makedirs as _create_path
 from deprecated import deprecated
 import tensorflow as tf
+from os import environ
+import logging
+logging.disable(logging.INFO)
+environ["TOKENIZERS_PARALLELISM"] = "false"
+
 from nerual_network import DatasetSequences, ModelPredictor
 
 class Hyperheuristic:
@@ -1407,10 +1412,16 @@ class Hyperheuristic:
             prev_learning_portion = self.parameters['learning_portion']
             self.parameters['num_replicas'] = sample_params.get('limit_seqs', 100)
             self.parameters['learning_portion'] = 1
-            seqfitness, seqrep, _ = self._solve_dynamic(save_steps=False)        
+            seqfitness, seqrep, _ = self._solve_dynamic(save_steps=False)
             self.parameters['num_replicas'] = prev_num_replicas
             self.parameters['learning_portion'] = prev_learning_portion
-                
+            """ TODO: Only consider first quartile
+            zip_fit_rep = list(zip(seqfitness, seqrep))
+            zip_fit_rep.sort()
+            zip_fit_rep = zip_fit_rep[:40]
+            seqfitness = [a for (a, _) in zip_fit_rep]
+            seqrep = [b for (_, b) in zip_fit_rep]
+            """
         # Verify that there is sequences for training
         if len(seqfitness) == 0 or len(seqrep) == 0:
             raise HyperheuristicError('There is no sample sequences for training')
@@ -1728,35 +1739,26 @@ if __name__ == '__main__':
         "num_steps": 100,
         "num_agents": 30,
         "num_iterations": 100,
-        "num_replicas": 3,
+        "num_replicas": 100,
         "stagnation_percentage": 0.50,
-        "verbose": True,
+        "verbose": False,
         "repeat_operators": True,
         "allow_weight_matrix": True,
         "trial_overflow": False,
         "solver": "dynamic_metaheuristic",
         "tabu_idx": 5,
         "model_params": {
-            "load_model": False,
-            "save_model": True,
-            "memory_length": 100,
-            "encoder" : "default",
-            "epochs": 10, 
-            "model_architecture": "MLP",
-            "model_architecture_layers": [
-                [20, "relu", "Dense"]
-            ],
-            "fitness_to_weight": "rank",
-            "early_stopping": {
-                "monitor": "accuracy",
-                "patience": 20,
-                "mode": "max"
-            },
-            "sample_params": {
-                "retrieve_sequences": True,
-                "limit_seqs": 10,
-                "store_sequences": True
-            }
+        "load_model": False,
+        "save_model": True,
+        "encoder": "identity",
+        "model_architecture": "transformer",
+        "pretrained_model" : "distilbert-base-uncased",
+        "epochs": 3,
+        "sample_params": {
+            "retrieve_sequences": False,
+            "limit_seqs": 400,
+            "store_sequences": True
+        }
         }
     }
 
@@ -1771,13 +1773,9 @@ if __name__ == '__main__':
     fitprep_nn, seqrep_nn, weimatrix = q.solve('neural_network')
     fitprep = fitprep_nn
     seqrep = seqrep_nn
-    """
-    q.parameters['num_replicas'] = 5
-    # sampling_portion = 0.37  # 0.37
-    fitprep_dyn, seqrep_dyn, _ = q.solve('dynamic', {
-        'include_fitness': False,
-        'learning_portion': sampling_portion
-    })
+    q.parameters['num_replicas'] = 100
+    q.parameters["sampling_portion"] = 0.37  # 0.37
+    fitprep_dyn, seqrep_dyn, _ = q.solve('dynamic')
 
     fitprep = fitprep_dyn.copy()
     for seq in fitprep_nn:
@@ -1786,7 +1784,7 @@ if __name__ == '__main__':
     for seq in seqrep_nn:
         seqrep.append(seq)
     
-
+    """
     # Transfer learning dynamic
     file_label = "tl_{}-{}D".format(problem.func_name, problem.variable_num)
 
@@ -1918,9 +1916,9 @@ if __name__ == '__main__':
 
     plt.ylabel('Fitness')
     plt.xlabel('Sample')
-    plt.savefig(folder_name + file_label + "FitnessSample" + ".svg", dpi=333, transparent=True)
     plt.show()
-
+    plt.savefig(folder_name + file_label + "FitnessSample" + ".svg", dpi=333, transparent=True)
+    
     # print('Stats for all fitness values:')
     #pprint(st.describe(last_fitness_values[:midpoint])._asdict())
     pprint(st.describe(last_fitness_values_nn)._asdict())
