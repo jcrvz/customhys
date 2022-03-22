@@ -7,11 +7,11 @@ Created on Mon Sep 30 13:42:15 2019
 @author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
 """
 
-import hyperheuristic as hyp
-from metaheuristic import Operators
-import benchmark_func as bf
+from customhys import hyperheuristic as hyp
+from customhys import operators as Operators
+from customhys import benchmark_func as bf
+from customhys import tools as tl
 import multiprocessing
-import tools as tl
 from os import path
 
 

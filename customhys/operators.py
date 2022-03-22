@@ -11,7 +11,7 @@ Created on Tue Jan  7 14:54:31 2020
 import numpy as np
 import os
 from itertools import combinations as _get_combinations
-from population import __selectors__
+from .population import all_selectors
 
 __all__ = ['local_random_walk', 'random_search', 'random_sample', 'random_flight', 'differential_mutation',
            'firefly_dynamic', 'swarm_dynamic', 'gravitational_search', 'central_force_dynamic', 'spiral_dynamic',
@@ -832,7 +832,7 @@ def obtain_operators(num_vals=5):
                                 ... },
                                'name_of_the_selector')
 
-    Available selectors from ``population.__selectors__`` are: 'all', 'greedy', 'metropolis', and 'probabilistic'.
+    Available selectors from ``population.all_selectors`` are: 'all', 'greedy', 'metropolis', and 'probabilistic'.
 
     :param int num_vals: optional
         Number of values to generate per each numerical parameter in a search operator. The default is 5.
@@ -849,20 +849,20 @@ def obtain_operators(num_vals=5):
                 alpha=[*np.linspace(0.0, 0.01, num_vals)],
                 beta=[*np.linspace(1.00, 2.00, num_vals)],
                 dt=[*np.linspace(0.0, 2.0, num_vals)]),
-            __selectors__),
+            all_selectors),
         # (
         #    'differential_crossover',
         #    dict(
         #        crossover_rate=[*np.linspace(0.0, 1.0, num_vals)],
         #        version=['binomial', 'exponential']),
-        #    __selectors__),
+        #    all_selectors),
         (
             'differential_mutation',
             dict(
                 expression=['rand', 'best', 'current', 'current-to-best', 'rand-to-best', 'rand-to-best-and-current'],
                 num_rands=[1, 2, 3],
                 factor=[*np.linspace(0.0, 2.5, num_vals)]),
-            __selectors__),
+            all_selectors),
         (
             'firefly_dynamic',
             dict(
@@ -870,7 +870,7 @@ def obtain_operators(num_vals=5):
                 alpha=[*np.linspace(0.0, 0.5, num_vals)],
                 beta=[*np.linspace(0.01, 1.0, num_vals)],
                 gamma=[*np.linspace(1.0, 1000.0, num_vals)]),
-            __selectors__),
+            all_selectors),
         (
             'genetic_crossover',
             dict(
@@ -878,7 +878,7 @@ def obtain_operators(num_vals=5):
                          'tournament_3_100', 'tournament_3_75', 'tournament_3_50'],
                 crossover=['single', 'two', 'uniform', 'blend', 'linear_0.5_0.5'],
                 mating_pool_factor=[*np.linspace(0.1, 0.9, num_vals)]),
-            __selectors__),
+            all_selectors),
         (
             'genetic_mutation',
             dict(
@@ -886,50 +886,50 @@ def obtain_operators(num_vals=5):
                 elite_rate=[*np.linspace(0.0, 0.9, num_vals)],
                 mutation_rate=[*np.linspace(0.1, 0.9, num_vals)],
                 distribution=['uniform', 'gaussian', 'levy']),
-            __selectors__),
+            all_selectors),
         (
             'gravitational_search',
             dict(
                 gravity=[*np.linspace(0.0, 1.0, num_vals)],
                 alpha=[*np.linspace(0.0, 0.04, num_vals)]),
-            __selectors__),
+            all_selectors),
         (
             'random_flight',  # Particular case for Levy flight
             dict(
                 scale=[*np.linspace(0.01, 1.0, num_vals)],
                 distribution=['levy'],
                 beta=[*np.linspace(1.00, 2.00, num_vals)]),
-            __selectors__),
+            all_selectors),
         (
             'random_flight',
             dict(
                 scale=[*np.linspace(0.01, 1.0, num_vals)],
                 distribution=['uniform', 'gaussian']),
-            __selectors__),
+            all_selectors),
         (
             'local_random_walk',
             dict(
                 probability=[*np.linspace(0.01, 0.99, num_vals)],
                 scale=[*np.linspace(0.01, 1.0, num_vals)],
                 distribution=['uniform', 'gaussian', 'levy']),
-            __selectors__),
+            all_selectors),
         (
             'random_sample',
             dict(),
-            __selectors__),
+            all_selectors),
         (
             'random_search',
             dict(
                 scale=[*np.linspace(0.01, 1.0, num_vals)],
                 distribution=['uniform', 'gaussian', 'levy']),
-            __selectors__),
+            all_selectors),
         (
             'spiral_dynamic',
             dict(
                 radius=[*np.linspace(0.001, 0.999, num_vals)],
                 angle=[*np.linspace(0.0, 180.0, num_vals)],
                 sigma=[*np.linspace(0.0, 0.5, num_vals)]),
-            __selectors__),
+            all_selectors),
         (
             'swarm_dynamic',
             dict(
@@ -938,7 +938,7 @@ def obtain_operators(num_vals=5):
                 swarm_conf=[*np.linspace(0.01, 4.99, num_vals)],
                 version=['inertial', 'constriction'],
                 distribution=['uniform', 'gaussian', 'levy']),
-            __selectors__)
+            all_selectors)
     ]
 
 

@@ -8,13 +8,12 @@ Created on Thu Jan  9 15:36:43 2020
 """
 import numpy as np
 import scipy.stats as st
-from metaheuristic import Metaheuristic
+from customhys.metaheuristic import Metaheuristic
+from customhys import tools as jt
 from datetime import datetime
 import json
-import tools as jt
 from os.path import exists as _check_path
 from os import makedirs as _create_path
-
 
 class Hyperheuristic:
     """

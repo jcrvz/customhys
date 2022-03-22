@@ -8,10 +8,10 @@ Created on Thu Sep 26 16:56:01 2019
 """
 
 import numpy as np
-from population import Population
-import operators as Operators
+from customhys import population as pop
+from customhys import operators as Operators
 
-__all__ = ['Metaheuristic', 'Population', 'Operators']
+# __all__ = ['Metaheuristic', 'Population', 'Operators']
 __operators__ = Operators.__all__
 __selectors__ = ['greedy', 'probabilistic', 'metropolis', 'all', 'none']
 
@@ -47,7 +47,7 @@ class Metaheuristic:
         self._problem_function = problem['function']
 
         # Create population
-        self.pop = Population(problem['boundaries'], num_agents, problem['is_constrained'])
+        self.pop = pop.Population(problem['boundaries'], num_agents, problem['is_constrained'])
 
         # Check and read the search_operators
         if not isinstance(search_operators, list):

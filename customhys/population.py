@@ -11,8 +11,8 @@ import numpy as np
 from itertools import product as cartesian_product
 from itertools import islice
 
-__all__ = ['Population']
-__selectors__ = ['all', 'greedy', 'metropolis', 'probabilistic']
+__all__ = ['Population', 'all_selectors']
+all_selectors = ['all', 'greedy', 'metropolis', 'probabilistic']
 
 
 class Population:
