@@ -355,7 +355,7 @@ class ModelPredictorTransformer():
             #return metric.compute(predictions=predictions, references=reference)
         
         # Training arguments
-        batch_size = 100
+        batch_size = 8
         training_args = TrainingArguments(
             output_dir=model_directory,
             overwrite_output_dir=True,
