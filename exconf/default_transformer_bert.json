@@ -1,6 +1,6 @@
 {
   "ex_config": {
-    "experiment_name": "demo_transformers",
+    "experiment_name": "transformer_bert",
     "experiment_type": "neural_network",
     "heuristic_collection_file": "default.txt",
     "use_parallel": true,
@@ -10,9 +10,9 @@
     "num_steps": 100,
     "num_agents": 30,
     "num_iterations": 100,
-    "num_replicas": 10,
+    "num_replicas": 100,
     "stagnation_percentage": 0.50,
-    "verbose": true,
+    "verbose": false,
     "repeat_operators": true,
     "allow_weight_matrix": true,
     "trial_overflow": false,
@@ -23,7 +23,7 @@
       "save_model": true,
       "encoder": "identity",
       "model_architecture": "transformer",
-      "pretrained_model" : "distilbert-base-uncased",
+      "pretrained_model" : "bert-base-uncased",
       "epochs": 3,
       "fitness_to_weight": "rank",
       "sample_params": {
