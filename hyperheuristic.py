@@ -27,7 +27,7 @@ import logging
 logging.disable(logging.INFO)
 environ["TOKENIZERS_PARALLELISM"] = "false"
 
-from nerual_network import DatasetSequences, ModelPredictor
+from neural_network import DatasetSequences, ModelPredictor
 
 class Hyperheuristic:
     """
