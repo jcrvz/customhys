@@ -355,7 +355,7 @@ class ModelPredictorTransformer():
             #return metric.compute(predictions=predictions, references=reference)
         
         # Training arguments
-        batch_size = 150
+        batch_size = 200
         training_args = TrainingArguments(
             output_dir=model_directory,
             overwrite_output_dir=True,
@@ -366,7 +366,7 @@ class ModelPredictorTransformer():
             num_train_epochs=epochs, 
             weight_decay=0.01,
             save_strategy='epoch',
-            logging_steps=1,
+            logging_steps=1 if verbose else 500,
             disable_tqdm=not verbose)
 
         # Integrate sample_weights
