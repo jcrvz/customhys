@@ -355,7 +355,7 @@ class ModelPredictorTransformer():
             #return metric.compute(predictions=predictions, references=reference)
         
         # Training arguments
-        batch_size = 200
+        batch_size = 100
         training_args = TrainingArguments(
             output_dir=model_directory,
             overwrite_output_dir=True,
@@ -409,6 +409,7 @@ class ModelPredictorTransformer():
         return np.exp(output) / sum(np.exp(output))
     
     def predict(self, sequence):
+        torch.cuda.empty_cache()
         sequence_tokenized = self._encoder(sequence)
         sequence_dataset = Dataset_hf.from_dict(sequence_tokenized)
         prediction, _, _ = self._predict(sequence_dataset)
