@@ -1,6 +1,6 @@
 __all__ = ['benchmark_func', 'experiment', 'hyperheuristic', 'metaheuristic', 'operators', 'population', 'tools']
 # Under revision: 'characterisation', 'visualisation'
-__version__ = "1.0.0"
+__version__ = "1.0.1.dev1"
 
 import customhys.benchmark_func as benchmark_func
 import customhys.population as population
