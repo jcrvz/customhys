@@ -5,7 +5,9 @@ from datasets import Dataset as Dataset_hf
 from datasets import load_metric as load_metric_hf 
 from os.path import exists as _check_path
 from os import makedirs as _create_path
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer, DataCollatorWithPadding
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, \
+    TrainingArguments, Trainer, DataCollatorWithPadding, DefaultDataCollator, \
+        TFAutoModelForSequenceClassification
 
 def obtain_sample_weight(sample_fitness, fitness_to_weight='rank'):
     """
@@ -450,9 +452,256 @@ class ModelPredictorTransformer():
         self._trainer.save_model(model_path)
 
 
+
+class ModelPredictorKerasTransformer():
+    def __init__(self, params):
+        self._checkpoint = params['pretrained_model']
+        self._num_operators = params['num_operators']
+        self._params = params.copy()
+        self._orig_encoder = Encoder(self._params).encode
+        self.__create_tokenizer()
+        self.__create_transformer_model()
+    
+    def __create_tokenizer(self):
+        self._tokenizer = AutoTokenizer.from_pretrained(self._checkpoint)
+    
+    def _encoder(self, sequence):
+        sequence_encoded = self._orig_encoder(sequence)
+        sequence_str = [' '.join(str(_x) for _x in sequence_encoded)]
+        return self._tokenizer(sequence_str)
+
+    def __create_transformer_model(self):
+        self._model = TFAutoModelForSequenceClassification.from_pretrained(self._checkpoint, num_labels=self._num_operators)
+    
+    def fit(self, X, y, epochs=3, sample_weight=None, 
+            verbose=False, early_stopping_params=None):
+        _, _, filename_dict = retrieve_model_info(self._params)
+        model_directory = filename_dict['model_directory']
+
+        # Prepare dataset
+        if sample_weight is None:
+            sample_weight = np.ones(len(y)) #/ len(y)
+        #else:
+        #    sample_weight = 100 * sample_weight / sum(sample_weight)
+        y_augmented = [[weight]+y_sample.tolist() for (y_sample, weight) in zip(y, sample_weight.numpy())]
+        raw_dataset = Dataset_hf.from_dict({
+            'text': [' '.join(str(_x) for _x in x) for x in X],
+            'label': y_augmented
+        })
+        train_dataset = raw_dataset.map(lambda w: self._tokenizer(w['text']))
+        data_collator = DefaultDataCollator(return_tensors="tf", 
+                                        batched=True)
+        train_dataset = train_dataset.to_tf_dataset(
+            columns=["attention_mask", "input_ids", "token_type_ids"],
+            label_cols=["labels"],
+            shuffle=True,
+            collate_fn=data_collator,
+            batch_size=8,
+        )
+        
+
+        # Integrate sample_weights
+        def custom_weighted_loss(labels, logits):
+            shift_labels = labels[..., 1:].contiguous()
+            weights = torch.squeeze(labels[..., :1].contiguous())
+            shift_logits = logits[..., :].contiguous().softmax(dim=1)
+            # Categorical Cross Entropy Loss
+            loss_val = (-shift_logits.log() * shift_labels).sum(dim=1)
+            weighted_loss = (loss_val * weights).mean()
+            return weighted_loss
+
+
+        self._model.compile(
+            optimizer=tf.keras.optimizers.Adam(),
+            loss=custom_weighted_loss,
+            metrics=['accuracy']
+        )
+        
+        
+        # Callbacks
+        callbacks = []
+        _, _, filename_dict = retrieve_model_info(self._params)
+        # History Logger
+        if not _check_path(filename_dict['model_directory']):
+            _create_path(filename_dict['model_directory'])
+        history_logger = tf.keras.callbacks.CSVLogger(filename_dict['log_path'],
+                                                      separator=',', append=True)
+        callbacks.append(history_logger)
+        # Early stopping
+        if early_stopping_params is not None:
+            early_stopping = tf.keras.callbacks.EarlyStopping(
+                monitor=early_stopping_params['monitor'],
+                patience=early_stopping_params['patience'],
+                mode=early_stopping_params['mode']
+            ) 
+            callbacks.append(early_stopping)
+
+        self._model.fit(train_dataset,
+                        epochs=epochs,
+                        verbose=verbose,
+                        callbacks=callbacks)
+
+        # Save predict function        
+        self._predict = self._model.predict
+    
+    @staticmethod
+    def __softmax(output):
+        return np.exp(output) / sum(np.exp(output))
+    
+    def predict(self, sequence):
+        torch.cuda.empty_cache()
+        sequence_tokenized = self._encoder(sequence)
+        sequence_dataset = Dataset_hf.from_dict(sequence_tokenized)
+        prediction, _, _ = self._predict(sequence_dataset)
+        return self.__softmax(prediction)[0]
+    
+    def load(self, model_path=None):
+        _, _, filename_dict = retrieve_model_info(self._params)
+        #model_directory = filename_dict['model_directory']
+        if model_path is None:
+            model_path = filename_dict['model_path']
+            
+        
+        if _check_path(model_path):
+            self._model = AutoModelForSequenceClassification.from_pretrained(model_path, num_labels=self._num_operators)
+            self._trainer = Trainer(model=self._model)        
+            self._predict = self._trainer.predict
+        else:
+            raise Exception(f'model_path "{model_path}" does not exists')
+    
+    def save(self, model_path=None):
+        if model_path is None:
+            _, _, filename_dict = retrieve_model_info(self._params)
+            if not _check_path(filename_dict['model_directory']):
+                _create_path(filename_dict['model_directory'])
+            model_path = filename_dict['model_path']
+        self._model.save_model(model_path)
+        
+        
+class ModelPredictorTransformerOriginal():
+     def __init__(self, params):
+         self._checkpoint = params['pretrained_model']
+         self._num_operators = params['num_operators']
+         self._params = params.copy()
+         self._orig_encoder = Encoder(self._params).encode
+         self.__create_tokenizer()
+         self.__create_transformer_model()
+
+     def __create_tokenizer(self):
+         self._tokenizer = AutoTokenizer.from_pretrained(self._checkpoint)
+
+     def _encoder(self, sequence):
+         sequence_encoded = self._orig_encoder(sequence)
+         sequence_str = [' '.join(str(_x) for _x in sequence_encoded)]
+         return self._tokenizer(sequence_str)
+
+     def __create_transformer_model(self):
+         self._model = AutoModelForSequenceClassification.from_pretrained(self._checkpoint, num_labels=self._num_operators)
+
+     def fit(self, X, y, epochs=3, sample_weight=None, 
+             verbose=False, early_stopping_params=None):
+         _, _, filename_dict = retrieve_model_info(self._params)
+         model_directory = filename_dict['model_directory']
+
+         # Prepare dataset
+         raw_dataset = Dataset_hf.from_dict({
+             "text": [' '.join(str(_x) for _x in x) for x in X],
+             "label": [np.where(y_one==1)[0][0] for y_one in y]
+         })
+         train_dataset = raw_dataset.map(lambda w: self._tokenizer(w['text']),
+                                         batched=True)
+         train_dataset.set_format(type='torch', columns=['input_ids',
+                                                         'label',
+                                                         'attention_mask'])
+
+         # Prepare 'accuracy' metric
+         metric = load_metric_hf("accuracy")
+         def compute_metrics(eval_pred):
+             logits, labels = eval_pred
+             predictions = np.argmax(logits, axis=-1)
+             return metric.compute(predictions=predictions, references=labels)
+
+         # Training arguments
+         batch_size = 150
+         training_args = TrainingArguments(
+             output_dir=model_directory,
+             logging_dir=filename_dict['log_path'],
+             evaluation_strategy='epoch',
+             learning_rate=5e-5,
+             per_device_train_batch_size=batch_size,
+             eval_steps=1,
+             num_train_epochs=epochs, 
+             weight_decay=0.01,
+             logging_steps = 1,
+             disable_tqdm=not verbose)
+         data_collator = DataCollatorWithPadding(tokenizer=self._tokenizer, padding=True)
+         self._trainer = Trainer(
+             model=self._model,
+             args=training_args,
+             train_dataset=train_dataset,
+             eval_dataset=train_dataset,
+             tokenizer=self._tokenizer,
+             data_collator=data_collator,
+             compute_metrics=compute_metrics
+         )
+
+         # Fit model
+         self._trainer.train()
+
+         # Save predict function        
+         self._predict = self._trainer.predict
+
+     @staticmethod
+     def __softmax(output):
+         return np.exp(output) / sum(np.exp(output))
+
+     def predict(self, sequence):
+         sequence_tokenized = self._encoder(sequence)
+         sequence_dataset = Dataset_hf.from_dict(sequence_tokenized)
+         prediction, _, _ = self._predict(sequence_dataset)
+         return self.__softmax(prediction)[0]
+
+     def load(self, model_path=None):
+         _, _, filename_dict = retrieve_model_info(self._params)
+         model_directory = filename_dict['model_directory']
+         if model_path is None:
+             model_path = filename_dict['model_path']
+
+
+         if _check_path(model_path):
+             self._model = AutoModelForSequenceClassification.from_pretrained(model_path, num_labels=self._num_operators)
+             training_args = TrainingArguments(output_dir=model_directory, disable_tqdm=True)
+             metric = load_metric_hf("accuracy")
+             def compute_metrics(eval_pred):
+                 logits, labels = eval_pred
+                 predictions = np.argmax(logits, axis=-1)
+                 return metric.compute(predictions=predictions, references=labels)
+             self._trainer = Trainer(
+                 model=self._model,
+                 args=training_args,
+                 tokenizer=self._tokenizer,
+                 compute_metrics=compute_metrics
+             )        
+             #self._trainer = Trainer(self._model)
+             self._predict = self._trainer.predict
+         else:
+             raise Exception(f'model_path "{model_path}" does not exists')
+
+     def save(self, model_path=None):
+         if model_path is None:
+             _, _, filename_dict = retrieve_model_info(self._params)
+             if not _check_path(filename_dict['model_directory']):
+                 _create_path(filename_dict['model_directory'])
+             model_path = filename_dict['model_path']
+         self._trainer.save_model(model_path)
+
 def ModelPredictor(params):
     architecture_name, _, _ = retrieve_model_info(params)
     if architecture_name in ['transformer']:
         return ModelPredictorTransformer(params)
+    elif architecture_name in ['transformer_keras']:
+        return ModelPredictorKerasTransformer(params)
+    elif architecture_name in ['transformer_orig']:
+        return ModelPredictorTransformerOriginal(params)
     else:
         return ModelPredictorKeras(params)
