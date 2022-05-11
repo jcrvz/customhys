@@ -1,0 +1,1 @@
+{"ex_config": {"experiment_name": "demo_test", "experiment_type": "default", "heuristic_collection_file": "default.txt", "weights_dataset_file": "operators_weights.json"}, "hh_config": {"cardinality": 3, "num_replicas": 30}, "prob_config": {"dimensions": [2, 5], "functions": ["<choose_randomly>"]}}

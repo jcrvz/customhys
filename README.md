@@ -21,43 +21,43 @@ The modules that comprise this framework depend on some basic Python packages, a
 
 This module includes several benchmark functions as classes to be solved by using optimisation techniques. The class structure is based on Keita Tomochika's repository [optimization-evaluation](https://github.com/keit0222/optimization-evaluation).
 
-Source: [``benchmark_func.py``](./benchmark_func.py)
+Source: [``benchmark_func.py``](customhys/benchmark_func.py)
 
 ### 👯‍♂️ Population
 
 This module contains the class Population. A Population object corresponds to a set of agents or individuals within a problem domain. These agents themselves do not explore the function landscape, but they know when to update the position according to a selection procedure.
 
-Source: [``population.py``](./population.py)
+Source: [``population.py``](customhys/population.py)
 
 ### 🦾 Search Operators (low-level heuristics)
 
 This module has a collection of search operators (simple heuristics) extracted from several well-known metaheuristics in the literature. Such operators work over a population, i.e., modify the individuals' positions. 
 
-Source: [``operators.py``](./operators.py)
+Source: [``operators.py``](customhys/operators.py)
 
 ### 🤖 Metaheuristic (mid-level heuristic)
 
 This module contains the Metaheuristic class. A metaheuristic object implements a set of search operators to guide a population in a search procedure within an optimisation problem.
 
-Source: [``metaheuristic.py``](./metaheuristic.py)
+Source: [``metaheuristic.py``](customhys/metaheuristic.py)
 
 ### 👽 Hyper-heuristic (high-level heuristic)
 
 This module contains the Hyperheuristic class. Similar to the Metaheuristic class, but in this case, a collection of search operators is required. A hyper-heuristic object searches within the heuristic space to find the sequence that builds the best metaheuristic for a specific problem.
 
-Source: [``hyperheuristic.py``](./hyperheuristic.py)
+Source: [``hyperheuristic.py``](customhys/hyperheuristic.py)
 
 ### 🏭 Experiment
 
 This module contains the Experiment class.  An experiment object can run several hyper-heuristic procedures for a list of optimisation problems.
 
-Source: [``experiment.py``](./experiment.py)
+Source: [``experiment.py``](customhys/experiment.py)
 
 ### 🗜️ Tools
 
 This module contains several functions and methods utilised by many modules in this package.
 
-Source: [``tools.py``](./tools.py)
+Source: [``tools.py``](customhys/tools.py)
 
 ### 💾 Data Structure
 
@@ -155,13 +155,13 @@ The following modules are available, but they may do not work. They are currentl
 
 This module intends to provide metrics for characterising the benchmark functions.
 
-Source: [``characterisation.py``](./characterisation.py)
+Source: [``characterisation.py``](customhys/characterisation.py)
 
 ### 📊 Visualisation
 
 This module intends to provide several tools for plotting results from the experiments.
 
-Source: [``visualisation.py``](./visualisation.py)
+Source: [``visualisation.py``](customhys/visualisation.py)
 
 ## Sponsors
 
@@ -171,5 +171,9 @@ Source: [``visualisation.py``](./visualisation.py)
 
 ## References
 
-1. [Cruz-Duarte, J.M., Amaya, I., Ortiz-Bayliss, J.C., Connat-Pablos, S.E., and Terashima-Marín, H., A Primary Study on Hyper-Heuristics to Customise Metaheuristics for Continuous Optimisation. CEC'2020. Accepted.](./docfiles/SearchOperators_CEC.pdf)
-1. Cruz-Duarte, J.M., Amaya, I., Ortiz-Bayliss, J.C., Connat-Pablos, S.E., Terashima-Marín, H., and Shi, Y., Hyper-Heuristics to Customise Metaheuristics for Continuous Optimisation. Submitted to SWEVO.
+1. [J. M. Cruz-Duarte, I. Amaya, J. C. Ortiz-Bayliss, H. Terashima-Marín, and Y. Shi, CUSTOMHyS: Customising Optimisation Metaheuristics via Hyper-heuristic Search, SoftwareX, vol. 12, p. 100628, 2020.](https://www.sciencedirect.com/science/article/pii/S2352711020303411)
+1. [J. M. Cruz-Duarte, I. Amaya, J. C. Ortiz-Bayliss, S. E. Conant-Pablos, H. Terashima-Marín, H., and Y. Shi. _Hyper-Heuristics to Customise Metaheuristics for Continuous Optimisation_, *Swarm and Evolutionary Computation*, 100935.](https://doi.org/10.1016/j.swevo.2021.100935)
+1. [J. M. Cruz-Duarte, I. Amaya, J. C. Ortiz-Bayliss, S. E. Connat-Pablos, and H. Terashima-Marín, A Primary Study on Hyper-Heuristics to Customise Metaheuristics for Continuous Optimisation. CEC'2020.](docfiles/SearchOperators_CEC.pdf)
+1. [J. M. Cruz-Duarte, J. C. Ortiz-Bayliss, I. Amaya, Y. Shi, H. Terashima-Marín, and N. Pillay, Towards a Generalised Metaheuristic Model for Continuous Optimisation Problems, Mathematics, vol. 8, no. 11, p. 2046, Nov. 2020.](https://www.mdpi.com/2227-7390/8/11/2046)
+1. [J. M. Cruz-Duarte, J. C. Ortiz-Bayliss, I. Amaya, and N. Pillay, _Global Optimisation through Hyper-Heuristics: Unfolding Population-Based Metaheuristics_, *Appl. Sci.*, vol. 11, no. 12, p. 5620, 2021.](http://dx.doi.org/10.3390/app11125620)
+1. [J. M. Cruz-Duarte, I. Amaya, J. C. Ortiz-Bayliss, N. Pillay. Automated Design of Unfolded Metaheuristics and the Effect of Population Size. 2021 IEEE Congress on Evolutionary Computation (CEC), 1155–1162, 2021.](https://doi.org/10.1109/CEC45853.2021.9504879)
