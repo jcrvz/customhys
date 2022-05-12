@@ -281,6 +281,17 @@ class BasicProblem:
         return self.__scale_function * self.get_func_val(variables, *args) + self.__noise_level * noise_value + \
                self.__offset_function
 
+    def get_function_values(self, samples):
+        """
+        Map the `get_function_value` method to evaluate a list of samples and return the evaluation for each sample.
+
+        :param list samples:
+            List of positions in the problem domain to be evaluated.
+
+        :return: list
+        """
+        return [self.get_function_value(sample) for sample in samples]
+
     def plot(self, samples=55, resolution=100):
         """
         Plot the current problem in 2D.
@@ -368,7 +379,7 @@ class BasicProblem:
         self.plot_object.savefig(self.save_dir + self.func_name + '.' + ext)
         plt.show()
 
-    def get_formatted_problem(self, is_constrained=True):
+    def get_formatted_problem(self, is_constrained=True, fts=None):
         """
         Return the problem in a simple format to be used in a solving procedure. This format contains the ``function``
         in lambda form, the ``boundaries`` as a tuple with the lower and upper boundaries, and the ``is_constrained``
@@ -377,12 +388,19 @@ class BasicProblem:
         :param bool is_constrained: Optional.
             Flag indicating if the problem domain has hard boundaries.
 
+        :param list fts: Optional.
+            List of features to be processed.
+
         :return: dict.
         """
+
         # TODO: Include additional parameters to build the formatted problem, e.g., length scale feature.
         return dict(function=lambda x: self.get_function_value(x),
                     boundaries=(self.min_search_range, self.max_search_range),
-                    is_constrained=is_constrained)
+                    is_constrained=is_constrained,
+                    features=self.get_features(fts=fts),
+                    func_name=self.func_name,
+                    dimensions=self.variable_num)
 
 
 # %% SPECIFIC PROBLEM FUNCTIONS
@@ -2850,14 +2868,14 @@ def list_functions(rnp=True, fts=None, wrd='1'):
         return functions_features
 
 
-def for_all(property, dimension=2):
+def for_all(property, dimensions=2):
     """
     Read a determined property or attribute for all the problems and return a list.
 
     :param str property:
         Property to read. Please, check the attributes from a given problem object.
 
-    :param int dimension: Optional
+    :param int dimensions: Optional
         Dimension to initialise all the problems.
 
     :return: list
@@ -2869,6 +2887,53 @@ def for_all(property, dimension=2):
         # Read all functions and request their optimum data
         for ii in range(len(__all__)):
             function_name = __all__[ii]
-            info[function_name] = eval('{}({}).{}'.format(function_name, dimension, property))
+            info[function_name] = eval('{}({}).{}'.format(function_name, dimensions, property))
 
         return info
+
+def filter_problems(features=['Differentiable', 'Separable', 'Unimodal'], intersection=True):
+    """
+    Return a list of function names that have the features listed
+
+    :param list[str] features: 
+        List of features
+        
+    :param bool intersection: 
+        True if the problems needs to have all the features, false if at least one is needed
+    
+    :return: list        
+    """
+    functions_features = list_functions(rnp=True, fts=features)    
+    features_length = len(features)
+    
+    funct_names = []
+    for funct_name, values in functions_features.items():
+        good_features = sum(map(int, list(values['Code'])))
+        if intersection and good_features == features_length:
+            # Problem has all the features
+            funct_names.append(funct_name)
+        if not intersection and good_features > 0:
+            # Problem has at least one feature
+            funct_names.append(funct_name)
+    return funct_names
+
+def choose_problem(problem_name=None, num_dimensions=None):
+    """
+    Select a problem from __all__ using its string name and create its object for a given number of dimensions. If no
+    problem is specified, it prints the full list of the available problems.
+
+    :param str problem_name:
+
+    :type problem_name:
+    :param int num_dimensions:
+    :type num_dimensions:
+    :return:
+    :rtype:
+    """
+    if problem_name and num_dimensions:
+        if problem_name == '<random>':
+            return eval('{}({})'.format(__all__[np.random.randint(0, len(__all__))], num_dimensions))
+        else:
+            return eval('{}({})'.format(problem_name, num_dimensions))
+    else:
+        print(f'You need to choose one problem. Available problems: {__all__}')

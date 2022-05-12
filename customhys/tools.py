@@ -11,6 +11,8 @@ import json
 from subprocess import call
 import numpy as np
 from tqdm import tqdm
+import pandas as pd
+import scipy.stats as st
 
 
 def printmsk(var, level=1, name=None):
@@ -147,7 +149,8 @@ def read_subfolders(foldername):
     return [element for element in os.listdir(foldername) if not element.startswith('.')]
 
 
-def preprocess_files(main_folder='data_files/raw/', output_name='brute_force', only_laststep=True):
+def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_laststep=True,
+                     output_name='processed_data'):
     """
     Return data from results saved in the main folder. This method save the summary file in json format. Take in account
     that ``output_name = 'brute_force'`` has a special behaviour due to each json file stored in sub-folders correspond
@@ -156,18 +159,21 @@ def preprocess_files(main_folder='data_files/raw/', output_name='brute_force', o
 
     :param str main_folder: Optional.
         Location of the main folder. The default is 'data_files/raw/'.
-    :param str output_name:
-        Label of the experiment, for example, if the data correspond to a brute force deployment, then use
-        'brute_force'; otherwise, use a different label, for example, 'first_test'. The default is 'brute_force'.
+    :param str kind:
+        Type of procedure run to obtain the data files. They can be 'brute_force', 'basic_metaheuristic', and any other,
+        which means metaheuristics without fixed search operators. The default is 'brute_force'.
     :param bool only_laststep: Optional.
         Flag for only save the last step of all fitness values from the historical data. It is useful for large amount
-          of experiments. It only works when ``output_name'' is not 'brute_force'. The default is True.
+          of experiments. It only works when ``kind'' is neither 'brute_force' or 'basic_metaheuristic'. The default is
+          True.
+    :param str output_name:
+        Name of the resulting file. The default is 'processed_data'.
 
-    :return: dict.
+    :return: None.
     """
     # TODO: Revise this method to enhance its performance.
     # Get folders and exclude hidden ones
-    raw_folders = read_subfolders(main_folder)
+    raw_folders = filter(lambda name: len(name.split('-')) >= 2, read_subfolders(main_folder))
 
     # Sort subfolder names by problem name & dimensions
     subfolder_names = sorted(raw_folders, key=lambda x: int(x.split('-')[1].strip('D')))
@@ -177,7 +183,9 @@ def preprocess_files(main_folder='data_files/raw/', output_name='brute_force', o
 
     for subfolder in subfolder_names:
         # Extract the problem name and the number of dimensions
-        problem_name, dimensions, date_str = subfolder.split('-')
+        subfolder_splitted_name = subfolder.split('-')
+        problem_name = subfolder_splitted_name[0]
+        dimensions = subfolder_splitted_name[1]
 
         # Store information about this subfolder
         data['problem'].append(problem_name)
@@ -194,17 +202,41 @@ def preprocess_files(main_folder='data_files/raw/', output_name='brute_force', o
         file_names = sorted(raw_file_names, key=lambda x: int(x.split('-')[0]))
 
         # When using brute_force experiments, the last_step has no sense.
-        if output_name == 'brute_force':
+        if kind == 'brute_force':
             last_step = -1
             label_operator = 'operator_id'
             # Initialise iteration data
-            file_data = {'operator_id': list(), 'performance': list(), 'statistics': list()}
+            file_data = {'operator_id': list(), 'performance': list(), 'statistics': list(), 'fitness': list()}
+        elif kind == 'basic_metaheuristic':
+            last_step = -1
+            label_operator = 'operator_id'
+            # Initialise iteration data
+            file_data = {'operator_id': list(), 'performance': list(), 'statistics': list(),
+                         'fitness': list(), 'hist_fitness': list()}  # !remove -> 'hist_fitness': list()
+        elif kind == "unknown":
+            last_step = int(file_names[-1].split('-')[0])
+            label_operator = 'step'
+            file_data = dict()
+        elif kind == 'dynamic_metaheuristic':
+            # TODO: Light conversion? - Verify compatibility with dynamic transfer learning
+            last_step = int(file_names[-1].split('-')[0])
+            label_operator = 'rep'
+            file_data = {'rep': list(), 'hist_fitness': list(),
+                         'encoded_solution': list(), 'performance': list()}
+        elif kind == "dynamic_transfer_learning":
+            last_step = int(file_names[-1].split('-')[0])
+            label_operator = 'step'
+            file_data = dict()
+        elif kind == "static_transfer_learning":
+            last_step = int(file_names[-1].split('-')[0])
+            label_operator = 'step'
+            file_data = dict(step=[], encoded_solution=[], performance=[], hist_fitness=[], hist_positions=[])
         else:
             last_step = int(file_names[-1].split('-')[0])
             label_operator = 'step'
             # Initialise iteration data
             file_data = {'step': list(), 'performance': list(), 'statistics': list(),
-                         'encoded_solution': list(), 'hist_fitness': list()}
+                         'encoded_solution': list(), 'hist_fitness': list(), 'hist_positions': list()}
 
         # Walk on the subfolder's files
         for file_name in tqdm(file_names, desc='{} {}, last={}'.format(
@@ -217,33 +249,80 @@ def preprocess_files(main_folder='data_files/raw/', output_name='brute_force', o
             with open(temporal_full_path + '/' + file_name, 'r') as json_file:
                 temporal_data = json.load(json_file)
 
-            # Store information in the corresponding variables
-            file_data[label_operator].append(operator_id)
-            file_data['performance'].append(temporal_data['performance'])
-            if output_name == 'brute_force':
-                file_data['statistics'].append(temporal_data['statistics'])
-            else:
+            if kind == "dynamic_metaheuristic":
+                file_data[label_operator].append(operator_id)
                 file_data['encoded_solution'].append(temporal_data['encoded_solution'])
-                file_data['statistics'].append(temporal_data['details']['statistics'])
-
-                # Only save the historical fitness values when operator_id is the largest one
-                if only_laststep and operator_id == last_step:
-                    file_data['hist_fitness'] = [x['fitness'] for x in temporal_data['details']['historical']]
+                file_data['hist_fitness'].append(temporal_data['best_fitness'])
+                
+            elif kind in ["unknown", "dynamic_transfer_learning"]:
+                if len(file_data) != 0:
+                    keys_to_use = list(file_data.keys())
                 else:
-                    file_data['hist_fitness'].append([x['fitness'] for x in temporal_data['details']['historical']])
+                    keys_to_use = list(temporal_data.keys())
+
+                if only_laststep and operator_id == last_step:
+                    for field in keys_to_use:
+                        file_data[field] = temporal_data[field]
+                else:
+                    if len(file_data) == 0:  # The first entering
+                        # Read the available fields from the first file and create the corresponding lists
+                        for field in keys_to_use:
+                            file_data[field] = list()
+
+                    # Fill the file_data
+                    for field in list(keys_to_use):
+                        file_data[field].append(temporal_data[field])
+
+            else:
+                # Store information in the corresponding variables
+                file_data[label_operator].append(operator_id)
+                file_data['performance'].append(temporal_data['performance'])
+                if kind == 'brute_force':
+                    file_data['statistics'].append(temporal_data['statistics'])
+                    file_data['fitness'].append(temporal_data['fitness'])
+                elif kind == 'basic_metaheuristic':
+                    file_data['statistics'].append(temporal_data['statistics'])
+                    file_data['fitness'].append(temporal_data['fitness'])
+                    file_data['hist_fitness'].append(temporal_data['historical'])
+
+                elif kind == "static_transfer_learning":
+                    file_data['encoded_solution'].append(temporal_data['encoded_solution'])
+                    file_data['performance'].append(temporal_data['performance'])
+
+                    if only_laststep and operator_id == last_step:
+                        file_data['hist_fitness'] = [x['fitness'] for x in temporal_data['details']['historical']]
+                        file_data['hist_positions'] = [x['position'] for x in temporal_data['details']['historical']]
+                    else:
+                        file_data['hist_fitness'].append([x['fitness'] for x in temporal_data['details']['historical']])
+                        file_data['hist_positions'].append([x['position'] for x in temporal_data['details']['historical']])
+
+                else:
+                    file_data['encoded_solution'].append(temporal_data['encoded_solution'])
+                    file_data['statistics'].append(temporal_data['details']['statistics'])
+
+                    # Only save the historical fitness values when operator_id is the largest one
+                    if only_laststep and operator_id == last_step:
+                        file_data['hist_fitness'] = [x['fitness'] for x in temporal_data['details']['historical']]
+                        file_data['hist_positions'] = [x['position'] for x in temporal_data['details']['historical']]
+                    else:
+                        file_data['hist_fitness'].append([x['fitness'] for x in temporal_data['details']['historical']])
+                        file_data['hist_positions'].append([x['position'] for x in temporal_data['details']['historical']])
 
             # Following information can be included but resulting files will be larger
             # file_data['fitness'].append(temporal_data['details']['fitness'])
             # file_data['positions'].append(temporal_data['details']['positions'])
-
+        if kind == "dynamic_metaheuristic":
+            best_fitness = [x[-1] for x in file_data['hist_fitness']]
+            file_data['performance'] = st.iqr(best_fitness) + np.median(best_fitness)
         # Store results in the main data frame
         data['results'].append(file_data)
 
     # Save pre-processed data
-    save_json(data, file_name=main_folder.split('/')[0] + "/" + output_name)
+    # save_json(data, file_name=main_folder.split('/')[0] + "/" + output_name)
+    save_json(data, file_name=output_name)
 
     # Return only the data variable
-    return data
+    # return data
 
 
 def df2dict(df):
@@ -275,7 +354,7 @@ def check_fields(default_dict, new_dict):
     return default_dict
 
 
-def save_json(variable_to_save, file_name=None):
+def save_json(variable_to_save, file_name=None, suffix=None):
     """
     Save a variable composed with diverse types of variables, like numpy.
 
@@ -283,14 +362,18 @@ def save_json(variable_to_save, file_name=None):
         Variable to save.
     :param str file_name: Optional.
         Filename to save the variable. If this is None, a random name is used. The default is None.
-    :return:
-    :rtype:
+    :param str suffix: Optional.
+        Prefix to put in the file_name. The default is None.
+
+    :return: None
     """
     if file_name is None:
         file_name = 'autosaved-' + str(hex(random.randint(0, 9999)))
 
+    suffix = '_' + suffix if suffix else ''
+
     # Create the new file
-    with open('./{}.json'.format(file_name), 'w') as json_file:
+    with open('./{}{}.json'.format(file_name, suffix), 'w') as json_file:
         json.dump(variable_to_save, json_file, cls=NumpyEncoder)
 
 
@@ -309,6 +392,29 @@ def read_json(data_file):
     return data
 
 
+def merge_json(data_folder, list_of_fields=None):
+    # data_folder = './data_files/raw/Sphere-50D'
+
+    final_file_path = data_folder + '/' + data_folder.split('/')[-1] + '.csv'
+    file_names = [element for element in os.listdir(data_folder) if ((not element.startswith('.'))
+                                                                     and element.endswith('.json'))]
+
+    temporal_pretable = list()
+
+    for file_name in tqdm(file_names):
+
+        temporal_data = read_json(data_folder + '/' + file_name)
+
+        if (len(temporal_pretable) == 0) and (not list_of_fields):
+            list_of_fields = list(temporal_data.keys())
+
+        temporal_pretable.append({field: temporal_data[field] for field in list_of_fields})
+
+    table = pd.DataFrame(temporal_pretable).to_csv(final_file_path)
+    print('Merged file saved: {}'.format(final_file_path))
+
+
+
 class NumpyEncoder(json.JSONEncoder):
     """
     Numpy encoder
@@ -318,7 +424,32 @@ class NumpyEncoder(json.JSONEncoder):
             return obj.tolist()
         return json.JSONEncoder.default(self, obj)
 
-
+# %% AUTOMATIC RUN
 if __name__ == '__main__':
+    # Import module for calling this code from command-line
+    import argparse
+    
+    parser = argparse.ArgumentParser(
+        description='Process results for a given experiment to make comparisons and visualisation with other experiments.'
+    )
+    parser.add_argument('output_filename', 
+                        metavar='output_filename', 
+                        type=str, nargs=1, 
+                        default='experiment_results', 
+                        help='Name of processed results file')
+    parser.add_argument('experiment_kind', 
+                        metavar='experiment_kind', 
+                        type=str, nargs=1, 
+                        default='dynamic_metaheuristic', 
+                        help='Specify which type of experiment would be processed')    
     # preprocess_files(main_folder='data_files/raw/', output_name='brute_force')
-    preprocess_files(main_folder='data_files/raw/', output_name='first_test')
+    DATA_FOLDER = 'data_files/raw'
+    experiment_kind = parser.parse_args().experiment_kind[0]
+    experiment_name = parser.parse_args().output_filename[0]
+    preprocess_files(main_folder=DATA_FOLDER, 
+                     kind=experiment_kind,
+                     output_name=experiment_name)
+
+    # Rename the raw folder to raw-$exp_name$
+    print(f"\nChanging folder name of raw results...")
+    os.rename(DATA_FOLDER, DATA_FOLDER + "-" + experiment_name)

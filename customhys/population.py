@@ -11,8 +11,8 @@ import numpy as np
 from itertools import product as cartesian_product
 from itertools import islice
 
-__all__ = ['Population', 'all_selectors']
-all_selectors = ['all', 'greedy', 'metropolis', 'probabilistic']
+__all__ = ['Population']
+__selectors__ = ['all', 'greedy', 'metropolis', 'probabilistic']
 
 
 class Population:
@@ -84,6 +84,12 @@ class Population:
         self.previous_velocities = np.full((self.num_agents, self.num_dimensions), np.nan)
         self.previous_fitness = np.full(self.num_agents, np.nan)
 
+        self.backup_positions = np.full((self.num_agents, self.num_dimensions), np.nan)
+        self.backup_velocities = np.full((self.num_agents, self.num_dimensions), np.nan)
+        self.backup_fitness = np.full(self.num_agents, np.nan)
+        self.backup_particular_best_positions = np.full((self.num_agents, self.num_dimensions), np.nan)
+        self.backup_particular_best_fitness = np.full(self.num_agents, np.nan)
+
         self.is_constrained = is_constrained
 
         # TODO Add capability for dealing with topologies (neighbourhoods)
@@ -94,19 +100,15 @@ class Population:
     # BASIC TOOLS
     # ===========
 
-    def get_state(self, as_string=True):
+    def get_state(self):
         """
-        TODO: update help
         Return a string containing the current state of the population, i.e.,
             str = 'x_best = ARRAY, f_best = VALUE'
 
         :returns: str
         """
-        if as_string:
-            return ('x_best = ' + str(self._rescale_back(self.global_best_position)) +
-                    ', f_best = ' + str(self.global_best_fitness))
-        else:
-            return self._rescale_back(self.global_best_position), self.global_best_fitness
+        return ('x_best = ' + str(self._rescale_back(self.global_best_position)) +
+                ', f_best = ' + str(self.global_best_fitness))
 
     def get_positions(self):
         """
@@ -135,6 +137,17 @@ class Population:
         return 2. * (positions - np.tile(self.centre_boundaries, (self.num_agents, 1))) / np.tile(
             self.span_boundaries, (self.num_agents, 1))
 
+    def revert_positions(self):
+        """
+        Revert the positions to the data in backup variables.
+        """
+        self.fitness = np.copy(self.backup_fitness)
+        self.positions = np.copy(self.backup_positions)
+        self.velocities = np.copy(self.backup_velocities)
+        self.particular_best_fitness = np.copy(self.backup_particular_best_fitness)
+        self.particular_best_positions = np.copy(self.backup_particular_best_positions)
+        self.update_positions('global', 'greedy')
+
     def update_positions(self, level='population', selector='all'):
         """
         Update the population positions according to the level and selection scheme.
@@ -151,11 +164,18 @@ class Population:
 
         :returns: None.
         """
-        # Update population positons, velocities and fitness
+        # Update population positions, velocities and fitness
         if level == 'population':
+            # backup the previous position to prevent losses
+            self.backup_fitness = np.copy(self.previous_fitness)
+            self.backup_positions = np.copy(self.previous_positions)
+            self.backup_velocities = np.copy(self.previous_velocities)
+            self.backup_particular_best_fitness = np.copy(self.particular_best_fitness)
+            self.backup_particular_best_positions = np.copy(self.particular_best_positions)
+
             for agent in range(self.num_agents):
                 if self._selection(self.fitness[agent], self.previous_fitness[agent], selector):
-                    # if new positions are improved, then update past register
+                    # if new positions are improved, then update the previous register
                     self.previous_fitness[agent] = np.copy(self.fitness[agent])
                     self.previous_positions[agent, :] = np.copy(self.positions[agent, :])
                     self.previous_velocities[agent, :] = np.copy(self.velocities[agent, :])
@@ -192,7 +212,7 @@ class Population:
 
         # Raise an error
         else:
-            PopulationError('Invalid update level')
+            raise PopulationError('Invalid update level')
 
     def evaluate_fitness(self, problem_function):
         """
