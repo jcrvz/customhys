@@ -8,8 +8,9 @@ Created on Thu Sep 26 16:56:01 2019
 """
 
 import numpy as np
-from customhys import population as pop
-from customhys import operators as Operators
+
+import population as pop
+import operators as Operators
 
 __all__ = ['Metaheuristic', 'Population', 'Operators']
 __operators__ = Operators.__all__

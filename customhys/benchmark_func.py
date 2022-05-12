@@ -23,9 +23,7 @@ Created on Tue Sep 17 14:29:43 2019
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import mpl_toolkits.mplot3d
 from matplotlib.colors import LightSource
-from matplotlib import rcParams
 
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif', size=11)

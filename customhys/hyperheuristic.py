@@ -6,22 +6,22 @@ Created on Thu Jan  9 15:36:43 2020
 
 @author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
 """
+
 import json
 import numpy as np
 import pandas as pd
 import random
 import scipy.stats as st
-
-from customhys.metaheuristic import Metaheuristic
-from customhys import benchmark_func as bf
-from customhys.neural_network import DatasetSequences, ModelPredictor
-from customhys import operators as Operators
-from customhys import tools as jt
 from datetime import datetime
-from deprecated import deprecated
 from itertools import product
 from os.path import exists as _check_path
 from os import makedirs as _create_path
+
+import operators as Operators
+import tools as jt
+from metaheuristic import Metaheuristic
+from neural_network import DatasetSequences, ModelPredictor
+
 
 class Hyperheuristic:
     """
@@ -1203,7 +1203,6 @@ class Hyperheuristic:
         # Save trained model
         if model_params['save_model']:
             model.save()
-        model.load()
         return model
 
 

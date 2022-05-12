@@ -7,12 +7,13 @@ Created on Mon Sep 30 13:42:15 2019
 @author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
 """
 
-from customhys import hyperheuristic as hyp
-from customhys import operators as Operators
-from customhys import benchmark_func as bf
-from customhys import tools as tl
 import multiprocessing
 from os import path
+
+import hyperheuristic as hyp
+import operators as Operators
+import benchmark_func as bf
+import tools as tl
 
 
 # %% PREDEFINED CONFIGURATIONS

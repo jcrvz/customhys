@@ -1,7 +1,8 @@
-import tensorflow as tf
 import numpy as np
-from os.path import exists as _check_path
+import tensorflow as tf
 from os import makedirs as _create_path
+from os.path import exists as _check_path
+
 
 def obtain_sample_weight(sample_fitness, fitness_to_weight='rank'):
     """

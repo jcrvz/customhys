@@ -11,6 +11,7 @@ Created on Tue Jan  7 14:54:31 2020
 import numpy as np
 import os
 from itertools import combinations as _get_combinations
+
 from population import __selectors__
 
 __all__ = ['local_random_walk', 'random_search', 'random_sample', 'random_flight', 'differential_mutation',

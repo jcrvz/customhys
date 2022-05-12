@@ -7,7 +7,7 @@
     "parallel_pool_size": 10
   },
   "hh_config": {
-    "num_steps": 100,
+    "num_steps": 30,
     "num_agents": 30,
     "num_iterations": 100,
     "num_replicas": 10,
@@ -23,7 +23,7 @@
       "save_model": false,
       "memory_length": 25,
       "encoder" : "default",
-      "epochs": 100, 
+      "epochs": 5, 
       "model_architecture": "LSTM",
       "model_architecture_layers": [
         [20, "sigmoid", "LSTM"]
@@ -31,7 +31,7 @@
       "fitness_to_weight": "rank",
       "sample_params": {
         "retrieve_sequences": false,
-        "limit_seqs": 20,
+        "limit_seqs": 10,
         "store_sequences": false
       }
     }

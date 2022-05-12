@@ -5,14 +5,15 @@ Created on Sat Feb 22, 2020
 
 @author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
 """
-import random
-import os
+
 import json
-from subprocess import call
 import numpy as np
-from tqdm import tqdm
+import os
 import pandas as pd
+import random
 import scipy.stats as st
+from subprocess import call
+from tqdm import tqdm
 
 
 def printmsk(var, level=1, name=None):

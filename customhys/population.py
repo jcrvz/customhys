@@ -8,8 +8,6 @@ Created on Tue Sep 17 14:29:43 2019
 """
 
 import numpy as np
-from itertools import product as cartesian_product
-from itertools import islice
 
 __all__ = ['Population']
 __selectors__ = ['all', 'greedy', 'metropolis', 'probabilistic']
@@ -107,7 +105,7 @@ class Population:
 
         :returns: str
         """
-        return ('x_best = ' + str(self._rescale_back(self.global_best_position)) +
+        return ('x_best = ' + str(self.rescale_back(self.global_best_position)) +
                 ', f_best = ' + str(self.global_best_fitness))
 
     def get_positions(self):
@@ -232,7 +230,7 @@ class Population:
 
         # Evaluate each agent in this function
         for agent in range(self.num_agents):
-            self.fitness[agent] = problem_function(self._rescale_back(self.positions[agent, :]))
+            self.fitness[agent] = problem_function(self.rescale_back(self.positions[agent, :]))
 
     # ==============
     # INITIALISATORS
@@ -310,7 +308,7 @@ class Population:
             self.positions[upp_check] = 1.0
             self.velocities[upp_check] = 0.0
 
-    def _rescale_back(self, position):
+    def rescale_back(self, position):
         """
         Rescale an agent position from [-1.0, 1.0] to the original search space boundaries per dimension.
 
