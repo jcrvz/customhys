@@ -160,6 +160,9 @@ class Hyperheuristic:
             if (current_cardinality <= self.min_cardinality) and ('Remove' in available_options):
                 available_options.remove('Remove')
 
+            if (current_cardinality <= self.min_cardinality) and ('RemoveLast' in available_options):
+                available_options.remove('RemoveLast')
+
         if current_cardinality <= 1:
             if 'Swap' in available_options:
                 available_options.remove('Swap')
@@ -273,7 +276,7 @@ class Hyperheuristic:
 
             elif (action == 'AddMany') and (current_cardinality < self.max_cardinality - 1):
                 encoded_neighbour = np.copy(sol)
-                for _ in range(np.random.randint(1, self.max_cardinality - current_cardinality + 1)):
+                for _ in range(np.random.randint(self.max_cardinality - current_cardinality + 1)):
                     encoded_neighbour = self._obtain_candidate_solution(sol=encoded_neighbour, action='Add')
 
             elif (action == 'Remove') and (current_cardinality > self.min_cardinality):
@@ -286,7 +289,7 @@ class Hyperheuristic:
 
             elif (action == 'RemoveMany') and (current_cardinality > self.min_cardinality + 1):
                 encoded_neighbour = np.copy(sol)
-                for _ in range(np.random.randint(1, current_cardinality - self.min_cardinality + 1)):
+                for _ in range(np.random.randint(current_cardinality - self.min_cardinality + 1)):
                     encoded_neighbour = self._obtain_candidate_solution(sol=encoded_neighbour, action='Remove')
 
             elif action == 'Shift':
@@ -298,7 +301,7 @@ class Hyperheuristic:
 
             elif action == 'ShiftMany':
                 encoded_neighbour = np.copy(sol)
-                for _ in range(np.random.randint(1, current_cardinality - self.min_cardinality + 1)):
+                for _ in range(np.random.randint(current_cardinality - self.min_cardinality + 1)):
                     encoded_neighbour = self._obtain_candidate_solution(sol=encoded_neighbour, action='Shift')
 
             elif action == 'LocalShift':  # It only works with the full set
@@ -316,7 +319,7 @@ class Hyperheuristic:
 
             elif action == 'LocalShiftMany':
                 encoded_neighbour = np.copy(sol)
-                for _ in range(np.random.randint(1, current_cardinality - self.min_cardinality + 1)):
+                for _ in range(np.random.randint(current_cardinality - self.min_cardinality + 1)):
                     encoded_neighbour = self._obtain_candidate_solution(sol=encoded_neighbour, action='LocalShift')
 
             elif (action == 'Swap') and (current_cardinality > 1):
