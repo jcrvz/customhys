@@ -356,6 +356,7 @@ class ModelPredictorTransformer():
             return {'accuracy': sum(weights * (predictions == reference))}
             #return metric.compute(predictions=predictions, references=reference)
         
+        torch.cuda.empty_cache()
         # Training arguments
         batch_size = 8
         training_args = TrainingArguments(
@@ -622,7 +623,8 @@ class ModelPredictorTransformerOriginal():
              return metric.compute(predictions=predictions, references=labels)
 
          # Training arguments
-         batch_size = 150
+         batch_size = 8
+         torch.cuda.empty_cache()
          training_args = TrainingArguments(
              output_dir=model_directory,
              logging_dir=filename_dict['log_path'],

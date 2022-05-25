@@ -1411,7 +1411,7 @@ class Hyperheuristic:
             prev_num_replicas = self.parameters['num_replicas']
             prev_learning_portion = self.parameters['learning_portion']
             self.parameters['num_replicas'] = sample_params.get('limit_seqs', 100)
-            self.parameters['learning_portion'] = 1
+            self.parameters['learning_portion'] = sample_params.get('random', 0.37)
             seqfitness, seqrep, _ = self._solve_dynamic(save_steps=False)
             self.parameters['num_replicas'] = prev_num_replicas
             self.parameters['learning_portion'] = prev_learning_portion

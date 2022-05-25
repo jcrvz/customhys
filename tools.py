@@ -440,19 +440,9 @@ if __name__ == '__main__':
                         metavar='experiment_filename', 
                         type=str, nargs=1, 
                         help='Name of finished experiment')
-    parser.add_argument('output_filename', 
-                        metavar='output_filename', 
-                        type=str, nargs=1, 
-                        default='experiment_results', 
-                        help='Name of processed results file')
-    parser.add_argument('experiment_kind', 
-                        metavar='experiment_kind', 
-                        type=str, nargs=1, 
-                        default='dynamic_metaheuristic', 
-                        help='Specify which type of experiment would be processed')    
-    # preprocess_files(main_folder='data_files/raw/', output_name='brute_force')
-
-    preprocess_files(main_folder='data_files/raw/', 
-                     kind=parser.parse_args().experiment_kind[0], #'dynamic_metaheuristic', 
-                     experiment=parser.parse_args().experiment[0], #'short_nn_mlp_30pop_performance_learning', 
-                     output_name=parser.parse_args().output_filename[0])#'short_mlp_30pop_performance')
+    
+    exp_name = parser.parse_args().experiment[0]
+    preprocess_files(main_folder='data_files/raw-'+exp_name, 
+                     kind='dynamic_metaheuristic', 
+                     experiment=exp_name, 
+                     output_name=exp_name)
