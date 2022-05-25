@@ -1,38 +1,56 @@
 {
   "ex_config": {
-    "experiment_name": "transformer_distilbert_original",
+    "experiment_name": "default_nn_lstm_padded_30pop_performance_learning",
     "experiment_type": "neural_network",
     "heuristic_collection_file": "default.txt",
     "use_parallel": true,
-    "parallel_pool_size": 10
+    "parallel_pool_size": 10,
+    "machine_learning_params": {
+      "num_replicas": 100,
+      "delete_idx": 5,
+      "model_params": {
+        "load_model": false,
+        "save_model": true,
+        "sample_sequences_params": {
+          "filters": {
+            "features": null,
+            "include_dimensions": true,
+            "include_population": true,
+            "sequence_limit":100
+          },
+          "retrieve_sequences": false,
+          "generate_sequences": true,
+          "store_sequences": true,
+          "kw_weighting_params": {
+            "include_fitness": false,
+            "learning_portion": 1
+          }
+        },
+        "encoder" : "LSTM",
+        "include_fitness": true,
+        "fitness_to_weight": "rank",
+        "model_architecture": "LSTM",
+        "model_architecture_layers": [
+          [20, "sigmoid"]
+        ],
+        "epochs": 100, 
+        "include_early_stopping": false
+      }
+    }
   },
   "hh_config": {
     "num_steps": 100,
     "num_agents": 30,
     "num_iterations": 100,
+    "cardinality": 3,
+    "cardinality_min": 1,
     "num_replicas": 100,
     "stagnation_percentage": 0.50,
+    "as_mh": false,
     "verbose": false,
     "repeat_operators": true,
     "allow_weight_matrix": true,
-    "trial_overflow": false,
-    "solver": "dynamic_metaheuristic",
-    "tabu_idx": 5,
-    "model_params": {
-      "load_model": false,
-      "save_model": true,
-      "encoder": "identity",
-      "model_architecture": "transformer_orig",
-      "pretrained_model" : "distilbert-base-uncased",
-      "epochs": 10,
-      "fitness_to_weight": "rank",
-      "sample_params": {
-        "retrieve_sequences": false,
-        "limit_seqs": 400,
-        "filter": "first_quartile",
-        "store_sequences": false
-      }
-    }
+    "trial_overflow": false
   },
   "prob_config": {
     "dimensions": [

@@ -1,6 +1,6 @@
 {
   "ex_config": {
-    "experiment_name": "transformer_distilbert_original",
+    "experiment_name": "default_nn_mlp_very_small_random",
     "experiment_type": "neural_network",
     "heuristic_collection_file": "default.txt",
     "use_parallel": true,
@@ -21,15 +21,18 @@
     "model_params": {
       "load_model": false,
       "save_model": true,
-      "encoder": "identity",
-      "model_architecture": "transformer_orig",
-      "pretrained_model" : "distilbert-base-uncased",
-      "epochs": 10,
+      "memory_length": 100,
+      "encoder" : "default",
+      "epochs": 100, 
+      "model_architecture": "MLP",
+      "model_architecture_layers": [
+        [20, "relu", "Dense"]
+      ],
       "fitness_to_weight": "rank",
       "sample_params": {
         "retrieve_sequences": false,
-        "limit_seqs": 400,
-        "filter": "first_quartile",
+        "limit_seqs": 100,
+        "random": 1,
         "store_sequences": false
       }
     }
