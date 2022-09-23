@@ -910,10 +910,13 @@ class Hyperheuristic:
         sequence_per_repetition = list()
         fitness_per_repetition = list()
         weights_per_repetition = list()
+        logs_time = []
 
         for rep in range(self.parameters['num_replicas']):
             # Call the metaheuristic
             # mh = None
+            
+            start_time = timer()
             mh = Metaheuristic(self.problem, num_agents=self.parameters['num_agents'],
                                num_iterations=self.num_iterations)
 
@@ -1062,6 +1065,9 @@ class Hyperheuristic:
                                 )),
                            self.file_label)
 
+            logs_time.append(timer() - start_time)
+        df_times = pd.DataFrame({"time": logs_time})
+        df_times.to_csv(f'./data_files/ml_models/{self.file_label}_mhs_dynamic_time_logs.csv')
         # Return the best solution found and its details
         return fitness_per_repetition, sequence_per_repetition, self.transition_matrix
 
