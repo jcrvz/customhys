@@ -31,8 +31,9 @@
       ],
       "fitness_to_weight": "rank",
       "sample_params": {
-        "retrieve_sequences": true,
+        "retrieve_sequences": false,
         "limit_seqs": 100,
+        "random": 0.37,
         "store_sequences": false
       }
     }
