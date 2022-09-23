@@ -1196,9 +1196,8 @@ class Hyperheuristic:
         model = ModelPredictor(model_params)
 
         # Load pre-trained model
-        if model_params['load_model']:
-            model.load()
-            return
+        if model_params['load_model'] and model.load()
+            return model
         
         # Get training data
         seqfitness_train, seqrep_train = self._get_sample_sequences(model_params['sample_params'])

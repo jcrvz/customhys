@@ -104,7 +104,10 @@ def retrieve_model_info(params):
     if 'pretrained_model' in params:
         attribute_labels.append(params['pretrained_model'])
     model_label = '-'.join(attribute_labels)
-
+    personal_label = params['file_label'].split('_')
+    if personal_label[-1] == 'extended':
+        personal_label.pop()
+    personal_labels = '_'.join(personal_label)
     # Filenames
     model_directory = './data_files/ml_models/'
     model_filename = model_label
@@ -114,7 +117,7 @@ def retrieve_model_info(params):
     filename_dict = dict({
         'model_directory': model_directory,
         'model_label': model_label,
-        'model_path': model_directory + f'{model_filename}.h5',
+        'model_path': model_directory + f'{personal_labels}.h5',
         'log_path': model_directory + f'{model_filename}_log.csv'
     })
     
@@ -292,7 +295,10 @@ class ModelPredictorKeras():
             model_path = filename_dict['model_path']
             
         if _check_path(model_path):
-            self._model = tf.keras.models.load_model(model_path)
+            self._model = tf.keras.models.load_model(model_path)    
+            # Save predict function
+            self._predict = self._model.predict
+            return True
         else:
             raise Exception(f'model_path "{model_path}" does not exists')
 
@@ -403,9 +409,6 @@ class ModelPredictorTransformer():
 
         # Fit model
         self._trainer.train()
-        
-        # Save predict function        
-        self._predict = self._trainer.predict
     
     @staticmethod
     def __softmax(output):
@@ -415,7 +418,7 @@ class ModelPredictorTransformer():
         torch.cuda.empty_cache()
         sequence_tokenized = self._encoder(sequence)
         sequence_dataset = Dataset_hf.from_dict(sequence_tokenized)
-        prediction, _, _ = self._predict(sequence_dataset)
+        prediction, _, _ = self._trainer.predict(sequence_dataset)
         return self.__softmax(prediction)[0]
     
     def load(self, model_path=None):
@@ -441,6 +444,7 @@ class ModelPredictorTransformer():
             )        
             #self._trainer = Trainer(self._model)
             self._predict = self._trainer.predict
+            return True
         else:
             raise Exception(f'model_path "{model_path}" does not exists')
     
