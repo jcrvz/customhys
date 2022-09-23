@@ -23,9 +23,17 @@ from os import makedirs as _create_path
 from deprecated import deprecated
 import tensorflow as tf
 from os import environ
+from timeit import default_timer as timer
+
 import logging
 logging.disable(logging.INFO)
 environ["TOKENIZERS_PARALLELISM"] = "false"
+environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import tensorflow as tf
+import warnings
+tf.get_logger().setLevel('INFO')
+warnings.simplefilter(action='ignore', category=FutureWarning)
+warnings.filterwarnings('ignore')
 
 from neural_network import DatasetSequences, ModelPredictor
 
@@ -1071,9 +1079,10 @@ class Hyperheuristic:
 
         # Neural network model that predicts operators
         model = self._get_neural_network_predictor()        
-        
+        logs_time = []
         for rep in range(self.parameters['num_replicas']):
             # Metaheuristic
+            start_time = timer()
             mh = Metaheuristic(self.problem, num_agents=self.parameters['num_agents'], num_iterations=self.num_iterations)
 
             # Initialiser
@@ -1182,7 +1191,11 @@ class Hyperheuristic:
                                     weight_matrix=self.transition_matrix
                                 )),
                            self.file_label)
-
+            
+            logs_time.append(timer() - start_time)
+        df_times = pd.DataFrame({"time": logs_time})
+        df_times.to_csv(f'./data_files/ml_models/{self.file_label}_mhs_time_prediction_logs.csv')
+        
         return fitness_per_repetition, sequence_per_repetition, self.transition_matrix
 
     def _get_neural_network_predictor(self):

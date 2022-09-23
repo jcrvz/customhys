@@ -273,9 +273,9 @@ class ModelPredictorKeras():
             def __init__(self, logs={}):
                 self.logs = []
             def on_epoch_begin(self, epoch, logs={}):
-                self.starttime = timer()
+                self.start_time = timer()
             def on_epoch_end(self, epoch, logs={}):
-                self.logs.append(timer()-self.starttime)
+                self.logs.append(timer() - self.start_time)
         timing_cb = TimingCallback()
         callbacks.append(timing_cb)
         
