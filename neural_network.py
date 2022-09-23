@@ -1,10 +1,12 @@
 import tensorflow as tf
 import torch
 import numpy as np
+import pandas as pd
 from datasets import Dataset as Dataset_hf
 from datasets import load_metric as load_metric_hf 
 from os.path import exists as _check_path
 from os import makedirs as _create_path
+from timeit import default_timer as timer
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, \
     TrainingArguments, Trainer, DataCollatorWithPadding, DefaultDataCollator, \
         TFAutoModelForSequenceClassification
@@ -118,7 +120,8 @@ def retrieve_model_info(params):
         'model_directory': model_directory,
         'model_label': model_label,
         'model_path': model_directory + f'{personal_labels}.h5',
-        'log_path': model_directory + f'{model_filename}_log.csv'
+        'log_path': model_directory + f'{model_filename}_log.csv',
+        'log_time_path': model_directory + f'{model_filename}_log_time.csv'
     })
     
     return architecture_name, encoder_name, filename_dict
@@ -265,6 +268,17 @@ class ModelPredictorKeras():
         history_logger = tf.keras.callbacks.CSVLogger(filename_dict['log_path'],
                                                       separator=',', append=True)
         callbacks.append(history_logger)
+
+        class TimingCallback(tf.keras.callbacks.Callback):
+            def __init__(self, logs={}):
+                self.logs = []
+            def on_epoch_begin(self, epoch, logs={}):
+                self.starttime = timer()
+            def on_epoch_end(self, epoch, logs={}):
+                self.logs.append(timer()-self.starttime)
+        timing_cb = TimingCallback()
+        callbacks.append(timing_cb)
+        
         # Early stopping
         if early_stopping_params is not None:
             early_stopping = tf.keras.callbacks.EarlyStopping(
@@ -280,6 +294,8 @@ class ModelPredictorKeras():
                   sample_weight=sample_weight, 
                   verbose=verbose,
                   callbacks=callbacks)
+        df_times = pd.DataFrame({"time": timing_cb.logs})
+        df_times.to_csv(filename_dict['log_time_path'])
         
         # Save predict function
         self._predict = self._model.predict

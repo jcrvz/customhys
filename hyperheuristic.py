@@ -1196,7 +1196,7 @@ class Hyperheuristic:
         model = ModelPredictor(model_params)
 
         # Load pre-trained model
-        if model_params['load_model'] and model.load()
+        if model_params['load_model'] and model.load():
             return model
         
         # Get training data
