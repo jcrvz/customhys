@@ -22,7 +22,7 @@
       "load_model": false,
       "save_model": true,
       "memory_length":  60,
-      "encoder" : "LSTM",
+      "encoder" : "default",
       "epochs": 100, 
       "model_architecture": "LSTM",
       "model_architecture_layers": [
