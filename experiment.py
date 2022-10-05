@@ -12,6 +12,7 @@ import benchmark_func as bf
 import multiprocessing
 import tools as tl
 from os import path
+from optproblems import cec2005
 
 # %% PREDEFINED CONFIGURATIONS
 # Use configuration files instead of predefined dictionaries
@@ -51,6 +52,53 @@ pr_configs = [
     {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 4 - Short collection +
     {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 5 - Long collection
 ]
+
+
+cec_boundaries = {
+  'F1': (-100, 100),
+  'F2': (-100, 100),
+  'F4': (-100, 100),
+  'F5': (-100, 100),
+  'F6': (-100, 100),
+  'F7': (0, 600),
+  'F8': (-32, 32),
+  'F9': (-5, 5),
+  'F10': (-5, 5),
+  'F11': (-0.5, 0.5),
+  'F13': (-3, 1),
+  'F14': (-100, 100),
+}
+
+cec_constrained = {
+  'F1': True,
+  'F2': True,
+  'F4': True,
+  'F5': True,
+  'F6': True,
+  'F7': False,
+  'F8': True,
+  'F9': True,
+  'F10': True,
+  'F11': True,
+  'F13': True,
+  'F14': True,
+}
+
+def get_cec_function_formatted(f_name, dimension):
+  f_initializer = eval(f'cec2005.{f_name}')
+  if f_name == 'F7':
+    f_function = f_initializer(dimension)
+  else:
+    f_function = f_initializer(dimension, None)
+  pre_bound = cec_boundaries[f_name]
+  boundaries = ([pre_bound[0]]*dimension, [pre_bound[1]]*dimension)
+  constrained = cec_constrained[f_name]
+  problem_to_solve = {
+    'function': f_function, 
+    'boundaries': boundaries, 
+    'is_constrained': constrained
+  }
+  return problem_to_solve
 
 
 # %% EXPERIMENT CLASS
@@ -182,9 +230,13 @@ class Experiment:
 
         # Get and format the problem
         # problem = eval('bf.{}({})'.format(function_string, num_dimensions))
-        problem = bf.choose_problem(function_string, num_dimensions)
-        problem_to_solve = problem.get_formatted_problem(self.prob_config['is_constrained'],
-                                                         self.prob_config['features'])
+        if 'CEC' in function_string:
+            f_name = function_string.split('_')[0]
+            problem_to_solve = get_cec_function_formatted(f_name, num_dimensions)
+        else:
+            problem = bf.choose_problem(function_string, num_dimensions)
+            problem_to_solve = problem.get_formatted_problem(self.prob_config['is_constrained'],
+                                                            self.prob_config['features'])
 
         # Read the particular weights array (if so)
         weights = self.weights_data[str(num_dimensions)][problem.get_features(fmt='string', wrd='1')] \

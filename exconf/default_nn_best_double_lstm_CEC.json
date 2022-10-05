@@ -1,0 +1,63 @@
+{
+  "ex_config": {
+    "experiment_name": "default_nn_best_double_lstm_CEC",
+    "experiment_type": "neural_network",
+    "heuristic_collection_file": "default.txt",
+    "use_parallel": true,
+    "parallel_pool_size": 3
+  },
+  "hh_config": {
+    "num_steps": 100,
+    "num_agents": 30,
+    "num_iterations": 100,
+    "num_replicas": 100,
+    "stagnation_percentage": 0.50,
+    "verbose": false,
+    "repeat_operators": true,
+    "allow_weight_matrix": true,
+    "trial_overflow": false,
+    "solver": "dynamic_metaheuristic",
+    "tabu_idx": 5,
+    "model_params": {
+      "load_model": false,
+      "save_model": true,
+      "memory_length":  60,
+      "encoder" : "default",
+      "epochs": 100, 
+      "model_architecture": "LSTM",
+      "model_architecture_layers": [
+        [20, "sigmoid", "LSTM"],
+        [20, "sigmoid", "LSTM"]
+      ],
+      "fitness_to_weight": "rank",
+      "sample_params": {
+        "retrieve_sequences": false,
+        "limit_seqs": 100,
+        "random": 0.37,
+        "store_sequences": false
+      }
+    }
+  },
+  "prob_config": {
+    "dimensions": [
+      2,
+      10,
+      30,
+      50
+    ],
+    "functions": [
+      "F1_CEC",
+      "F2_CEC",
+      "F4_CEC",
+      "F5_CEC",
+      "F6_CEC",
+      "F7_CEC",
+      "F8_CEC",
+      "F9_CEC",
+      "F10_CEC",
+      "F11_CEC",
+      "F13_CEC",
+      "F14_CEC"
+    ]
+  }
+}
