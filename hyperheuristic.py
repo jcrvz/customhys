@@ -912,7 +912,17 @@ class Hyperheuristic:
         weights_per_repetition = list()
         logs_time = []
 
-        for rep in range(self.parameters['num_replicas']):
+        rep = 0
+        beginning_time = timer()
+        while rep < self.parameters['num_replicas']:
+            if 'limit_time' in self.parameters and self.parameters['limit_time'] is not None:
+                now_time = timer()
+                print(now_time - beginning_time)
+                if now_time - beginning_time > self.parameters['limit_time']:
+                    break
+                if rep >= self.parameters['num_replicas']:
+                    break
+            
             # Call the metaheuristic
             # mh = None
             
@@ -1066,6 +1076,7 @@ class Hyperheuristic:
                            self.file_label)
 
             logs_time.append(timer() - start_time)
+            rep += 1
         df_times = pd.DataFrame({"time": logs_time})
         df_times.to_csv(f'./data_files/ml_models/{self.file_label}_mhs_dynamic_time_logs.csv')
         # Return the best solution found and its details

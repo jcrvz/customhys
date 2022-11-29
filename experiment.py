@@ -343,7 +343,8 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
             'learning_portion': 0.37,
             'solver': 'static',
             'tabu_idx': None,
-            'model_params': None
+            'model_params': None,
+            'limit_time': None,
         }, hh_config)
 
     # Load the default problem configuration and compare it with prob_config
