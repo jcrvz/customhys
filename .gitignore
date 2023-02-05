@@ -127,7 +127,8 @@ dmypy.json
 data_files/images/*
 data_files/images
 data_files/ml_models/*
-data_files/ml_models
+data_files/ml_models*
+data_files/ml_models_prev/*
 data_files/transformers_models/*
 data_files/transformers_models
 data_files/raw/*

@@ -1202,7 +1202,7 @@ class Hyperheuristic:
         df_times = pd.DataFrame({"time": logs_time})
         df_times.to_csv(f'./data_files/ml_models/{self.file_label}_mhs_time_prediction_logs.csv')
         
-        return fitness_per_repetition, sequence_per_repetition, self.transition_matrix
+        return fitness_per_repetition, sequence_per_repetition #, self.transition_matrix
 
     def _get_neural_network_predictor(self):
         # Prepare model params
@@ -1250,7 +1250,9 @@ class Hyperheuristic:
         :return: float, dict
         """
         # Decode the sequence corresponding to the hyper/meta-heuristic
-        search_operators = self.get_operators(encoded_sequence)
+        search_operators = encoded_sequence
+        if isinstance(encoded_sequence[0], int):
+            search_operators = self.get_operators(encoded_sequence)
 
         # Initialise the historical registers
         historical_data = list()
@@ -1317,6 +1319,12 @@ class Hyperheuristic:
         :return: None.
         """
         # Apply all the search operators in the collection as 1-size MHs
+        
+        res = {
+            'performance': [],
+            'fitness': [],
+            'time': [],
+        }
         for operator_id in range(self.num_operators):
             operator = self.heuristic_space[operator_id]
             # Read the corresponding operator
@@ -1324,9 +1332,10 @@ class Hyperheuristic:
             if isinstance(operator, tuple):
                 operator = [operator]
 
+            start_time = timer()
             # Evaluate it within the metaheuristic structure
             operator_performance, operator_details = self.evaluate_candidate_solution(operator)
-
+            end_time = timer() - start_time
             # Save information
             _save_step(operator_id, {
                 'encoded_solution': operator_id,
@@ -1335,10 +1344,16 @@ class Hyperheuristic:
                 # 'fitness': operator_details['fitness'],  # to-delete
                 # 'historical': operator_details['historical']  # to-delete
             }, self.file_label)
-
+            res['performance'].append(operator_performance)
+            historical_replicas = operator_details['historical']
+            hist_fitness = [[int(fitness) for fitness in replica['fitness']] for replica in historical_replicas]
+            res['fitness'].append(hist_fitness)
+            res['time'].append(end_time)
+            
             # Print update
             print('{} :: BasicMH {} of {}, Perf: {}'.format(
                 self.file_label, operator_id + 1, self.num_operators, operator_performance))
+        return res
 
     @staticmethod
     def get_performance(statistics):

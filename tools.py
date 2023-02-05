@@ -179,10 +179,10 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
     subfolder_names_raw = sorted(raw_folders, key=lambda x: int(x.split('-')[1].strip('D')))
 
     if len(experiment) > 0:
-        subfolder_names = filter(lambda name: len(name.split('-')) >= 3 and name.split('-')[2] == experiment, subfolder_names_raw)
+        subfolder_names = filter(lambda name: len(name.split('-')) >= 3 and '-'.join(name.split('-')[2:]) == experiment, subfolder_names_raw)
     else:
         subfolder_names = subfolder_names_raw
-        
+
     # Define the basic data structure
     data = {'problem': list(), 'dimensions': list(), 'results': list()}
 

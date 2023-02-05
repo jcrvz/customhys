@@ -9,7 +9,8 @@ from os import makedirs as _create_path
 from timeit import default_timer as timer
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, \
     TrainingArguments, Trainer, DataCollatorWithPadding, DefaultDataCollator, \
-        TFAutoModelForSequenceClassification
+        TFAutoModelForSequenceClassification, AutoConfig
+from transformers import BertTokenizer, BertForSequenceClassification, GPT2Tokenizer, GPT2ForSequenceClassification
 
 def obtain_sample_weight(sample_fitness, fitness_to_weight='rank'):
     """
@@ -38,7 +39,10 @@ def obtain_sample_weight(sample_fitness, fitness_to_weight='rank'):
         # f: [fitness] -> [0, n-1]
         indices = list(range(len(sample_fitness)))
         indices.sort(key = lambda idx: -sample_fitness[idx])
-        return indices
+        indices_sorted = [0 for _ in indices]
+        for i, idx in enumerate(indices):
+            indices_sorted[idx] = i
+        return indices_sorted
     else:
         # Default linear conversion
         # f: [a, b] -> [a, b]
@@ -141,7 +145,7 @@ class Encoder():
             return lambda x: f(g(x))
         
         # Choice identity encoder
-        if self._architecture_name in ['transformer', 'LSTM_Ragged']:
+        if self._architecture_name in ['transformer', 'transformer_orig', 'LSTM_Ragged']:
             # Keep original values but element -1
             self.__identity_encoder = self.__clean_sequence
         else:
@@ -337,6 +341,7 @@ class ModelPredictorTransformer():
     
     def __create_tokenizer(self):
         self._tokenizer = AutoTokenizer.from_pretrained(self._checkpoint)
+        self._tokenizer.add_special_tokens({'pad_token': '[PAD]'})
     
     def _encoder(self, sequence):
         sequence_encoded = self._orig_encoder(sequence)
@@ -344,7 +349,18 @@ class ModelPredictorTransformer():
         return self._tokenizer(sequence_str)
 
     def __create_transformer_model(self):
-        self._model = AutoModelForSequenceClassification.from_pretrained(self._checkpoint, num_labels=self._num_operators)
+
+        config = AutoConfig.from_pretrained(
+            self._checkpoint,
+            vocab_size=len(self._tokenizer),
+            n_ctx=1024,
+            pad_token_id=self._tokenizer.pad_token_id,
+            bos_token_id=self._tokenizer.bos_token_id,
+            eos_token_id=self._tokenizer.eos_token_id,
+            num_labels=self._num_operators
+        )
+        self._model = AutoModelForSequenceClassification.from_config(config)
+        #self._model = AutoModelForSequenceClassification.from_pretrained(self._checkpoint, num_labels=self._num_operators)
     
     def fit(self, X, y, epochs=3, sample_weight=None, 
             verbose=False, early_stopping_params=None):
@@ -361,7 +377,10 @@ class ModelPredictorTransformer():
             'text': [' '.join(str(_x) for _x in x) for x in X],
             'label': y_augmented
         })
-        train_dataset = raw_dataset.map(lambda w: self._tokenizer(w['text']),
+        train_dataset = raw_dataset.map(lambda w: self._tokenizer(w['text'], 
+                                                                  max_length=1024,
+                                                                  truncation=True,
+                                                                  padding=True),
                                         batched=True)
         train_dataset.set_format(type='torch', columns=['input_ids',
                                                         'label',
@@ -380,12 +399,12 @@ class ModelPredictorTransformer():
         
         torch.cuda.empty_cache()
         # Training arguments
-        batch_size = 8
+        batch_size = 32
         training_args = TrainingArguments(
             output_dir=model_directory,
             overwrite_output_dir=True,
             evaluation_strategy='epoch',
-            learning_rate=5e-4,
+            learning_rate=3e-5,
             per_device_train_batch_size=batch_size,
             eval_steps=1,
             num_train_epochs=epochs, 
@@ -609,15 +628,53 @@ class ModelPredictorTransformerOriginal():
          self.__create_transformer_model()
 
      def __create_tokenizer(self):
-         self._tokenizer = AutoTokenizer.from_pretrained(self._checkpoint)
+         #self._tokenizer = GPT2Tokenizer.from_pretrained(self._params['pretrained_tokenizer'])
+         self._tokenizer = AutoTokenizer.from_pretrained(self._params['pretrained_tokenizer'])
+         #self._tokenizer = AutoTokenizer.from_pretrained(self._checkpoint)
 
      def _encoder(self, sequence):
          sequence_encoded = self._orig_encoder(sequence)
-         sequence_str = [' '.join(str(_x) for _x in sequence_encoded)]
+         sequence_str = [', '.join(str(_x) for _x in sequence_encoded)]
          return self._tokenizer(sequence_str)
 
      def __create_transformer_model(self):
-         self._model = AutoModelForSequenceClassification.from_pretrained(self._checkpoint, num_labels=self._num_operators)
+         #self._model = BertForSequenceClassification.from_pretrained(
+         #       self._checkpoint,  
+         #       num_labels = self._num_operators,
+         #       output_attentions = False,
+         #       output_hidden_states = False,
+         #   )
+        #self._model = AutoModelForSequenceClassification.from_pretrained(self._checkpoint, num_labels=self._num_operators)
+        config = AutoConfig.from_pretrained(
+            self._checkpoint,
+            vocab_size=len(self._tokenizer),
+            n_ctx=1024,
+            pad_token_id=self._tokenizer.pad_token_id,
+            bos_token_id=self._tokenizer.bos_token_id,
+            eos_token_id=self._tokenizer.eos_token_id,
+            num_labels=self._num_operators
+        )
+        self._model = AutoModelForSequenceClassification.from_config(config)
+        
+        #self._model = GPT2ForSequenceClassification.from_pretrained(self._checkpoint, num_labels=self._num_operators)
+
+        _, _, filename_dict = retrieve_model_info(self._params)
+        model_directory = filename_dict['model_directory']             
+        training_args = TrainingArguments(output_dir=model_directory, disable_tqdm=True)
+        metric = load_metric_hf("accuracy")
+        def compute_metrics(eval_pred):
+            logits, labels = eval_pred
+            predictions = np.argmax(logits, axis=-1)
+            return metric.compute(predictions=predictions, references=labels)
+        self._trainer = Trainer(
+            model=self._model,
+            args=training_args,
+            tokenizer=self._tokenizer,
+            compute_metrics=compute_metrics
+        )        
+        #self._trainer = Trainer(self._model)
+        self._predict = self._trainer.predict
+
 
      def fit(self, X, y, epochs=3, sample_weight=None, 
              verbose=False, early_stopping_params=None):
@@ -643,13 +700,13 @@ class ModelPredictorTransformerOriginal():
              return metric.compute(predictions=predictions, references=labels)
 
          # Training arguments
-         batch_size = 8
+         batch_size = 32
          torch.cuda.empty_cache()
          training_args = TrainingArguments(
              output_dir=model_directory,
              logging_dir=filename_dict['log_path'],
              evaluation_strategy='epoch',
-             learning_rate=5e-5,
+             learning_rate=3e-5,
              per_device_train_batch_size=batch_size,
              eval_steps=1,
              num_train_epochs=epochs, 
@@ -678,10 +735,18 @@ class ModelPredictorTransformerOriginal():
          return np.exp(output) / sum(np.exp(output))
 
      def predict(self, sequence):
-         sequence_tokenized = self._encoder(sequence)
-         sequence_dataset = Dataset_hf.from_dict(sequence_tokenized)
-         prediction, _, _ = self._predict(sequence_dataset)
-         return self.__softmax(prediction)[0]
+        seq_str = ' '.join([str(x) for x in sequence])
+        token = self._tokenizer([seq_str], max_length=1024)
+        #print(token)
+        sequence_dataset = Dataset_hf.from_dict(token)
+        #print(sequence_dataset)
+        prediction = self._predict(sequence_dataset).predictions[0]
+        return np.exp(prediction) / sum(np.exp(prediction))
+
+        # sequence_tokenized = self._encoder(sequence)
+        # sequence_dataset = Dataset_hf.from_dict(sequence_tokenized)
+        # prediction, _, _ = self._predict(sequence_dataset)
+        # return self.__softmax(prediction)[0]
 
      def load(self, model_path=None):
          _, _, filename_dict = retrieve_model_info(self._params)
