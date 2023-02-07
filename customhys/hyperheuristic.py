@@ -6,20 +6,19 @@ Created on Thu Jan  9 15:36:43 2020
 
 @author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
 """
+
 import json
 import numpy as np
-import pandas as pd
 import random
 import scipy.stats as st
 from datetime import datetime
-from itertools import product
 from os import makedirs as _create_path
 from os.path import exists as _check_path
 
 import operators as Operators
 import tools as jt
 from metaheuristic import Metaheuristic
-from neural_network import DatasetSequences, ModelPredictor
+from machine_learning import DatasetSequences, ModelPredictor
 
 class Hyperheuristic:
     """
