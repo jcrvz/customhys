@@ -21,6 +21,7 @@ class Metaheuristic:
         This is the Metaheuristic class, each object corresponds to a metaheuristic implemented with a sequence of
         search operators from Operators, and it is based on a population from Population.
     """
+
     def __init__(self, problem, search_operators=None, num_agents=30, num_iterations=100, initial_scheme='random'):
         """
         Create a population-based metaheuristic by employing different simple search operators.
@@ -48,13 +49,15 @@ class Metaheuristic:
         self._problem_function = problem['function']
 
         # Create population
-        self.pop = Population(problem['boundaries'], num_agents, problem['is_constrained'])
+        self.pop = Population(
+            problem['boundaries'], num_agents, problem['is_constrained'])
 
         # Check and read the search_operators
         if search_operators:
             if not isinstance(search_operators, list):
                 search_operators = [search_operators]
-            self.perturbators, self.selectors = Operators.process_operators(search_operators)
+            self.perturbators, self.selectors = Operators.process_operators(
+                search_operators)
 
         # Define the maximum number of iterations
         self.num_iterations = num_iterations
@@ -114,7 +117,8 @@ class Metaheuristic:
         :return: None.
         """
         if (not self.perturbators) or (not self.selectors):
-            raise Operators.OperatorsError("There are not perturbator or selector!")
+            raise Operators.OperatorsError(
+                "There are not perturbator or selector!")
 
         # Apply initialiser / Random Sampling
         self.apply_initialiser()
@@ -144,7 +148,8 @@ class Metaheuristic:
                 self.update_historicals()
 
             # Verbose (if so) some information
-            self._verbose('{}\npop. radius: {}'.format(iteration, self.historical['radius'][-1]))
+            self._verbose('{}\npop. radius: {}'.format(
+                iteration, self.historical['radius'][-1]))
             self._verbose(self.pop.get_state())
 
     def get_solution(self):
@@ -159,7 +164,8 @@ class Metaheuristic:
         Reset the ``historical`` variables.
         :return: None.
         """
-        self.historical = dict(fitness=list(), position=list(), centroid=list(), radius=list())
+        self.historical = dict(
+            fitness=list(), position=list(), centroid=list(), radius=list())
 
     def update_historicals(self):
         """
@@ -167,8 +173,10 @@ class Metaheuristic:
         :return: None.
         """
         # Update historical variables
-        self.historical['fitness'].append(np.copy(self.pop.global_best_fitness))
-        self.historical['position'].append(np.copy(self.pop.global_best_position))
+        self.historical['fitness'].append(
+            np.copy(self.pop.global_best_fitness))
+        self.historical['position'].append(
+            np.copy(self.pop.global_best_position))
 
         # Update population centroid and radius
         current_centroid = np.array(self.pop.positions).mean(0)

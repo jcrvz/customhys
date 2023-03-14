@@ -77,27 +77,33 @@ class Characteriser():
                 order = int(np.ceil(np.log10(np.std(length_scale))))
                 coarse_grid = GridSearchCV(KernelDensity(),
                                            {'bandwidth': np.logspace(order / 2 - 3, order / 2 + 3, 25)}, cv=3)
-                first_approach = coarse_grid.fit(length_scale).best_estimator_.bandwidth
+                first_approach = coarse_grid.fit(
+                    length_scale).best_estimator_.bandwidth
                 fine_grid = GridSearchCV(KernelDensity(), {'bandwidth':
-                    np.linspace(0.5 * first_approach, 2 * first_approach, 50)}, cv=3)
-                self.bandwidth = fine_grid.fit(length_scale).best_estimator_.bandwidth
+                                                           np.linspace(0.5 * first_approach, 2 * first_approach, 50)}, cv=3)
+                self.bandwidth = fine_grid.fit(
+                    length_scale).best_estimator_.bandwidth
             elif bandwidth_mode == 'scott_rule':
-                self.bandwidth = 1.06 * np.std(length_scale) * np.power(self.num_samples, -1/5)
+                self.bandwidth = 1.06 * \
+                    np.std(length_scale) * np.power(self.num_samples, -1/5)
             elif bandwidth_mode == 'silverman_rule':
                 self.bandwidth = 0.9 * np.min([np.std(length_scale), st.iqr(length_scale)/1.34]) * \
-                                 np.power(self.num_samples, -1/5)
+                    np.power(self.num_samples, -1/5)
             else:
                 self.bandwidth = None
 
         # Estimate the distribution function
-        pdf_xvalues = np.linspace(0.9 * length_scale.min(), 1.1 * length_scale.max(), self.kde_samples).reshape(-1, 1)
-        pdf_fvalues = np.exp(KernelDensity(bandwidth=self.bandwidth).fit(length_scale).score_samples(pdf_xvalues))
+        pdf_xvalues = np.linspace(
+            0.9 * length_scale.min(), 1.1 * length_scale.max(), self.kde_samples).reshape(-1, 1)
+        pdf_fvalues = np.exp(KernelDensity(bandwidth=self.bandwidth).fit(
+            length_scale).score_samples(pdf_xvalues))
 
         # Get statistics from raw length_scale values
         dst = st.describe(length_scale)
 
         # Determine the entropy metric
-        entropy_value = (pdf_xvalues[1] - pdf_xvalues[0]) * st.entropy(pdf_fvalues, base=2)
+        entropy_value = (pdf_xvalues[1] - pdf_xvalues[0]
+                         ) * st.entropy(pdf_fvalues, base=2)
 
         # Return a dictionary with all the information
         return dict(nob=dst.nobs,
@@ -151,8 +157,6 @@ class Characteriser():
         return np.array(positions)
 
 
-
-
 class CharacteriserError(Exception):
     """
     Simple CharacteriserError to manage exceptions.
@@ -181,7 +185,8 @@ if __name__ == '__main__':
 
     chsr = Characteriser()
     results = chsr.length_scale(problem, bandwidth_mode='exhaustive')
-    plt.hist(results['raw'], density=True, bins=100), plt.plot(results['PDF_xs'], results['PDF_fx']), plt.show()
+    plt.hist(results['raw'], density=True, bins=100), plt.plot(
+        results['PDF_xs'], results['PDF_fx']), plt.show()
 
     print(results['Entropy'])
 

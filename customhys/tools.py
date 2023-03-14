@@ -116,7 +116,8 @@ def revise_results(main_folder='data_files/raw/'):
         Path to analyse. The default is 'data_files/raw/'.
     :return: None
     """
-    raw_folders = [element for element in os.listdir(main_folder) if not element.startswith('.')]
+    raw_folders = [element for element in os.listdir(
+        main_folder) if not element.startswith('.')]
     folders_with_date = sorted(raw_folders, key=lambda x: x.split('D-')[0])
     folders_without_date = [x.split('D-')[0] for x in folders_with_date]
 
@@ -129,12 +130,14 @@ def revise_results(main_folder='data_files/raw/'):
 
             for index in indices[1:]:
                 # Copy all content to the first folder
-                call(['cp', '-a', main_folder + folders_with_date[index] + '/*', destination_folder])
+                call(['cp', '-a', main_folder +
+                     folders_with_date[index] + '/*', destination_folder])
 
                 # Rename the copied folder with prefix '.to_delete-'
                 call(['mv', main_folder + folders_with_date[index],
                       main_folder + '.to_delete-' + folders_with_date[index]])
-                print("Merged '{}' into '{}'!".format(folders_with_date[index], folders_with_date[indices[0]]))
+                print("Merged '{}' into '{}'!".format(
+                    folders_with_date[index], folders_with_date[indices[0]]))
 
 
 def read_subfolders(foldername):
@@ -172,10 +175,12 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
     """
     # TODO: Revise this method to enhance its performance.
     # Get folders and exclude hidden ones
-    raw_folders = filter(lambda name: len(name.split('-')) >= 2, read_subfolders(main_folder))
+    raw_folders = filter(lambda name: len(name.split('-'))
+                         >= 2, read_subfolders(main_folder))
 
     # Sort subfolder names by problem name & dimensions
-    subfolder_names_raw = sorted(raw_folders, key=lambda x: int(x.split('-')[1].strip('D')))
+    subfolder_names_raw = sorted(
+        raw_folders, key=lambda x: int(x.split('-')[1].strip('D')))
 
     if len(experiment) > 0:
         subfolder_names = filter(lambda name: len(name.split('-')) >= 3 and '-'.join(name.split('-')[2:]) == experiment,
@@ -278,9 +283,10 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
 
             if kind in ['dynamic_metaheuristic', 'neural_network']:
                 file_data[label_operator].append(operator_id)
-                file_data['encoded_solution'].append(temporal_data['encoded_solution'])
+                file_data['encoded_solution'].append(
+                    temporal_data['encoded_solution'])
                 file_data['hist_fitness'].append(temporal_data['best_fitness'])
-                
+
             elif kind in ['unknown', 'dynamic_transfer_learning']:
                 if len(file_data) != 0:
                     keys_to_use = list(file_data.keys())
@@ -310,17 +316,22 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
                 elif kind == 'basic_metaheuristic':
                     file_data['statistics'].append(temporal_data['statistics'])
                     file_data['fitness'].append(temporal_data['fitness'])
-                    file_data['hist_fitness'].append(temporal_data['historical'])
+                    file_data['hist_fitness'].append(
+                        temporal_data['historical'])
 
                 else:
                     # static_transfer_learning and unkown kind
-                    file_data['encoded_solution'].append(temporal_data['encoded_solution'])
+                    file_data['encoded_solution'].append(
+                        temporal_data['encoded_solution'])
                     if kind != 'static_transfer_learning':
-                        file_data['statistics'].append(temporal_data['details']['statistics'])
+                        file_data['statistics'].append(
+                            temporal_data['details']['statistics'])
 
                     # Only save the historical fitness values when operator_id is the largest one
-                    step_fitness = [x['fitness'] for x in temporal_data['details']['historical']]
-                    step_position = [x['position'] for x in temporal_data['details']['historical']]
+                    step_fitness = [x['fitness']
+                                    for x in temporal_data['details']['historical']]
+                    step_position = [x['position']
+                                     for x in temporal_data['details']['historical']]
                     if only_laststep and operator_id == last_step:
                         file_data['hist_fitness'] = step_fitness
                         file_data['hist_positions'] = step_position
@@ -334,7 +345,8 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
         if kind in ['dynamic_metaheuristic', 'neural_network']:
             # Compute performance for kind based on unfolded MH
             best_fitness = [x[-1] for x in file_data['hist_fitness']]
-            file_data['performance'] = st.iqr(best_fitness) + np.median(best_fitness)
+            file_data['performance'] = st.iqr(
+                best_fitness) + np.median(best_fitness)
         # Store results in the main data frame
         data['results'].append(file_data)
 
@@ -418,7 +430,8 @@ def merge_json(data_folder, list_of_fields=None):
         if (len(temporal_pretable) == 0) and (not list_of_fields):
             list_of_fields = list(temporal_data.keys())
 
-        temporal_pretable.append({field: temporal_data[field] for field in list_of_fields})
+        temporal_pretable.append(
+            {field: temporal_data[field] for field in list_of_fields})
 
     _ = pd.DataFrame(temporal_pretable).to_csv(final_file_path)
     print('Merged file saved: {}'.format(final_file_path))
@@ -428,6 +441,7 @@ class NumpyEncoder(json.JSONEncoder):
     """
     Numpy encoder
     """
+
     def default(self, obj):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
@@ -437,22 +451,22 @@ class NumpyEncoder(json.JSONEncoder):
 if __name__ == '__main__':
     # Import module for calling this code from command-line
     import argparse
-    
+
     parser = argparse.ArgumentParser(
         description='Process results for a given experiment to make comparisons and visualisation with other experiments.'
     )
-    parser.add_argument('experiment', 
-                        metavar='experiment_filename', 
+    parser.add_argument('experiment',
+                        metavar='experiment_filename',
                         type=str, nargs=1,
                         help='Name of finished experiment')
-    parser.add_argument('kind', 
-                        metavar='kind', 
+    parser.add_argument('kind',
+                        metavar='kind',
                         type=str, nargs=1,
                         help='Kind of finished experiment')
-    
+
     exp_name = parser.parse_args().experiment[0]
     kind = parser.parse_args().kind[0]
-    preprocess_files(main_folder='data_files/raw-'+exp_name, 
-                     kind=kind, 
-                     experiment=exp_name, 
+    preprocess_files(main_folder='data_files/raw-'+exp_name,
+                     kind=kind,
+                     experiment=exp_name,
                      output_name=exp_name)

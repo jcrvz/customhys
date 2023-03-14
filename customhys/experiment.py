@@ -47,11 +47,16 @@ hh_configs = [
 # Configuration dictionary for problems
 pr_configs = [
     {'dimensions': [2, 5], 'functions': ['<choose_randomly>']},  # 0 - Default
-    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 1 - Brute force
-    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 2 - Basic metaheuristic
-    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 3 - Short collection
-    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 4 - Short collection +
-    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},    # 5 - Long collection
+    {'dimensions': [2, 5, *range(10, 50 + 1, 10)],
+     'functions': bf.__all__},    # 1 - Brute force
+    # 2 - Basic metaheuristic
+    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},
+    # 3 - Short collection
+    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},
+    # 4 - Short collection +
+    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},
+    # 5 - Long collection
+    {'dimensions': [2, 5, *range(10, 50 + 1, 10)], 'functions': bf.__all__},
 ]
 
 
@@ -128,7 +133,8 @@ class Experiment:
             # If the name is a reserved one. These files cannot be not created automatically
             if exp_config['heuristic_collection_file'] in ['default.txt', 'automatic.txt', 'basicmetaheuristics.txt',
                                                            'test_collection', 'short_collection.txt']:
-                raise ExperimentError('This collection name is reserved and cannot be created automatically!')
+                raise ExperimentError(
+                    'This collection name is reserved and cannot be created automatically!')
             else:
                 Operators.build_operators(Operators.obtain_operators(
                     num_vals=exp_config['auto_collection_num_vals']),
@@ -139,9 +145,11 @@ class Experiment:
         if self.exp_config['weights_dataset_file'] and (
                 self.exp_config['experiment_type'] not in ['brute_force', 'basic_metaheuristics']):
             if path.isfile('collections/' + self.exp_config['weights_dataset_file']):
-                self.weights_data = tl.read_json('collections/' + self.exp_config['weights_dataset_file'])
+                self.weights_data = tl.read_json(
+                    'collections/' + self.exp_config['weights_dataset_file'])
             else:
-                raise ExperimentError('A valid weights_dataset_file must be provided in exp_config')
+                raise ExperimentError(
+                    'A valid weights_dataset_file must be provided in exp_config')
         else:
             self.weights_data = None
 
@@ -152,7 +160,8 @@ class Experiment:
         """
         # TODO: Create a task log for prevent interruptions
         # Create a list of problems from functions and dimensions combinations
-        all_problems = create_task_list(self.prob_config['functions'], self.prob_config['dimensions'])
+        all_problems = create_task_list(
+            self.prob_config['functions'], self.prob_config['dimensions'])
 
         # Check if the experiment will be in parallel
         if self.exp_config['use_parallel']:
@@ -173,11 +182,13 @@ class Experiment:
         function_string, num_dimensions = prob_dim
 
         # Message to print and to store in folders
-        label = '{}-{}D-{}'.format(function_string, num_dimensions, self.exp_config['experiment_name'])
+        label = '{}-{}D-{}'.format(function_string,
+                                   num_dimensions, self.exp_config['experiment_name'])
 
         # Get and format the problem
         problem = eval('bf.{}({})'.format(function_string, num_dimensions))
-        problem_to_solve = problem.get_formatted_problem(self.prob_config['is_constrained'])
+        problem_to_solve = problem.get_formatted_problem(
+            self.prob_config['is_constrained'])
 
         # Read the particular weights array (if so)
         weights = self.weights_data[str(num_dimensions)][problem.get_features(fmt='string', wrd='1')] \
@@ -253,7 +264,8 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
     exp_config = tl.check_fields(
         {
             'experiment_name': 'test',
-            'experiment_type': 'default',  # 'default' -> hh, 'brute_force', 'basic_metaheuristics'
+            # 'default' -> hh, 'brute_force', 'basic_metaheuristics'
+            'experiment_type': 'default',
             'heuristic_collection_file': 'default.txt',
             'weights_dataset_file': None,  # 'operators_weights.json',
             'use_parallel': True,
@@ -303,7 +315,8 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
 
     # Check if there is a special case of function name: <choose_randomly>
     prob_config['functions'] = [
-        bf.__all__[hyp.np.random.randint(0, len(bf.__all__))] if fun in ['<choose_randomly>', '<random>'] else fun
+        bf.__all__[hyp.np.random.randint(0, len(bf.__all__))] if fun in [
+            '<choose_randomly>', '<random>'] else fun
         for fun in prob_config['functions']]
 
     return exp_config, hh_config, prob_config
@@ -334,7 +347,8 @@ if __name__ == '__main__':
     # Only one argument is allowed: the code
     parser = argparse.ArgumentParser(
         description="Run certain experiment, default experiment is './exconf/demo.json'")
-    parser.add_argument('-b', '--batch', action='store_true', help="carry out a batch of experiments")
+    parser.add_argument('-b', '--batch', action='store_true',
+                        help="carry out a batch of experiments")
     parser.add_argument('exp_config', metavar='config_filename', type=str, nargs='?', default='demo',
                         help='''Name of the configuration file in './exconf/' or its full path. Only JSON files.
                                 If --batch flag is given, it is assumed that the entered file contains a list of all the
@@ -348,7 +362,8 @@ if __name__ == '__main__':
     if args.batch:
         with open(args.exp_config) as configs:
             exp_filenames = configs.read()
-        exp_filenames = [filename.strip() for filename in exp_filenames.splitlines()]
+        exp_filenames = [filename.strip()
+                         for filename in exp_filenames.splitlines()]
     else:
         exp_filenames = [args.exp_config]
 
@@ -377,6 +392,7 @@ if __name__ == '__main__':
 
         # Rename the raw folder to raw-$exp_name$
         print(f"\nChanging folder name of raw results...")
-        os.rename(DATA_FOLDER, DATA_FOLDER + "-" + exp.exp_config["experiment_name"])
+        os.rename(DATA_FOLDER, DATA_FOLDER + "-" +
+                  exp.exp_config["experiment_name"])
 
     print("\nExperiment(s) finished!")
