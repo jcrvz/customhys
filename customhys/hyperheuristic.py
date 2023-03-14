@@ -23,8 +23,9 @@ from .metaheuristic import Metaheuristic
 from .machine_learning import DatasetSequences, ModelPredictor
 
 # Remove Tensorflow warnings
-_environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+_environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 tf.get_logger().setLevel('ERROR')
+
 
 class Hyperheuristic:
     """
@@ -74,9 +75,11 @@ class Hyperheuristic:
             self.heuristic_space_label = 'custom_list'
             self.heuristic_space = heuristic_space
         elif isinstance(heuristic_space, str):
-            self.heuristic_space_label = heuristic_space[:heuristic_space.rfind('.')].split('_')[0]
+            self.heuristic_space_label = heuristic_space[:heuristic_space.rfind('.')].split('_')[
+                0]
             with open('collections/' + heuristic_space, 'r') as operators_file:
-                self.heuristic_space = [eval(line.rstrip('\n')) for line in operators_file]
+                self.heuristic_space = [
+                    eval(line.rstrip('\n')) for line in operators_file]
         else:
             raise HyperheuristicError('Invalid heuristic_space')
 
@@ -90,14 +93,19 @@ class Hyperheuristic:
                               num_replicas=50,                  # Replicas per each MH,     lvl:2
                               num_steps=200,                    # Trials per HH step,       lvl:2
                               stagnation_percentage=0.37,       # Stagnation percentage,    lvl:2
-                              max_temperature=1,                # Initial temperature (SA), lvl:2
-                              min_temperature=1e-6,             # Min temperature (SA),     lvl:2
-                              cooling_rate=1e-3,                # Cooling rate (SA),        lvl:2
-                              temperature_scheme='fast',        # Temperature updating (SA),lvl:2
+                              # Initial temperature (SA), lvl:2
+                              max_temperature=1,
+                              # Min temperature (SA),     lvl:2
+                              min_temperature=1e-6,
+                              # Cooling rate (SA),        lvl:2
+                              cooling_rate=1e-3,
+                              # Temperature updating (SA),lvl:2
+                              temperature_scheme='fast',
                               acceptance_scheme='exponential',  # Acceptance mode,          lvl:2
-                              allow_weight_matrix=True,         # Weight matrix,            lvl:2 
+                              allow_weight_matrix=True,         # Weight matrix,            lvl:2
                               trial_overflow=False,             # Trial overflow policy,    lvl:2
-                              learnt_dataset=None,              # If it is a learnt dataset related with the heuristic space
+                              # If it is a learnt dataset related with the heuristic space
+                              learnt_dataset=None,
                               repeat_operators=True,            # Allow repeating SOs inSeq,lvl:2
                               verbose=True,                     # Verbose process,          lvl:2
                               learning_portion=0.37,            # Percent of seqs to learn  lvl:2
@@ -126,7 +134,6 @@ class Hyperheuristic:
         self.min_cardinality = None
         self.num_iterations = None
         self.toggle_seq_as_meta(parameters['as_mh'])
-
 
     def toggle_seq_as_meta(self, as_mh=None):
         if as_mh is None:
@@ -165,7 +172,8 @@ class Hyperheuristic:
             if 'Swap' in available_options:
                 available_options.remove('Swap')
             if 'Mirror' in available_options:
-                available_options.remove('Mirror')  # not an error, but to prevent wasting time
+                # not an error, but to prevent wasting time
+                available_options.remove('Mirror')
 
         if current_cardinality >= self.max_cardinality - 1:
             if 'AddMany' in available_options:
@@ -214,7 +222,8 @@ class Hyperheuristic:
             if action == 'max_frequency':
                 # Each search operator per step corresponds to the most frequent one: uMH weight matrix is required
                 # this option only works for transfer learning
-                encoded_neighbour = [weights_per_step.argmax() for weights_per_step in operators_weights]
+                encoded_neighbour = [weights_per_step.argmax()
+                                     for weights_per_step in operators_weights]
 
             else:
                 initial_cardinality = self.min_cardinality if self.parameters['as_mh'] else \
@@ -223,7 +232,8 @@ class Hyperheuristic:
                 operators_weights = operators_weights if operators_weights else self.weights
 
                 encoded_neighbour = np.random.choice(
-                    self.current_space if (operators_weights is None) else self.num_operators, initial_cardinality,
+                    self.current_space if (
+                        operators_weights is None) else self.num_operators, initial_cardinality,
                     replace=self.parameters['repeat_operators'], p=operators_weights)
 
         # If sol is an integer, assume that it refers to the cardinality
@@ -231,13 +241,15 @@ class Hyperheuristic:
             operators_weights = self.weights if operators_weights is None else operators_weights
 
             encoded_neighbour = np.random.choice(
-                self.current_space if (operators_weights is None) else self.num_operators, sol,
+                self.current_space if (
+                    operators_weights is None) else self.num_operators, sol,
                 replace=self.parameters['repeat_operators'], p=operators_weights)
 
         elif isinstance(sol, (np.ndarray, list)):
             # Bypass the current weights vector to highlight the ``top`` most relevant ones.
             if (operators_weights is not None) and (top is not None):
-                operators_weights = self.__adjust_frequencies(operators_weights, to_only=top)
+                operators_weights = self.__adjust_frequencies(
+                    operators_weights, to_only=top)
 
             sol = np.array(sol) if isinstance(sol, list) else sol
             current_cardinality = len(sol)
@@ -262,16 +274,19 @@ class Hyperheuristic:
                 operator_location = np.random.randint(current_cardinality + 1)
 
                 # Add the selected operator
-                encoded_neighbour = np.array((*sol[:operator_location], selected_operator, *sol[operator_location:]))
+                encoded_neighbour = np.array(
+                    (*sol[:operator_location], selected_operator, *sol[operator_location:]))
 
             elif (action == 'AddMany') and (current_cardinality < self.max_cardinality - 1):
                 encoded_neighbour = np.copy(sol)
                 for _ in range(np.random.randint(1, self.max_cardinality - current_cardinality + 1)):
-                    encoded_neighbour = self._obtain_candidate_solution(sol=encoded_neighbour, action='Add')
+                    encoded_neighbour = self._obtain_candidate_solution(
+                        sol=encoded_neighbour, action='Add')
 
             elif (action == 'Remove') and (current_cardinality > self.min_cardinality):
                 # Delete an operator randomly selected
-                encoded_neighbour = np.delete(sol, np.random.randint(current_cardinality))
+                encoded_neighbour = np.delete(
+                    sol, np.random.randint(current_cardinality))
 
             elif (action == 'RemoveLast') and (current_cardinality > self.min_cardinality):
                 # Delete an operator randomly selected
@@ -280,7 +295,8 @@ class Hyperheuristic:
             elif (action == 'RemoveMany') and (current_cardinality > self.min_cardinality + 1):
                 encoded_neighbour = np.copy(sol)
                 for _ in range(np.random.randint(1, current_cardinality - self.min_cardinality + 1)):
-                    encoded_neighbour = self._obtain_candidate_solution(sol=encoded_neighbour, action='Remove')
+                    encoded_neighbour = self._obtain_candidate_solution(
+                        sol=encoded_neighbour, action='Remove')
 
             elif action == 'Shift':
                 # Perturbate an operator randomly selected excluding the existing ones
@@ -292,25 +308,29 @@ class Hyperheuristic:
             elif action == 'ShiftMany':
                 encoded_neighbour = np.copy(sol)
                 for _ in range(np.random.randint(1, current_cardinality - self.min_cardinality + 1)):
-                    encoded_neighbour = self._obtain_candidate_solution(sol=encoded_neighbour, action='Shift')
+                    encoded_neighbour = self._obtain_candidate_solution(
+                        sol=encoded_neighbour, action='Shift')
 
             elif action == 'LocalShift':  # It only works with the full set
                 # Perturbate an operator randomly selected +/- 1 excluding the existing ones
                 encoded_neighbour = np.copy(sol)
                 operator_location = np.random.randint(current_cardinality)
                 neighbour_direction = 1 if random.random() < 0.5 else -1  # +/- 1
-                selected_operator = (encoded_neighbour[operator_location] + neighbour_direction) % self.num_operators
+                selected_operator = (
+                    encoded_neighbour[operator_location] + neighbour_direction) % self.num_operators
 
                 # If repeat is true and the selected_operator is repeated, then apply +/- 1 until it is not repeated
                 while (not self.parameters['repeat_operators']) and (selected_operator in encoded_neighbour):
-                    selected_operator = (selected_operator + neighbour_direction) % self.num_operators
+                    selected_operator = (
+                        selected_operator + neighbour_direction) % self.num_operators
 
                 encoded_neighbour[operator_location] = selected_operator
 
             elif action == 'LocalShiftMany':
                 encoded_neighbour = np.copy(sol)
                 for _ in range(np.random.randint(1, current_cardinality - self.min_cardinality + 1)):
-                    encoded_neighbour = self._obtain_candidate_solution(sol=encoded_neighbour, action='LocalShift')
+                    encoded_neighbour = self._obtain_candidate_solution(
+                        sol=encoded_neighbour, action='LocalShift')
 
             elif (action == 'Swap') and (current_cardinality > 1):
                 # Swap two elements randomly chosen
@@ -319,11 +339,13 @@ class Hyperheuristic:
 
                 elif current_cardinality > 2:
                     encoded_neighbour = np.copy(sol)
-                    ind1, ind2 = np.random.choice(current_cardinality, 2, replace=False)
+                    ind1, ind2 = np.random.choice(
+                        current_cardinality, 2, replace=False)
                     encoded_neighbour[ind1], encoded_neighbour[ind2] = encoded_neighbour[ind2], encoded_neighbour[ind1]
 
                 else:
-                    raise HyperheuristicError('Swap cannot be applied! current_cardinality < 2')
+                    raise HyperheuristicError(
+                        'Swap cannot be applied! current_cardinality < 2')
 
             elif action == 'Mirror':
                 # Mirror the sequence of the encoded_neighbour
@@ -331,7 +353,8 @@ class Hyperheuristic:
 
             elif action == 'Roll':
                 # Move a step forward or backward, depending on a random variable, all the sequence
-                encoded_neighbour = np.roll(sol, 1 if random.random() < 0.5 else -1)
+                encoded_neighbour = np.roll(
+                    sol, 1 if random.random() < 0.5 else -1)
 
             elif action == 'RollMany':
                 # Move many (at random) steps forward or backward, depending on a random variable, all the sequence
@@ -340,13 +363,14 @@ class Hyperheuristic:
 
             elif action == 'Restart':
                 # Restart the entire sequence
-                encoded_neighbour = self._obtain_candidate_solution(current_cardinality)
+                encoded_neighbour = self._obtain_candidate_solution(
+                    current_cardinality)
 
             else:
-                raise HyperheuristicError(f'Invalid action = {action} to perform!')
+                raise HyperheuristicError(
+                    f'Invalid action = {action} to perform!')
         else:
             raise HyperheuristicError('Invalid type of current solution!')
-
 
         # Return the neighbour sequence
         return encoded_neighbour
@@ -372,7 +396,7 @@ class Hyperheuristic:
 
         elif function == 'logarithmic':
             return self.parameters['max_temperature'] / (
-                    1 + (1 - self.parameters['cooling_rate']) * np.log(step_val + 1))
+                1 + (1 - self.parameters['cooling_rate']) * np.log(step_val + 1))
 
         elif function == 'exponential':
             return self.parameters['max_temperature'] * np.power(1 - self.parameters['cooling_rate'], step_val)
@@ -400,13 +424,15 @@ class Hyperheuristic:
         """
 
         if acceptation_scheme == 'exponential':
-            probability = np.min([np.exp(-delta / (energy_zero * temp)), 1]) if prob is None else prob
+            probability = np.min(
+                [np.exp(-delta / (energy_zero * temp)), 1]) if prob is None else prob
             if self.parameters['verbose']:
                 print(', [Delta: {:.2e}, ArgProb: {:.2e}, Prob: {:.2f}]'.format(
                     delta, -delta / (energy_zero * temp), probability), end=' ')
             return np.random.rand() < probability
         elif acceptation_scheme == 'boltzmann':
-            probability = 1. / (1. + np.exp(delta / temp)) if prob is None else prob
+            probability = 1. / (1. + np.exp(delta / temp)
+                                ) if prob is None else prob
             return (delta <= 0.0) or (np.random.rand() <= probability)
         elif acceptation_scheme == 'probabilistic':
             probability = 0.25 if prob is None else prob
@@ -424,13 +450,11 @@ class Hyperheuristic:
          variables that can be considered such as `temperature`. These additional variables must be args[0] < 0.0.
         """
         return (step >= self.parameters['num_steps']) or (
-                self.__stagnation_check(stag_counter) and not self.parameters['trial_overflow']) or \
-               (any([var < 0.0 for var in args]))
-
+            self.__stagnation_check(stag_counter) and not self.parameters['trial_overflow']) or \
+            (any([var < 0.0 for var in args]))
 
     def get_operators(self, sequence):
         return [self.heuristic_space[index] for index in sequence]
-
 
     def solve(self, mode=None, save_steps=True):
         mode = mode if mode is not None else self.parameters["solver"]
@@ -462,7 +486,8 @@ class Hyperheuristic:
         current_solution = self._obtain_candidate_solution()
 
         # Evaluate this solution
-        current_performance, current_details = self.evaluate_candidate_solution(current_solution)
+        current_performance, current_details = self.evaluate_candidate_solution(
+            current_solution)
 
         # Initialise some additional variables
         initial_energy = np.abs(current_performance) + 1
@@ -476,7 +501,7 @@ class Hyperheuristic:
         # Save this historical register, step = 0
         if save_steps:
             _save_step(0, dict(encoded_solution=best_solution, performance=best_performance,
-                            details=current_details), self.file_label)
+                               details=current_details), self.file_label)
 
         # Step, stagnation counter and its maximum value
         step = 0
@@ -494,21 +519,24 @@ class Hyperheuristic:
                                            temperature - self.parameters['min_temperature']):
             # Update step and temperature
             step += 1
-            temperature = self._obtain_temperature(step, self.parameters['temperature_scheme'])
+            temperature = self._obtain_temperature(
+                step, self.parameters['temperature_scheme'])
 
             # Generate a neighbour solution (just indices-codes)
             action = self._choose_action(len(current_solution), action)
-            candidate_solution = self._obtain_candidate_solution(sol=current_solution, action=action)
+            candidate_solution = self._obtain_candidate_solution(
+                sol=current_solution, action=action)
 
             # Evaluate this candidate solution
-            candidate_performance, candidate_details = self.evaluate_candidate_solution(candidate_solution)
+            candidate_performance, candidate_details = self.evaluate_candidate_solution(
+                candidate_solution)
 
             # Print update
             if self.parameters['verbose']:
                 print('{} :: Step: {:4d}, Action: {:12s}, Temp: {:.2e}, Card: {:3d}, '.format(
                     self.file_label, step, action, temperature, len(candidate_solution)) +
-                      'candPerf: {:.2e}, currPerf: {:.2e}, bestPerf: {:.2e}'.format(
-                          candidate_performance, current_performance, best_performance), end=' ')
+                    'candPerf: {:.2e}, currPerf: {:.2e}, bestPerf: {:.2e}'.format(
+                    candidate_performance, current_performance, best_performance), end=' ')
 
             # Accept the current solution using a given acceptance_scheme
             if self._check_acceptance(candidate_performance - current_performance, self.parameters['acceptance_scheme'],
@@ -555,7 +583,8 @@ class Hyperheuristic:
 
         # Print the best one
         if self.parameters['verbose']:
-            print('\nBEST --> Perf: {}, e-Sol: {}'.format(best_performance, best_solution))
+            print(
+                '\nBEST --> Perf: {}, e-Sol: {}'.format(best_performance, best_solution))
 
         # Return the best solution found and its details
         return best_solution, best_performance, historical_current, historical_best
@@ -587,7 +616,8 @@ class Hyperheuristic:
 
             # Extract the population and fitness vealues, and their best values
             current_fitness = np.copy(mh.pop.global_best_fitness)
-            current_position = np.copy(mh.pop.rescale_back(mh.pop.global_best_position))
+            current_position = np.copy(
+                mh.pop.rescale_back(mh.pop.global_best_position))
 
             # Heuristic sets
             self.current_space = np.arange(self.num_operators)
@@ -610,7 +640,8 @@ class Hyperheuristic:
             while not self._check_finalisation(step, stag_counter):
                 # Update the current set
                 if self.parameters['trial_overflow'] and self.__stagnation_check(stag_counter):
-                    possible_transitions = np.ones(self.num_operators) / self.num_operators
+                    possible_transitions = np.ones(
+                        self.num_operators) / self.num_operators
                     which_matrix = 'random'
                 else:
                     if not ((self.parameters['allow_weight_matrix'] is None) or (self.transition_matrix is None)):
@@ -619,13 +650,16 @@ class Hyperheuristic:
                             transitions_sum = possible_transitions.sum()
 
                             if transitions_sum > 0.0:
-                                possible_transitions = np.nan_to_num(possible_transitions / transitions_sum)
+                                possible_transitions = np.nan_to_num(
+                                    possible_transitions / transitions_sum)
                             else:
-                                possible_transitions = np.ones(self.num_operators) / self.num_operators
+                                possible_transitions = np.ones(
+                                    self.num_operators) / self.num_operators
 
                             which_matrix = 'transition'
                         else:
-                            possible_transitions = np.ones(self.num_operators) / self.num_operators
+                            possible_transitions = np.ones(
+                                self.num_operators) / self.num_operators
 
                     else:
                         if self.weight_matrix is not None:
@@ -635,17 +669,21 @@ class Hyperheuristic:
                         which_matrix = 'entered'
 
                 # Pick randomly a simple heuristic
-                candidate_enc_so = self._obtain_candidate_solution(sol=1, operators_weights=possible_transitions)
+                candidate_enc_so = self._obtain_candidate_solution(
+                    sol=1, operators_weights=possible_transitions)
 
                 # Prepare before evaluate the last search operator and apply it
-                candidate_search_operator = self.get_operators([candidate_enc_so[-1]])
-                perturbators, selectors = Operators.process_operators(candidate_search_operator)
+                candidate_search_operator = self.get_operators(
+                    [candidate_enc_so[-1]])
+                perturbators, selectors = Operators.process_operators(
+                    candidate_search_operator)
 
                 mh.apply_search_operator(perturbators[0], selectors[0])
 
                 # Extract the population and fitness values, and their best values
                 current_fitness = np.copy(mh.pop.global_best_fitness)
-                current_position = np.copy(mh.pop.rescale_back(mh.pop.global_best_position))
+                current_position = np.copy(
+                    mh.pop.rescale_back(mh.pop.global_best_position))
 
                 # Print update
                 if self.parameters['verbose']:
@@ -653,12 +691,13 @@ class Hyperheuristic:
                         '{} :: Rep: {:3d}, Step: {:3d}, Trial: {:3d}, SO: {:30s}, currPerf: {:.2e}, candPerf: {:.2e} '
                         'which: {:10s}'.format(
                             self.file_label, rep + 1, step + 1, stag_counter,
-                            candidate_search_operator[0][0] + ' & ' + candidate_search_operator[0][2][:4],
+                            candidate_search_operator[0][0] + ' & ' +
+                            candidate_search_operator[0][2][:4],
                             best_fitness[-1], current_fitness, which_matrix), end=' ')
 
                 # If the candidate solution is better or equal than the current best solution
                 if self._check_acceptance(current_fitness - best_fitness[-1], 'probabilistic', prob=0.2):
-                    
+
                     # Update the current sequence and its characteristics
                     current_sequence.append(candidate_enc_so[-1])
 
@@ -690,10 +729,12 @@ class Hyperheuristic:
 
             # Print the best one
             if self.parameters['verbose']:
-                print('\nBest fitness: {},\nBest position: {}'.format(current_fitness, current_position))
+                print('\nBest fitness: {},\nBest position: {}'.format(
+                    current_fitness, current_position))
 
             #  Update the repetition register
-            sequence_per_repetition.append(np.double(current_sequence).astype(int).tolist())
+            sequence_per_repetition.append(
+                np.double(current_sequence).astype(int).tolist())
             fitness_per_repetition.append(np.double(best_fitness).tolist())
 
             # Update the weights for learning purposes
@@ -709,7 +750,7 @@ class Hyperheuristic:
                                     fitness_per_rep=fitness_per_repetition,
                                     sequence_per_rep=sequence_per_repetition,
                                     weight_matrix=self.weight_matrix
-                                )),
+                           )),
                            self.file_label)
 
             rep += 1
@@ -726,7 +767,7 @@ class Hyperheuristic:
          performance of the HH. Once the process ends, it returns:
             - fitness_per_repetition: The list of fitnesses of all uMH generated by the model.
             - sequence_per_repetition: The list of uMHs generated by the model.
-        
+
         This method requires a special dictionary in the ``hh_config'' with the following parameters:
             - model_architecture (str): Which Neural Network Architecture will be used.
             - model_architecture_layers (list): Hidden layer information.
@@ -738,24 +779,26 @@ class Hyperheuristic:
             - epochs (int): Number of epochs to train the NN model.
             - load_model (bool): True if it will load a pre-trained model.
             - save_model (bool): True if it will save the trained model.
-        
+
         :returns list, list: fitness_per_repetition, sequence_per_repetition
         """
         sequence_per_repetition = list()
         fitness_per_repetition = list()
 
         # Neural network model that predicts operators
-        model = self._get_neural_network_predictor()        
+        model = self._get_neural_network_predictor()
         for rep in range(self.parameters['num_replicas']):
             # Metaheuristic
-            mh = Metaheuristic(self.problem, num_agents=self.parameters['num_agents'], num_iterations=self.num_iterations)
+            mh = Metaheuristic(
+                self.problem, num_agents=self.parameters['num_agents'], num_iterations=self.num_iterations)
 
             # Initialiser
             mh.apply_initialiser()
 
             # Extract the population and fitness values, and their best values
             current_fitness = np.copy(mh.pop.global_best_fitness)
-            current_position = np.copy(mh.pop.rescale_back(mh.pop.global_best_position))
+            current_position = np.copy(
+                mh.pop.rescale_back(mh.pop.global_best_position))
 
             # Heuristic sets
             self.current_space = np.arange(self.num_operators)
@@ -770,7 +813,8 @@ class Hyperheuristic:
             step = 0
             stag_counter = 0
             exclude_indices = []
-            normalize_weights = lambda w: w / sum(w) if sum(w) > 0 else np.ones(self.num_operators) / self.num_operators
+            def normalize_weights(
+                w): return w / sum(w) if sum(w) > 0 else np.ones(self.num_operators) / self.num_operators
 
             # Finalisator
             while not self._check_finalisation(step, stag_counter):
@@ -780,15 +824,19 @@ class Hyperheuristic:
                     operators_weights = normalize_weights(operator_prediction)
 
                 # Select a simple heuristic and apply it
-                candidate_enc_so = self._obtain_candidate_solution(sol=1, operators_weights=operators_weights)
-                candidate_search_operator = self.get_operators([candidate_enc_so[-1]])
-                perturbators, selectors = Operators.process_operators(candidate_search_operator)
+                candidate_enc_so = self._obtain_candidate_solution(
+                    sol=1, operators_weights=operators_weights)
+                candidate_search_operator = self.get_operators(
+                    [candidate_enc_so[-1]])
+                perturbators, selectors = Operators.process_operators(
+                    candidate_search_operator)
 
                 mh.apply_search_operator(perturbators[0], selectors[0])
 
                 # Extract population and fitness values
                 current_fitness = np.copy(mh.pop.global_best_fitness)
-                current_position = np.copy(mh.pop.rescale_back(mh.pop.global_best_position))
+                current_position = np.copy(
+                    mh.pop.rescale_back(mh.pop.global_best_position))
 
                 # Print update
                 if self.parameters['verbose']:
@@ -796,7 +844,8 @@ class Hyperheuristic:
                         '{} :: Neural Network, Rep: {:3d}, Step: {:3d}, Trial: {:3d}, SO: {:30s}, currPerf: {:.2e}, candPerf: {:.2e}, '
                         'csl: {:3d}'.format(
                             self.file_label, rep + 1, step + 1, stag_counter,
-                            candidate_search_operator[0][0] + ' & ' + candidate_search_operator[0][2][:4],
+                            candidate_search_operator[0][0] + ' & ' +
+                            candidate_search_operator[0][2][:4],
                             best_fitness[-1], current_fitness, len(self.current_space)), end=' ')
 
                 # If the candidate solution is better or equal than the current best solution
@@ -827,7 +876,8 @@ class Hyperheuristic:
                         # Include last search operator's index to the tabu list
                         exclude_indices.append(candidate_enc_so[-1])
                         operator_prediction[exclude_indices[-1]] = 0
-                        operators_weights = normalize_weights(operator_prediction)
+                        operators_weights = normalize_weights(
+                            operator_prediction)
 
                 # Add ending mark
                 if self.parameters['verbose']:
@@ -835,12 +885,14 @@ class Hyperheuristic:
 
             # Print the best one
             if self.parameters['verbose']:
-                print('\nBest fitness: {},\nBest position: {}'.format(current_fitness, current_position))
+                print('\nBest fitness: {},\nBest position: {}'.format(
+                    current_fitness, current_position))
 
             # Update the repetition register
-            sequence_per_repetition.append(np.double(current_sequence).astype(int).tolist())
+            sequence_per_repetition.append(
+                np.double(current_sequence).astype(int).tolist())
             fitness_per_repetition.append(np.double(best_fitness).tolist())
-            
+
             # Save this historical register
             if save_steps:
                 _save_step(rep,
@@ -851,7 +903,7 @@ class Hyperheuristic:
                                     fitness_per_rep=fitness_per_repetition,
                                     sequence_per_rep=sequence_per_repetition,
                                     weight_matrix=self.transition_matrix
-                                )),
+                           )),
                            self.file_label)
 
         return fitness_per_repetition, sequence_per_repetition
@@ -862,33 +914,34 @@ class Hyperheuristic:
         model_params['file_label'] = self.file_label
         model_params['num_steps'] = self.parameters['num_steps']
         model_params['num_operators'] = self.num_operators
-        
-        # Initialize model        
+
+        # Initialize model
         model = ModelPredictor(model_params)
 
         # Load pre-trained model
         if model_params['load_model'] and model.load():
             return model
-        
+
         # Get training data
-        seqfitness_train, seqrep_train = self._get_sample_sequences(model_params['sample_params'])
-        dataset = DatasetSequences(seqrep_train, seqfitness_train, 
+        seqfitness_train, seqrep_train = self._get_sample_sequences(
+            model_params['sample_params'])
+        dataset = DatasetSequences(seqrep_train, seqfitness_train,
                                    num_operators=self.num_operators,
                                    fitness_to_weight=model_params.get('fitness_to_weight', None))
         X, y, sample_weight = dataset.obtain_dataset()
 
         # Fit model
-        model.fit(X, y, model_params['epochs'], 
+        model.fit(X, y, model_params['epochs'],
                   sample_weight=sample_weight,
                   verbose=self.parameters['verbose'],
-                  early_stopping_params=model_params.get('early_stopping', None),
+                  early_stopping_params=model_params.get(
+                      'early_stopping', None),
                   verbose_statistics=self.parameters['verbose_statistics'])
 
         # Save trained model
         if model_params['save_model']:
             model.save()
         return model
-
 
     def evaluate_candidate_solution(self, encoded_sequence):
         """
@@ -936,7 +989,6 @@ class Hyperheuristic:
         return self.get_performance(fitness_stats), dict(
             historical=historical_data, fitness=fitness_data, positions=position_data, statistics=fitness_stats)
 
-
     def brute_force(self, save_steps=True):
         """
         This method performs a brute force procedure solving the problem via all the available search operators without
@@ -950,7 +1002,8 @@ class Hyperheuristic:
             operator = [self.heuristic_space[operator_id]]
 
             # Evaluate it within the metaheuristic structure
-            operator_performance, operator_details = self.evaluate_candidate_solution(operator)
+            operator_performance, operator_details = self.evaluate_candidate_solution(
+                operator)
 
             # Save information
             if save_steps:
@@ -964,7 +1017,6 @@ class Hyperheuristic:
             if self.parameters['verbose']:
                 print('{} :: Operator {} of {}, Perf: {}'.format(
                     self.file_label, operator_id + 1, self.num_operators, operator_performance))
-
 
     def basic_metaheuristics(self, save_steps=True):
         """
@@ -982,7 +1034,8 @@ class Hyperheuristic:
                 operator = [operator]
 
             # Evaluate it within the metaheuristic structure
-            operator_performance, operator_details = self.evaluate_candidate_solution(operator)
+            operator_performance, operator_details = self.evaluate_candidate_solution(
+                operator)
 
             # Save information
             if save_steps:
@@ -996,7 +1049,6 @@ class Hyperheuristic:
             if self.parameters['verbose']:
                 print('{} :: BasicMH {} of {}, Perf: {}'.format(
                     self.file_label, operator_id + 1, self.num_operators, operator_performance))
-
 
     @staticmethod
     def get_performance(statistics):
@@ -1012,7 +1064,6 @@ class Hyperheuristic:
         # return statistics['Avg'] + statistics['Std']                                              # Option 2
         return statistics['Med'] + statistics['IQR']  # Option 3
         # return statistics['Avg'] + statistics['Std'] + statistics['Med'] + statistics['IQR']      # Option 4
-
 
     @staticmethod
     def get_statistics(raw_data):
@@ -1039,7 +1090,6 @@ class Hyperheuristic:
                     Med=np.median(raw_data),
                     MAD=st.median_abs_deviation(raw_data))
 
-
     def _get_sample_sequences(self, sample_params):
         """
         Retrieve or generate sequences to use them as data train
@@ -1060,51 +1110,54 @@ class Hyperheuristic:
                             'population': f'-{self.parameters["num_agents"]}pop-',
                             'func_name': self.problem['func_name']})
             seqfitness, seqrep = _get_stored_sample_sequences(filters)
-        else:        
+        else:
             # Generate sequences from dynamic solver
             prev_num_replicas = self.parameters['num_replicas']
             prev_learning_portion = self.parameters['learning_portion']
-            self.parameters['num_replicas'] = sample_params.get('limit_seqs', 100)
-            self.parameters['learning_portion'] = sample_params.get('random', 0.37)
+            self.parameters['num_replicas'] = sample_params.get(
+                'limit_seqs', 100)
+            self.parameters['learning_portion'] = sample_params.get(
+                'random', 0.37)
             seqfitness, seqrep, _ = self._solve_dynamic(save_steps=False)
             self.parameters['num_replicas'] = prev_num_replicas
             self.parameters['learning_portion'] = prev_learning_portion
-        
+
         # Filter sequences with best performance
         if 'filter' in sample_params:
             seqfitness_last = [sequence[-1] for sequence in seqfitness]
             if sample_params['filter'] == 'first_quartile':
                 top_value = np.quantile(seqfitness_last, 0.25)
             else:
-                raise HyperheuristicError(f'"{sample_params["filter"]}" is not supported yet!')
+                raise HyperheuristicError(
+                    f'"{sample_params["filter"]}" is not supported yet!')
             valid_indices = np.array(seqfitness_last) <= top_value
             seqfitness = (np.array(seqfitness)[valid_indices]).tolist()
             seqrep = (np.array(seqrep)[valid_indices]).tolist()
 
         # Verify that there is sequences for training
         if len(seqfitness) == 0 or len(seqrep) == 0:
-            raise HyperheuristicError('There is no sample of sequences for training')
+            raise HyperheuristicError(
+                'There is no sample of sequences for training')
 
         # Store sequences if requested
         if sample_params['store_sequences']:
             # Order sequences according to its fitness
             indices_order = list(range(len(seqfitness)))
-            indices_order.sort(key = lambda idx: seqfitness[idx][-1])
+            indices_order.sort(key=lambda idx: seqfitness[idx][-1])
 
             sequences_to_save = dict()
             for idx in indices_order:
                 sequences_to_save[idx] = (seqfitness[idx], seqrep[idx])
-                
-            # Store sequence without identificator of experiment : '-'.join(self.file_label.split('-')[:2]
-            sequences_name = '-'.join([self.problem['func_name'], 
-                                      f'{self.problem["dimensions"]}D', 
-                                      f'{self.parameters["num_agents"]}pop',
-                                      self.heuristic_space_label,
-                                      self.file_label])
-            _save_sequences(sequences_name, sequences_to_save)
-    
-        return seqfitness, seqrep
 
+            # Store sequence without identificator of experiment : '-'.join(self.file_label.split('-')[:2]
+            sequences_name = '-'.join([self.problem['func_name'],
+                                      f'{self.problem["dimensions"]}D',
+                                       f'{self.parameters["num_agents"]}pop',
+                                       self.heuristic_space_label,
+                                       self.file_label])
+            _save_sequences(sequences_name, sequences_to_save)
+
+        return seqfitness, seqrep
 
     def _update_weights(self, sequences=None):
         if (self.weights is None) or (len(sequences) < int(self.parameters['num_replicas'] *
@@ -1118,20 +1171,25 @@ class Hyperheuristic:
             mat_seq = np.array([np.array([*seq, *[-2] * (max_length - len(seq))]) for seq in sequences],
                                dtype=object).T
 
-            all_operators_including_empty = [-2.5, *np.arange(-2, self.num_operators) + 0.5]
+            all_operators_including_empty = [-2.5,
+                                             *np.arange(-2, self.num_operators) + 0.5]
             current_hist = list()
             for ii_step in range(max_length):
                 # Disregard the -2 and -1 operators (empty and initialiser)
-                densities, _ = np.histogram(mat_seq[ii_step].tolist(), bins=all_operators_including_empty)
+                densities, _ = np.histogram(
+                    mat_seq[ii_step].tolist(), bins=all_operators_including_empty)
                 temp_hist = densities[2:]
                 if np.sum(temp_hist) > 0.0:
-                    current_hist.append(np.ndarray.tolist(temp_hist / np.sum(temp_hist)))
+                    current_hist.append(np.ndarray.tolist(
+                        temp_hist / np.sum(temp_hist)))
                 else:
-                    current_hist.append(np.ndarray.tolist(np.ones(self.num_operators) / self.num_operators))
+                    current_hist.append(np.ndarray.tolist(
+                        np.ones(self.num_operators) / self.num_operators))
 
             self.transition_matrix = np.array(current_hist)
 
 # %% ADDITIONAL TOOLS
+
 
 def _save_step(step_number, variable_to_save, prefix=''):
     """
@@ -1177,14 +1235,17 @@ def _get_stored_sample_sequences(filters, folder_name='./data_files/sequences/')
         return [], []
 
     # Filter stored sequences
-    essential_attributes = ['func_name', 'dimensions', 'population', 'collection']
+    essential_attributes = ['func_name',
+                            'dimensions', 'population', 'collection']
+
     def is_valid_file(file_name):
         # Verify that its a valid problem
         return all(filters[attribute] in file_name
                    for attribute in essential_attributes)
 
     files_in_folder = jt.read_subfolders(folder_name)
-    sequences_files = [file_name for file_name in files_in_folder if is_valid_file(file_name)]
+    sequences_files = [
+        file_name for file_name in files_in_folder if is_valid_file(file_name)]
 
     # Limit the number of sequences retreived from a problem
     limit_seqs = filters['limit_seqs']
@@ -1197,7 +1258,7 @@ def _get_stored_sample_sequences(filters, folder_name='./data_files/sequences/')
         if problem_name not in sequences_per_problem:
             # Initialise counter per problem
             sequences_per_problem[problem_name] = 0
-        
+
         # Check limit before read the json file
         if sequences_per_problem[problem_name] == limit_seqs:
             continue
@@ -1207,7 +1268,7 @@ def _get_stored_sample_sequences(filters, folder_name='./data_files/sequences/')
             # Check limit before append sequence
             if sequences_per_problem[problem_name] == limit_seqs:
                 break
-            
+
             # Append sequence
             seqfitness.append(fitness)
             seqrep.append(sequence)
@@ -1224,11 +1285,11 @@ def _save_sequences(file_name, sequences_to_save):
     """
     # Define the folder name
     folder_name = 'data_files/sequences/'
-    
+
     # Check if this path exists
     if not _check_path(folder_name):
         _create_path(folder_name)
-    
+
     # Overwrite or create file to store the sequences along its respective fitness
     with open(folder_name + f'{file_name}.json', 'w') as json_file:
         json.dump(sequences_to_save, json_file, cls=jt.NumpyEncoder)

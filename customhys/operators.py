@@ -41,6 +41,7 @@ def get_operator_aliases():
 
 # %% SEARCH OPERATORS
 
+
 def central_force_dynamic(pop, gravity=0.001, alpha=0.01, beta=1.5, dt=1.0):
     """
     Apply the central force dynamic from Central Force Optimisation (CFO) to the population's positions (pop.positions).
@@ -69,12 +70,14 @@ def central_force_dynamic(pop, gravity=0.001, alpha=0.01, beta=1.5, dt=1.0):
             pop.fitness[agent], (1, pop.num_agents - 1))
 
         # Determine all vector distances with respect to agent
-        delta_positions = pop.positions[indices, :] - np.tile(pop.positions[agent, :], (pop.num_agents - 1, 1))
+        delta_positions = pop.positions[indices, :] - \
+            np.tile(pop.positions[agent, :], (pop.num_agents - 1, 1))
 
         distances = np.linalg.norm(delta_positions, 2, 1)
 
         # Find the quotient part
-        quotient = np.heaviside(-delta_masses, 0.0) * (np.abs(delta_masses) ** alpha) / (distances ** beta + 1e-23)
+        quotient = np.heaviside(-delta_masses, 0.0) * \
+            (np.abs(delta_masses) ** alpha) / (distances ** beta + 1e-23)
 
         # Determine the acceleration for each agent
         acceleration[agent, :] = gravity * np.sum(delta_positions * np.tile(
@@ -103,7 +106,8 @@ def differential_crossover(pop, crossover_rate=0.2, version='binomial'):
         indices = np.tile(np.arange(pop.num_dimensions), (pop.num_agents, 1))
 
         # Permute indices per dimension
-        rand_indices = np.vectorize(np.random.permutation, signature='(n)->(n)')(indices)
+        rand_indices = np.vectorize(
+            np.random.permutation, signature='(n)->(n)')(indices)
 
         # Calculate the NOT condition (because positions already updated!)
         condition = np.logical_not(
@@ -128,7 +132,8 @@ def differential_crossover(pop, crossover_rate=0.2, version='binomial'):
 
                 # Perform the crossover if the following condition is met
                 if dim not in [(n + x) % pop.num_dimensions for x in range(exp_var)]:
-                    pop.positions[agent, dim] = np.copy(pop.previous_positions[agent, dim])
+                    pop.positions[agent, dim] = np.copy(
+                        pop.previous_positions[agent, dim])
 
     # Invalid version
     else:
@@ -173,9 +178,9 @@ def differential_mutation(pop, expression='current-to-best', num_rands=1, factor
 
     elif expression == 'rand-to-best-and-current':
         mutant = pop.positions[np.random.permutation(pop.num_agents), :] + factor * (
-                np.tile(pop.global_best_position, (pop.num_agents, 1)) -
-                pop.positions[np.random.permutation(pop.num_agents), :] +
-                pop.positions[np.random.permutation(pop.num_agents), :] - pop.positions)
+            np.tile(pop.global_best_position, (pop.num_agents, 1)) -
+            pop.positions[np.random.permutation(pop.num_agents), :] +
+            pop.positions[np.random.permutation(pop.num_agents), :] - pop.positions)
     else:
         raise OperatorsError('Invalid DE mutation scheme!')
 
@@ -210,10 +215,12 @@ def firefly_dynamic(pop, alpha=1.0, beta=1.0, gamma=100.0, distribution='uniform
     """
     # Determine epsilon values
     if distribution == 'gaussian':
-        epsilon_value = np.random.standard_normal((pop.num_agents, pop.num_dimensions))
+        epsilon_value = np.random.standard_normal(
+            (pop.num_agents, pop.num_dimensions))
 
     elif distribution == 'uniform':
-        epsilon_value = np.random.uniform(-0.5, 0.5, (pop.num_agents, pop.num_dimensions))
+        epsilon_value = np.random.uniform(-0.5, 0.5,
+                                          (pop.num_agents, pop.num_dimensions))
     elif distribution == 'levy':
         epsilon_value = _random_levy((pop.num_agents, pop.num_dimensions), 1.5)
     else:
@@ -227,7 +234,8 @@ def firefly_dynamic(pop, alpha=1.0, beta=1.0, gamma=100.0, distribution='uniform
         indices = (np.arange(pop.num_agents) != agent)
 
         # Determine all vector distances with respect to agent
-        delta = pop.positions[indices, :] - np.tile(pop.positions[agent, :], (pop.num_agents - 1, 1))
+        delta = pop.positions[indices, :] - \
+            np.tile(pop.positions[agent, :], (pop.num_agents - 1, 1))
 
         # Determine differences between lights
         delta_lights = np.tile((pop.fitness[indices] - np.tile(
@@ -289,10 +297,12 @@ def genetic_crossover(pop, pairing='rank', crossover='blend', mating_pool_factor
             pop.fitness[np.setdiff1d(np.arange(pop.num_agents), mating_pool_indices)])
 
         # Determine the related probabilities
-        probabilities = np.abs(normalised_cost / (np.sum(normalised_cost) + 1e-23))
+        probabilities = np.abs(
+            normalised_cost / (np.sum(normalised_cost) + 1e-23))
 
         # Perform the roulette wheel selection and return couples
-        couple_indices_ = np.searchsorted(np.cumsum(probabilities), np.random.rand(2 * num_couples))
+        couple_indices_ = np.searchsorted(
+            np.cumsum(probabilities), np.random.rand(2 * num_couples))
 
         # Return couples
         couple_indices = couple_indices_.reshape((2, -1))
@@ -304,7 +314,8 @@ def genetic_crossover(pop, pairing='rank', crossover='blend', mating_pool_factor
             mating_pool_indices.size)) / np.sum(np.arange(mating_pool_indices.size) + 1)
 
         # Perform the roulette wheel selection and return couples
-        couple_indices_ = np.searchsorted(np.cumsum(probabilities), np.random.rand(2 * num_couples))
+        couple_indices_ = np.searchsorted(
+            np.cumsum(probabilities), np.random.rand(2 * num_couples))
 
         # Return couples
         couple_indices = couple_indices_.reshape((2, -1))
@@ -313,7 +324,8 @@ def genetic_crossover(pop, pairing='rank', crossover='blend', mating_pool_factor
     elif pairing == 'tournament':
         # Calculate probabilities
         probability = float(tournament_probability) / 100.
-        probabilities = probability * ((1 - probability) ** np.arange(tournament_size))
+        probabilities = probability * \
+            ((1 - probability) ** np.arange(tournament_size))
 
         # Initialise the mother and father indices
         couple_indices = np.full((2, num_couples), np.nan)
@@ -323,13 +335,16 @@ def genetic_crossover(pop, pairing='rank', crossover='blend', mating_pool_factor
             mate = 0
             while mate < 2:
                 # Choose tournament candidates
-                random_indices = mating_pool_indices[np.random.permutation(mating_pool_indices.size)[:tournament_size]]
+                random_indices = mating_pool_indices[np.random.permutation(
+                    mating_pool_indices.size)[:tournament_size]]
 
                 # Determine the candidate fitness values
-                candidates_indices = random_indices[np.argsort(pop.fitness[random_indices])]
+                candidates_indices = random_indices[np.argsort(
+                    pop.fitness[random_indices])]
 
                 # Find the best according to its fitness and probability
-                winner = candidates_indices[np.random.rand(tournament_size) < probabilities]
+                winner = candidates_indices[np.random.rand(
+                    tournament_size) < probabilities]
                 if winner.size > 0:
                     couple_indices[mate, couple] = int(winner[0])
                     mate += 1
@@ -337,7 +352,8 @@ def genetic_crossover(pop, pairing='rank', crossover='blend', mating_pool_factor
     # Random pairing
     elif pairing == 'random':
         # Return two random indices from mating pool
-        couple_indices = mating_pool_indices[np.random.randint(mating_pool_indices.size, size=(2, num_couples))]
+        couple_indices = mating_pool_indices[np.random.randint(
+            mating_pool_indices.size, size=(2, num_couples))]
 
     # TODO: Check Even-and-Odd pairing
     # Even-and-Odd pairing
@@ -367,7 +383,8 @@ def genetic_crossover(pop, pairing='rank', crossover='blend', mating_pool_factor
         raise OperatorsError("Invalid pairing method")
 
     # Identify offspring indices
-    offspring_indices = np.setdiff1d(np.arange(pop.num_agents), mating_pool_indices, True)
+    offspring_indices = np.setdiff1d(
+        np.arange(pop.num_agents), mating_pool_indices, True)
 
     # Prepare crossover variables
     if len(crossover) > 7:  # if crossover = 'linear_0.5_0.5', for example
@@ -396,7 +413,8 @@ def genetic_crossover(pop, pairing='rank', crossover='blend', mating_pool_factor
             pop.num_dimensions, size=parent_indices.shape[1]), (pop.num_dimensions, 1)).transpose()
 
         # Crossover condition mask
-        crossover_mask = np.tile(np.arange(pop.num_dimensions), (parent_indices.shape[1], 1)) <= single_points
+        crossover_mask = np.tile(
+            np.arange(pop.num_dimensions), (parent_indices.shape[1], 1)) <= single_points
 
         # Get father and mother
         father_position = pop.positions[parent_indices[0, :], :]
@@ -409,16 +427,20 @@ def genetic_crossover(pop, pairing='rank', crossover='blend', mating_pool_factor
     # Two-Point Crossover
     elif crossover == 'two':
         # Find raw points
-        raw_points = np.sort(np.random.randint(pop.num_dimensions, size=(parent_indices.shape[1], 2)))
+        raw_points = np.sort(np.random.randint(
+            pop.num_dimensions, size=(parent_indices.shape[1], 2)))
 
         # Determine the single point per each couple
-        points = [np.tile(raw_points[:, x], (pop.num_dimensions, 1)).transpose() for x in range(raw_points.shape[1])]
+        points = [np.tile(raw_points[:, x], (pop.num_dimensions, 1)).transpose()
+                  for x in range(raw_points.shape[1])]
 
         # Range matrix
-        dummy_matrix = np.tile(np.arange(pop.num_dimensions), (parent_indices.shape[1], 1))
+        dummy_matrix = np.tile(
+            np.arange(pop.num_dimensions), (parent_indices.shape[1], 1))
 
         # Crossover condition mask (only for two points)
-        crossover_mask = np.bitwise_or(dummy_matrix <= points[0], dummy_matrix > points[1])
+        crossover_mask = np.bitwise_or(
+            dummy_matrix <= points[0], dummy_matrix > points[1])
 
         # Get father and mother
         father_position = pop.positions[parent_indices[0, :], :]
@@ -431,7 +453,8 @@ def genetic_crossover(pop, pairing='rank', crossover='blend', mating_pool_factor
     # Uniform Crossover
     elif crossover == 'uniform':
         # Crossover condition mask (only for uniform crossover)
-        crossover_mask = np.random.rand(parent_indices.shape[1], pop.num_dimensions) < 0.5
+        crossover_mask = np.random.rand(
+            parent_indices.shape[1], pop.num_dimensions) < 0.5
 
         # Get father and mother
         father_position = pop.positions[parent_indices[0, :], :]
@@ -444,14 +467,16 @@ def genetic_crossover(pop, pairing='rank', crossover='blend', mating_pool_factor
     # Random blending crossover
     elif crossover == 'blend':
         # Initialise random numbers between 0 and 1
-        beta_values = np.random.rand(parent_indices.shape[1], pop.num_dimensions)
+        beta_values = np.random.rand(
+            parent_indices.shape[1], pop.num_dimensions)
 
         # Get father and mother
         father_position = pop.positions[parent_indices[0, :], :]
         mother_position = pop.positions[parent_indices[1, :], :]
 
         # Determine offsprings with father and mother positions
-        offsprings = beta_values * father_position + (1 - beta_values) * mother_position
+        offsprings = beta_values * father_position + \
+            (1 - beta_values) * mother_position
 
     # Linear Crossover: offspring = coeff[0] * father + coeff[1] * mother
     elif crossover == 'linear':
@@ -460,7 +485,8 @@ def genetic_crossover(pop, pairing='rank', crossover='blend', mating_pool_factor
         mother_position = pop.positions[parent_indices[1, :], :]
 
         # Determine offsprings with father and mother positions
-        offsprings = coefficients[0] * father_position + coefficients[1] * mother_position
+        offsprings = coefficients[0] * father_position + \
+            coefficients[1] * mother_position
 
     # If no crossover method recognised
     else:
@@ -494,15 +520,19 @@ def genetic_mutation(pop, scale=1.0, elite_rate=0.1, mutation_rate=0.25, distrib
     # If num_elite equals num_agents then do nothing, or ...
     if num_elite < pop.num_agents:
         # Number of mutations to perform
-        num_mutations = int(np.round(pop.num_agents * pop.num_dimensions * mutation_rate))
+        num_mutations = int(
+            np.round(pop.num_agents * pop.num_dimensions * mutation_rate))
 
         # Identify mutable agents
-        dimension_indices = np.random.randint(0, pop.num_dimensions, num_mutations)
+        dimension_indices = np.random.randint(
+            0, pop.num_dimensions, num_mutations)
 
         if num_elite > 0:
-            agent_indices = np.argsort(pop.fitness)[np.random.randint(num_elite, pop.num_agents, num_mutations)]
+            agent_indices = np.argsort(pop.fitness)[np.random.randint(
+                num_elite, pop.num_agents, num_mutations)]
         else:
-            agent_indices = np.random.randint(num_elite, pop.num_agents, num_mutations)
+            agent_indices = np.random.randint(
+                num_elite, pop.num_agents, num_mutations)
 
         # Transform indices
         rows, columns = np.meshgrid(agent_indices, dimension_indices)
@@ -547,28 +577,34 @@ def gravitational_search(pop, gravity=1.0, alpha=0.02):
     gravitation = gravity * np.exp(- alpha * pop.iteration)
 
     # Determine mass for each agent
-    raw_masses = (pop.fitness - np.tile(pop.current_worst_fitness, (1, pop.num_agents)))
-    masses = (raw_masses / (np.sum(raw_masses) + 1e-23)).reshape(pop.num_agents)
+    raw_masses = (
+        pop.fitness - np.tile(pop.current_worst_fitness, (1, pop.num_agents)))
+    masses = (raw_masses / (np.sum(raw_masses) + 1e-23)
+              ).reshape(pop.num_agents)
 
     for agent in range(pop.num_agents):
         # Select indices in order to avoid division by zero
         indices = (np.arange(pop.num_agents) != agent)
 
         # Determine all vector distances with respect to agent
-        delta_positions = pop.positions[indices, :] - np.tile(pop.positions[agent, :], (pop.num_agents - 1, 1))
+        delta_positions = pop.positions[indices, :] - \
+            np.tile(pop.positions[agent, :], (pop.num_agents - 1, 1))
 
-        quotient = masses[indices] / (np.linalg.norm(delta_positions, 2, 1) + 1e-23)
+        quotient = masses[indices] / \
+            (np.linalg.norm(delta_positions, 2, 1) + 1e-23)
 
         # Force interaction
         force_interaction = gravitation * np.tile(
             quotient.reshape(pop.num_agents - 1, 1), (1, pop.num_dimensions)) * delta_positions
 
         # Acceleration
-        acceleration[agent, :] = np.sum(np.random.rand(pop.num_agents - 1, pop.num_dimensions) * force_interaction, 0)
+        acceleration[agent, :] = np.sum(np.random.rand(
+            pop.num_agents - 1, pop.num_dimensions) * force_interaction, 0)
 
     # Update velocities
     # TODO: Add different random distributions
-    pop.velocities = acceleration + np.random.rand(pop.num_agents, pop.num_dimensions) * pop.velocities
+    pop.velocities = acceleration + \
+        np.random.rand(pop.num_agents, pop.num_dimensions) * pop.velocities
 
     # Update positions
     pop.positions += pop.velocities
@@ -603,13 +639,15 @@ def random_flight(pop, scale=1.0, distribution='levy', beta=1.5):
 
     elif distribution == 'levy':
         # Calculate the random number with levy stable distribution
-        random_samples = _random_levy(size=(pop.num_agents, pop.num_dimensions), beta=beta)
+        random_samples = _random_levy(
+            size=(pop.num_agents, pop.num_dimensions), beta=beta)
 
     else:
         raise OperatorsError('Invalid distribution!')
 
     # Move each agent using levy random displacements
-    pop.positions += scale * random_samples * (pop.positions - np.tile(pop.global_best_position, (pop.num_agents, 1)))
+    pop.positions += scale * random_samples * \
+        (pop.positions - np.tile(pop.global_best_position, (pop.num_agents, 1)))
 
 
 def local_random_walk(pop, probability=0.75, scale=1.0, distribution='uniform'):
@@ -642,9 +680,9 @@ def local_random_walk(pop, probability=0.75, scale=1.0, distribution='uniform'):
     # Move positions with a displacement due permutations and probabilities
     pop.positions += scale * r_1 * (pop.positions[
                                     np.random.permutation(pop.num_agents), :] - pop.positions[
-                                                                                np.random.permutation(pop.num_agents),
-                                                                                :]) * np.heaviside(r_2 - probability,
-                                                                                                   0.0)
+        np.random.permutation(pop.num_agents),
+        :]) * np.heaviside(r_2 - probability,
+                           0.0)
 
 
 def random_sample(pop):
@@ -657,7 +695,8 @@ def random_sample(pop):
     :return: None.
     """
     # Create random positions using random numbers between -1 and 1
-    pop.positions = np.random.uniform(-1, 1, (pop.num_agents, pop.num_dimensions))
+    pop.positions = np.random.uniform(-1, 1,
+                                      (pop.num_agents, pop.num_dimensions))
 
 
 def random_search(pop, scale=0.01, distribution='uniform'):
@@ -675,9 +714,11 @@ def random_search(pop, scale=0.01, distribution='uniform'):
     """
     # Determine the random step
     if distribution == "uniform":
-        random_step = np.random.uniform(-1, 1, (pop.num_agents, pop.num_dimensions))
+        random_step = np.random.uniform(-1, 1,
+                                        (pop.num_agents, pop.num_dimensions))
     elif distribution == "gaussian":
-        random_step = np.random.standard_normal((pop.num_agents, pop.num_dimensions))
+        random_step = np.random.standard_normal(
+            (pop.num_agents, pop.num_dimensions))
     elif distribution == "levy":
         random_step = _random_levy(size=(pop.num_agents, pop.num_dimensions))
     else:
@@ -704,13 +745,16 @@ def spiral_dynamic(pop, radius=0.9, angle=22.5, sigma=0.1):
     :return: None.
     """
     # Determine the rotation matrix
-    rotation_matrix = get_rotation_matrix(pop.num_dimensions, np.deg2rad(angle))
+    rotation_matrix = get_rotation_matrix(
+        pop.num_dimensions, np.deg2rad(angle))
 
     for agent in range(pop.num_agents):
-        random_radii = np.random.uniform(radius - sigma, radius + sigma, pop.num_dimensions)
+        random_radii = np.random.uniform(
+            radius - sigma, radius + sigma, pop.num_dimensions)
         # If random radii need to be constrained to [0, 1]:
         pop.positions[agent, :] = pop.global_best_position + random_radii * \
-                                  np.matmul(rotation_matrix, (pop.positions[agent, :] - pop.global_best_position))
+            np.matmul(rotation_matrix,
+                      (pop.positions[agent, :] - pop.global_best_position))
 
 
 def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56, version='constriction', distribution='uniform'):
@@ -750,8 +794,9 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56, version='con
     if version == 'inertial':
         # Find new velocities
         pop.velocities = factor * pop.velocities + r_1 * self_conf * (
-                pop.particular_best_positions - pop.positions) + \
-                         r_2 * swarm_conf * (np.tile(pop.global_best_position, (pop.num_agents, 1)) - pop.positions)
+            pop.particular_best_positions - pop.positions) + \
+            r_2 * swarm_conf * \
+            (np.tile(pop.global_best_position, (pop.num_agents, 1)) - pop.positions)
     elif version == 'constriction':
         # Find the constriction factor chi using phi
         phi = self_conf + swarm_conf
@@ -790,7 +835,7 @@ def _random_levy(size, beta=1.5):
     """
     # Calculate x's std dev (Mantegna's algorithm)
     sigma = ((np.math.gamma(1 + beta) * np.sin(np.pi * beta / 2)) / (
-            np.math.gamma((1 + beta) / 2) * beta * (2 ** ((beta - 1) / 2)))) ** (1 / beta)
+        np.math.gamma((1 + beta) / 2) * beta * (2 ** ((beta - 1) / 2)))) ** (1 / beta)
 
     # Determine x and y using normal distributions with sigma_y = 1
     x = sigma * np.random.standard_normal(size)
@@ -828,7 +873,8 @@ def get_rotation_matrix(dimensions, angle=0.3927):
         rotation_plane = np.eye(dimensions)
 
         # Assign corresponding values
-        rotation_plane[[x, x, y, y], [x, y, x, y]] = [np.cos(angle), -np.sin(angle), np.sin(angle), np.cos(angle)]
+        rotation_plane[[x, x, y, y], [x, y, x, y]] = [
+            np.cos(angle), -np.sin(angle), np.sin(angle), np.cos(angle)]
         rotation_matrix = np.matmul(rotation_matrix, rotation_plane)
 
     return rotation_matrix
@@ -862,7 +908,8 @@ def obtain_operators(num_vals=5):
     """
     return [
         # First line for the initial search operator
-        ('random_search', dict(scale=[1.0], distribution=['uniform']), ['greedy']),
+        ('random_search', dict(scale=[1.0],
+         distribution=['uniform']), ['greedy']),
         (
             'central_force_dynamic',
             dict(
@@ -880,7 +927,8 @@ def obtain_operators(num_vals=5):
         (
             'differential_mutation',
             dict(
-                expression=['rand', 'best', 'current', 'current-to-best', 'rand-to-best', 'rand-to-best-and-current'],
+                expression=['rand', 'best', 'current', 'current-to-best',
+                            'rand-to-best', 'rand-to-best-and-current'],
                 num_rands=[1, 2, 3],
                 factor=[*np.linspace(0.0, 2.5, num_vals)]),
             __selectors__),
@@ -897,7 +945,8 @@ def obtain_operators(num_vals=5):
             dict(
                 pairing=['rank', 'cost', 'random', 'tournament_2_100', 'tournament_2_75', 'tournament_2_50',
                          'tournament_3_100', 'tournament_3_75', 'tournament_3_50'],
-                crossover=['single', 'two', 'uniform', 'blend', 'linear_0.5_0.5'],
+                crossover=['single', 'two', 'uniform',
+                           'blend', 'linear_0.5_0.5'],
                 mating_pool_factor=[*np.linspace(0.1, 0.9, num_vals)]),
             __selectors__),
         (
@@ -1009,7 +1058,8 @@ def build_operators(heuristics=obtain_operators(), file_name='operators_collecti
             num_combinations = int(np.prod(par_num_values))
 
             # Create the table of all possible combinations (index/parameter)
-            indices = [x.flatten() for x in np.meshgrid(*list(map(lambda y: np.arange(y), par_num_values)))]
+            indices = [x.flatten() for x in np.meshgrid(
+                *list(map(lambda y: np.arange(y), par_num_values)))]
 
             # For each combination, create a single dictionary which
             # corresponds to a simple search operator
@@ -1030,11 +1080,13 @@ def build_operators(heuristics=obtain_operators(), file_name='operators_collecti
         # Update the total combination counter
         total_counters[1] += num_combinations * num_selectors
 
-        print(f"{operator}: parameters={num_parameters}, " + f"combinations:{num_combinations}")
+        print(f"{operator}: parameters={num_parameters}, " +
+              f"combinations:{num_combinations}")
 
     # Close the file and print how many types and specific operators were stored
     file.close()
-    print("-" * 50 + "--\nTOTAL: families=%d, operators=%d" % tuple(total_counters))
+    print("-" * 50 + "--\nTOTAL: families=%d, operators=%d" %
+          tuple(total_counters))
 
 
 def process_operators(simple_heuristics):

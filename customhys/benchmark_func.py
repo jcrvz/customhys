@@ -72,7 +72,8 @@ class BasicProblem:
                          'Convex': True}
         self.plot_object = None
         self.func_name = ''
-        self.save_dir = '{0}/function_plots/'.format(os.path.dirname(os.path.abspath(__file__)))
+        self.save_dir = '{0}/function_plots/'.format(
+            os.path.dirname(os.path.abspath(__file__)))
 
         self.__offset_domain = 0.0
         self.__scale_domain = 1.0
@@ -214,8 +215,10 @@ class BasicProblem:
         :return: None.
         """
         if isinstance(min_search_range, (float, int)) and isinstance(max_search_range, (float, int)):
-            self.min_search_range = np.array([min_search_range] * self.variable_num)
-            self.max_search_range = np.array([max_search_range] * self.variable_num)
+            self.min_search_range = np.array(
+                [min_search_range] * self.variable_num)
+            self.max_search_range = np.array(
+                [max_search_range] * self.variable_num)
         else:
             if (len(min_search_range) == self.variable_num) and (len(max_search_range) == self.variable_num):
                 self.min_search_range = min_search_range
@@ -257,7 +260,7 @@ class BasicProblem:
 
         # Call ``get_func_val``with the modifications
         return self.__scale_function * self.get_func_val(variables, *args) + self.__noise_level * noise_value + \
-               self.__offset_function
+            self.__offset_function
 
     def get_function_values(self, samples):
         """
@@ -278,8 +281,10 @@ class BasicProblem:
         :return: matplotlib.pyplot
         """
         # Generate the samples for each dimension.
-        x = np.linspace(self.min_search_range[0], self.max_search_range[0], samples)
-        y = np.linspace(self.min_search_range[1], self.max_search_range[1], samples)
+        x = np.linspace(
+            self.min_search_range[0], self.max_search_range[0], samples)
+        y = np.linspace(
+            self.min_search_range[1], self.max_search_range[1], samples)
 
         # Create the grid matrices
         matrix_x, matrix_y = np.meshgrid(x, y)
@@ -391,7 +396,7 @@ class Ackley1(BasicProblem):
     def get_func_val(self, variables, a=20., b=0.2, c=2. * np.pi):
         return a + np.e - (a * np.exp(-b * np.sqrt(
             np.sum(np.square(variables)) / self.variable_num)) +
-                           np.exp(np.sum(np.cos(c * variables)) / self.variable_num))
+            np.exp(np.sum(np.cos(c * variables)) / self.variable_num))
 
 
 # 4 - Class Ackley 4 function
@@ -413,8 +418,8 @@ class Ackley4(BasicProblem):
     def get_func_val(self, variables, *args):
         return np.exp(-0.2) * np.sum(np.sqrt(
             np.square(variables[:-1]) + np.square(variables[1:]))) + \
-               3. * np.sum(np.cos(2. * variables[:-1]) +
-                           np.sin(2. * variables[:-1]))
+            3. * np.sum(np.cos(2. * variables[:-1]) +
+                        np.sin(2. * variables[:-1]))
 
 
 # 6 - Class Alpine 1 function
@@ -587,7 +592,8 @@ class Deb2(BasicProblem):
         super().__init__(variable_num)
         self.max_search_range = np.array([1.] * self.variable_num)
         self.min_search_range = np.array([0.] * self.variable_num)
-        self.optimal_solution = np.array([np.power(1. / 10. + 0.05, 4. / 3.)] * self.variable_num)
+        self.optimal_solution = np.array(
+            [np.power(1. / 10. + 0.05, 4. / 3.)] * self.variable_num)
         self.global_optimum_solution = -1.
         self.func_name = 'Deb 2'
         self.features = {'Continuous': True,
@@ -599,7 +605,7 @@ class Deb2(BasicProblem):
 
     def get_func_val(self, variables, *args):
         return np.sum(np.power(np.sin(5. * np.pi * (
-                np.power(variables, 3. / 4.) - 0.05)), 6.)) / (-self.variable_num)
+            np.power(variables, 3. / 4.) - 0.05)), 6.)) / (-self.variable_num)
 
 
 # 48 - Class Dixon & Price function
@@ -643,7 +649,7 @@ class DropWave(BasicProblem):
 
     def get_func_val(self, variables, *args):
         return -(1. + np.cos(12. * np.linalg.norm(variables))) / (
-                0.5 * np.sum(np.square(variables)) + 2.)
+            0.5 * np.sum(np.square(variables)) + 2.)
 
 
 # 53 - Class Egg Holder function
@@ -667,7 +673,7 @@ class EggHolder(BasicProblem):
         xi1 = variables[1:]
         return np.sum(-(xi1 + 47.) * np.sin(np.sqrt(
             np.abs(xi1 + xi / 2. + 47.))) - xi * np.sin(np.sqrt(
-            np.abs(xi - xi1 - 47.))))
+                np.abs(xi - xi1 - 47.))))
 
 
 # Class Expanded Two-Peak Trap function [Qu2016]
@@ -698,7 +704,7 @@ class ExpandedTwoPeakTrap(BasicProblem):
                 return -200. + np.square(y - 20.)
 
         return np.sum(np.vectorize(get_cases)(variables + 20.)) + 200. * \
-               self.variable_num
+            self.variable_num
 
 
 # Class Expanded Five-Uneven-Peak Trap function [Qu2016]
@@ -794,7 +800,7 @@ class ExpandedDecreasingMinima(BasicProblem):
                 return np.square(y)
 
         return np.sum(np.vectorize(get_cases)(variables + 0.1)) + \
-               self.variable_num
+            self.variable_num
 
 
 # Class Expanded Uneven Minima function [Qu2016]
@@ -821,7 +827,7 @@ class ExpandedUnevenMinima(BasicProblem):
                 return np.square(y)
 
         return np.sum(np.vectorize(get_cases)(variables + 0.079699392688696)) - \
-               self.variable_num
+            self.variable_num
 
 
 # Class Vincent function [http://infinity77.net/global_optimization/test_functions_nd_V.html#go_benchmark
@@ -871,7 +877,7 @@ class ModifiedVincent(BasicProblem):
                 return np.square(y - 10.) - np.sin(10. * np.log(10))
 
         return np.sum(np.vectorize(get_cases)(variables + 4.1112) + 1.0) / \
-               self.variable_num
+            self.variable_num
 
 
 # 54 - Class Exponential function
@@ -900,7 +906,8 @@ class Giunta(BasicProblem):
         super().__init__(variable_num)
         self.max_search_range = np.array([1.] * self.variable_num)
         self.min_search_range = np.array([-1.] * self.variable_num)
-        self.optimal_solution = np.array([0.4673200277395354] * self.variable_num)
+        self.optimal_solution = np.array(
+            [0.4673200277395354] * self.variable_num)
         self.global_optimum_solution = 0.06447042053690566
         self.func_name = 'Giunta'
         self.features = {'Continuous': True,
@@ -1109,9 +1116,10 @@ class Pinter(BasicProblem):
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
-        component_a = variables[:-2] * np.sin(variables[1:-1]) + np.sin(variables[2:])
+        component_a = variables[:-2] * \
+            np.sin(variables[1:-1]) + np.sin(variables[2:])
         component_b = np.square(variables[:-2]) - 2. * variables[1:-1] + (
-                3. * variables[2:] - np.cos(variables[1:-1]) + 1.)
+            3. * variables[2:] - np.cos(variables[1:-1]) + 1.)
         i = np.arange(self.variable_num) + 1.
         return np.sum(i * np.square(variables)) + np.sum(
             20. * i[1:-1] * np.square(np.sin(component_a))) + np.sum(
@@ -1272,7 +1280,8 @@ class Ridge(BasicProblem):
         super().__init__(variable_num)
         self.max_search_range = np.array([5.] * self.variable_num)
         self.min_search_range = np.array([-5.] * self.variable_num)
-        self.optimal_solution = np.array([self.min_search_range[0], *[0.] * (self.variable_num - 1)])
+        self.optimal_solution = np.array(
+            [self.min_search_range[0], *[0.] * (self.variable_num - 1)])
         self.global_optimum_solution = 0.
         self.func_name = 'Ridge'
         self.features = {'Continuous': True,
@@ -1325,7 +1334,7 @@ class Salomon(BasicProblem):
 
     def get_func_val(self, variables, *args):
         return 1. - np.cos(2. * np.pi * np.sqrt(np.sum(np.square(variables)))) + \
-               0.1 * np.sqrt(np.sum(np.square(variables)))
+            0.1 * np.sqrt(np.sum(np.square(variables)))
 
 
 # 111 - Class Sargan function
@@ -1538,7 +1547,8 @@ class Schwefel226(BasicProblem):
         super().__init__(variable_num)
         self.max_search_range = np.array([500.] * self.variable_num)
         self.min_search_range = np.array([-500.] * self.variable_num)
-        self.optimal_solution = np.array([np.square(np.pi * 1.5)] * self.variable_num)
+        self.optimal_solution = np.array(
+            [np.square(np.pi * 1.5)] * self.variable_num)
         self.global_optimum_solution = -418.983
         self.func_name = 'Schwefel 2.26'
         self.features = {'Continuous': True,
@@ -1641,7 +1651,7 @@ class SchafferN6(BasicProblem):
         return 0.5 * (self.variable_num - 1.) + np.sum((np.square(
             np.sin(np.sqrt(np.square(variables[:-1]) + np.square(
                 variables[1:])))) - 0.5) / np.square(1. + 0.001 * (
-                variables[:-1] + variables[1:])))
+                    variables[:-1] + variables[1:])))
 
 
 # 136* - Class Schaffer N1 function [http://benchmarkfcns.xyz/benchmarkfcns/schaffern1fcn.html]
@@ -1664,7 +1674,7 @@ class SchafferN1(BasicProblem):
         return 0.5 * (self.variable_num - 1.) + np.sum((np.square(
             np.sin(np.square(np.square(variables[:-1]) + np.square(
                 variables[1:])))) - 0.5) / np.square(1. + 0.001 * (
-                variables[:-1] + variables[1:])))
+                    variables[:-1] + variables[1:])))
 
 
 # 136* - Class Schaffer N2 function [http://benchmarkfcns.xyz/benchmarkfcns/schaffern2fcn.html]
@@ -1852,8 +1862,10 @@ class StrechedVSineWave(BasicProblem):
                          'Convex': False}
 
     def get_func_val(self, variables, *args):
-        f10 = np.power(np.square(variables[:-1]) + np.square(variables[1:]), 0.10)
-        f25 = np.power(np.square(variables[:-1]) + np.square(variables[1:]), 0.25)
+        f10 = np.power(
+            np.square(variables[:-1]) + np.square(variables[1:]), 0.10)
+        f25 = np.power(
+            np.square(variables[:-1]) + np.square(variables[1:]), 0.25)
         return np.sum(f25 * (np.square(np.sin(f10)) + 0.1))
 
 
@@ -1881,12 +1893,14 @@ class SumSquares(BasicProblem):
 class Trid(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
-        self.max_search_range = np.array([np.square(self.variable_num)] * self.variable_num)
-        self.min_search_range = np.array([-np.square(self.variable_num)] * self.variable_num)
+        self.max_search_range = np.array(
+            [np.square(self.variable_num)] * self.variable_num)
+        self.min_search_range = np.array(
+            [-np.square(self.variable_num)] * self.variable_num)
         self.optimal_solution = np.array(np.arange(1., self.variable_num + 1.) * (
-                self.variable_num + 1. - np.arange(1., self.variable_num + 1.)))
+            self.variable_num + 1. - np.arange(1., self.variable_num + 1.)))
         self.global_optimum_solution = -self.variable_num * (
-                self.variable_num + 4.) * (self.variable_num - 1.) / 6.
+            self.variable_num + 4.) * (self.variable_num - 1.) / 6.
         self.func_name = 'Trid'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -1917,9 +1931,10 @@ class Trigonometric1(BasicProblem):
 
     def get_func_val(self, variables, *args):
         x = np.outer(variables, np.ones(self.variable_num))
-        i = np.outer(np.arange(1, self.variable_num + 1), np.ones(self.variable_num))
+        i = np.outer(np.arange(1, self.variable_num + 1),
+                     np.ones(self.variable_num))
         return np.sum(np.square(self.variable_num - np.sum(np.cos(x) + i * (
-                1 - np.cos(x.T) - np.sin(x.T)), 0)))
+            1 - np.cos(x.T) - np.sin(x.T)), 0)))
 
 
 # 154 - Class Trigonometric 2 function
@@ -1941,7 +1956,7 @@ class Trigonometric2(BasicProblem):
     def get_func_val(self, variables, *args):
         return 1 + np.sum(8. * np.square(np.sin(7. * np.square(
             variables - 0.9))) + 6. * np.square(np.sin(14. * np.square(
-            variables - 0.9))) + np.square(variables - 0.9))
+                variables - 0.9))) + np.square(variables - 0.9))
 
 
 # 165 - Class W-Wavy function
@@ -1962,7 +1977,7 @@ class WWavy(BasicProblem):
 
     def get_func_val(self, variables, k=10., *args):
         return 1. - np.sum(np.cos(k * variables) * np.exp(-0.5 * np.square(variables))) / \
-               self.variable_num
+            self.variable_num
 
 
 # 166 - Class Weierstrass function
@@ -2070,8 +2085,8 @@ class XinSheYang3(BasicProblem):
 
     def get_func_val(self, variables, m=5., beta=15., *args):
         return np.exp(-np.sum(np.power(variables / beta, 2. * m))) - 2. \
-               * np.exp(-np.sum(np.square(variables))) \
-               * np.prod(np.square(np.cos(variables)))
+            * np.exp(-np.sum(np.square(variables))) \
+            * np.prod(np.square(np.cos(variables)))
 
 
 # 172 - Class Xin-She Yang 4 function
@@ -2093,7 +2108,7 @@ class XinSheYang4(BasicProblem):
     def get_func_val(self, variables, *args):
         return (np.sum(np.square(np.sin(variables))) - np.exp(-np.sum(
             np.square(variables)))) * np.exp(-np.sum(np.square(
-            np.sin(np.abs(variables)))))
+                np.sin(np.abs(variables)))))
 
 
 # 173 - Class Zakharov function
@@ -2156,7 +2171,7 @@ class Stochastic(BasicProblem):
 
     def get_func_val(self, variables, *args):
         return np.sum(np.random.rand(self.variable_num) * abs(variables - 1. / (
-                np.arange(self.variable_num) + 1.)))
+            np.arange(self.variable_num) + 1.)))
 
 
 # Class Ellipsoid function \cite{Finck2009}
@@ -2177,7 +2192,7 @@ class Ellipsoid(BasicProblem):
 
     def get_func_val(self, variables, *args):
         return np.sum(np.square(np.power(10., np.arange(self.variable_num) / (
-                self.variable_num - 1.)) * variables))
+            self.variable_num - 1.)) * variables))
 
 
 # Class Hyper-Ellipsoid function http://www.geatbx.com/docu/fcnindex-01.html#P109_4163
@@ -2241,8 +2256,10 @@ class Michalewicz(BasicProblem):
         super().__init__(variable_num)
         self.max_search_range = np.array([np.pi] * self.variable_num)
         self.min_search_range = np.array([0.] * self.variable_num)
-        self.optimal_solution = np.array(self.approximated_optima[:self.variable_num])
-        self.global_optimum_solution = self.get_function_value(self.optimal_solution)
+        self.optimal_solution = np.array(
+            self.approximated_optima[:self.variable_num])
+        self.global_optimum_solution = self.get_function_value(
+            self.optimal_solution)
         self.func_name = 'Michalewicz'
         self.features = {'Continuous': True,
                          'Differentiable': True,
@@ -2281,8 +2298,10 @@ class KTablet(BasicProblem):
 class Perm01(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
-        self.max_search_range = np.array([self.variable_num + 1] * self.variable_num)
-        self.min_search_range = np.array([-self.variable_num] * self.variable_num)
+        self.max_search_range = np.array(
+            [self.variable_num + 1] * self.variable_num)
+        self.min_search_range = np.array(
+            [-self.variable_num] * self.variable_num)
         self.optimal_solution = np.arange(1, self.variable_num + 1)
         self.global_optimum_solution = 0.
         self.func_name = 'Perm 01'
@@ -2295,17 +2314,20 @@ class Perm01(BasicProblem):
 
     def get_func_val(self, variables, beta=1.):
         x = np.outer(variables, np.ones(self.variable_num))
-        inds = np.outer(np.ones(self.variable_num), np.arange(self.variable_num) + 1.)
+        inds = np.outer(np.ones(self.variable_num),
+                        np.arange(self.variable_num) + 1.)
         return np.sum(np.square(np.sum((np.power(inds.T, inds) + beta) * (
-                np.power(x / inds.T, inds) - 1.), 0)))
+            np.power(x / inds.T, inds) - 1.), 0)))
 
 
 # Class Perm 02 function [http://www.sfu.ca/~ssurjano/perm0db.html]
 class Perm02(BasicProblem):
     def __init__(self, variable_num):
         super().__init__(variable_num)
-        self.max_search_range = np.array([self.variable_num + 1] * self.variable_num)
-        self.min_search_range = np.array([-self.variable_num] * self.variable_num)
+        self.max_search_range = np.array(
+            [self.variable_num + 1] * self.variable_num)
+        self.min_search_range = np.array(
+            [-self.variable_num] * self.variable_num)
         self.optimal_solution = 1. / np.arange(1, self.variable_num + 1)
         self.global_optimum_solution = 0.
         self.func_name = 'Perm 02'
@@ -2318,9 +2340,10 @@ class Perm02(BasicProblem):
 
     def get_func_val(self, variables, beta=1.):
         x = np.outer(variables, np.ones(self.variable_num))
-        inds = np.outer(np.ones(self.variable_num), np.arange(self.variable_num) + 1.)
+        inds = np.outer(np.ones(self.variable_num),
+                        np.arange(self.variable_num) + 1.)
         return np.sum(np.square(np.sum((inds.T + beta) * (
-                np.power(x, inds) - np.power(1. / inds.T, inds)), 0)))
+            np.power(x, inds) - np.power(1. / inds.T, inds)), 0)))
 
 
 # Class Yao Liu 09 function [http://infinity77.net/global_optimization/test_functions_nd_Y.html#go_benchmark.YaoLiu04]
@@ -2439,7 +2462,8 @@ class CarromTable(BasicProblem):
         super().__init__(variable_num)
         self.max_search_range = np.array([10.] * self.variable_num)
         self.min_search_range = np.array([-10.] * self.variable_num)
-        self.optimal_solution = np.array([9.646157266348881] * self.variable_num)
+        self.optimal_solution = np.array(
+            [9.646157266348881] * self.variable_num)
         self.global_optimum_solution = -24.15681551650653
         self.func_name = 'Carrom Table'
         self.features = {'Continuous': True,
@@ -2451,7 +2475,7 @@ class CarromTable(BasicProblem):
 
     def get_func_val(self, variables, *args):
         return - (1. / 30.) * np.exp(2. * np.abs(1. - np.linalg.norm(variables) / np.pi)) * \
-               np.prod(np.square(np.cos(variables)))
+            np.prod(np.square(np.cos(variables)))
 
 
 # Class CrownedCross function [http://infinity77.net/global_optimization/test_functions_nd_C.html#go_benchmark
@@ -2483,7 +2507,8 @@ class CrossInTray(BasicProblem):
         super().__init__(variable_num)
         self.max_search_range = np.array([15.] * self.variable_num)
         self.min_search_range = np.array([-15.] * self.variable_num)
-        self.optimal_solution = np.array([1.349406608602084] * self.variable_num)
+        self.optimal_solution = np.array(
+            [1.349406608602084] * self.variable_num)
         self.global_optimum_solution = -2.062611870822739
         self.func_name = 'Cross-in-Tray'
         self.features = {'Continuous': True,
@@ -2577,7 +2602,8 @@ class Katsuura(BasicProblem):
                          'Convex': False}
 
     def get_func_val(self, variables, d=32):
-        two_k = np.outer(np.power(2., np.arange(1, d + 1)), np.ones(self.variable_num))
+        two_k = np.outer(np.power(2., np.arange(1, d + 1)),
+                         np.ones(self.variable_num))
         x = np.outer(np.ones(d), variables)
         return np.prod(1. + np.arange(1, self.variable_num + 1)
                        * np.sum(np.floor(two_k * x) / two_k, 0))
@@ -2688,7 +2714,8 @@ class TypeII(BasicProblem):
         super().__init__(variable_num)
         self.max_search_range = np.array([1.] * self.variable_num)
         self.min_search_range = np.array([0.] * self.variable_num)
-        self.optimal_solution = np.array([0.8] * self.variable_num)  # alpha and 1 - alpha
+        self.optimal_solution = np.array(
+            [0.8] * self.variable_num)  # alpha and 1 - alpha
         self.global_optimum_solution = 0.
         self.func_name = "Type-II Medium-Complex Deceptive"
         self.features = {'Continuous': False,
@@ -2722,7 +2749,8 @@ class F2(BasicProblem):
         super().__init__(variable_num)
         self.max_search_range = np.array([1.] * self.variable_num)
         self.min_search_range = np.array([-1.] * self.variable_num)
-        self.optimal_solution = np.array([self.l_values[3]] * self.variable_num)
+        self.optimal_solution = np.array(
+            [self.l_values[3]] * self.variable_num)
         self.global_optimum_solution = -1.
         self.func_name = 'F2'
         self.features = {'Continuous': True,
@@ -2757,7 +2785,7 @@ class InvertedCosineWave(BasicProblem):
 
     def get_func_val(self, variables, k=6., *args):
         x_vals = np.square(variables[:-1]) + np.square(variables[1:]) \
-                 + 0.5 * variables[1:] * variables[:-1]
+            + 0.5 * variables[1:] * variables[:-1]
         return -np.sum(np.exp(-x_vals / 8.) * np.cos(4. * np.sqrt(x_vals)))
 
 
@@ -2779,7 +2807,7 @@ class OddSquare(BasicProblem):
 
     def get_func_val(self, variables, k=6., *args):
         x_vals = np.square(variables[:-1]) + np.square(variables[1:]) \
-                 + 0.5 * variables[1:] * variables[:-1]
+            + 0.5 * variables[1:] * variables[:-1]
         return -np.sum(np.exp(-x_vals / 8.) * np.cos(4. * np.sqrt(x_vals)))
 
 
@@ -2848,9 +2876,11 @@ def for_all(property, dimensions=2):
         # Read all functions and request their optimum data
         for ii in range(len(__all__)):
             function_name = __all__[ii]
-            info[function_name] = eval('{}({}).{}'.format(function_name, dimensions, property))
+            info[function_name] = eval('{}({}).{}'.format(
+                function_name, dimensions, property))
 
         return info
+
 
 def filter_problems(features=['Differentiable', 'Separable', 'Unimodal'], intersection=True):
     """
@@ -2861,9 +2891,9 @@ def filter_problems(features=['Differentiable', 'Separable', 'Unimodal'], inters
         True if the problems needs to have all the features, false if at least one is needed.
     :return: list        
     """
-    functions_features = list_functions(rnp=True, fts=features)    
+    functions_features = list_functions(rnp=True, fts=features)
     features_length = len(features)
-    
+
     funct_names = []
     for funct_name, values in functions_features.items():
         good_features = sum(map(int, list(values['Code'])))
@@ -2874,6 +2904,7 @@ def filter_problems(features=['Differentiable', 'Separable', 'Unimodal'], inters
             # Problem has at least one feature
             funct_names.append(funct_name)
     return funct_names
+
 
 def choose_problem(problem_name=None, num_dimensions=None):
     """
