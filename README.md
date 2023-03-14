@@ -1,18 +1,29 @@
 # customhys
 
 <div>
-    <img align="left" alt="Module Dependency Diagram" src="docfiles/chm_logo.png" title="Customhys logo" width="25%"/>
+    <img align="left" alt="Module Dependency Diagram" src="https://raw.githubusercontent.com/jcrvz/customhys/master/docfiles/chm_logo.png" title="Customhys logo" width="25%"/>
 </div>
 <div align="justify"> 
     <b>Customising optimisation metaheuristics via hyper-heuristic search</b> (CUSTOMHyS). This framework provides tools for solving, but not limited to, continuous optimisation problems using a hyper-heuristic approach for customising metaheuristics. Such an approach is powered by a strategy based on Simulated Annealing. Also, several search operators serve as building blocks for tailoring metaheuristics. They were extracted from ten well-known metaheuristics in the literature.
 </div>
 
-Detailed information about this framework can be found in [1, 2]. Plus, the code for each module is well-documented.
+Detailed information about this framework can be found in [[1, 2]](#references). Plus, the code for each module is well-documented.
+
 
 ### 🛠 Requirements:
-Python 3.8 and higher. Packages: NumPy 1.20.3, SciPy 1.5.0, Matplotlib 3.2.2, json 2.0.9, tqdm 4.47.0, tensorflow 2.8.0, pandas 1.5.3, scikit-learn 1.2.2. 
 
-For Mac M1/M2, one may need to install TensorFlow via `conda` such as:
+| Package                                            | Version (>=) |
+|----------------------------------------------------|--------------|
+| [Python](https://github.com/conda-forge/miniforge) | 3.8          |
+| [NumPy](https://numpy.org)                         | 1.22.0       |
+| [SciPy](https://scipy.org)                         | 1.5.0        |
+| [matplotlib](https://matplotlib.org)               | 3.2.2        |
+| [tqdm](https://tqdm.github.io)                     | 4.47.0       |
+| [pandas](https://pandas.pydata.org)                | 1.5.3        |
+| [scikit-learn](https://scikit-learn.org/stable/)   | 1.2.2        |
+| [TensorFlow](https://www.tensorflow.org)*          | 2.8.0        |
+
+*For Mac M1/M2, one may need to install TensorFlow via `conda` such as:
 ```shell
 conda install -c apple tensorflow-deps
 ```
@@ -22,7 +33,7 @@ Further information can be found at [Install TensorFlow on Mac M1/M2 with GPU su
 
 The modules that comprise this framework depend on some basic Python packages, as well as they liaise each other. The module dependency diagram is presented as follows:
 
-![Module Dependency Diagram](docfiles/dependency_diagram.png)
+![Module Dependency Diagram](https://github.com/jcrvz/customhys/blob/master/docfiles/dependency_diagram.png?raw=true)
 
 **NOTE:** Each module is briefly described below. If you require further information, please check the corresponding source code.
 
@@ -180,9 +191,9 @@ Source: [``visualisation.py``](customhys/visualisation.py)
 
 ## Sponsors
 
-<a href="https://tec.mx/en" target="_blank"><img src="./docfiles/logoTEC_full.png" width="250"></a>
-<a href="http://www.cas.cn/" target="_blank"><img src="./docfiles/cas_logo.png" width="250"></a>
-<a href="https://www.gob.mx/conacyt" target="_blank"><img src="./docfiles/conacyt-logo.png" width="250"></a>
+<a href="https://tec.mx/en" target="_blank"><img src="https://github.com/jcrvz/customhys/raw/master/docfiles/logoTEC_full.png" width="250"></a>
+<a href="http://www.cas.cn/" target="_blank"><img src="https://github.com/jcrvz/customhys/raw/master/docfiles/cas_logo.png" width="250"></a>
+<a href="https://www.gob.mx/conacyt" target="_blank"><img src="https://github.com/jcrvz/customhys/raw/master/docfiles/conacyt-logo.png" width="250"></a>
 
 ## References
 

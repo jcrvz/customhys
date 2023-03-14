@@ -14,6 +14,7 @@ setuptools.setup(
     author_email='jorge.cruz@tec.mx',
     description='This framework provides tools for solving, but not limited to, continuous optimisation problems '
                 'using a hyper-heuristic approach for customising metaheuristics. ',
+    long_description_content_type='text/markdown',
     long_description=README,
     keywords=['metaheuristics', 'hyper-heuristic', 'optimization', 'automatic design', 'global optimization',
               'evolutionary computation', 'bio-inspired', 'algorithm design'],
