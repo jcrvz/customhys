@@ -7,7 +7,7 @@
 Detailed information about this framework can be found in [1, 2]. Plus, the code for each module is well-documented.
 
 ### 🛠 Requirements:
-Python 3.7 and higher. Packages: NumPy 1.18.5, SciPy 1.5.0, Matplotlib 3.2.2, json 2.0.9, tqdm 4.47.0, tensorflow 2.8.0.
+Python 3.8 and higher. Packages: NumPy 1.18.5, SciPy 1.5.0, Matplotlib 3.2.2, json 2.0.9, tqdm 4.47.0, tensorflow 2.8.0.
 
 ## 🧰 Modules
 
