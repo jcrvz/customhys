@@ -1,0 +1,17 @@
+{
+  "ex_config": {
+    "experiment_name": "dynamic",
+    "experiment_type": "dynamic",
+    "heuristic_collection_file": "short_collection.txt",
+    "use_parallel": false,
+    "save_steps": false,
+    "verbose": false
+  },
+  "hh_config": {
+    "cardinality": 3,
+    "num_replicas": 2,
+    "num_iterations": 2,
+    "num_steps": 2
+  },
+  "prob_config": { "dimensions": [2, 10], "functions": ["Ackley1"] }
+}

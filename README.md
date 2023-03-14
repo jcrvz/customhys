@@ -7,7 +7,7 @@
 Detailed information about this framework can be found in [1, 2]. Plus, the code for each module is well-documented.
 
 ### 🛠 Requirements:
-Python 3.7 and higher. Packages: NumPy 1.18.5, SciPy 1.5.0, Matplotlib 3.2.2, json 2.0.9, tqdm 4.47.0.
+Python 3.8 and higher. Packages: NumPy 1.20.3, SciPy 1.5.0, Matplotlib 3.2.2, json 2.0.9, tqdm 4.47.0, tensorflow 2.8.0, pandas 1.5.3, scikit-learn 1.2.2.
 
 ## 🧰 Modules
 
@@ -58,6 +58,12 @@ Source: [``experiment.py``](customhys/experiment.py)
 This module contains several functions and methods utilised by many modules in this package.
 
 Source: [``tools.py``](customhys/tools.py)
+
+### 🧠 Machine Learning
+
+This module contains the implementation of Machine Learning models which can power a hyper-heuristic model from this framework. In particular, it is implemented a wrapper for a Neural Network model from Tensorflow. Also, contains auxiliar data structures which process sample of sequences to generate training data for Machine Learning models.
+
+Source: [``machine_learning.py``](customhys/machine_learning.py)
 
 ### 💾 Data Structure
 
@@ -177,3 +183,5 @@ Source: [``visualisation.py``](customhys/visualisation.py)
 1. [J. M. Cruz-Duarte, J. C. Ortiz-Bayliss, I. Amaya, Y. Shi, H. Terashima-Marín, and N. Pillay, Towards a Generalised Metaheuristic Model for Continuous Optimisation Problems, Mathematics, vol. 8, no. 11, p. 2046, Nov. 2020.](https://www.mdpi.com/2227-7390/8/11/2046)
 1. [J. M. Cruz-Duarte, J. C. Ortiz-Bayliss, I. Amaya, and N. Pillay, _Global Optimisation through Hyper-Heuristics: Unfolding Population-Based Metaheuristics_, *Appl. Sci.*, vol. 11, no. 12, p. 5620, 2021.](http://dx.doi.org/10.3390/app11125620)
 1. [J. M. Cruz-Duarte, I. Amaya, J. C. Ortiz-Bayliss, N. Pillay. Automated Design of Unfolded Metaheuristics and the Effect of Population Size. 2021 IEEE Congress on Evolutionary Computation (CEC), 1155–1162, 2021.](https://doi.org/10.1109/CEC45853.2021.9504879)
+1. [J. M. Tapia-Avitia, J. M. Cruz-Duarte, I. Amaya, J. C. Ortiz-Bayliss, H. Terashima-Marin, and N. Pillay. _A Primary Study on Hyper-Heuristics Powered by Artificial Neural Networks for Customising Population-based Metaheuristics in Continuous Optimisation Problems_, 2022 IEEE Congress on Evolutionary Computation (CEC), 2022.](https://doi.org/10.1109/CEC55065.2022.9870275)
+1. [J. M. Cruz-Duarte, I. Amaya, J. C. Ortiz-Bayliss, N. Pillay. _A Transfer Learning Hyper-heuristic Approach for Automatic Tailoring of Unfolded Population-based Metaheuristics_, 2022 IEEE Congress on Evolutionary Computation (CEC), 2022.](https://doi.org/10.1109/CEC55065.2022.9870426)

@@ -23,9 +23,7 @@ Created on Tue Sep 17 14:29:43 2019
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import mpl_toolkits.mplot3d
 from matplotlib.colors import LightSource
-from matplotlib import rcParams
 
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif', size=11)
@@ -98,7 +96,6 @@ class BasicProblem:
         :param list fts: optional
             Features to be read. The available features are: 'Continuous', 'Differentiable', 'Separable', 'Scalable',
             'Unimodal', 'Convex' The default is ['Differentiable', 'Separable', 'Unimodal'].
-
         :return: str or int
         """
         # Default features to deliver
@@ -130,7 +127,6 @@ class BasicProblem:
     def set_offset_domain(self, value=None):
         """
         Add an offset value for the problem domain, i.e., f(x + offset).
-
         :param float value:
             The value to add to the variable before evaluate the function. It could be a float or numpy.array. The
             default is None.
@@ -141,7 +137,6 @@ class BasicProblem:
     def set_offset_function(self, value=None):
         """
         Add an offset value for the problem function, i.e., f(x) + offset
-
         :param float value:
             The value to add to the function after evaluate it. The default is None.
         """
@@ -151,7 +146,6 @@ class BasicProblem:
     def set_scale_domain(self, value=None):
         """
         Add a scale value for the problem domain, i.e., f(scale * x)
-
         :param float value:
             The value to add to the variable before evaluate the function. It could be a float or numpy.array. The
             default is None.
@@ -162,7 +156,6 @@ class BasicProblem:
     def set_scale_function(self, value=None):
         """
         Add a scale value for the problem function, i.e., scale * f(x)
-
         :param float value:
             The value to add to the function after evaluate it. The default is None.
         """
@@ -172,7 +165,6 @@ class BasicProblem:
     def set_noise_type(self, noise_distribution=None):
         """
         Specify the noise distribution to add, i.e., f(x) + noise
-
         :param str noise_distribution:
             Noise distribution. It can be 'gaussian' or 'uniform'. The default is None.
         """
@@ -182,7 +174,6 @@ class BasicProblem:
     def set_noise_level(self, value=None):
         """
         Specify the noise level, i.e., f(x) + value * noise
-
         :param float value:
             Noise level. The default is None.
         """
@@ -192,9 +183,7 @@ class BasicProblem:
     def get_optimal_fitness(self):
         """
         Return the theoretical global optimum value.
-
         **Note:** Not all the functions have recognised theoretical optima.
-
         :return: float
         """
         return self.optimal_fitness
@@ -202,9 +191,7 @@ class BasicProblem:
     def get_optimal_solution(self):
         """
         Return the theoretical solution.
-
         **Note:** Not all the functions have recognised theoretical optima.
-
         :return: numpy.array
         """
         return self.optimal_solution
@@ -212,7 +199,6 @@ class BasicProblem:
     def get_search_range(self):
         """
         Return the problem domain given by the lower and upper boundaries, both are 1-by-variable_num arrays.
-
         :returns: numpy.array, numpy.array
         """
         return self.min_search_range, self.max_search_range
@@ -221,12 +207,10 @@ class BasicProblem:
         """
         Define the problem domain given by the lower and upper boundaries. They could be 1-by-variable_num arrays or
         floats.
-
         :param min_search_range:
             Lower boundary of the problem domain. It can be a numpy.array or a float.
         :param max_search_range:
             Upper boundary of the problem domain. It can be a numpy.array or a float.
-
         :return: None.
         """
         if isinstance(min_search_range, (float, int)) and isinstance(max_search_range, (float, int)):
@@ -242,13 +226,10 @@ class BasicProblem:
     def get_func_val(self, variables, *args):
         """
         Evaluate the problem function without considering additions like noise, offset, etc.
-
         :param numpy.array variables:
             The position where the problem function is going to be evaluated.
-
         :param args:
             Additional arguments that some problem functions could consider.
-
         :return: float
         """
         return -1
@@ -256,13 +237,10 @@ class BasicProblem:
     def get_function_value(self, variables, *args):
         """
         Evaluate the problem function considering additions like noise, offset, etc. This method calls ``get_func_val``.
-
         :param numpy.array variables:
             The position where the problem function is going to be evaluated.
-
         :param args:
             Additional arguments that some problem functions could consider.
-
         :return: float
         """
         if isinstance(variables, list):
@@ -281,16 +259,22 @@ class BasicProblem:
         return self.__scale_function * self.get_func_val(variables, *args) + self.__noise_level * noise_value + \
                self.__offset_function
 
+    def get_function_values(self, samples):
+        """
+        Map the `get_function_value` method to evaluate a list of samples and return the evaluation for each sample.
+        :param list samples:
+            List of positions in the problem domain to be evaluated.
+        :return: list
+        """
+        return [self.get_function_value(sample) for sample in samples]
+
     def plot(self, samples=55, resolution=100):
         """
         Plot the current problem in 2D.
-
         :param int samples: Optional.
             Number of samples per dimension. The default is 55.
-
         :param int resolution: Optional.
             Resolution in dpi according to matplotlib.pyplot.figure(). The default is 100.
-
         :return: matplotlib.pyplot
         """
         # Generate the samples for each dimension.
@@ -345,14 +329,12 @@ class BasicProblem:
     def save_fig(self, samples=100, resolution=333, ext='png'):
         """
         Save the 2D representation of the problem function. There is no requirement to plot it before.
-
         :param int samples: Optional.
             Number of samples per dimension. The default is 100.
         :param int resolution: Optional.
             Resolution in dpi according to matplotlib.pyplot.figure(). The default is 333.
         :param str ext: Optional.
             Extension of the image file. The default is 'png'
-
         :return: None.
         """
         # Verify if the path exists
@@ -368,21 +350,25 @@ class BasicProblem:
         self.plot_object.savefig(self.save_dir + self.func_name + '.' + ext)
         plt.show()
 
-    def get_formatted_problem(self, is_constrained=True):
+    def get_formatted_problem(self, is_constrained=True, fts=None):
         """
         Return the problem in a simple format to be used in a solving procedure. This format contains the ``function``
         in lambda form, the ``boundaries`` as a tuple with the lower and upper boundaries, and the ``is_constrained``
         flag.
-
         :param bool is_constrained: Optional.
             Flag indicating if the problem domain has hard boundaries.
-
+        :param list fts: Optional.
+            List of features to be processed.
         :return: dict.
         """
+
         # TODO: Include additional parameters to build the formatted problem, e.g., length scale feature.
         return dict(function=lambda x: self.get_function_value(x),
                     boundaries=(self.min_search_range, self.max_search_range),
-                    is_constrained=is_constrained)
+                    is_constrained=is_constrained,
+                    features=self.get_features(fts=fts),
+                    func_name=self.func_name,
+                    dimensions=self.variable_num)
 
 
 # %% SPECIFIC PROBLEM FUNCTIONS
@@ -2801,7 +2787,6 @@ class OddSquare(BasicProblem):
 def list_functions(rnp=True, fts=None, wrd='1'):
     """
     This function lists all available functions in screen. It could be formatted for copy and paste in a latex document.
-
     :param bool rnp: Optional.
         Flag (return-not-print). If True, the function delivers a list but not print, otherwise, print but not return.
         An example of the list returned when rnp = True is:
@@ -2809,13 +2794,10 @@ def list_functions(rnp=True, fts=None, wrd='1'):
              [function2_weight, function2_id, function2_name, function2_features],
              ...
              [functionN_weight, functionN_id, functionN_name, functionN_features]]
-
     Weights are determined with ``function.get_features("string", wrd=wrd, fts=fts)``
-
     :param list fts: Optional.
         Features to export/print. Possible options: 'Continuous', 'Differentiable','Separable', 'Scalable', 'Unimodal',
         'Convex'. Default: ['Differentiable','Separable', 'Unimodal']
-
     :return: list or none.
     """
     # Set the default value
@@ -2850,16 +2832,13 @@ def list_functions(rnp=True, fts=None, wrd='1'):
         return functions_features
 
 
-def for_all(property, dimension=2):
+def for_all(property, dimensions=2):
     """
     Read a determined property or attribute for all the problems and return a list.
-
     :param str property:
         Property to read. Please, check the attributes from a given problem object.
-
-    :param int dimension: Optional
+    :param int dimensions: Optional
         Dimension to initialise all the problems.
-
     :return: list
     """
     if property == 'features':
@@ -2869,6 +2848,45 @@ def for_all(property, dimension=2):
         # Read all functions and request their optimum data
         for ii in range(len(__all__)):
             function_name = __all__[ii]
-            info[function_name] = eval('{}({}).{}'.format(function_name, dimension, property))
+            info[function_name] = eval('{}({}).{}'.format(function_name, dimensions, property))
 
         return info
+
+def filter_problems(features=['Differentiable', 'Separable', 'Unimodal'], intersection=True):
+    """
+    Return a list of function names that have the features listed
+    :param list[str] features: 
+        List of features.
+    :param bool intersection: 
+        True if the problems needs to have all the features, false if at least one is needed.
+    :return: list        
+    """
+    functions_features = list_functions(rnp=True, fts=features)    
+    features_length = len(features)
+    
+    funct_names = []
+    for funct_name, values in functions_features.items():
+        good_features = sum(map(int, list(values['Code'])))
+        if intersection and good_features == features_length:
+            # Problem has all the features
+            funct_names.append(funct_name)
+        if not intersection and good_features > 0:
+            # Problem has at least one feature
+            funct_names.append(funct_name)
+    return funct_names
+
+def choose_problem(problem_name=None, num_dimensions=None):
+    """
+    Select a problem from __all__ using its string name and create its object for a given number of dimensions. If no
+    problem is specified, it prints the full list of the available problems.
+    :param str problem_name: Identificator name of the problem.
+    :param int num_dimensions: Number of dimensions.
+    :return problem: The problem object ready to evaluate.
+    """
+    if problem_name and num_dimensions:
+        if problem_name == '<random>':
+            return eval('{}({})'.format(__all__[np.random.randint(0, len(__all__))], num_dimensions))
+        else:
+            return eval('{}({})'.format(problem_name, num_dimensions))
+    else:
+        print(f'You need to choose one problem. Available problems: {__all__}')

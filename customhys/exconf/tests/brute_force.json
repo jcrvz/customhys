@@ -1,0 +1,15 @@
+{
+  "ex_config": {
+    "experiment_name": "brute_force",
+    "experiment_type": "brute_force",
+    "heuristic_collection_file": "short_collection.txt",
+    "use_parallel": false,
+    "save_steps": false,
+    "verbose": false
+  },
+  "hh_config": { "cardinality": 2, "num_replicas": 2 },
+  "prob_config": {
+    "dimensions": [2, 10],
+    "functions": ["Ackley1"]
+  }
+}

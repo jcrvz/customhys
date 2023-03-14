@@ -1,0 +1,46 @@
+{
+  "ex_config": {
+    "experiment_name": "neural_network",
+    "experiment_type": "neural_network",
+    "heuristic_collection_file": "short_collection.txt",
+    "use_parallel": false,
+    "save_steps": false,
+    "verbose": false
+  },
+  "hh_config": {
+    "num_steps": 5,
+    "num_agents": 30,
+    "num_replicas": 2,
+    "stagnation_percentage": 0.5,
+    "verbose": false,
+    "verbose_statistics": false,
+    "repeat_operators": true,
+    "allow_weight_matrix": true,
+    "trial_overflow": false,
+    "solver": "neural_network",
+    "tabu_idx": 5,
+    "model_params": {
+      "load_model": false,
+      "save_model": false,
+      "memory_length": 10,
+      "encoder": "default",
+      "epochs": 5,
+      "model_architecture": "LSTM",
+      "model_architecture_layers": [[20, "sigmoid", "LSTM"]],
+      "fitness_to_weight": "rank",
+      "sample_params": {
+        "retrieve_sequences": false,
+        "limit_seqs": 5,
+        "random": 0.37,
+        "store_sequences": false
+      }
+    }
+  },
+  "prob_config": {
+    "dimensions": [2, 10],
+    "functions": [
+      "Ackley1",
+      "ZeroSum"
+    ]
+  }
+}
