@@ -136,10 +136,8 @@ data_files/sequences*
 /test.xlsx
 /chunk_2d.csv
 *.npy
-*.json
 *.tex
 *.png
-*.txt
 *.svg
 *.csv
 .DS_Store
