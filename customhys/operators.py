@@ -850,12 +850,12 @@ def obtain_operators(num_vals=5):
                 beta=[*np.linspace(1.00, 2.00, num_vals)],
                 dt=[*np.linspace(0.0, 2.0, num_vals)]),
             all_selectors),
-        # (
-        #    'differential_crossover',
-        #    dict(
-        #        crossover_rate=[*np.linspace(0.0, 1.0, num_vals)],
-        #        version=['binomial', 'exponential']),
-        #    all_selectors),
+        (
+           'differential_crossover',
+           dict(
+               crossover_rate=[*np.linspace(0.0, 1.0, num_vals)],
+               version=['binomial', 'exponential']),
+           all_selectors),
         (
             'differential_mutation',
             dict(
