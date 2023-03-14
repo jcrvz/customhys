@@ -1,13 +1,22 @@
 # customhys
 
-<img align="left" src="./docfiles/chm_logo.png?raw=true" width="200"/>
-
-**Customising optimisation metaheuristics via hyper-heuristic search** (CUSTOMHyS). This framework provides tools for solving, but not limited to, continuous optimisation problems using a hyper-heuristic approach for customising metaheuristics. Such an approach is powered by a strategy based on Simulated Annealing. Also, several search operators serve as building blocks for tailoring metaheuristics. They were extracted from ten well-known metaheuristics in the literature.
+<div>
+    <img align="left" alt="Module Dependency Diagram" src="docfiles/chm_logo.png" title="Customhys logo" width="25%"/>
+</div>
+<div align="justify"> 
+    <b>Customising optimisation metaheuristics via hyper-heuristic search</b> (CUSTOMHyS). This framework provides tools for solving, but not limited to, continuous optimisation problems using a hyper-heuristic approach for customising metaheuristics. Such an approach is powered by a strategy based on Simulated Annealing. Also, several search operators serve as building blocks for tailoring metaheuristics. They were extracted from ten well-known metaheuristics in the literature.
+</div>
 
 Detailed information about this framework can be found in [1, 2]. Plus, the code for each module is well-documented.
 
 ### 🛠 Requirements:
-Python 3.8 and higher. Packages: NumPy 1.20.3, SciPy 1.5.0, Matplotlib 3.2.2, json 2.0.9, tqdm 4.47.0, tensorflow 2.8.0, pandas 1.5.3, scikit-learn 1.2.2.
+Python 3.8 and higher. Packages: NumPy 1.20.3, SciPy 1.5.0, Matplotlib 3.2.2, json 2.0.9, tqdm 4.47.0, tensorflow 2.8.0, pandas 1.5.3, scikit-learn 1.2.2. 
+
+For Mac M1/M2, one may need to install TensorFlow via `conda` such as:
+```shell
+conda install -c apple tensorflow-deps
+```
+Further information can be found at [Install TensorFlow on Mac M1/M2 with GPU support](https://medium.com/mlearning-ai/install-tensorflow-on-mac-m1-m2-with-gpu-support-c404c6cfb580) by D. Ganzaroli.
 
 ## 🧰 Modules
 
