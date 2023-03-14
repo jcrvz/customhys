@@ -192,7 +192,7 @@ class Population:
 
         # Raise an error
         else:
-            PopulationError('Invalid update level')
+            raise PopulationError('Invalid update level')
 
     def evaluate_fitness(self, problem_function):
         """
