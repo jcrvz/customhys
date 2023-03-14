@@ -17,6 +17,6 @@ setuptools.setup(
     long_description=README,
     keywords=['metaheuristics', 'hyper-heuristic', 'optimization', 'automatic design', 'global optimization',
               'evolutionary computation', 'bio-inspired', 'algorithm design'],
-    python_requires=">=3.6",
+    python_requires=">=3.8",
     include_package_data=True
 )
