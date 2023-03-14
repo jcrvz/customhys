@@ -17,10 +17,10 @@ from os.path import exists as _check_path
 from os import environ as _environ
 import tensorflow as tf
 
-import operators as Operators
-import tools as jt
-from metaheuristic import Metaheuristic
-from machine_learning import DatasetSequences, ModelPredictor
+from . import operators as Operators
+from . import tools as jt
+from .metaheuristic import Metaheuristic
+from .machine_learning import DatasetSequences, ModelPredictor
 
 # Remove Tensorflow warnings
 _environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 

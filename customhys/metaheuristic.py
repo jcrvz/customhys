@@ -8,8 +8,8 @@ Created on Thu Sep 26 16:56:01 2019
 """
 
 import numpy as np
-import operators as Operators
-from population import Population
+from . import operators as Operators
+from .population import Population
 
 __all__ = ['Metaheuristic', 'Population', 'Operators']
 __operators__ = Operators.__all__
