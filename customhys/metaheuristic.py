@@ -19,7 +19,7 @@ __selectors__ = ['greedy', 'probabilistic', 'metropolis', 'all', 'none']
 class Metaheuristic:
     """
         This is the Metaheuristic class, each object corresponds to a metaheuristic implemented with a sequence of
-        search operators from Operators, and it is based on a population from Population.
+        search operators from op, and it is based on a population from Population.
     """
     def __init__(self, problem, search_operators=None, num_agents=30, num_iterations=100, initial_scheme='random'):
         """

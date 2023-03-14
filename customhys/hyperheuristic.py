@@ -14,17 +14,18 @@ import scipy.stats as st
 from datetime import datetime
 from os import makedirs as _create_path
 from os.path import exists as _check_path
-from os import environ as _environ
-import tensorflow as tf
+# from os import environ as _environ
+# import tensorflow as tf
 
-from . import operators as Operators
+from . import operators as op
 from . import tools as jt
 from .metaheuristic import Metaheuristic
 from .machine_learning import DatasetSequences, ModelPredictor
 
+
 # Remove Tensorflow warnings
-_environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
-tf.get_logger().setLevel('ERROR')
+# _environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+# tf.get_logger().setLevel('ERROR')
 
 class Hyperheuristic:
     """
@@ -639,7 +640,7 @@ class Hyperheuristic:
 
                 # Prepare before evaluate the last search operator and apply it
                 candidate_search_operator = self.get_operators([candidate_enc_so[-1]])
-                perturbators, selectors = Operators.process_operators(candidate_search_operator)
+                perturbators, selectors = op.process_operators(candidate_search_operator)
 
                 mh.apply_search_operator(perturbators[0], selectors[0])
 
@@ -748,7 +749,10 @@ class Hyperheuristic:
         model = self._get_neural_network_predictor()        
         for rep in range(self.parameters['num_replicas']):
             # Metaheuristic
-            mh = Metaheuristic(self.problem, num_agents=self.parameters['num_agents'], num_iterations=self.num_iterations)
+            mh = Metaheuristic(
+                self.problem,
+                num_agents=self.parameters['num_agents'],
+                num_iterations=self.num_iterations)
 
             # Initialiser
             mh.apply_initialiser()
@@ -782,7 +786,7 @@ class Hyperheuristic:
                 # Select a simple heuristic and apply it
                 candidate_enc_so = self._obtain_candidate_solution(sol=1, operators_weights=operators_weights)
                 candidate_search_operator = self.get_operators([candidate_enc_so[-1]])
-                perturbators, selectors = Operators.process_operators(candidate_search_operator)
+                perturbators, selectors = op.process_operators(candidate_search_operator)
 
                 mh.apply_search_operator(perturbators[0], selectors[0])
 

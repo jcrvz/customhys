@@ -8,7 +8,7 @@ Created on Mon Sep 30 13:42:15 2019
 """
 
 from . import hyperheuristic as hyp
-from . import operators as Operators
+from . import operators as op
 from . import benchmark_func as bf
 from . import tools as tl
 import multiprocessing
@@ -88,9 +88,9 @@ class Experiment:
             'auto_collection_num_vals':     5               # Number of values for creating an automatic collection
 
             **NOTE 1:** 'experiment_type': 'default' or another name mean hyper-heuristic.
-            **NOTE 2:** If the collection does not exist and it is not a reserved one ('default.txt', 'automatic.txt',
+            **NOTE 2:** If the collection does not exist, and it is not a reserved one ('default.txt', 'automatic.txt',
             'basicmetaheuristics.txt', 'test_collection'), then an automatic heuristic space is generated with
-            ``Operators.build_operators`` with 'auto_collection_num_vals' as ``num_vals`` and
+            ``op.build_operators`` with 'auto_collection_num_vals' as ``num_vals`` and
             'heuristic_collection_file' as ``filename``.
             **NOTE 3:** # 'weights_dataset_file' must be determined in a pre-processing step. For the 'default'
             heuristic space, it is provided 'operators_weights.json'.
@@ -109,7 +109,7 @@ class Experiment:
             'cooling_rate':                     0.05        # * Cooling rate for HH-Simulated Annealing
 
             **NOTE 4:** Keys with * correspond to those that are only used when ``exp_config['experiment_type']`` is
-            neither 'brute_force' or 'basic_metaheuristic'.
+            neither 'brute_force' nor 'basic_metaheuristic'.
 
         :param dict prob_config:
             Configuration dictionary related to the problems to solve. Keys and default values are listed as follows:
@@ -130,7 +130,7 @@ class Experiment:
                                                            'test_collection', 'short_collection.txt']:
                 raise ExperimentError('This collection name is reserved and cannot be created automatically!')
             else:
-                Operators.build_operators(Operators.obtain_operators(
+                op.build_operators(op.obtain_operators(
                     num_vals=exp_config['auto_collection_num_vals']),
                     file_name=exp_config['heuristic_collection_file'].split('.')[0])
                 self.exp_config['weights_dataset_file'] = None
@@ -362,7 +362,7 @@ if __name__ == '__main__':
         exp = Experiment(config_file=exp_filename)
 
         # print("* Experiment configuration: \n", "-" * 30 + "\n", json.dumps(exp.prob_config, indent=2, default=str))
-        # print("* Hyper-heuristic configuration: \n", "-" * 30 + "\n", json.dumps(exp.hh_config, indent=2, default=str))
+        # print("* Hyper-heuristic configuration: \n", "-" * 30 + "\n",json.dumps(exp.hh_config, indent=2, default=str))
         # print("* Problem configuration: \n", "-" * 30 + "\n", json.dumps(exp.prob_config, indent=2, default=str))
 
         # Run the experiment et voilà

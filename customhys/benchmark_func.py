@@ -4,7 +4,7 @@ This module is an upgraded version of the Keita Tomochika's module in
 https://github.com/keit0222/optimization-evaluation. The current module only contain N-dimensional functions. These
 functions are listed in ``__all__``.
 
-All these functions are based and revisited on the following research papers and web sites:
+All these functions are based and revisited on the following research papers and websites:
 
 - Momin Jamil and Xin-She Yang, A literature survey of benchmark functions for global optimization problems,
 Int. Journal of Mathematical Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150–194 (2013), arXiv:1308.4008
@@ -208,9 +208,9 @@ class BasicProblem:
         Define the problem domain given by the lower and upper boundaries. They could be 1-by-variable_num arrays or
         floats.
         :param min_search_range:
-            Lower boundary of the problem domain. It can be a numpy.array or a float.
+            Lower boundary of the problem domain. It can be a `numpy.array` or a float.
         :param max_search_range:
-            Upper boundary of the problem domain. It can be a numpy.array or a float.
+            Upper boundary of the problem domain. It can be a `numpy.array` or a float.
         :return: None.
         """
         if isinstance(min_search_range, (float, int)) and isinstance(max_search_range, (float, int)):
@@ -257,7 +257,7 @@ class BasicProblem:
 
         # Call ``get_func_val``with the modifications
         return self.__scale_function * self.get_func_val(variables, *args) + self.__noise_level * noise_value + \
-               self.__offset_function
+            self.__offset_function
 
     def get_function_values(self, samples):
         """
@@ -301,7 +301,7 @@ class BasicProblem:
         rgb = ls.shade(matrix_z, plt.cm.jet)
 
         # Plot data
-        ax = fig.gca(projection='3d', proj_type='ortho')
+        ax = fig.add_subplot(111, projection='3d', proj_type='ortho')
         ax.plot_surface(matrix_x, matrix_y, matrix_z, rstride=1, cstride=1, linewidth=0.5,
                         antialiased=False, facecolors=rgb)  #
 
@@ -413,8 +413,8 @@ class Ackley4(BasicProblem):
     def get_func_val(self, variables, *args):
         return np.exp(-0.2) * np.sum(np.sqrt(
             np.square(variables[:-1]) + np.square(variables[1:]))) + \
-               3. * np.sum(np.cos(2. * variables[:-1]) +
-                           np.sin(2. * variables[:-1]))
+            3. * np.sum(np.cos(2. * variables[:-1]) +
+                        np.sin(2. * variables[:-1]))
 
 
 # 6 - Class Alpine 1 function
@@ -666,8 +666,7 @@ class EggHolder(BasicProblem):
         xi = variables[:-1]
         xi1 = variables[1:]
         return np.sum(-(xi1 + 47.) * np.sin(np.sqrt(
-            np.abs(xi1 + xi / 2. + 47.))) - xi * np.sin(np.sqrt(
-            np.abs(xi - xi1 - 47.))))
+            np.abs(xi1 + xi / 2. + 47.))) - xi * np.sin(np.sqrt(np.abs(xi - xi1 - 47.))))
 
 
 # Class Expanded Two-Peak Trap function [Qu2016]
@@ -698,7 +697,7 @@ class ExpandedTwoPeakTrap(BasicProblem):
                 return -200. + np.square(y - 20.)
 
         return np.sum(np.vectorize(get_cases)(variables + 20.)) + 200. * \
-               self.variable_num
+            self.variable_num
 
 
 # Class Expanded Five-Uneven-Peak Trap function [Qu2016]
@@ -794,7 +793,7 @@ class ExpandedDecreasingMinima(BasicProblem):
                 return np.square(y)
 
         return np.sum(np.vectorize(get_cases)(variables + 0.1)) + \
-               self.variable_num
+            self.variable_num
 
 
 # Class Expanded Uneven Minima function [Qu2016]
@@ -821,7 +820,7 @@ class ExpandedUnevenMinima(BasicProblem):
                 return np.square(y)
 
         return np.sum(np.vectorize(get_cases)(variables + 0.079699392688696)) - \
-               self.variable_num
+            self.variable_num
 
 
 # Class Vincent function [http://infinity77.net/global_optimization/test_functions_nd_V.html#go_benchmark
@@ -871,7 +870,7 @@ class ModifiedVincent(BasicProblem):
                 return np.square(y - 10.) - np.sin(10. * np.log(10))
 
         return np.sum(np.vectorize(get_cases)(variables + 4.1112) + 1.0) / \
-               self.variable_num
+            self.variable_num
 
 
 # 54 - Class Exponential function
@@ -1325,7 +1324,7 @@ class Salomon(BasicProblem):
 
     def get_func_val(self, variables, *args):
         return 1. - np.cos(2. * np.pi * np.sqrt(np.sum(np.square(variables)))) + \
-               0.1 * np.sqrt(np.sum(np.square(variables)))
+            0.1 * np.sqrt(np.sum(np.square(variables)))
 
 
 # 111 - Class Sargan function
@@ -1640,8 +1639,7 @@ class SchafferN6(BasicProblem):
     def get_func_val(self, variables, *args):
         return 0.5 * (self.variable_num - 1.) + np.sum((np.square(
             np.sin(np.sqrt(np.square(variables[:-1]) + np.square(
-                variables[1:])))) - 0.5) / np.square(1. + 0.001 * (
-                variables[:-1] + variables[1:])))
+                variables[1:])))) - 0.5) / np.square(1. + 0.001 * (variables[:-1] + variables[1:])))
 
 
 # 136* - Class Schaffer N1 function [http://benchmarkfcns.xyz/benchmarkfcns/schaffern1fcn.html]
@@ -1663,8 +1661,7 @@ class SchafferN1(BasicProblem):
     def get_func_val(self, variables, *args):
         return 0.5 * (self.variable_num - 1.) + np.sum((np.square(
             np.sin(np.square(np.square(variables[:-1]) + np.square(
-                variables[1:])))) - 0.5) / np.square(1. + 0.001 * (
-                variables[:-1] + variables[1:])))
+                variables[1:])))) - 0.5) / np.square(1. + 0.001 * (variables[:-1] + variables[1:])))
 
 
 # 136* - Class Schaffer N2 function [http://benchmarkfcns.xyz/benchmarkfcns/schaffern2fcn.html]
@@ -1940,8 +1937,7 @@ class Trigonometric2(BasicProblem):
 
     def get_func_val(self, variables, *args):
         return 1 + np.sum(8. * np.square(np.sin(7. * np.square(
-            variables - 0.9))) + 6. * np.square(np.sin(14. * np.square(
-            variables - 0.9))) + np.square(variables - 0.9))
+            variables - 0.9))) + 6. * np.square(np.sin(14. * np.square(variables - 0.9))) + np.square(variables - 0.9))
 
 
 # 165 - Class W-Wavy function
@@ -1962,7 +1958,7 @@ class WWavy(BasicProblem):
 
     def get_func_val(self, variables, k=10., *args):
         return 1. - np.sum(np.cos(k * variables) * np.exp(-0.5 * np.square(variables))) / \
-               self.variable_num
+            self.variable_num
 
 
 # 166 - Class Weierstrass function
@@ -2070,8 +2066,8 @@ class XinSheYang3(BasicProblem):
 
     def get_func_val(self, variables, m=5., beta=15., *args):
         return np.exp(-np.sum(np.power(variables / beta, 2. * m))) - 2. \
-               * np.exp(-np.sum(np.square(variables))) \
-               * np.prod(np.square(np.cos(variables)))
+            * np.exp(-np.sum(np.square(variables))) \
+            * np.prod(np.square(np.cos(variables)))
 
 
 # 172 - Class Xin-She Yang 4 function
@@ -2092,8 +2088,7 @@ class XinSheYang4(BasicProblem):
 
     def get_func_val(self, variables, *args):
         return (np.sum(np.square(np.sin(variables))) - np.exp(-np.sum(
-            np.square(variables)))) * np.exp(-np.sum(np.square(
-            np.sin(np.abs(variables)))))
+            np.square(variables)))) * np.exp(-np.sum(np.square(np.sin(np.abs(variables)))))
 
 
 # 173 - Class Zakharov function
@@ -2451,7 +2446,7 @@ class CarromTable(BasicProblem):
 
     def get_func_val(self, variables, *args):
         return - (1. / 30.) * np.exp(2. * np.abs(1. - np.linalg.norm(variables) / np.pi)) * \
-               np.prod(np.square(np.cos(variables)))
+            np.prod(np.square(np.cos(variables)))
 
 
 # Class CrownedCross function [http://infinity77.net/global_optimization/test_functions_nd_C.html#go_benchmark
@@ -2784,7 +2779,7 @@ class OddSquare(BasicProblem):
 
 
 # %% TOOLS TO HANDLE THE PROBLEMS
-def list_functions(rnp=True, fts=None, wrd='1'):
+def list_functions(rnp: bool = True, fts: list = None, wrd: str = '1'):
     """
     This function lists all available functions in screen. It could be formatted for copy and paste in a latex document.
     :param bool rnp: Optional.
@@ -2832,27 +2827,28 @@ def list_functions(rnp=True, fts=None, wrd='1'):
         return functions_features
 
 
-def for_all(property, dimensions=2):
+def for_all(characteristic, dimensions=2):
     """
     Read a determined property or attribute for all the problems and return a list.
-    :param str property:
+    :param str characteristic:
         Property to read. Please, check the attributes from a given problem object.
     :param int dimensions: Optional
         Dimension to initialise all the problems.
     :return: list
     """
-    if property == 'features':
+    if characteristic == 'features':
         return list_functions(rnp=True, fts=None)
     else:
         info = dict()
         # Read all functions and request their optimum data
         for ii in range(len(__all__)):
             function_name = __all__[ii]
-            info[function_name] = eval('{}({}).{}'.format(function_name, dimensions, property))
+            info[function_name] = eval('{}({}).{}'.format(function_name, dimensions, characteristic))
 
         return info
 
-def filter_problems(features=['Differentiable', 'Separable', 'Unimodal'], intersection=True):
+
+def filter_problems(features: list = None, intersection: bool = True):
     """
     Return a list of function names that have the features listed
     :param list[str] features: 
@@ -2861,9 +2857,11 @@ def filter_problems(features=['Differentiable', 'Separable', 'Unimodal'], inters
         True if the problems needs to have all the features, false if at least one is needed.
     :return: list        
     """
-    functions_features = list_functions(rnp=True, fts=features)    
+    features = ['Differentiable', 'Separable', 'Unimodal'] if features is None else features
+
+    functions_features = list_functions(rnp=True, fts=features)
     features_length = len(features)
-    
+
     funct_names = []
     for funct_name, values in functions_features.items():
         good_features = sum(map(int, list(values['Code'])))
@@ -2875,11 +2873,12 @@ def filter_problems(features=['Differentiable', 'Separable', 'Unimodal'], inters
             funct_names.append(funct_name)
     return funct_names
 
+
 def choose_problem(problem_name=None, num_dimensions=None):
     """
     Select a problem from __all__ using its string name and create its object for a given number of dimensions. If no
     problem is specified, it prints the full list of the available problems.
-    :param str problem_name: Identificator name of the problem.
+    :param str problem_name: Identification name of the problem.
     :param int num_dimensions: Number of dimensions.
     :return problem: The problem object ready to evaluate.
     """
