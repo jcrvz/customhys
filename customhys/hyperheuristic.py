@@ -14,11 +14,17 @@ import scipy.stats as st
 from datetime import datetime
 from os import makedirs as _create_path
 from os.path import exists as _check_path
+from os import environ as _environ
+import tensorflow as tf
 
 import operators as Operators
 import tools as jt
 from metaheuristic import Metaheuristic
 from machine_learning import DatasetSequences, ModelPredictor
+
+# Remove Tensorflow warnings
+_environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+tf.get_logger().setLevel('ERROR')
 
 class Hyperheuristic:
     """
@@ -426,17 +432,17 @@ class Hyperheuristic:
         return [self.heuristic_space[index] for index in sequence]
 
 
-    def solve(self, mode=None):
+    def solve(self, mode=None, save_steps=True):
         mode = mode if mode is not None else self.parameters["solver"]
 
         if mode == 'dynamic':
-            return self._solve_dynamic()
+            return self._solve_dynamic(save_steps)
         elif mode == 'neural_network':
-            return self._solve_neural_network()
+            return self._solve_neural_network(save_steps)
         else:  # default: 'static'
-            return self._solve_static()
+            return self._solve_static(save_steps)
 
-    def _solve_static(self):
+    def _solve_static(self, save_steps=True):
         """
         Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each meatheuristic is
         run 'num_replicas' times to obtain statistics and then its performance. Once the process ends, it returns:
@@ -468,8 +474,9 @@ class Hyperheuristic:
         best_performance = current_performance
 
         # Save this historical register, step = 0
-        _save_step(0, dict(encoded_solution=best_solution, performance=best_performance,
-                           details=current_details), self.file_label)
+        if save_steps:
+            _save_step(0, dict(encoded_solution=best_solution, performance=best_performance,
+                            details=current_details), self.file_label)
 
         # Step, stagnation counter and its maximum value
         step = 0
@@ -526,11 +533,12 @@ class Hyperheuristic:
                 stag_counter = 0
 
                 # Save this information
-                _save_step(step, {
-                    'encoded_solution': best_solution,
-                    'performance': best_performance,
-                    'details': candidate_details
-                }, self.file_label)
+                if save_steps:
+                    _save_step(step, {
+                        'encoded_solution': best_solution,
+                        'performance': best_performance,
+                        'details': candidate_details
+                    }, self.file_label)
 
                 # Add improvement mark
                 if self.parameters['verbose']:
@@ -552,7 +560,7 @@ class Hyperheuristic:
         # Return the best solution found and its details
         return best_solution, best_performance, historical_current, historical_best
 
-    def _solve_dynamic(self, save_steps = True):
+    def _solve_dynamic(self, save_steps=True):
         """
         Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each meatheuristic is
         run 'num_replicas' times to obtain statistics and then its performance. Once the process ends, it returns:
@@ -873,7 +881,8 @@ class Hyperheuristic:
         model.fit(X, y, model_params['epochs'], 
                   sample_weight=sample_weight,
                   verbose=self.parameters['verbose'],
-                  early_stopping_params=model_params.get('early_stopping', None))
+                  early_stopping_params=model_params.get('early_stopping', None),
+                  verbose_statistics=self.parameters['verbose_statistics'])
 
         # Save trained model
         if model_params['save_model']:
@@ -894,7 +903,7 @@ class Hyperheuristic:
         """
         # Decode the sequence corresponding to the hyper/meta-heuristic
         search_operators = encoded_sequence
-        if isinstance(encoded_sequence[0], int):
+        if isinstance(encoded_sequence[0], int) or isinstance(encoded_sequence[0], np.int64):
             search_operators = self.get_operators(encoded_sequence)
 
         # Initialise the historical registers
@@ -928,7 +937,7 @@ class Hyperheuristic:
             historical=historical_data, fitness=fitness_data, positions=position_data, statistics=fitness_stats)
 
 
-    def brute_force(self):
+    def brute_force(self, save_steps=True):
         """
         This method performs a brute force procedure solving the problem via all the available search operators without
         integrating a high-level search method. So, each search operator is used as a 1-cardinality metaheuristic.
@@ -944,18 +953,20 @@ class Hyperheuristic:
             operator_performance, operator_details = self.evaluate_candidate_solution(operator)
 
             # Save information
-            _save_step(operator_id, {
-                'encoded_solution': operator_id,
-                'performance': operator_performance,
-                'statistics': operator_details['statistics']
-            }, self.file_label)
+            if save_steps:
+                _save_step(operator_id, {
+                    'encoded_solution': operator_id,
+                    'performance': operator_performance,
+                    'statistics': operator_details['statistics']
+                }, self.file_label)
 
             # Print update
-            print('{} :: Operator {} of {}, Perf: {}'.format(
-                self.file_label, operator_id + 1, self.num_operators, operator_performance))
+            if self.parameters['verbose']:
+                print('{} :: Operator {} of {}, Perf: {}'.format(
+                    self.file_label, operator_id + 1, self.num_operators, operator_performance))
 
 
-    def basic_metaheuristics(self):
+    def basic_metaheuristics(self, save_steps=True):
         """
         This method performs a brute force procedure solving the problem via all the predefined metaheuristics in
         './collections/basicmetaheuristics.txt'. Many of them are 1-cardinality MHs but other are 2-cardinality ones.
@@ -974,15 +985,17 @@ class Hyperheuristic:
             operator_performance, operator_details = self.evaluate_candidate_solution(operator)
 
             # Save information
-            _save_step(operator_id, {
-                'encoded_solution': operator_id,
-                'performance': operator_performance,
-                'statistics': operator_details['statistics']
-            }, self.file_label)
+            if save_steps:
+                _save_step(operator_id, {
+                    'encoded_solution': operator_id,
+                    'performance': operator_performance,
+                    'statistics': operator_details['statistics']
+                }, self.file_label)
 
             # Print update
-            print('{} :: BasicMH {} of {}, Perf: {}'.format(
-                self.file_label, operator_id + 1, self.num_operators, operator_performance))
+            if self.parameters['verbose']:
+                print('{} :: BasicMH {} of {}, Perf: {}'.format(
+                    self.file_label, operator_id + 1, self.num_operators, operator_performance))
 
 
     @staticmethod

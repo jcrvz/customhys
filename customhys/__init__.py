@@ -2,10 +2,10 @@ __all__ = ['benchmark_func', 'experiment', 'hyperheuristic', 'metaheuristic', 'o
 # Under revision: 'characterisation', 'visualisation'
 __version__ = "1.1"
 
-import customhys.benchmark_func as benchmark_func
-import customhys.population as population
-import customhys.operators as operators
-import customhys.tools as tools
-import customhys.metaheuristic as metaheuristic
-import customhys.hyperheuristic as hyperheuristic
-import customhys.experiment as experiment
+import benchmark_func
+import population
+import operators
+import tools
+import metaheuristic
+import hyperheuristic
+import experiment

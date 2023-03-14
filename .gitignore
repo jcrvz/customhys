@@ -141,6 +141,7 @@ data_files/sequences*
 *.png
 *.txt
 *.svg
+*.csv
 .DS_Store
 !docfiles/
 !customhys/exconf/*

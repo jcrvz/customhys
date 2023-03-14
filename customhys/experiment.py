@@ -127,7 +127,7 @@ class Experiment:
         if not path.isfile('./collections/' + self.exp_config['heuristic_collection_file']):
             # If the name is a reserved one. These files cannot be not created automatically
             if exp_config['heuristic_collection_file'] in ['default.txt', 'automatic.txt', 'basicmetaheuristics.txt',
-                                                           'test_collection']:
+                                                           'test_collection', 'short_collection.txt']:
                 raise ExperimentError('This collection name is reserved and cannot be created automatically!')
             else:
                 Operators.build_operators(Operators.obtain_operators(
@@ -189,18 +189,20 @@ class Experiment:
                                 file_label=label, weights_array=weights)
 
         # Run the HH according to the specified type
+        save_steps = self.exp_config['save_steps']
         if self.exp_config['experiment_type'] in ['brute_force', 'bf']:
-            hh.brute_force()
+            hh.brute_force(save_steps)
         elif self.exp_config['experiment_type'] in ['basic_metaheuristics', 'bmh']:
-            hh.basic_metaheuristics()
+            hh.basic_metaheuristics(save_steps)
         elif self.exp_config['experiment_type'] in ['online_learning', 'dynamic']:
-            hh.solve('dynamic')
+            hh.solve('dynamic', save_steps)
         elif self.exp_config['experiment_type'] in ['neural_network']:
-            hh.solve('neural_network')
+            hh.solve('neural_network', save_steps)
         else:  # 'static_run'
-            hh.solve('static')
+            hh.solve('static', save_steps)
 
-        print(label + ' done!')
+        if self.exp_config['verbose']:
+            print(label + ' done!')
 
 
 class ExperimentError(Exception):
@@ -256,7 +258,9 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
             'weights_dataset_file': None,  # 'operators_weights.json',
             'use_parallel': True,
             'parallel_pool_size': None,  # Default
-            'auto_collection_num_vals': 5
+            'auto_collection_num_vals': 5,
+            'save_steps': True,
+            'verbose': True,
         }, exp_config)
 
     # Load the default hyper-heuristic configuration and compare it with hh_cfg
@@ -270,11 +274,14 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
             'max_temperature': 1,
             'min_temperature': 1e-6,
             'stagnation_percentage': 0.37,
+            'temperature_scheme': 'fast',
+            'acceptance_scheme': 'exponential',
             'cooling_rate': 1e-3,
             'cardinality_min': 1,
             'repeat_operators': True,
             'as_mh': True,
             'verbose': False,
+            'verbose_statistics': False,
             'trial_overflow': True,
             'learnt_dataset': None,
             'allow_weight_matrix': True,

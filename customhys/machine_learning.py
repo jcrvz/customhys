@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+"""
+This module contains Machine Learning tools.
+
+Created on Wed Sep  8 00:00:00 2021
+
+@author: Jose Manuel Tapia Avitia, e-mail: josetapia@exatec.tec.mx
+"""
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -246,7 +255,7 @@ class ModelPredictorKeras():
             return tf.constant(tensor)
         
     def fit(self, X, y, epochs=100, sample_weight=None, 
-            verbose=False, early_stopping_params=None):
+            verbose=False, early_stopping_params=None, verbose_statistics=False):
 
         # Pre-process dataset
         X_encoded = [self._encoder(x) for x in X]
@@ -256,12 +265,14 @@ class ModelPredictorKeras():
         # Callbacks
         callbacks = []
         _, _, filename_dict = retrieve_model_info(self._params)
+
         # History Logger
-        if not _check_path(filename_dict['model_directory']):
-            _create_path(filename_dict['model_directory'])
-        history_logger = tf.keras.callbacks.CSVLogger(filename_dict['log_path'],
-                                                      separator=',', append=True)
-        callbacks.append(history_logger)
+        if verbose_statistics:
+            if not _check_path(filename_dict['model_directory']):
+                _create_path(filename_dict['model_directory'])
+            history_logger = tf.keras.callbacks.CSVLogger(filename_dict['log_path'],
+                                                        separator=',', append=True)
+            callbacks.append(history_logger)
 
         class TimingCallback(tf.keras.callbacks.Callback):
             def __init__(self, logs={}):
@@ -271,10 +282,11 @@ class ModelPredictorKeras():
             def on_epoch_end(self, epoch, logs={}):
                 self.logs.append(timer() - self.start_time)
         timing_cb = TimingCallback()
-        callbacks.append(timing_cb)
+        if verbose_statistics:
+            callbacks.append(timing_cb)
         
         # Early stopping
-        if early_stopping_params is not None:
+        if early_stopping_params is not None and verbose_statistics:
             early_stopping = tf.keras.callbacks.EarlyStopping(
                 monitor=early_stopping_params['monitor'],
                 patience=early_stopping_params['patience'],
@@ -288,9 +300,10 @@ class ModelPredictorKeras():
                   sample_weight=sample_weight, 
                   verbose=verbose,
                   callbacks=callbacks)
-        df_times = pd.DataFrame({'time': timing_cb.logs})
-        df_times.to_csv(filename_dict['log_time_path'])
-        
+        if verbose_statistics:
+            df_times = pd.DataFrame({'time': timing_cb.logs})
+            df_times.to_csv(filename_dict['log_time_path'])
+            
         # Save predict function
         self._predict = self._model.predict
 
