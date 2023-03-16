@@ -7,4 +7,4 @@ pandas>=1.5.3
 tensorflow>=2.8.0; sys_platform != 'darwin'
 tensorflow-macos>=2.11.0; sys_platform == 'darwin'
 tensorflow-metal>=0.7.1; sys_platform == 'darwin'
-setuptools~=65.5.0
+setuptools>=65.5.0
