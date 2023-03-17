@@ -14,18 +14,28 @@ import scipy.stats as st
 from datetime import datetime
 from os import makedirs as _create_path
 from os.path import exists as _check_path
-# from os import environ as _environ
-# import tensorflow as tf
-
 from . import operators as op
 from . import tools as jt
 from .metaheuristic import Metaheuristic
-from .machine_learning import DatasetSequences, ModelPredictor
 
+_using_tensorflow = False
+try:
+    import tensorflow as tf
+    from .machine_learning import DatasetSequences, ModelPredictor
 
-# Remove Tensorflow warnings
-# _environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-# tf.get_logger().setLevel('ERROR')
+    from os import environ as _environ
+
+    # Remove Tensorflow warnings
+    _environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+    tf.get_logger().setLevel('ERROR')
+    _using_tensorflow = True
+
+except ImportError as e:
+    import warnings as wa
+
+    message = "`Tensorflow` not found! Please, install it to use the machine_learning module"
+    wa.showwarning(message, ImportWarning, "hyperheuristic.py", 23)
+
 
 class Hyperheuristic:
     """
@@ -83,26 +93,26 @@ class Hyperheuristic:
 
         # Assign default values
         if not parameters:
-            parameters = dict(cardinality=3,                    # Max. numb. of SOs in MHs, lvl:1
-                              cardinality_min=1,                # Min. numb. of SOs in MHs, lvl:1
-                              num_iterations=100,               # Iterations a MH performs, lvl:1
-                              num_agents=30,                    # Agents in population,     lvl:1
-                              as_mh=False,                      # HH sequence as a MH?,     lvl:2
-                              num_replicas=50,                  # Replicas per each MH,     lvl:2
-                              num_steps=200,                    # Trials per HH step,       lvl:2
-                              stagnation_percentage=0.37,       # Stagnation percentage,    lvl:2
-                              max_temperature=1,                # Initial temperature (SA), lvl:2
-                              min_temperature=1e-6,             # Min temperature (SA),     lvl:2
-                              cooling_rate=1e-3,                # Cooling rate (SA),        lvl:2
-                              temperature_scheme='fast',        # Temperature updating (SA),lvl:2
+            parameters = dict(cardinality=3,  # Max. numb. of SOs in MHs, lvl:1
+                              cardinality_min=1,  # Min. numb. of SOs in MHs, lvl:1
+                              num_iterations=100,  # Iterations a MH performs, lvl:1
+                              num_agents=30,  # Agents in population,     lvl:1
+                              as_mh=False,  # HH sequence as a MH?,     lvl:2
+                              num_replicas=50,  # Replicas per each MH,     lvl:2
+                              num_steps=200,  # Trials per HH step,       lvl:2
+                              stagnation_percentage=0.37,  # Stagnation percentage,    lvl:2
+                              max_temperature=1,  # Initial temperature (SA), lvl:2
+                              min_temperature=1e-6,  # Min temperature (SA),     lvl:2
+                              cooling_rate=1e-3,  # Cooling rate (SA),        lvl:2
+                              temperature_scheme='fast',  # Temperature updating (SA),lvl:2
                               acceptance_scheme='exponential',  # Acceptance mode,          lvl:2
-                              allow_weight_matrix=True,         # Weight matrix,            lvl:2 
-                              trial_overflow=False,             # Trial overflow policy,    lvl:2
-                              learnt_dataset=None,              # If it is a learnt dataset related with the heuristic space
-                              repeat_operators=True,            # Allow repeating SOs inSeq,lvl:2
-                              verbose=True,                     # Verbose process,          lvl:2
-                              learning_portion=0.37,            # Percent of seqs to learn  lvl:2
-                              solver='static')                  # Indicate which solver use lvl:1
+                              allow_weight_matrix=True,  # Weight matrix,            lvl:2
+                              trial_overflow=False,  # Trial overflow policy,    lvl:2
+                              learnt_dataset=None,  # If it is a learnt dataset related with the heuristic space
+                              repeat_operators=True,  # Allow repeating SOs inSeq,lvl:2
+                              verbose=True,  # Verbose process,          lvl:2
+                              learning_portion=0.37,  # Percent of seqs to learn  lvl:2
+                              solver='static')  # Indicate which solver use lvl:1
 
         # Read the problem
         if problem:
@@ -127,7 +137,6 @@ class Hyperheuristic:
         self.min_cardinality = None
         self.num_iterations = None
         self.toggle_seq_as_meta(parameters['as_mh'])
-
 
     def toggle_seq_as_meta(self, as_mh=None):
         if as_mh is None:
@@ -348,7 +357,6 @@ class Hyperheuristic:
         else:
             raise HyperheuristicError('Invalid type of current solution!')
 
-
         # Return the neighbour sequence
         return encoded_neighbour
 
@@ -426,12 +434,10 @@ class Hyperheuristic:
         """
         return (step >= self.parameters['num_steps']) or (
                 self.__stagnation_check(stag_counter) and not self.parameters['trial_overflow']) or \
-               (any([var < 0.0 for var in args]))
-
+            (any([var < 0.0 for var in args]))
 
     def get_operators(self, sequence):
         return [self.heuristic_space[index] for index in sequence]
-
 
     def solve(self, mode=None, save_steps=True):
         mode = mode if mode is not None else self.parameters["solver"]
@@ -477,7 +483,7 @@ class Hyperheuristic:
         # Save this historical register, step = 0
         if save_steps:
             _save_step(0, dict(encoded_solution=best_solution, performance=best_performance,
-                            details=current_details), self.file_label)
+                               details=current_details), self.file_label)
 
         # Step, stagnation counter and its maximum value
         step = 0
@@ -654,12 +660,13 @@ class Hyperheuristic:
                         '{} :: Rep: {:3d}, Step: {:3d}, Trial: {:3d}, SO: {:30s}, currPerf: {:.2e}, candPerf: {:.2e} '
                         'which: {:10s}'.format(
                             self.file_label, rep + 1, step + 1, stag_counter,
-                            candidate_search_operator[0][0] + ' & ' + candidate_search_operator[0][2][:4],
+                                             candidate_search_operator[0][0] + ' & ' + candidate_search_operator[0][2][
+                                                                                       :4],
                             best_fitness[-1], current_fitness, which_matrix), end=' ')
 
                 # If the candidate solution is better or equal than the current best solution
                 if self._check_acceptance(current_fitness - best_fitness[-1], 'probabilistic', prob=0.2):
-                    
+
                     # Update the current sequence and its characteristics
                     current_sequence.append(candidate_enc_so[-1])
 
@@ -746,7 +753,7 @@ class Hyperheuristic:
         fitness_per_repetition = list()
 
         # Neural network model that predicts operators
-        model = self._get_neural_network_predictor()        
+        model = self._get_neural_network_predictor()
         for rep in range(self.parameters['num_replicas']):
             # Metaheuristic
             mh = Metaheuristic(
@@ -800,7 +807,8 @@ class Hyperheuristic:
                         '{} :: Neural Network, Rep: {:3d}, Step: {:3d}, Trial: {:3d}, SO: {:30s}, currPerf: {:.2e}, candPerf: {:.2e}, '
                         'csl: {:3d}'.format(
                             self.file_label, rep + 1, step + 1, stag_counter,
-                            candidate_search_operator[0][0] + ' & ' + candidate_search_operator[0][2][:4],
+                                             candidate_search_operator[0][0] + ' & ' + candidate_search_operator[0][2][
+                                                                                       :4],
                             best_fitness[-1], current_fitness, len(self.current_space)), end=' ')
 
                 # If the candidate solution is better or equal than the current best solution
@@ -844,7 +852,7 @@ class Hyperheuristic:
             # Update the repetition register
             sequence_per_repetition.append(np.double(current_sequence).astype(int).tolist())
             fitness_per_repetition.append(np.double(best_fitness).tolist())
-            
+
             # Save this historical register
             if save_steps:
                 _save_step(rep,
@@ -866,23 +874,23 @@ class Hyperheuristic:
         model_params['file_label'] = self.file_label
         model_params['num_steps'] = self.parameters['num_steps']
         model_params['num_operators'] = self.num_operators
-        
+
         # Initialize model        
         model = ModelPredictor(model_params)
 
         # Load pre-trained model
         if model_params['load_model'] and model.load():
             return model
-        
+
         # Get training data
         seqfitness_train, seqrep_train = self._get_sample_sequences(model_params['sample_params'])
-        dataset = DatasetSequences(seqrep_train, seqfitness_train, 
+        dataset = DatasetSequences(seqrep_train, seqfitness_train,
                                    num_operators=self.num_operators,
                                    fitness_to_weight=model_params.get('fitness_to_weight', None))
         X, y, sample_weight = dataset.obtain_dataset()
 
         # Fit model
-        model.fit(X, y, model_params['epochs'], 
+        model.fit(X, y, model_params['epochs'],
                   sample_weight=sample_weight,
                   verbose=self.parameters['verbose'],
                   early_stopping_params=model_params.get('early_stopping', None),
@@ -892,7 +900,6 @@ class Hyperheuristic:
         if model_params['save_model']:
             model.save()
         return model
-
 
     def evaluate_candidate_solution(self, encoded_sequence):
         """
@@ -940,7 +947,6 @@ class Hyperheuristic:
         return self.get_performance(fitness_stats), dict(
             historical=historical_data, fitness=fitness_data, positions=position_data, statistics=fitness_stats)
 
-
     def brute_force(self, save_steps=True):
         """
         This method performs a brute force procedure solving the problem via all the available search operators without
@@ -968,7 +974,6 @@ class Hyperheuristic:
             if self.parameters['verbose']:
                 print('{} :: Operator {} of {}, Perf: {}'.format(
                     self.file_label, operator_id + 1, self.num_operators, operator_performance))
-
 
     def basic_metaheuristics(self, save_steps=True):
         """
@@ -1001,7 +1006,6 @@ class Hyperheuristic:
                 print('{} :: BasicMH {} of {}, Perf: {}'.format(
                     self.file_label, operator_id + 1, self.num_operators, operator_performance))
 
-
     @staticmethod
     def get_performance(statistics):
         """
@@ -1016,7 +1020,6 @@ class Hyperheuristic:
         # return statistics['Avg'] + statistics['Std']                                              # Option 2
         return statistics['Med'] + statistics['IQR']  # Option 3
         # return statistics['Avg'] + statistics['Std'] + statistics['Med'] + statistics['IQR']      # Option 4
-
 
     @staticmethod
     def get_statistics(raw_data):
@@ -1043,7 +1046,6 @@ class Hyperheuristic:
                     Med=np.median(raw_data),
                     MAD=st.median_abs_deviation(raw_data))
 
-
     def _get_sample_sequences(self, sample_params):
         """
         Retrieve or generate sequences to use them as data train
@@ -1064,7 +1066,7 @@ class Hyperheuristic:
                             'population': f'-{self.parameters["num_agents"]}pop-',
                             'func_name': self.problem['func_name']})
             seqfitness, seqrep = _get_stored_sample_sequences(filters)
-        else:        
+        else:
             # Generate sequences from dynamic solver
             prev_num_replicas = self.parameters['num_replicas']
             prev_learning_portion = self.parameters['learning_portion']
@@ -1073,7 +1075,7 @@ class Hyperheuristic:
             seqfitness, seqrep, _ = self._solve_dynamic(save_steps=False)
             self.parameters['num_replicas'] = prev_num_replicas
             self.parameters['learning_portion'] = prev_learning_portion
-        
+
         # Filter sequences with best performance
         if 'filter' in sample_params:
             seqfitness_last = [sequence[-1] for sequence in seqfitness]
@@ -1093,22 +1095,21 @@ class Hyperheuristic:
         if sample_params['store_sequences']:
             # Order sequences according to its fitness
             indices_order = list(range(len(seqfitness)))
-            indices_order.sort(key = lambda idx: seqfitness[idx][-1])
+            indices_order.sort(key=lambda idx: seqfitness[idx][-1])
 
             sequences_to_save = dict()
             for idx in indices_order:
                 sequences_to_save[idx] = (seqfitness[idx], seqrep[idx])
-                
-            # Store sequence without identificator of experiment : '-'.join(self.file_label.split('-')[:2]
-            sequences_name = '-'.join([self.problem['func_name'], 
-                                      f'{self.problem["dimensions"]}D', 
-                                      f'{self.parameters["num_agents"]}pop',
-                                      self.heuristic_space_label,
-                                      self.file_label])
-            _save_sequences(sequences_name, sequences_to_save)
-    
-        return seqfitness, seqrep
 
+            # Store sequence without identificator of experiment : '-'.join(self.file_label.split('-')[:2]
+            sequences_name = '-'.join([self.problem['func_name'],
+                                       f'{self.problem["dimensions"]}D',
+                                       f'{self.parameters["num_agents"]}pop',
+                                       self.heuristic_space_label,
+                                       self.file_label])
+            _save_sequences(sequences_name, sequences_to_save)
+
+        return seqfitness, seqrep
 
     def _update_weights(self, sequences=None):
         if (self.weights is None) or (len(sequences) < int(self.parameters['num_replicas'] *
@@ -1134,6 +1135,7 @@ class Hyperheuristic:
                     current_hist.append(np.ndarray.tolist(np.ones(self.num_operators) / self.num_operators))
 
             self.transition_matrix = np.array(current_hist)
+
 
 # %% ADDITIONAL TOOLS
 
@@ -1182,6 +1184,7 @@ def _get_stored_sample_sequences(filters, folder_name='./data_files/sequences/')
 
     # Filter stored sequences
     essential_attributes = ['func_name', 'dimensions', 'population', 'collection']
+
     def is_valid_file(file_name):
         # Verify that its a valid problem
         return all(filters[attribute] in file_name
@@ -1201,7 +1204,7 @@ def _get_stored_sample_sequences(filters, folder_name='./data_files/sequences/')
         if problem_name not in sequences_per_problem:
             # Initialise counter per problem
             sequences_per_problem[problem_name] = 0
-        
+
         # Check limit before read the json file
         if sequences_per_problem[problem_name] == limit_seqs:
             continue
@@ -1211,7 +1214,7 @@ def _get_stored_sample_sequences(filters, folder_name='./data_files/sequences/')
             # Check limit before append sequence
             if sequences_per_problem[problem_name] == limit_seqs:
                 break
-            
+
             # Append sequence
             seqfitness.append(fitness)
             seqrep.append(sequence)
@@ -1228,11 +1231,11 @@ def _save_sequences(file_name, sequences_to_save):
     """
     # Define the folder name
     folder_name = 'data_files/sequences/'
-    
+
     # Check if this path exists
     if not _check_path(folder_name):
         _create_path(folder_name)
-    
+
     # Overwrite or create file to store the sequences along its respective fitness
     with open(folder_name + f'{file_name}.json', 'w') as json_file:
         json.dump(sequences_to_save, json_file, cls=jt.NumpyEncoder)
