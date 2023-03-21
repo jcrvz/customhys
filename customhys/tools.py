@@ -137,13 +137,23 @@ def revise_results(main_folder='data_files/raw/'):
                 print("Merged '{}' into '{}'!".format(folders_with_date[index], folders_with_date[indices[0]]))
 
 
-def read_subfolders(foldername):
+def read_folder_files(folder_name):
     """
     Return a list of all subfolders contained in a folder, ignoring all those starting with '.' (hidden ones).
-    :param str foldername: Name of the main folder.
+    :param str folder_name: Name of the main folder.
     :return: list.
     """
-    return [element for element in os.listdir(foldername) if not element.startswith('.')]
+    return [element for element in os.listdir(folder_name) if not element.startswith('.')]
+
+
+# def process_results(target_folder: str = None, output_name: str = None):
+#     if target_folder is None:
+#         raise FileNotFoundError("target_folder must be provided")
+#
+#     output_name = target_folder.split('/')[-1] if output_name is None else target_folder
+#
+#     folder_files = read_folder_files(target_folder)
+
 
 
 def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_laststep=True,
@@ -172,7 +182,7 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
     """
     # TODO: Revise this method to enhance its performance.
     # Get folders and exclude hidden ones
-    raw_folders = filter(lambda name: len(name.split('-')) >= 2, read_subfolders(main_folder))
+    raw_folders = filter(lambda name: len(name.split('-')) >= 2, read_folder_files(main_folder))
 
     # Sort subfolder names by problem name & dimensions
     subfolder_names_raw = sorted(raw_folders, key=lambda x: int(x.split('-')[1].strip('D')))
@@ -280,7 +290,7 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
                 file_data[label_operator].append(operator_id)
                 file_data['encoded_solution'].append(temporal_data['encoded_solution'])
                 file_data['hist_fitness'].append(temporal_data['best_fitness'])
-                
+
             elif kind in ['unknown', 'dynamic_transfer_learning']:
                 if len(file_data) != 0:
                     keys_to_use = list(file_data.keys())
@@ -405,7 +415,7 @@ def read_json(data_file):
     return data
 
 
-def merge_json(data_folder, list_of_fields=None):
+def merge_json(data_folder: str, list_of_fields: list = None, save_file: bool = True):
     final_file_path = data_folder + '/' + data_folder.split('/')[-1] + '.csv'
     file_names = [element for element in os.listdir(data_folder) if ((not element.startswith('.'))
                                                                      and element.endswith('.json'))]
@@ -420,14 +430,19 @@ def merge_json(data_folder, list_of_fields=None):
 
         temporal_pretable.append({field: temporal_data[field] for field in list_of_fields})
 
-    _ = pd.DataFrame(temporal_pretable).to_csv(final_file_path)
-    print('Merged file saved: {}'.format(final_file_path))
+    df = pd.DataFrame(temporal_pretable)
 
+    if save_file:
+        df.to_csv(final_file_path)
+        print('Merged file saved: {}'.format(final_file_path))
+
+    return df
 
 class NumpyEncoder(json.JSONEncoder):
     """
     Numpy encoder
     """
+
     def default(self, obj):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
@@ -437,22 +452,22 @@ class NumpyEncoder(json.JSONEncoder):
 if __name__ == '__main__':
     # Import module for calling this code from command-line
     import argparse
-    
+
     parser = argparse.ArgumentParser(
         description='Process results for a given experiment to make comparisons and visualisation with other experiments.'
     )
-    parser.add_argument('experiment', 
-                        metavar='experiment_filename', 
+    parser.add_argument('experiment',
+                        metavar='experiment_filename',
                         type=str, nargs=1,
                         help='Name of finished experiment')
-    parser.add_argument('kind', 
-                        metavar='kind', 
+    parser.add_argument('kind',
+                        metavar='kind',
                         type=str, nargs=1,
                         help='Kind of finished experiment')
-    
+
     exp_name = parser.parse_args().experiment[0]
     kind = parser.parse_args().kind[0]
-    preprocess_files(main_folder='data_files/raw-'+exp_name, 
-                     kind=kind, 
-                     experiment=exp_name, 
+    preprocess_files(main_folder='data_files/raw-' + exp_name,
+                     kind=kind,
+                     experiment=exp_name,
                      output_name=exp_name)

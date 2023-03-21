@@ -1190,7 +1190,7 @@ def _get_stored_sample_sequences(filters, folder_name='./data_files/sequences/')
         return all(filters[attribute] in file_name
                    for attribute in essential_attributes)
 
-    files_in_folder = jt.read_subfolders(folder_name)
+    files_in_folder = jt.read_folder_files(folder_name)
     sequences_files = [file_name for file_name in files_in_folder if is_valid_file(file_name)]
 
     # Limit the number of sequences retreived from a problem
