@@ -155,7 +155,6 @@ def read_folder_files(folder_name):
 #     folder_files = read_folder_files(target_folder)
 
 
-
 def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_laststep=True,
                      output_name='processed_data', experiment=''):
     """
@@ -415,10 +414,11 @@ def read_json(data_file):
     return data
 
 
-def merge_json(data_folder: str, list_of_fields: list = None, save_file: bool = True):
-    final_file_path = data_folder + '/' + data_folder.split('/')[-1] + '.csv'
-    file_names = [element for element in os.listdir(data_folder) if ((not element.startswith('.'))
-                                                                     and element.endswith('.json'))]
+def merge_json(data_folder: str, list_of_fields: list = None, save_file: bool = True) -> None:
+    raw_file_names = [element for element in os.listdir(data_folder) if (
+            (not element.startswith('.')) and element.endswith('.json'))]
+
+    file_names = sorted(raw_file_names, key=lambda x: int(x.split('-')[0]))
 
     temporal_pretable = list()
 
@@ -428,15 +428,21 @@ def merge_json(data_folder: str, list_of_fields: list = None, save_file: bool = 
         if (len(temporal_pretable) == 0) and (not list_of_fields):
             list_of_fields = list(temporal_data.keys())
 
-        temporal_pretable.append({field: temporal_data[field] for field in list_of_fields})
+        temporal_pretable.append(
+            {**{"file_name": file_name, "step": int(file_name.split('-')[0])},
+             **{field: temporal_data[field] for field in list_of_fields}}
+        )
 
-    df = pd.DataFrame(temporal_pretable)
+    # df = pd.DataFrame(temporal_pretable)
 
     if save_file:
-        df.to_csv(final_file_path)
-        print('Merged file saved: {}'.format(final_file_path))
+        path = data_folder.split('/')
+        final_file_path = "/".join(path[:-1] + [path[-1]])
+        save_json(temporal_pretable, final_file_path)
 
-    return df
+        # df.to_csv(final_file_path + '.csv')
+        # print('Merged file saved: {}'.format(final_file_path + '.csv'))
+        print('Merged file saved: {}'.format(final_file_path + '.json'))
 
 class NumpyEncoder(json.JSONEncoder):
     """
