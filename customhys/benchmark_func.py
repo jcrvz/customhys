@@ -25,8 +25,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LightSource
 
-plt.rc('text', usetex=True)
-plt.rc('font', family='serif', size=11)
+_cec_functions = False
+try:
+    from optproblems import cec2005
+    _cec_functions = True
+
+except ImportError as e:
+    import warnings as wa
+
+    message = "`optproblems` not found! Please, install it to use the cec2005 benchmark functions"
+    wa.showwarning(message, ImportWarning, "benchmark_func.py", 29)
+
+import shutil
+if shutil.which("latex") is not None:
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif', size=11)
+
 
 __all__ = ['Ackley1', 'Ackley4', 'Alpine1', 'Alpine2', 'Bohachevsky', 'Brent', 'Brown', 'CarromTable', 'ChungReynolds',
            'Cigar', 'CosineMixture', 'CrossInTray', 'CrossLegTable', 'CrownedCross', 'Csendes', 'Deb1', 'Deb2',
@@ -232,7 +246,7 @@ class BasicProblem:
             Additional arguments that some problem functions could consider.
         :return: float
         """
-        return -1
+        return None
 
     def get_function_value(self, variables, *args):
         """
@@ -2776,6 +2790,51 @@ class OddSquare(BasicProblem):
         x_vals = np.square(variables[:-1]) + np.square(variables[1:]) \
                  + 0.5 * variables[1:] * variables[:-1]
         return -np.sum(np.exp(-x_vals / 8.) * np.cos(4. * np.sqrt(x_vals)))
+
+
+# %% LOAD CEC2005 PROBLEM
+if _cec_functions:
+    class CEC2005(BasicProblem):
+        CONSTRAINTS = {f'F{i}': i != 7 for i in range(1, 15)}
+        BOUNDARIES = {
+            'F1': (-100, 100),
+            'F2': (-100, 100),
+            'F4': (-100, 100),
+            'F5': (-100, 100),
+            'F6': (-100, 100),
+            'F7': (0, 600),
+            'F8': (-32, 32),
+            'F9': (-5, 5),
+            'F10': (-5, 5),
+            'F11': (-0.5, 0.5),
+            'F13': (-3, 1),
+            'F14': (-100, 100),
+        }
+
+        def __init__(self, f_name, variable_num):
+            super().__init__(variable_num)
+            f_initializer = eval(f'cec2005.{f_name}')
+
+            if f_name == 'F7':
+                self.f_function = f_initializer(variable_num)
+            else:
+                self.f_function = f_initializer(variable_num, None)
+            pre_bound = self.BOUNDARIES[f_name]
+
+            self.func_name = f_name
+            self.min_search_range = np.array([self.BOUNDARIES[f_name][0]] * variable_num)
+            self.max_search_range = np.array([self.BOUNDARIES[f_name][1]] * variable_num)
+            self.is_constrained = self.CONSTRAINTS[f_name]
+
+        def get_func_val(self, variables):
+            return self.f_function(variables)
+
+        def get_formatted_problem(self):
+            return dict(
+                function=self.f_function,
+                boundaries=(self.min_search_range, self.max_search_range),
+                is_constrained=self.is_constrained
+            )
 
 
 # %% TOOLS TO HANDLE THE PROBLEMS
