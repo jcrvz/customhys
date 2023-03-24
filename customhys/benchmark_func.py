@@ -24,6 +24,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LightSource
+import abc
 
 _cec_functions = False
 try:
@@ -237,6 +238,7 @@ class BasicProblem:
             else:
                 print('Invalid range!')
 
+    @abc.abstractmethod
     def get_func_val(self, variables, *args):
         """
         Evaluate the problem function without considering additions like noise, offset, etc.
@@ -364,6 +366,7 @@ class BasicProblem:
         self.plot_object.savefig(self.save_dir + self.func_name + '.' + ext)
         plt.show()
 
+    @abc.abstractmethod
     def get_formatted_problem(self, is_constrained=True, fts=None):
         """
         Return the problem in a simple format to be used in a solving procedure. This format contains the ``function``
@@ -2794,37 +2797,24 @@ class OddSquare(BasicProblem):
 
 # %% LOAD CEC2005 PROBLEM
 if _cec_functions:
+
     class CEC2005(BasicProblem):
-        CONSTRAINTS = {f'F{i}': i != 7 for i in range(1, 15)}
-        BOUNDARIES = {
-            'F1': (-100, 100),
-            'F2': (-100, 100),
-            'F4': (-100, 100),
-            'F5': (-100, 100),
-            'F6': (-100, 100),
-            'F7': (0, 600),
-            'F8': (-32, 32),
-            'F9': (-5, 5),
-            'F10': (-5, 5),
-            'F11': (-0.5, 0.5),
-            'F13': (-3, 1),
-            'F14': (-100, 100),
-        }
-
-        def __init__(self, f_name, variable_num):
+        def __init__(self, f_name, variable_num, **kwargs):
             super().__init__(variable_num)
-            f_initializer = eval(f'cec2005.{f_name}')
-
-            if f_name == 'F7':
-                self.f_function = f_initializer(variable_num)
-            else:
-                self.f_function = f_initializer(variable_num, None)
-            pre_bound = self.BOUNDARIES[f_name]
-
             self.func_name = f_name
-            self.min_search_range = np.array([self.BOUNDARIES[f_name][0]] * variable_num)
-            self.max_search_range = np.array([self.BOUNDARIES[f_name][1]] * variable_num)
-            self.is_constrained = self.CONSTRAINTS[f_name]
+            self.variable_num = variable_num
+
+            f_initializer = eval(f'cec2005.{self.func_name}')
+            self.f_function = f_initializer(self.variable_num, **kwargs)
+
+            if self.func_name in ['F7', 'F25']:
+                self.is_constrained = False
+                self.min_search_range = np.array([-5] * self.variable_num)
+                self.max_search_range = np.array([5] * self.variable_num)
+            else:
+                self.is_constrained = True
+                self.min_search_range = np.array(self.f_function.min_bounds)
+                self.max_search_range = np.array(self.f_function.max_bounds)
 
         def get_func_val(self, variables):
             return self.f_function(variables)
