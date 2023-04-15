@@ -6,7 +6,7 @@ README = (pathlib.Path(__file__).parent / 'README.md').read_text()
 
 setuptools.setup(
     name='customhys',
-    version='1.1.1',
+    version='1.1.3',
     packages=setuptools.find_packages(),
     url='https://github.com/jcrvz/customhys',
     license='MIT License',

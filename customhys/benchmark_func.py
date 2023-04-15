@@ -59,6 +59,8 @@ __all__ = ['Ackley1', 'Ackley4', 'Alpine1', 'Alpine2', 'Bohachevsky', 'Brent', '
            'WWavy', 'Weierstrass', 'Whitley', 'XinSheYang1', 'XinSheYang2', 'XinSheYang3', 'XinSheYang4', 'YaoLiu09',
            'Zakharov', 'ZeroSum']
 
+if _cec_functions:
+    __all__.append("CEC2005")
 
 # %% BASIC FUNCTION CLASS
 class BasicProblem:
@@ -2854,17 +2856,19 @@ def list_functions(rnp: bool = True, fts: list = None, wrd: str = '1'):
 
     # For all the functions
     for ii in range(len(__all__)):
-        # Get the name and initialise its object in two dimensions
-        function_name = __all__[ii]
-        funct = eval("{}(2)".format(function_name))
 
-        # Get the features and weights
-        feature_str = funct.get_features(fts=fts)
-        weight = funct.get_features("string", wrd=wrd, fts=fts)
-        functions_features[function_name] = dict(**funct.features, Code=weight)
+        if __all__[ii] not in ["CEC2005"]:
+            # Get the name and initialise its object in two dimensions
+            function_name = __all__[ii]
+            funct = eval("{}(2)".format(function_name))
 
-        # Build the list
-        feature_strings.append([weight, ii + 1, funct.func_name, feature_str])
+            # Get the features and weights
+            feature_str = funct.get_features(fts=fts)
+            weight = funct.get_features("string", wrd=wrd, fts=fts)
+            functions_features[function_name] = dict(**funct.features, Code=weight)
+
+            # Build the list
+            feature_strings.append([weight, ii + 1, funct.func_name, feature_str])
 
     if not rnp:
         # Print first line
