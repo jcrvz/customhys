@@ -21,7 +21,8 @@ class Metaheuristic:
         This is the Metaheuristic class, each object corresponds to a metaheuristic implemented with a sequence of
         search operators from op, and it is based on a population from Population.
     """
-    def __init__(self, problem, search_operators=None, num_agents=30, num_iterations=100, initial_scheme='random'):
+    def __init__(self, problem, search_operators=None, num_agents: int = 30, num_iterations: int = 100,
+                 initial_scheme: str = 'random', verbose: bool = False):
         """
         Create a population-based metaheuristic by employing different simple search operators.
 
@@ -45,6 +46,7 @@ class Metaheuristic:
         :return: None.
         """
         # Read the problem function
+        self.finalisation_conditions = None
         self._problem_function = problem['function']
 
         # Create population
@@ -69,7 +71,7 @@ class Metaheuristic:
         self.historical = dict()
 
         # Set additional variables
-        self.verbose = False
+        self.verbose = verbose
 
         # Set the initial scheme
         self.initial_scheme = initial_scheme
@@ -130,9 +132,9 @@ class Metaheuristic:
         self._verbose("{}".format('-' * 50))
 
         # Start optimisaton procedure
-        for iteration in range(1, self.num_iterations + 1):
+        while not self.finaliser():
             # Update the current iteration
-            self.pop.iteration = iteration
+            self.pop.iteration += 1
 
             # Implement the sequence of operators and selectors
             for perturbator, selector in zip(self.perturbators, self.selectors):
@@ -144,8 +146,23 @@ class Metaheuristic:
                 self.update_historicals()
 
             # Verbose (if so) some information
-            self._verbose('{}\npop. radius: {}'.format(iteration, self.historical['radius'][-1]))
+            self._verbose('{}\npop. radius: {}'.format(self.pop.iteration, self.historical['radius'][-1]))
             self._verbose(self.pop.get_state())
+
+    def set_finalisation_conditions(self, conditions):
+        # TODO: Check that it works for budgets <=
+        if not isinstance(conditions, list):
+            conditions = list(conditions)
+
+        self.finalisation_conditions = conditions
+
+    def finaliser(self):
+        criteria = self.pop.iteration >= self.num_iterations
+        if self.finalisation_conditions is not None:
+            for condition in self.finalisation_conditions:
+                criteria |= condition()
+
+        return criteria
 
     def get_solution(self):
         """

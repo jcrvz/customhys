@@ -92,6 +92,7 @@ class Hyperheuristic:
             raise HyperheuristicError('Invalid heuristic_space')
 
         # Assign default values
+        # TODO: Put default values -> .get('key', defaultVal)
         if not parameters:
             parameters = dict(cardinality=3,  # Max. numb. of SOs in MHs, lvl:1
                               cardinality_min=1,  # Min. numb. of SOs in MHs, lvl:1

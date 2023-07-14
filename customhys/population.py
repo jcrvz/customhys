@@ -19,7 +19,7 @@ class Population:
     """
 
     # Internal variables
-    iteration = 1
+    iteration = 0
     rotation_matrix = []
 
     # Parameters per selection method
