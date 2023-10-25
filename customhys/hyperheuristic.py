@@ -86,7 +86,7 @@ class Hyperheuristic:
             self.heuristic_space = heuristic_space
         elif isinstance(heuristic_space, str):
             self.heuristic_space_label = heuristic_space[:heuristic_space.rfind('.')].split('_')[0]
-            with open('collections/' + heuristic_space, 'r') as operators_file:
+            with open('collections/' + heuristic_space, 'r', encoding='utf-8') as operators_file:
                 self.heuristic_space = [eval(line.rstrip('\n')) for line in operators_file]
         else:
             raise HyperheuristicError('Invalid heuristic_space')
@@ -1167,7 +1167,8 @@ def _save_step(step_number, variable_to_save, prefix=''):
         _create_path(folder_name)
 
     # Create a new file for this step
-    with open(folder_name + f'/{str(step_number)}-' + now.strftime('%m_%d_%Y_%H_%M_%S') + '.json', 'w') as json_file:
+    with open(folder_name + f'/{str(step_number)}-' + now.strftime('%m_%d_%Y_%H_%M_%S') + '.json', 'w',
+              encoding='utf-8') as json_file:
         json.dump(variable_to_save, json_file, cls=jt.NumpyEncoder)
 
 
@@ -1238,7 +1239,7 @@ def _save_sequences(file_name, sequences_to_save):
         _create_path(folder_name)
 
     # Overwrite or create file to store the sequences along its respective fitness
-    with open(folder_name + f'{file_name}.json', 'w') as json_file:
+    with open(folder_name + f'{file_name}.json', 'w', encoding='utf-8') as json_file:
         json.dump(sequences_to_save, json_file, cls=jt.NumpyEncoder)
 
 

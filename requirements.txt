@@ -4,6 +4,7 @@ matplotlib>=3.2.2
 tqdm>=4.47.0
 scikit-learn>=1.2.2
 pandas>=1.5.3
+latex>=0.7.0
 tensorflow>=2.8.0; sys_platform != 'darwin'
 tensorflow-macos>=2.11.0; sys_platform == 'darwin'
 tensorflow-metal>=0.7.1; sys_platform == 'darwin'

@@ -1,12 +1,13 @@
+# -*- coding: utf-8 -*-
 import setuptools
 import pathlib
 
 # The text of the README file
-README = (pathlib.Path(__file__).parent / 'README.md').read_text()
+README = (pathlib.Path(__file__).parent / 'README.md').read_text(encoding='utf-8')
 
 setuptools.setup(
     name='customhys',
-    version='1.1.4',
+    version='1.1.5',
     packages=setuptools.find_packages(),
     url='https://github.com/jcrvz/customhys',
     license='MIT License',
@@ -34,5 +35,6 @@ setuptools.setup(
             "tensorflow-metal>=0.7.1; sys_platform == 'darwin'",
         ]
     },
-    include_package_data=True
+    include_package_data=True,
+
 )

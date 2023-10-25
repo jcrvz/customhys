@@ -346,7 +346,7 @@ if __name__ == '__main__':
         os.makedirs(OUTPUT_FOLDER)
 
     if args.batch:
-        with open(args.exp_config) as configs:
+        with open(args.exp_config, encoding='utf-8') as configs:
             exp_filenames = configs.read()
         exp_filenames = [filename.strip() for filename in exp_filenames.splitlines()]
     else:

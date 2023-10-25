@@ -986,7 +986,7 @@ def build_operators(heuristics=obtain_operators(), file_name='operators_collecti
     # Initialise the collection of simple heuristics
     if file_name[-4:] == '.txt':
         file_name = file_name[:-4]
-    file = open('collections/' + file_name + '.txt', 'w')
+    file = open('collections/' + file_name + '.txt', 'w', encoding='utf-8')
 
     # For each simple heuristic, read their parameters and values
     for operator, parameters, selectors in heuristics:

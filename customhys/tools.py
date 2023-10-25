@@ -396,7 +396,7 @@ def save_json(variable_to_save, file_name=None, suffix=None):
     suffix = '_' + suffix if suffix else ''
 
     # Create the new file
-    with open('./{}{}.json'.format(file_name, suffix), 'w') as json_file:
+    with open('./{}{}.json'.format(file_name, suffix), 'w', encoding='utf-8') as json_file:
         json.dump(variable_to_save, json_file, cls=NumpyEncoder)
 
 
@@ -407,7 +407,7 @@ def read_json(data_file):
         Filename of the json file.
     :return: dict or list.
     """
-    with open(data_file, 'r') as json_file:
+    with open(data_file, 'r', encoding='utf-8') as json_file:
         data = json.load(json_file)
 
     # Return only the data variable
