@@ -81,6 +81,7 @@ class Hyperheuristic:
             Weights of the search operators, if there is a-priori information about them. The default is None.
         """
         # Read the heuristic space
+        # TODO: fix for any OS (now, it only works for Windows)
         if isinstance(heuristic_space, list):
             self.heuristic_space_label = 'custom_list'
             self.heuristic_space = heuristic_space
