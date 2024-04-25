@@ -504,25 +504,27 @@ def genetic_mutation(pop, scale=1.0, elite_rate=0.1, mutation_rate=0.25, distrib
         else:
             agent_indices = np.random.randint(num_elite, pop.num_agents, num_mutations)
 
-        # Transform indices
-        rows, columns = np.meshgrid(agent_indices, dimension_indices)
+        flat_rows = agent_indices.flatten()
+        flat_columns = dimension_indices.flatten()
+
+        total_mutations = len(flat_rows)
 
         # Perform mutation according to the random distribution
         if distribution == 'uniform':
-            mutants = np.random.uniform(-1, 1, num_mutations ** 2)
+            mutants = np.random.uniform(-1, 1, total_mutations)
 
         elif distribution == 'gaussian':
             # Normal with mu = 0 and sigma = parameter
-            mutants = np.random.standard_normal(num_mutations ** 2)
+            mutants = np.random.standard_normal(total_mutations)
 
         elif distribution == 'levy':
-            mutants = _random_levy(num_mutations ** 2, 1.5)
+            mutants = _random_levy(total_mutations, 1.5)
 
         else:
             raise OperatorsError('Invalid distribution!')
 
         # Store mutants
-        pop.positions[rows.flatten(), columns.flatten()] = scale * mutants
+        pop.positions[flat_rows, flat_columns] += scale * mutants
 
 
 def gravitational_search(pop, gravity=1.0, alpha=0.02):
