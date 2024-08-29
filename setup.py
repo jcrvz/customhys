@@ -21,6 +21,8 @@ setuptools.setup(
               'evolutionary computation', 'bio-inspired', 'algorithm design'],
     python_requires=">=3.8",
     install_requires=[
+        "setuptools>=57.4.0",
+        "latex>=0.7.0",
         "numpy>=1.22.0",
         "scipy>=1.5.0",
         "matplotlib>=3.2.2",

@@ -31,7 +31,7 @@ try:
     from optproblems import cec2005
     _cec_functions = True
 
-except ImportError as e:
+except ImportError:
     import warnings as wa
 
     message = "`optproblems` not found! Please, install it to use the cec2005 benchmark functions"

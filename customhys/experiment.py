@@ -376,7 +376,7 @@ if __name__ == '__main__':
                          output_name=OUTPUT_FOLDER + "/" + exp.exp_config["experiment_name"])
 
         # Rename the raw folder to raw-$exp_name$
-        print(f"\nChanging folder name of raw results...")
+        print("\nChanging folder name of raw results...")
         os.rename(DATA_FOLDER, DATA_FOLDER + "-" + exp.exp_config["experiment_name"])
 
     print("\nExperiment(s) finished!")

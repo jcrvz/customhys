@@ -9,7 +9,6 @@ Created on Sat Feb 22, 2020
 import json
 import numpy as np
 import os
-import pandas as pd
 import random
 import scipy.stats as st
 from subprocess import call
@@ -69,7 +68,7 @@ def printmsk(var, level=1, name=None):
     print('|  ' * (level - 1) + '|-- ' + var_name + "{", end="")
 
     # Check if it has __len__ but is not str or ndarray
-    if hasattr(var, '__len__') and not (parent_type in ['str', 'ndarray']):
+    if hasattr(var, '__len__') and parent_type not in ['str', 'ndarray']:
         print('{}: {}'.format(parent_type, len(var)) + '}')
 
         # If is it a dictionary

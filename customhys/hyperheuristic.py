@@ -30,7 +30,7 @@ try:
     tf.get_logger().setLevel('ERROR')
     _using_tensorflow = True
 
-except ImportError as e:
+except ImportError:
     import warnings as wa
 
     message = "`Tensorflow` not found! Please, install it to use the machine_learning module"

@@ -5,14 +5,7 @@ Created on Wed Jan 15 15:37:54 2020
 @author: L03130342
 """
 
-import os
-from datetime import datetime
-import json
-from tqdm import tqdm
 import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
-from matplotlib import rcParams, cycler
-import numpy as np
 
 
 def show_performance_overview(steps, historical_fitness, performances=None):
