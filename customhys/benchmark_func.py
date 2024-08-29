@@ -37,11 +37,11 @@ except ImportError:
     message = "`optproblems` not found! Please, install it to use the cec2005 benchmark functions"
     wa.showwarning(message, ImportWarning, "benchmark_func.py", 29)
 
-import shutil
-if shutil.which("latex") is not None:
-    plt.rc('text', usetex=True)
-    plt.rc('font', family='serif', size=11)
-
+# Prevent using LaTeX if it is not installed
+try:
+    plt.rcParams.update({'text.usetex': True})
+except:
+    plt.rcParams.update({'text.usetex': False})
 
 __all__ = ['Ackley1', 'Ackley4', 'Alpine1', 'Alpine2', 'Bohachevsky', 'Brent', 'Brown', 'CarromTable', 'ChungReynolds',
            'Cigar', 'CosineMixture', 'CrossInTray', 'CrossLegTable', 'CrownedCross', 'Csendes', 'Deb1', 'Deb2',
