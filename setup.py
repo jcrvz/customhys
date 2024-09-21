@@ -19,7 +19,7 @@ setuptools.setup(
     long_description=README,
     keywords=['metaheuristics', 'hyper-heuristic', 'optimization', 'automatic design', 'global optimization',
               'evolutionary computation', 'bio-inspired', 'algorithm design'],
-    python_requires=">=3.10",
+    python_requires=">=3.9",
     install_requires=(pathlib.Path(__file__).parent / 'requirements.txt').read_text(encoding='utf-8').split('\n'),
     extras_require={
         "ML": [
