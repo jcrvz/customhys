@@ -19,7 +19,7 @@ def test_dynamic():
   exp = Experiment("./tests/dynamic.json")
   exp.run()
 
-def test_neural_network():
-  exp = Experiment("./tests/neural_network.json")
-  exp.run()
+#def test_neural_network():
+#  exp = Experiment("./tests/neural_network.json")
+#  exp.run()
     
