@@ -7,7 +7,7 @@ Created on Tue Jan  7 14:54:31 2020
 
 @author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
 """
-
+import math
 import numpy as np
 import os
 from itertools import combinations as _get_combinations
@@ -791,8 +791,8 @@ def _random_levy(size, beta=1.5):
     :return: numpy.array
     """
     # Calculate x's std dev (Mantegna's algorithm)
-    sigma = ((np.math.gamma(1 + beta) * np.sin(np.pi * beta / 2)) / (
-            np.math.gamma((1 + beta) / 2) * beta * (2 ** ((beta - 1) / 2)))) ** (1 / beta)
+    sigma = ((math.gamma(1 + beta) * np.sin(np.pi * beta / 2)) / (
+            math.gamma((1 + beta) / 2) * beta * (2 ** ((beta - 1) / 2)))) ** (1 / beta)
 
     # Determine x and y using normal distributions with sigma_y = 1
     x = sigma * np.random.standard_normal(size)
