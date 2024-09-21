@@ -24,7 +24,7 @@ setuptools.setup(
     extras_require={
         "ML": [
             "tensorflow>=2.8.0; sys_platform != 'darwin'",
-            "tensorflow-macos>=2.11.0; sys_platform == 'darwin'",
+            "tensorflow-macos>=2.10.0; sys_platform == 'darwin'",
             "tensorflow-metal>=0.7.1; sys_platform == 'darwin'",
         ]
     },
