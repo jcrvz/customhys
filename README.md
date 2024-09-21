@@ -10,20 +10,10 @@
 Detailed information about this framework can be found in [[1, 2]](#references). Plus, the code for each module is well-documented.
 
 
-### 🛠 Requirements:
+### 🛠 Requirements: 
 
-| Package                                            | Version (>=) |
-|----------------------------------------------------|--------------|
-| [Python](https://github.com/conda-forge/miniforge) | 3.8          |
-| [NumPy](https://numpy.org)                         | 1.22.0       |
-| [SciPy](https://scipy.org)                         | 1.5.0        |
-| [matplotlib](https://matplotlib.org)               | 3.2.2        |
-| [tqdm](https://tqdm.github.io)                     | 4.47.0       |
-| [pandas](https://pandas.pydata.org)                | 1.5.3        |
-| [scikit-learn](https://scikit-learn.org/stable/)   | 1.2.2        |
-| [TensorFlow](https://www.tensorflow.org)*          | 2.8.0        |
-
-*For Mac M1/M2, one may need to install TensorFlow via `conda` such as:
+* Check the [requirements.txt](requirements.txt) file.
+* For Apple Silicon, one may need to install TensorFlow via `conda` such as:
 ```shell
 conda install -c apple tensorflow-deps
 ```

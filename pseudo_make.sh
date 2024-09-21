@@ -11,7 +11,7 @@ function usage {
 
 send_pip() {
   echo "Sending to PyPi..."
-  python -m twine upload --repository testpypi dist/*
+  #python -m twine upload --repository testpypi dist/*
   python -m twine upload dist/*
   printf "[Done]\n"
 }
