@@ -12,14 +12,14 @@ setuptools.setup(
     url='https://github.com/jcrvz/customhys',
     license='MIT License',
     author='Jorge Mario Cruz-Duarte',
-    author_email='jorge.cruz@tec.mx',
+    author_email='jorge.cruz-duarte@univ-lille.fr',
     description='This framework provides tools for solving, but not limited to, continuous optimisation problems '
                 'using a hyper-heuristic approach for customising metaheuristics. ',
     long_description_content_type='text/markdown',
     long_description=README,
     keywords=['metaheuristics', 'hyper-heuristic', 'optimization', 'automatic design', 'global optimization',
               'evolutionary computation', 'bio-inspired', 'algorithm design'],
-    python_requires=">=3.9",
+    python_requires=">=3.10",
     install_requires=(pathlib.Path(__file__).parent / 'requirements.txt').read_text(encoding='utf-8').split('\n'),
     extras_require={
         "ML": [

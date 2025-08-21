@@ -15,7 +15,7 @@ from .population import __selectors__
 
 __all__ = ['local_random_walk', 'random_search', 'random_sample', 'random_flight', 'differential_mutation',
            'firefly_dynamic', 'swarm_dynamic', 'gravitational_search', 'central_force_dynamic', 'spiral_dynamic',
-           'genetic_mutation', 'genetic_crossover']
+           'genetic_mutation', 'genetic_crossover', 'linear_system']
 
 
 # Search operator aliases
@@ -36,8 +36,15 @@ def get_operator_aliases():
         'local_random_walk': 'RW',
         'random_sample': 'RX',
         'spiral_dynamic': 'SD',
-        'swarm_dynamic': 'PS'}, {
-        'greedy': 'g', 'all': 'd', 'metropolis': 'm', 'probabilistic': 'p'}
+        'swarm_dynamic': 'PS',
+        'linear_system': 'LS',
+    }, {
+        'greedy': 'g',
+        'all': 'd',
+        'metropolis': 'm',
+        'probabilistic': 'p'
+    }
+
 
 # %% SEARCH OPERATORS
 
@@ -643,10 +650,10 @@ def local_random_walk(pop, probability=0.75, scale=1.0, distribution='uniform'):
 
     # Move positions with a displacement due permutations and probabilities
     pop.positions += scale * r_1 * (pop.positions[
-                                    np.random.permutation(pop.num_agents), :] - pop.positions[
-                                                                                np.random.permutation(pop.num_agents),
-                                                                                :]) * np.heaviside(r_2 - probability,
-                                                                                                   0.0)
+                                        np.random.permutation(pop.num_agents), :] - pop.positions[
+                                        np.random.permutation(pop.num_agents),
+                                        :]) * np.heaviside(r_2 - probability,
+                                                           0.0)
 
 
 def random_sample(pop):
@@ -774,14 +781,271 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56, version='con
     pop.positions += pop.velocities
 
 
+def linear_system(pop, matrix=None, dt=0.1, offset="globalbest", noise=0.0):
+    """
+    Linear-affine update using a Forward Euler approximation of the continuous-time system:
+        x' = x @ A_i + c_i,  with  A_i = (M_i - I)/dt  and  c_i = b_i/dt
+    so that a forward-Euler step matches the discrete map x_{t+1} ≈ x_t @ M_i + b_i.
+
+    Supports per-agent matrices:
+      - matrix.shape == (D, D): same matrix for all agents
+      - matrix.shape == (A, D, D): distinct matrix per agent
+
+    The target equilibrium x* is chosen from `offset` ("subpopmean" or "globalbest")
+    and the affine term per agent is set to b_i = x* @ (I - M_i) (row-vector convention).
+    """
+    # --- 0) Defaults & checks ---
+    num_agents, num_dimensions = pop.num_agents, pop.num_dimensions
+    if matrix is None:
+        matrix = np.eye(num_dimensions)
+
+    # Select the target equilibrium x* from the chosen offset mode
+    if offset == "subpopmean":
+        sampled_positions = pop.particular_best_positions[np.random.permutation(pop.num_agents)[:num_agents // 3], :]
+        x_star = (np.mean(sampled_positions, axis=0) + pop.global_best_position.copy()) / 2.0
+    elif offset == "globalbest":
+        x_star = np.asarray(pop.global_best_position.copy())
+    else:
+        raise OperatorsError('Invalid offset! Use "subpopmean" or "globalbest".')
+    if x_star.shape != (num_dimensions,):
+        raise OperatorsError("x_star/offset must yield a 1D vector of length num_dimensions")
+
+    # Normalise matrix shape to per-agent
+    M = np.asarray(matrix)
+    if M.ndim == 2:
+        if M.shape != (num_dimensions, num_dimensions):
+            raise OperatorsError('matrix must have shape (num_dimensions,num_dimensions) or (num_agents,num_dimensions,num_dimensions)')
+        M = np.tile(M, (num_agents, 1, 1))           # same matrix for all agents
+    elif M.ndim == 3:
+        if M.shape != (num_agents, num_dimensions, num_dimensions):
+            raise OperatorsError('matrix with per-agent values must have shape (num_agents,num_dimensions,num_dimensions)')
+    else:
+        raise OperatorsError('matrix must be a 2D or 3D array')
+
+    # Build per-agent affine term so x* is the fixed point for each agent
+    I = np.eye(num_dimensions)
+    I_batch = np.tile(I, (num_agents, 1, 1))         # (num_agents, num_dimensions, num_dimensions)
+    # b_i = x* @ (I - M_i)   -> result shape (num_agents, num_dimensions)
+    b = np.einsum('d,adk->ak', x_star, I_batch - M)
+
+    # Continuous-time field and Forward Euler step
+    # A_i = (M_i - I)/dt,  c_i = b_i/dt
+    A_all = (M - I_batch) / dt              # (num_agents, num_dimensions, num_dimensions)
+    c_all = b / dt                          # (num_agents, num_dimensions)
+
+    # Euler: X_{t+1} = X_t + dt * ( X_t @ A_i + c_i )
+    # X @ A_i -> (num_agents,num_dimensions) via batched matmul
+    drift = np.einsum('ad,adj->aj', pop.positions, A_all) + c_all
+    pop.positions = pop.positions + dt * drift
+
+    # Optional additive noise, per agent & dimension ---
+    if noise != 0.0:
+        pop.positions += np.random.normal(scale=noise, size=(num_agents, num_dimensions))
+
 # %% INTERNAL METHODS
+
+def _spectral_radius(M: np.ndarray) -> float:
+    """Maximal |eigenvalue|."""
+    return float(np.max(np.abs(np.linalg.eigvals(M))))
+
+
+def _block_rotation(r: float, theta: float) -> np.ndarray:
+    """2x2 real block for eigenvalues r·e^{±iθ}."""
+    c, s = np.cos(theta), np.sin(theta)
+    return np.array([[r * c, -r * s], [r * s, r * c]], dtype=float)
+
+
+def _assemble_with_random_basis(blocks, n, rng):
+    """Place blocks on a block-diagonal R, then randomize basis: M = Q R Q^T."""
+    R = np.zeros((n, n), dtype=float)
+    i = 0
+    for B in blocks:
+        m = B.shape[0]
+        R[i:i + m, i:i + m] = B
+        i += m
+    Q, _ = np.linalg.qr(rng.standard_normal((n, n)))
+    return Q @ R @ Q.T
+
+
+def random_stable_matrix(n: int, *, focus_prob: float = 0.5,
+                         radius=(0.3, 0.95), shrink=0.995, seed=None) -> np.ndarray:
+    """
+    Discrete-time SCHUR-stable M (ρ(M)<1). Builds random 1x1 and 2x2 blocks with |λ| in (radius[0], radius[1]) ⊂ (0,1).
+    focus_prob controls chance of inserting a complex conjugate pair.
+    """
+    rng = np.random.default_rng(seed)
+    rmin, rmax = radius
+    if not (0.0 < rmin < rmax < 1.0):
+        raise ValueError("radius must satisfy 0 < rmin < rmax < 1")
+    blocks, k = [], 0
+    while k < n:
+        make_pair = (n - k) >= 2 and rng.random() < focus_prob
+        if make_pair:
+            r = rng.uniform(rmin, rmax)
+            theta = rng.uniform(0.15 * np.pi, 0.95 * np.pi)  # avoid nearly real
+            blocks.append(_block_rotation(r, theta))
+            k += 2
+        else:
+            lam = rng.uniform(rmin, rmax) * (1 if rng.random() < 0.5 else -1)
+            blocks.append(np.array([[lam]], dtype=float))
+            k += 1
+    M = _assemble_with_random_basis(blocks, n, rng) * shrink  # slight shrink for safety
+    assert _spectral_radius(M) < 1.0
+    return M
+
+
+def random_unstable_matrix(n: int, *, num_unstable: int = 1,
+                           unstable_radius=(1.05, 1.8),
+                           stable_radius=(0.2, 0.95),
+                           focus_prob_unstable: float = 0.5,
+                           focus_prob_stable: float = 0.5,
+                           seed=None) -> np.ndarray:
+    """
+    Matrix with at least 'num_unstable' eigenvalues outside the unit circle (discrete-time unstable).
+    Remaining eigenvalues are inside the unit circle.
+    """
+    rng = np.random.default_rng(seed)
+    if not (1.0 < unstable_radius[0] < unstable_radius[1]):
+        raise ValueError("unstable_radius must satisfy 1 < rmin < rmax")
+    if not (0.0 < stable_radius[0] < stable_radius[1] < 1.0):
+        raise ValueError("stable_radius must satisfy 0 < rmin < rmax < 1")
+
+    blocks, k, remaining = [], 0, n
+
+    # Place unstable eigenvalues/pairs first
+    u = 0
+    while u < num_unstable and remaining > 0:
+        make_pair = (remaining >= 2) and (u + 2 <= num_unstable) and (rng.random() < focus_prob_unstable)
+        if make_pair:
+            r = rng.uniform(*unstable_radius)
+            theta = rng.uniform(0.15 * np.pi, 0.95 * np.pi)
+            blocks.append(_block_rotation(r, theta))
+            u += 2
+            remaining -= 2
+        else:
+            r = rng.uniform(*unstable_radius)
+            sgn = 1 if rng.random() < 0.5 else -1
+            blocks.append(np.array([[sgn * r]], dtype=float))
+            u += 1
+            remaining -= 1
+
+    # Fill the rest with stable blocks
+    while remaining > 0:
+        make_pair = (remaining >= 2) and (rng.random() < focus_prob_stable)
+        if make_pair:
+            r = rng.uniform(*stable_radius)
+            theta = rng.uniform(0.15 * np.pi, 0.95 * np.pi)
+            blocks.append(_block_rotation(r, theta))
+            remaining -= 2
+        else:
+            lam = rng.uniform(*stable_radius) * (1 if rng.random() < 0.5 else -1)
+            blocks.append(np.array([[lam]], dtype=float))
+            remaining -= 1
+
+    M = _assemble_with_random_basis(blocks, n, rng)
+    # Sanity checks
+    rho = _spectral_radius(M)
+    if rho <= 1.0:
+        raise RuntimeError("Construction failed to produce an unstable matrix (try another seed).")
+    return M
+
+def generate_mixed_matrices(
+    dim: int,
+    n: int,
+    *,
+    stable_ratio: float = 0.7,
+    stable_kwargs: dict = None,
+    unstable_kwargs: dict = None,
+    seed: int = None,
+    shuffle: bool = True,
+    retries: int = 5,
+):
+    """
+    Generate n real (dim x dim) matrices where approximately stable_ratio*n are Schur-stable,
+    the rest are unstable. Uses random_stable_matrix / random_unstable_matrix defined above.
+
+    Parameters
+    ----------
+    dim : int
+        Matrix dimension (D).
+    n : int
+        Number of matrices to generate.
+    stable_ratio : float
+        Proportion in (0,1). Rounded to nearest integer count of stable matrices.
+    stable_kwargs : dict | None
+        Extra kwargs passed to random_stable_matrix (e.g., focus_prob, radius, shrink).
+    unstable_kwargs : dict | None
+        Extra kwargs passed to random_unstable_matrix (e.g., num_unstable, unstable_radius).
+    seed : int | None
+        RNG seed for reproducibility.
+    shuffle : bool
+        If True, randomly permutes the order of matrices and mask.
+    retries : int
+        Number of extra attempts for generating an unstable matrix if a seed accidentally yields ρ≤1.
+
+    Returns
+    -------
+    matrices : (n, dim, dim) ndarray
+        Batch of matrices.
+    is_stable : (n,) bool ndarray
+        True where the matrix is stable (ρ<1).
+
+    Notes
+    -----
+    - “Stable” means Schur-stable (all |λ|<1).
+    - “Unstable” means at least one |λ|>1.
+    """
+    if not (0 <= stable_ratio <= 1):
+        raise ValueError("stable_ratio must be in (0,1)")
+    if n <= 0 or dim <= 0:
+        raise ValueError("n and dim must be positive integers")
+
+    stable_kwargs = {} if stable_kwargs is None else dict(stable_kwargs)
+    unstable_kwargs = {} if unstable_kwargs is None else dict(unstable_kwargs)
+
+    rng = np.random.default_rng(seed)
+    n_stable = int(round(stable_ratio * n))
+    n_unstable = n - n_stable
+
+    matrices = np.empty((n, dim, dim), dtype=float)
+    is_stable = np.empty(n, dtype=bool)
+
+    # Helper: try multiple seeds if an unstable draw ever fails (very rare safety net)
+    def _make_unstable(d, base_seed):
+        for t in range(retries + 1):
+            try:
+                return random_unstable_matrix(d, seed=int(base_seed + t), **unstable_kwargs)
+            except RuntimeError:
+                continue
+        raise RuntimeError("Failed to generate an unstable matrix after retries; adjust parameters or seed.")
+
+    # Pre-generate distinct seeds for each matrix
+    seeds = rng.integers(0, 2**32 - 1, size=n, dtype=np.uint64)
+
+    # Fill stable block
+    for i in range(n_stable):
+        matrices[i] = random_stable_matrix(dim, seed=int(seeds[i]), **stable_kwargs)
+        is_stable[i] = True
+
+    # Fill unstable block
+    for i in range(n_stable, n):
+        matrices[i] = _make_unstable(dim, int(seeds[i]))
+        is_stable[i] = False
+
+    # Optional shuffle to mix stable/unstable positions
+    if shuffle:
+        perm = rng.permutation(n)
+        matrices = matrices[perm]
+        is_stable = is_stable[perm]
+
+    return matrices, is_stable
 
 def _random_levy(size, beta=1.5):
     """
     This is an internal method to draw a random number (or array) using the Levy stable distribution via the
     Mantegna's algorithm.
         R. N. Mantegna and H. E. Stanley, “Stochastic Process with Ultraslow Convergence to a Gaussian: The Truncated
-        Levy Flight,” Phys. Rev. Lett., vol. 73, no. 22, pp. 2946–2949, 1994.
+        Levy's Flight,” Phys. Rev. Lett., vol. 73, no. 22, pp. 2946–2949, 1994.
 
     :param size: optional
         Size can be a tuple with all the dimensions. Behaviour similar to ``numpy.random.standard_normal``.
@@ -874,11 +1138,11 @@ def obtain_operators(num_vals=5):
                 dt=[*np.linspace(0.0, 2.0, num_vals)]),
             __selectors__),
         (
-           'differential_crossover',
-           dict(
-               crossover_rate=[*np.linspace(0.0, 1.0, num_vals)],
-               version=['binomial', 'exponential']),
-           __selectors__),
+            'differential_crossover',
+            dict(
+                crossover_rate=[*np.linspace(0.0, 1.0, num_vals)],
+                version=['binomial', 'exponential']),
+            __selectors__),
         (
             'differential_mutation',
             dict(
@@ -917,7 +1181,7 @@ def obtain_operators(num_vals=5):
                 alpha=[*np.linspace(0.0, 0.04, num_vals)]),
             __selectors__),
         (
-            'random_flight',  # Particular case for Levy flight
+            'random_flight',  # Particular case for Levy's flight
             dict(
                 scale=[*np.linspace(0.01, 1.0, num_vals)],
                 distribution=['levy'],
@@ -961,7 +1225,16 @@ def obtain_operators(num_vals=5):
                 swarm_conf=[*np.linspace(0.01, 4.99, num_vals)],
                 version=['inertial', 'constriction'],
                 distribution=['uniform', 'gaussian', 'levy']),
-            __selectors__)
+            __selectors__),
+        (
+            'linear_system',
+            dict(
+                matrix=[None],  # Use strings to indicate random matrices
+                dt=[*np.linspace(0.01, 1.0, num_vals)],
+                offset=['subpopmean', 'globalbest'],
+                noise=[*np.linspace(0.0, 0.1, num_vals)]
+            ),
+            __selectors__),
     ]
 
 

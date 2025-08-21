@@ -1,5 +1,6 @@
 function usage {
        printf "Usage:\n"
+       printf " -d                               Development mode: install package in editable mode.\n"
        printf " -r                               Remove package's dist folder.\n"
        printf " -u                               Uninstall package.\n"
        printf " -b                               Build package.\n"
@@ -35,6 +36,12 @@ build_package() {
   printf "[Done]\n"
 }
 
+development_mode() {
+  echo "Running in development mode..."
+  python3 -m pip install -e .
+  printf "[Done]\n"
+}
+
 install_package() {
   echo "Installing package..."
   python3 setup.py sdist
@@ -52,8 +59,9 @@ default () {
   printf "[Done]\n"
 }
 
-while getopts 'rubiph' flag; do
+while getopts 'drubiph' flag; do
   case "${flag}" in
+    d) development_mode ;;
     r) remove_package ;;
     u) uninstall_package ;;
     b) build_package ;;

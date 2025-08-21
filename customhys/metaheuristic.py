@@ -57,6 +57,7 @@ class Metaheuristic:
             if not isinstance(search_operators, list):
                 search_operators = [search_operators]
             self.perturbators, self.selectors = Operators.process_operators(search_operators)
+            # TODO: consider operators without being dictionary
 
         # Define the maximum number of iterations
         self.num_iterations = num_iterations
