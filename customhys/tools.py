@@ -82,7 +82,7 @@ def printmsk(var, level=1, name=None):
                 var = var[:10]
 
             # If all the elements has same type, then show an example
-            if len(set([val.__class__.__name__ for val in var])) == 1:
+            if len([val.__class__.__name__ for val in var]) == 1:
                 printmsk(var[0], level + 1, '0')
                 print(':  ' * (level + 1))
             else:
@@ -413,23 +413,26 @@ def read_json(data_file):
     return data
 
 
-def merge_json(data_folder: str, list_of_fields: list = None, save_file: bool = True) -> None:
+def merge_json(data_folder: str, list_of_fields: list|None = None, save_file: bool = True) -> None:
     raw_file_names = [element for element in os.listdir(data_folder) if (
             (not element.startswith('.')) and element.endswith('.json'))]
 
     file_names = sorted(raw_file_names, key=lambda x: int(x.split('-')[0]))
 
-    temporal_pretable = []
+    temporal_pretable: list[dict] = []
+
+    _list_of_fields = [] if list_of_fields is None else list_of_fields
+
 
     for file_name in tqdm(file_names):
         temporal_data = read_json(data_folder + '/' + file_name)
 
-        if (len(temporal_pretable) == 0) and (not list_of_fields):
-            list_of_fields = list(temporal_data.keys())
+        if (len(temporal_pretable) == 0) and (len(_list_of_fields) == 0):
+            _list_of_fields = list(temporal_data.keys())
 
         temporal_pretable.append(
             {**{"file_name": file_name, "step": int(file_name.split('-')[0])},
-             **{field: temporal_data[field] for field in list_of_fields}}
+             **{field: temporal_data[field] for field in _list_of_fields}}
         )
 
     # df = pd.DataFrame(temporal_pretable)

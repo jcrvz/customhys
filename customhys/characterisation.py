@@ -99,21 +99,22 @@ class Characteriser:
         entropy_value = (pdf_xvalues[1] - pdf_xvalues[0]) * st.entropy(pdf_fvalues, base=2)
 
         # Return a dictionary with all the information
-        return dict(nob=dst.nobs,
-                    raw=length_scale,
-                    Min=dst.minmax[0],
-                    Max=dst.minmax[1],
-                    Avg=dst.mean,
-                    Std=np.std(length_scale),
-                    Skw=dst.skewness,
-                    Kur=dst.kurtosis,
-                    IQR=st.iqr(length_scale),
-                    Med=np.median(length_scale),
-                    MAD=st.median_absolute_deviation(length_scale),
-                    KDE_bw=self.bandwidth,
-                    PDF_fx=pdf_fvalues,
-                    PDF_xs=pdf_xvalues,
-                    Entropy=entropy_value)
+        return {"nob":      dst.nobs,
+                "raw":      length_scale,
+                "Min":      dst.minmax[0],
+                "Max":      dst.minmax[1],
+                "Avg":      dst.mean,
+                "Std":      np.std(length_scale),
+                "Skw":      dst.skewness,
+                "Kur":      dst.kurtosis,
+                "IQR":      st.iqr(length_scale),
+                "Med":      np.median(length_scale),
+                "MAD":      st.median_absolute_deviation(length_scale),
+                "KDE_bw":   self.bandwidth,
+                "PDF_fx":   pdf_fvalues,
+                "PDF_xs":   pdf_xvalues,
+                "Entropy":  entropy_value
+        }
 
     @staticmethod
     def _evaluate_positions(function, span_boundaries, centre_boundaries, positions):
@@ -180,7 +181,9 @@ if __name__ == '__main__':
 
     chsr = Characteriser()
     results = chsr.length_scale(problem, bandwidth_mode='exhaustive')
-    plt.hist(results['raw'], density=True, bins=100), plt.plot(results['PDF_xs'], results['PDF_fx']), plt.show()
+    plt.hist(results['raw'], density=True, bins=100)
+    plt.plot(results['PDF_xs'], results['PDF_fx'])
+    plt.show()
 
     print(results['Entropy'])
 

@@ -26,13 +26,19 @@ def obtain_sample_weight(sample_fitness, fitness_to_weight='rank'):
     b = max(sample_fitness)
     if fitness_to_weight == 'linear_reciprocal':
         # f: [a, b] -> (0, 1]
-        weight_conversion = lambda fitness: a / fitness
+        def weight_conversion(fitness):
+            return fitness / a
+        # weight_conversion = lambda fitness: a / fitness
     elif fitness_to_weight == 'linear_reciprocal_translated':
         # f: [a, b] -> [1, b-a+1]
-        weight_conversion = lambda fitness: a * b / fitness - a + 1
+        def weight_conversion(fitness):
+            return a * b / fitness - a + 1
+        # weight_conversion = lambda fitness: a * b / fitness - a + 1
     elif fitness_to_weight == 'linear_percentage':
         # f: [a, b] -> [1, 100]
-        weight_conversion = lambda fitness: 100 * (b - fitness) / (b - a) + 1
+        def weight_conversion(fitness):
+            return 100 * (b - fitness) / (b - a) + 1
+        # weight_conversion = lambda fitness: 100 * (b - fitness) / (b - a) + 1
     elif fitness_to_weight == 'rank':
         # f: [fitness] -> [0, n-1]
         indices = list(range(len(sample_fitness)))
@@ -44,7 +50,9 @@ def obtain_sample_weight(sample_fitness, fitness_to_weight='rank'):
     else:
         # Default linear conversion
         # f: [a, b] -> [a, b]
-        weight_conversion = lambda fitness: a + b - fitness
+        def weight_conversion(fitness):
+            return a + b - fitness
+        # weight_conversion = lambda fitness: a + b - fitness
 
     return [weight_conversion(fitness) for fitness in sample_fitness]
 
@@ -53,7 +61,7 @@ class DatasetSequences:
     def __init__(self, sequences, fitnesses, num_operators=None, fitness_to_weight=None):
         'Pre-process sequences to generate training data for HHNN'
         X, y, sample_fitness = [], [], []
-        for sequence, fitness in zip(sequences, fitnesses):
+        for sequence, fitness in zip(sequences, fitnesses, strict=True):
             if len(sequence) >0 and sequence[0] == -1:
                 sequence.pop(0)
                 fitness.pop(0)
@@ -120,13 +128,13 @@ def retrieve_model_info(params):
         model_directory = model_directory +f'{model_label}_dir/'
         model_filename = 'trained_model'
 
-    filename_dict = dict({
+    filename_dict = {
         'model_directory': model_directory,
         'model_label': model_label,
         'model_path': model_directory + f'{personal_labels}.h5',
         'log_path': model_directory + f'{model_filename}_log.csv',
         'log_time_path': model_directory + f'{model_filename}_log_time.csv'
-    })
+    }
 
     return architecture_name, encoder_name, filename_dict
 
@@ -275,11 +283,11 @@ class ModelPredictorKeras:
             callbacks.append(history_logger)
 
         class TimingCallback(tf.keras.callbacks.Callback):
-            def __init__(self, logs={}):
+            def __init__(self, logs=None):
                 self.logs = []
-            def on_epoch_begin(self, epoch, logs={}):
+            def on_epoch_begin(self, epoch, logs=None):
                 self.start_time = timer()
-            def on_epoch_end(self, epoch, logs={}):
+            def on_epoch_end(self, epoch, logs=None):
                 self.logs.append(timer() - self.start_time)
         timing_cb = TimingCallback()
         if verbose_statistics:

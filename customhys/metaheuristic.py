@@ -71,7 +71,7 @@ class Metaheuristic:
         self.num_agents = num_agents
 
         # Initialise historical variables
-        self.historical = dict()
+        self.historical: dict = {}
 
         # Set additional variables
         self.verbose = verbose
@@ -133,7 +133,7 @@ class Metaheuristic:
 
         # Report which operators are going to use
         self._verbose('\nSearch operators to employ:')
-        for perturbator, selector in zip(self.perturbators, self.selectors):
+        for perturbator, selector in zip(self.perturbators, self.selectors, strict=True):
             self._verbose(f"{perturbator} with {selector}")
         self._verbose("{}".format('-' * 50))
 
@@ -143,7 +143,7 @@ class Metaheuristic:
             self.pop.iteration += 1
 
             # Implement the sequence of operators and selectors
-            for perturbator, selector in zip(self.perturbators, self.selectors):
+            for perturbator, selector in zip(self.perturbators, self.selectors, strict=True):
 
                 # Apply the corresponding search operator
                 self.apply_search_operator(perturbator, selector)

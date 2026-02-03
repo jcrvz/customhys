@@ -242,11 +242,11 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
             raise ExperimentError(f"File {full_path} does not exist!")
     else:
         if exp_config is None:
-            exp_config = dict()
+            exp_config = {}
         if hh_config is None:
-            hh_config = dict()
+            hh_config = {}
         if prob_config is None:
-            prob_config = dict()
+            prob_config = {}
 
     # Load the default experiment configuration and compare it with exp_cfg
     exp_config = tl.check_fields(
@@ -345,6 +345,7 @@ if __name__ == '__main__':
     if not os.path.exists(OUTPUT_FOLDER):
         os.makedirs(OUTPUT_FOLDER)
 
+    exp_filenames: list[str]|str
     if args.batch:
         with open(args.exp_config, encoding='utf-8') as configs:
             exp_filenames = configs.read()

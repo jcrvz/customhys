@@ -5,13 +5,13 @@ Created on Tue Sep 17 14:29:43 2019
 
 @author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: j.m.cruzduarte@ieee.org
 """
+
 from math import isfinite
 
 import numpy as np
 
 __all__ = ['Population']
 __selectors__ = ['all', 'greedy', 'metropolis', 'probabilistic']
-
 
 class Population:
     """
@@ -20,7 +20,7 @@ class Population:
 
     # Internal variables
     iteration = 0
-    rotation_matrix = []
+    # rotation_matrix = []
 
     # Parameters per selection method
     metropolis_temperature = 1000.0
@@ -164,7 +164,8 @@ class Population:
         self.particular_best_positions = np.copy(self.backup_particular_best_positions)
         self.update_positions('global', 'greedy')
 
-    def update_positions(self, level: str ='population', selector: (str, list[str]) = 'greedy'):
+    def update_positions(self, level: str = 'population', selector: str|list[str] = 'greedy'):
+    # def update_positions(self, level: str ='population', selector: (str, list[str]) = 'greedy'):
         """
         Update the population positions according to the level and selection scheme.
 
@@ -178,7 +179,7 @@ class Population:
             Selection method. The selectors available are: 'greedy', 'probabilistic', 'metropolis', 'all', and 'none'.
             The default is 'all'.
 
-        :returns: None.s
+        :returns: None.
         """
         # Check if the selector is a list
 

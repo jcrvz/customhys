@@ -20,6 +20,8 @@ Created on Tue Sep 17 14:29:43 2019
 """
 
 import abc
+import importlib
+import importlib.util
 import os
 
 import matplotlib.pyplot as plt
@@ -27,20 +29,26 @@ import numpy as np
 from matplotlib.colors import LightSource
 
 _cec_functions = False
-try:
-    from optproblems import cec2005
+if importlib.util.find_spec("optproblems.cec2005") is not None:
+    cec2005 = importlib.import_module("optproblems.cec2005")
     _cec_functions = True
+else:
+    _cec_functions = False
 
-except ImportError:
     import warnings as wa
-
     message = "`optproblems` not found! Please, install it to use the cec2005 benchmark functions"
     wa.showwarning(message, ImportWarning, "benchmark_func.py", 29)
 
 # Prevent using LaTeX if it is not installed
 try:
     plt.rcParams.update({'text.usetex': True})
-except:
+except (RuntimeError, ImportError, OSError) as e:
+    import warnings
+    warnings.warn(f"Disabling `text.usetex` because enabling failed: {e}", RuntimeWarning, stacklevel=2)
+    plt.rcParams.update({'text.usetex': False})
+except Exception as e:
+    import warnings
+    warnings.warn(f"Unexpected error while setting `text.usetex`: {e}", RuntimeWarning, stacklevel=2)
     plt.rcParams.update({'text.usetex': False})
 
 __all__ = ['Ackley1', 'Ackley4', 'Alpine1', 'Alpine2', 'Bohachevsky', 'Brent', 'Brown', 'CarromTable', 'ChungReynolds',
@@ -304,9 +312,9 @@ class BasicProblem:
 
         # Evaluate each node of the grid into the problem function
         matrix_z = []
-        for xy_list in zip(matrix_x, matrix_y):
+        for xy_list in zip(matrix_x, matrix_y, strict=True):
             z = []
-            for xy_input in zip(xy_list[0], xy_list[1]):
+            for xy_input in zip(xy_list[0], xy_list[1], strict=True):
                 tmp = list(xy_input)
                 tmp.extend(list(self.optimal_solution[2:self.variable_num]))
                 z.append(self.get_function_value(np.array(tmp)))
@@ -382,12 +390,13 @@ class BasicProblem:
         """
 
         # TODO: Include additional parameters to build the formatted problem, e.g., length scale feature.
-        return dict(function=lambda x: self.get_function_value(x),
-                    boundaries=(self.min_search_range, self.max_search_range),
-                    is_constrained=is_constrained,
-                    features=self.get_features(fts=fts),
-                    func_name=self.func_name,
-                    dimensions=self.variable_num)
+        return {"function": lambda x: self.get_function_value(x),
+                "boundaries":   (self.min_search_range, self.max_search_range),
+                "is_constrained":   is_constrained,
+                "features": self.get_features(fts=fts),
+                "func_name":    self.func_name,
+                "dimensions":   self.variable_num
+        }
 
 
 # %% SPECIFIC PROBLEM FUNCTIONS
@@ -2822,15 +2831,15 @@ if _cec_functions:
             return self.f_function(variables)
 
         def get_formatted_problem(self):
-            return dict(
-                function=self.f_function,
-                boundaries=(self.min_search_range, self.max_search_range),
-                is_constrained=self.is_constrained
-            )
+            return {
+                "function":         self.f_function,
+                "boundaries":       (self.min_search_range, self.max_search_range),
+                "is_constrained":   self.is_constrained
+            }
 
 
 # %% TOOLS TO HANDLE THE PROBLEMS
-def list_functions(rnp: bool = True, fts: list = None, wrd: str = '1'):
+def list_functions(rnp: bool = True, fts: list|None = None, wrd: str = '1'):
     """
     This function lists all available functions in screen. It could be formatted for copy and paste in a latex document.
     :param bool rnp: Optional.
@@ -2851,8 +2860,8 @@ def list_functions(rnp: bool = True, fts: list = None, wrd: str = '1'):
         fts = ['Differentiable', 'Separable', 'Unimodal']
 
     # Initialise the variables
-    feature_strings = list()
-    functions_features = dict()
+    feature_strings = []
+    functions_features = {}
 
     # For all the functions
     for ii in range(len(__all__)):
@@ -2892,7 +2901,7 @@ def for_all(characteristic, dimensions=2):
     if characteristic == 'features':
         return list_functions(rnp=True, fts=None)
     else:
-        info = dict()
+        info = {}
         # Read all functions and request their optimum data
         for ii in range(len(__all__)):
             function_name = __all__[ii]
@@ -2901,14 +2910,12 @@ def for_all(characteristic, dimensions=2):
         return info
 
 
-def filter_problems(features: list = None, intersection: bool = True):
+def filter_problems(features: list|None = None, intersection: bool = True):
     """
     Return a list of function names that have the features listed
-    :param list[str] features: 
-        List of features.
-    :param bool intersection: 
-        True if the problems needs to have all the features, false if at least one is needed.
-    :return: list        
+    :param list[str] features: List of features.
+    :param bool intersection: True if the problems needs to have all the features, false if at least one is needed.
+    :return: list of function names
     """
     features = ['Differentiable', 'Separable', 'Unimodal'] if features is None else features
 
