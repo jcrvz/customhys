@@ -1,19 +1,18 @@
-# -*- coding: utf-8 -*-
 """
 This module contains the main experiments performed using the current framework.
 
 Created on Mon Sep 30 13:42:15 2019
 
-@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
+@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: j.m.cruzduarte@ieee.org
 """
 
-from . import hyperheuristic as hyp
-from . import operators as op
-from . import benchmark_func as bf
-from . import tools as tl
 import multiprocessing
 from os import path
 
+from . import benchmark_func as bf
+from . import hyperheuristic as hyp
+from . import operators as op
+from . import tools as tl
 
 # %% PREDEFINED CONFIGURATIONS
 # Use configuration files instead of predefined dictionaries
@@ -176,7 +175,7 @@ class Experiment:
         label = '{}-{}D-{}'.format(function_string, num_dimensions, self.exp_config['experiment_name'])
 
         # Get and format the problem
-        problem = eval('bf.{}({})'.format(function_string, num_dimensions))
+        problem = eval(f'bf.{function_string}({num_dimensions})')
         problem_to_solve = problem.get_formatted_problem(self.prob_config['is_constrained'])
 
         # Read the particular weights array (if so)
@@ -326,6 +325,7 @@ if __name__ == '__main__':
     # Import module for calling this code from command-line
     import argparse
     import os
+
     from tools import preprocess_files
 
     DATA_FOLDER = "./data_files/raw"

@@ -3,15 +3,16 @@ This module contains tools for processing and dealing with some data liaised to 
 
 Created on Sat Feb 22, 2020
 
-@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
+@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: j.m.cruzduarte@ieee.org
 """
 
 import json
-import numpy as np
 import os
 import random
-import scipy.stats as st
 from subprocess import call
+
+import numpy as np
+import scipy.stats as st
 from tqdm import tqdm
 
 
@@ -69,7 +70,7 @@ def printmsk(var, level=1, name=None):
 
     # Check if it has __len__ but is not str or ndarray
     if hasattr(var, '__len__') and parent_type not in ['str', 'ndarray']:
-        print('{}: {}'.format(parent_type, len(var)) + '}')
+        print(f'{parent_type}: {len(var)}' + '}')
 
         # If is it a dictionary
         if parent_type == 'dict':
@@ -90,9 +91,9 @@ def printmsk(var, level=1, name=None):
     else:
         if parent_type == 'ndarray':
             dimensions = ' x '.join([str(x) for x in var.shape])
-            print('{}: {}'.format(parent_type, dimensions) + '}')
+            print(f'{parent_type}: {dimensions}' + '}')
         else:
-            print('{}'.format(parent_type) + '}')
+            print(f'{parent_type}' + '}')
 
 
 def listfind(values, val):
@@ -133,7 +134,7 @@ def revise_results(main_folder='data_files/raw/'):
                 # Rename the copied folder with prefix '.to_delete-'
                 call(['mv', main_folder + folders_with_date[index],
                       main_folder + '.to_delete-' + folders_with_date[index]])
-                print("Merged '{}' into '{}'!".format(folders_with_date[index], folders_with_date[indices[0]]))
+                print(f"Merged '{folders_with_date[index]}' into '{folders_with_date[indices[0]]}'!")
 
 
 def read_folder_files(folder_name):
@@ -274,14 +275,13 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
                          'hist_positions': list()}
 
         # Walk on the subfolder's files
-        for file_name in tqdm(file_names, desc='{} {}, last={}'.format(
-                problem_name, dimensions, last_step)):
+        for file_name in tqdm(file_names, desc=f'{problem_name} {dimensions}, last={last_step}'):
 
             # Extract the iteration number and time
             operator_id = int(file_name.split('-')[0])
 
             # Read json file
-            with open(temporal_full_path + '/' + file_name, 'r') as json_file:
+            with open(temporal_full_path + '/' + file_name) as json_file:
                 temporal_data = json.load(json_file)
 
             if kind in ['dynamic_metaheuristic', 'neural_network']:
@@ -395,7 +395,7 @@ def save_json(variable_to_save, file_name=None, suffix=None):
     suffix = '_' + suffix if suffix else ''
 
     # Create the new file
-    with open('./{}{}.json'.format(file_name, suffix), 'w', encoding='utf-8') as json_file:
+    with open(f'./{file_name}{suffix}.json', 'w', encoding='utf-8') as json_file:
         json.dump(variable_to_save, json_file, cls=NumpyEncoder)
 
 
@@ -406,7 +406,7 @@ def read_json(data_file):
         Filename of the json file.
     :return: dict or list.
     """
-    with open(data_file, 'r', encoding='utf-8') as json_file:
+    with open(data_file, encoding='utf-8') as json_file:
         data = json.load(json_file)
 
     # Return only the data variable

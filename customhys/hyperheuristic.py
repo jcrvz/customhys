@@ -1,29 +1,31 @@
-# -*- coding: utf-8 -*-
 """
 This module contains the Hyperheuristic class.
 
 Created on Thu Jan  9 15:36:43 2020
 
-@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
+@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: j.m.cruzduarte@ieee.org
 """
 
 import json
-import numpy as np
 import random
-import scipy.stats as st
 from datetime import datetime
 from os import makedirs as _create_path
 from os.path import exists as _check_path
+
+import numpy as np
+import scipy.stats as st
+
 from . import operators as op
 from . import tools as jt
 from .metaheuristic import Metaheuristic
 
 _using_tensorflow = False
 try:
-    import tensorflow as tf
-    from .machine_learning import DatasetSequences, ModelPredictor
-
     from os import environ as _environ
+
+    import tensorflow as tf
+
+    from .machine_learning import DatasetSequences, ModelPredictor
 
     # Remove Tensorflow warnings
     _environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -87,7 +89,7 @@ class Hyperheuristic:
             self.heuristic_space = heuristic_space
         elif isinstance(heuristic_space, str):
             self.heuristic_space_label = heuristic_space[:heuristic_space.rfind('.')].split('_')[0]
-            with open('collections/' + heuristic_space, 'r', encoding='utf-8') as operators_file:
+            with open('collections/' + heuristic_space, encoding='utf-8') as operators_file:
                 self.heuristic_space = [eval(line.rstrip('\n')) for line in operators_file]
         else:
             raise HyperheuristicError('Invalid heuristic_space')
@@ -413,8 +415,7 @@ class Hyperheuristic:
         if acceptation_scheme == 'exponential':
             probability = np.min([np.exp(-delta / (energy_zero * temp)), 1]) if prob is None else prob
             if self.parameters['verbose']:
-                print(', [Delta: {:.2e}, ArgProb: {:.2e}, Prob: {:.2f}]'.format(
-                    delta, -delta / (energy_zero * temp), probability), end=' ')
+                print(f', [Delta: {delta:.2e}, ArgProb: {-delta / (energy_zero * temp):.2e}, Prob: {probability:.2f}]', end=' ')
             return np.random.rand() < probability
         elif acceptation_scheme == 'boltzmann':
             probability = 1. / (1. + np.exp(delta / temp)) if prob is None else prob
@@ -514,10 +515,8 @@ class Hyperheuristic:
 
             # Print update
             if self.parameters['verbose']:
-                print('{} :: Step: {:4d}, Action: {:12s}, Temp: {:.2e}, Card: {:3d}, '.format(
-                    self.file_label, step, action, temperature, len(candidate_solution)) +
-                      'candPerf: {:.2e}, currPerf: {:.2e}, bestPerf: {:.2e}'.format(
-                          candidate_performance, current_performance, best_performance), end=' ')
+                print(f'{self.file_label} :: Step: {step:4d}, Action: {action:12s}, Temp: {temperature:.2e}, Card: {len(candidate_solution):3d}, ' +
+                      f'candPerf: {candidate_performance:.2e}, currPerf: {current_performance:.2e}, bestPerf: {best_performance:.2e}', end=' ')
 
             # Accept the current solution using a given acceptance_scheme
             if self._check_acceptance(candidate_performance - current_performance, self.parameters['acceptance_scheme'],
@@ -564,7 +563,7 @@ class Hyperheuristic:
 
         # Print the best one
         if self.parameters['verbose']:
-            print('\nBEST --> Perf: {}, e-Sol: {}'.format(best_performance, best_solution))
+            print(f'\nBEST --> Perf: {best_performance}, e-Sol: {best_solution}')
 
         # Return the best solution found and its details
         return best_solution, best_performance, historical_current, historical_best
@@ -700,7 +699,7 @@ class Hyperheuristic:
 
             # Print the best one
             if self.parameters['verbose']:
-                print('\nBest fitness: {},\nBest position: {}'.format(current_fitness, current_position))
+                print(f'\nBest fitness: {current_fitness},\nBest position: {current_position}')
 
             #  Update the repetition register
             sequence_per_repetition.append(np.double(current_sequence).astype(int).tolist())
@@ -849,7 +848,7 @@ class Hyperheuristic:
 
             # Print the best one
             if self.parameters['verbose']:
-                print('\nBest fitness: {},\nBest position: {}'.format(current_fitness, current_position))
+                print(f'\nBest fitness: {current_fitness},\nBest position: {current_position}')
 
             # Update the repetition register
             sequence_per_repetition.append(np.double(current_sequence).astype(int).tolist())
@@ -877,7 +876,7 @@ class Hyperheuristic:
         model_params['num_steps'] = self.parameters['num_steps']
         model_params['num_operators'] = self.num_operators
 
-        # Initialize model        
+        # Initialize model
         model = ModelPredictor(model_params)
 
         # Load pre-trained model
@@ -974,8 +973,7 @@ class Hyperheuristic:
 
             # Print update
             if self.parameters['verbose']:
-                print('{} :: Operator {} of {}, Perf: {}'.format(
-                    self.file_label, operator_id + 1, self.num_operators, operator_performance))
+                print(f'{self.file_label} :: Operator {operator_id + 1} of {self.num_operators}, Perf: {operator_performance}')
 
     def basic_metaheuristics(self, save_steps=True):
         """
@@ -1005,8 +1003,7 @@ class Hyperheuristic:
 
             # Print update
             if self.parameters['verbose']:
-                print('{} :: BasicMH {} of {}, Perf: {}'.format(
-                    self.file_label, operator_id + 1, self.num_operators, operator_performance))
+                print(f'{self.file_label} :: BasicMH {operator_id + 1} of {self.num_operators}, Perf: {operator_performance}')
 
     @staticmethod
     def get_performance(statistics):

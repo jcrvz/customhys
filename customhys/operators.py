@@ -1,16 +1,17 @@
-# -*- coding: utf-8 -*-
 """
 This module contains a collection search operators extracted from several well-known metaheuristics from the literature.
 All the available operators are listed in ``__all__``
 
 Created on Tue Jan  7 14:54:31 2020
 
-@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
+@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: j.m.cruzduarte@ieee.org
 """
 import math
-import numpy as np
 import os
 from itertools import combinations as _get_combinations
+
+import numpy as np
+
 from .population import __selectors__
 
 __all__ = ['local_random_walk', 'random_search', 'random_sample', 'random_flight', 'differential_mutation',
@@ -803,12 +804,14 @@ def linear_system(pop, matrix=None, dt=0.1, offset="globalbest", noise=0.0):
     if offset == "subpopmean":
         sampled_positions = pop.particular_best_positions[np.random.permutation(pop.num_agents)[:num_agents // 3], :]
         x_star = (np.mean(sampled_positions, axis=0) + pop.global_best_position.copy()) / 2.0
+    elif offset == "particularbest":
+        x_star = (np.asarray(pop.global_best_position.copy()) + pop.particular_best_positions.copy())/2.0
     elif offset == "globalbest":
         x_star = np.asarray(pop.global_best_position.copy())
     else:
         raise OperatorsError('Invalid offset! Use "subpopmean" or "globalbest".')
-    if x_star.shape != (num_dimensions,):
-        raise OperatorsError("x_star/offset must yield a 1D vector of length num_dimensions")
+    # if x_star.shape != (num_dimensions,):
+    #     raise OperatorsError("x_star/offset must yield a 1D vector of length num_dimensions")
 
     # Normalise matrix shape to per-agent
     M = np.asarray(matrix)
@@ -826,7 +829,7 @@ def linear_system(pop, matrix=None, dt=0.1, offset="globalbest", noise=0.0):
     I = np.eye(num_dimensions)
     I_batch = np.tile(I, (num_agents, 1, 1))         # (num_agents, num_dimensions, num_dimensions)
     # b_i = x* @ (I - M_i)   -> result shape (num_agents, num_dimensions)
-    b = np.einsum('d,adk->ak', x_star, I_batch - M)
+    b = np.einsum('ad,adk->ak', x_star, I_batch - M)
 
     # Continuous-time field and Forward Euler step
     # A_i = (M_i - I)/dt,  c_i = b_i/dt
@@ -1294,8 +1297,7 @@ def build_operators(heuristics=obtain_operators(), file_name='operators_collecti
                     for k in range(num_parameters)]
                 simple_par_combination = dict(list_tuples)
                 for selector in selectors:
-                    file.write("('{}', {}, '{}')\n".format(
-                        operator, simple_par_combination, selector))
+                    file.write(f"('{operator}', {simple_par_combination}, '{selector}')\n")
         elif num_parameters == 0:
             num_combinations = num_selectors
             for selector in selectors:
@@ -1341,15 +1343,15 @@ def process_operators(simple_heuristics):
 
                 # Check if a value is string
                 if type(value) == str:
-                    str_parameters.append("{}='{}'".format(parameter, value))
+                    str_parameters.append(f"{parameter}='{value}'")
                 else:
-                    str_parameters.append('{}={}'.format(parameter, value))
+                    str_parameters.append(f'{parameter}={value}')
 
             # Create an executable string with given arguments
-            full_string = '{}({})'.format(operator, sep.join(str_parameters))
+            full_string = f'{operator}({sep.join(str_parameters)})'
         else:
             # Create an executable string with default arguments
-            full_string = '{}()'.format(operator)
+            full_string = f'{operator}()'
 
         # Store the read operator
         executable_operators.append(full_string)

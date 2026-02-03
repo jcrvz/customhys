@@ -1,7 +1,9 @@
-import pytest
 import numpy as np
+import pytest
+
 from customhys import benchmark_func as bf
 from customhys import population as pp
+
 selector_data = {'all', 'greedy'}
 selector_global_data = {'greedy'}
 selectors = {('all', 'greedy'),

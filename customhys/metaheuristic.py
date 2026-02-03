@@ -1,13 +1,13 @@
-# -*- coding: utf-8 -*-
 """
 This module contains the Metaheuristic class.
 
 Created on Thu Sep 26 16:56:01 2019
 
-@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
+@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: j.m.cruzduarte@ieee.org
 """
 
 import numpy as np
+
 from . import operators as Operators
 from .population import Population
 
@@ -56,6 +56,8 @@ class Metaheuristic:
         if search_operators:
             if not isinstance(search_operators, list):
                 search_operators = [search_operators]
+            # Store original operators for direct calling
+            self._search_operators_orig = search_operators
             self.perturbators, self.selectors = Operators.process_operators(search_operators)
             # TODO: consider operators without being dictionary
 
@@ -93,11 +95,14 @@ class Metaheuristic:
         self.pop.update_positions('global', 'greedy')
 
     def apply_search_operator(self, perturbator, selector):
-        # Split operator
-        operator_name, operator_params = perturbator.split('(')
+        # Find the index of this perturbator and use original parameters
+        idx = self.perturbators.index(perturbator)
+        operator_name, operator_params, _ = self._search_operators_orig[idx]
 
-        # Apply an operator
-        exec('Operators.' + operator_name + '(self.pop,' + operator_params)
+        # Get the operator function and call it directly
+        operator_func = getattr(Operators, operator_name)
+        operator_func(self.pop, **operator_params)
+
 
         # Evaluate fitness values
         self.pop.evaluate_fitness(self._problem_function)
@@ -129,7 +134,7 @@ class Metaheuristic:
         # Report which operators are going to use
         self._verbose('\nSearch operators to employ:')
         for perturbator, selector in zip(self.perturbators, self.selectors):
-            self._verbose("{} with {}".format(perturbator, selector))
+            self._verbose(f"{perturbator} with {selector}")
         self._verbose("{}".format('-' * 50))
 
         # Start optimisaton procedure

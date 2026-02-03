@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 """
 This module contains the class Population.
 
 Created on Tue Sep 17 14:29:43 2019
 
-@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
+@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: j.m.cruzduarte@ieee.org
 """
 from math import isfinite
 
@@ -314,7 +313,7 @@ class Population:
         total_vertices = 2 ** num_dimensions
 
         basic_matrix = 2 * np.array(
-            [[int(x) for x in list(format(k, '0{}b'.format(num_dimensions)))] for k in range(total_vertices)]) - 1
+            [[int(x) for x in list(format(k, f'0{num_dimensions}b'))] for k in range(total_vertices)]) - 1
 
         output_matrix = np.copy(basic_matrix)
 

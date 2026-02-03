@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This module contains Machine Learning tools.
 
@@ -7,12 +6,13 @@ Created on Wed Sep  8 00:00:00 2021
 @author: Jose Manuel Tapia Avitia, e-mail: josetapia@exatec.tec.mx
 """
 
+from os import makedirs as _create_path
+from os.path import exists as _check_path
+from timeit import default_timer as timer
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from os.path import exists as _check_path
-from os import makedirs as _create_path
-from timeit import default_timer as timer
 
 
 def obtain_sample_weight(sample_fitness, fitness_to_weight='rank'):
@@ -45,11 +45,11 @@ def obtain_sample_weight(sample_fitness, fitness_to_weight='rank'):
         # Default linear conversion
         # f: [a, b] -> [a, b]
         weight_conversion = lambda fitness: a + b - fitness
-    
+
     return [weight_conversion(fitness) for fitness in sample_fitness]
 
 
-class DatasetSequences():
+class DatasetSequences:
     def __init__(self, sequences, fitnesses, num_operators=None, fitness_to_weight=None):
         'Pre-process sequences to generate training data for HHNN'
         X, y, sample_fitness = [], [], []
@@ -61,7 +61,7 @@ class DatasetSequences():
                 # Per each prefix, predict the next operator
                 y.append(sequence.pop())
                 X.append(sequence.copy())
-                sample_fitness.append(fitness.pop())            
+                sample_fitness.append(fitness.pop())
         self._X = X
         self._y = y
         if fitness_to_weight is not None:
@@ -72,7 +72,7 @@ class DatasetSequences():
         self._one_hot_encoded = None
         if num_operators is not None:
             self.apply_one_hot_encoding(num_operators)
-    
+
     def apply_one_hot_encoding(self, num_operators):
         'One-Hot encode the output of the training data'
         if self._one_hot_encoded is not None:
@@ -85,7 +85,7 @@ class DatasetSequences():
             self._y = tf.one_hot(indices=self._y,
                                  depth=num_operators,
                                  dtype=tf.int64).numpy()
-    
+
     def obtain_dataset(self):
         'Retrieve the pre-processed data'
         return self._X, self._y, self._sample_weight
@@ -97,7 +97,7 @@ def retrieve_model_info(params):
     if not all(attribute in params for attribute in essential_attributes):
         left_attributes = [attribute for attribute in essential_attributes if attribute not in params]
         raise Exception(f'The following attributes left while retrieving the model info: {left_attributes}')
-    
+
     # Names
     architecture_name = params['model_architecture']
     encoder_name = params['encoder']
@@ -127,11 +127,11 @@ def retrieve_model_info(params):
         'log_path': model_directory + f'{model_filename}_log.csv',
         'log_time_path': model_directory + f'{model_filename}_log_time.csv'
     })
-    
+
     return architecture_name, encoder_name, filename_dict
 
 
-class Encoder():
+class Encoder:
     def __init__(self, params):
         self._encoder_name = params['encoder']
         self._architecture_name = params['model_architecture']
@@ -143,7 +143,7 @@ class Encoder():
                               dtype=tf.int64).numpy()
         def compose(f, g):
             return lambda x: f(g(x))
-        
+
         # Choice identity encoder
         if self._architecture_name in ['transformer', 'transformer_orig', 'LSTM_Ragged']:
             # Keep original values but element -1
@@ -160,40 +160,40 @@ class Encoder():
             encoder = compose(one_hot_encode, self.__identity_encoder)
         else:
             raise Exception('Encoder name does not exists')
-        
+
         # Prepare if LSTM is used
         if self._architecture_name in ['LSTM']:
             # Encode sequence, then reshape
             self._encoder = compose(self.__lstm_sequence, encoder)
         else:
             self._encoder = encoder
-    
+
     def encode(self, sequence):
         return self._encoder(sequence)
-    
+
     def __fix_sequence_length(self, sequence):
         'Fill a sequence with a dummy value until a fixed length'
         suffix = sequence[:self._memory_length]
         left_len = self._memory_length - len(suffix)
         prefix = [self._num_operators for _ in range(left_len)]
         return prefix + suffix
-    
+
     def __clean_sequence(self, sequence):
         'Keep original values but first -1 element'
         sequence_copy = sequence.copy()
         while len(sequence_copy) > 0 and sequence_copy[0] == -1:
             sequence_copy.pop(0)
         if len(sequence_copy) == 0:
-            sequence_copy.append(self._num_operators)  
+            sequence_copy.append(self._num_operators)
         return sequence_copy
-    
+
     @staticmethod
     def __lstm_sequence(sequence):
         'Reshape sequence for LSTM architecture usage'
         return [[x] for x in sequence]
-    
 
-class ModelPredictorKeras():
+
+class ModelPredictorKeras:
     # Keras TensorFlow Artificial Neural Network Model
     def __init__(self, params):
         # Get encoder
@@ -201,7 +201,7 @@ class ModelPredictorKeras():
         self._params = params.copy()
         self._encoder = Encoder(params.copy()).encode
         self.__create_keras_model()
-    
+
     def __create_keras_model(self):
         # Create model
         self._model = tf.keras.Sequential()
@@ -209,7 +209,7 @@ class ModelPredictorKeras():
         architecture_name = self._params['model_architecture']
         input_size = self._params['memory_length']
         hidden_layers = self._params['model_architecture_layers']
-        
+
         # Input layer
         if architecture_name in ['MLP']:
             # MLP input
@@ -238,23 +238,23 @@ class ModelPredictorKeras():
             elif layer_type == 'LSTM':
                 self._model.add(tf.keras.layers.LSTM(units=layer_size,
                                                      activation=layer_activation,
-                                                     return_sequences=idx + 1 < num_lstm_layers))        
+                                                     return_sequences=idx + 1 < num_lstm_layers))
 
         # Output layer
         self._model.add(tf.keras.layers.Dense(self._num_operators, activation='softmax'))
-    
+
         # Compile model
         self._model.compile(loss=tf.keras.losses.CategoricalCrossentropy(),
                             optimizer=tf.keras.optimizers.Adam(),
                             metrics=['accuracy'])
-    
+
     def __convert_tensor(self, tensor):
         if self._params['model_architecture'] in ['LSTM_Ragged']:
             return tf.ragged.constant(tensor)
         else:
             return tf.constant(tensor)
-        
-    def fit(self, X, y, epochs=100, sample_weight=None, 
+
+    def fit(self, X, y, epochs=100, sample_weight=None,
             verbose=False, early_stopping_params=None, verbose_statistics=False):
 
         # Pre-process dataset
@@ -284,26 +284,26 @@ class ModelPredictorKeras():
         timing_cb = TimingCallback()
         if verbose_statistics:
             callbacks.append(timing_cb)
-        
+
         # Early stopping
         if early_stopping_params is not None and verbose_statistics:
             early_stopping = tf.keras.callbacks.EarlyStopping(
                 monitor=early_stopping_params['monitor'],
                 patience=early_stopping_params['patience'],
                 mode=early_stopping_params['mode']
-            ) 
+            )
             callbacks.append(early_stopping)
 
         # Train model
-        self._model.fit(X_tensor, y_tensor, 
+        self._model.fit(X_tensor, y_tensor,
                   epochs=epochs,
-                  sample_weight=sample_weight, 
+                  sample_weight=sample_weight,
                   verbose=verbose,
                   callbacks=callbacks)
         if verbose_statistics:
             df_times = pd.DataFrame({'time': timing_cb.logs})
             df_times.to_csv(filename_dict['log_time_path'])
-            
+
         # Save predict function
         self._predict = self._model.predict
 
@@ -311,14 +311,14 @@ class ModelPredictorKeras():
         # Use model to predict weights
         tensor = self.__convert_tensor([self._encoder(sequence)])
         return self._predict(tensor)[0]
-    
+
     def load(self, model_path=None):
         if model_path is None:
             _, _, filename_dict = retrieve_model_info(self._params)
             model_path = filename_dict['model_path']
-            
+
         if _check_path(model_path):
-            self._model = tf.keras.models.load_model(model_path)    
+            self._model = tf.keras.models.load_model(model_path)
             # Save predict function
             self._predict = self._model.predict
             return True
@@ -336,6 +336,6 @@ class ModelPredictorKeras():
 
 def ModelPredictor(params):
     # Function that decide which ML model uses.
-    # For now, it is only supported the NN architecture with dense 
+    # For now, it is only supported the NN architecture with dense
     # and lstm layers. Future version will support Transformers.
     return ModelPredictorKeras(params)

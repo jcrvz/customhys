@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This module is an upgraded version of the Keita Tomochika's module in
 https://github.com/keit0222/optimization-evaluation. The current module only contain N-dimensional functions. These
@@ -17,14 +16,15 @@ optimization with comparative results. Swarm and Evolutionary Computation, 26 (2
 
 Created on Tue Sep 17 14:29:43 2019
 
-@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
+@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: j.m.cruzduarte@ieee.org
 """
 
-import os
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.colors import LightSource
 import abc
+import os
+
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.colors import LightSource
 
 _cec_functions = False
 try:
@@ -89,7 +89,7 @@ class BasicProblem:
                          'Convex': True}
         self.plot_object = None
         self.func_name = ''
-        self.save_dir = '{0}/function_plots/'.format(os.path.dirname(os.path.abspath(__file__)))
+        self.save_dir = f'{os.path.dirname(os.path.abspath(__file__))}/function_plots/'
 
         self.__offset_domain = 0.0
         self.__scale_domain = 1.0
@@ -2860,7 +2860,7 @@ def list_functions(rnp: bool = True, fts: list = None, wrd: str = '1'):
         if __all__[ii] not in ["CEC2005"]:
             # Get the name and initialise its object in two dimensions
             function_name = __all__[ii]
-            funct = eval("{}(2)".format(function_name))
+            funct = eval(f"{function_name}(2)")
 
             # Get the features and weights
             feature_str = funct.get_features(fts=fts)
@@ -2896,7 +2896,7 @@ def for_all(characteristic, dimensions=2):
         # Read all functions and request their optimum data
         for ii in range(len(__all__)):
             function_name = __all__[ii]
-            info[function_name] = eval('{}({}).{}'.format(function_name, dimensions, characteristic))
+            info[function_name] = eval(f'{function_name}({dimensions}).{characteristic}')
 
         return info
 
@@ -2937,8 +2937,8 @@ def choose_problem(problem_name=None, num_dimensions=None):
     """
     if problem_name and num_dimensions:
         if problem_name == '<random>':
-            return eval('{}({})'.format(__all__[np.random.randint(0, len(__all__))], num_dimensions))
+            return eval(f'{__all__[np.random.randint(0, len(__all__))]}({num_dimensions})')
         else:
-            return eval('{}({})'.format(problem_name, num_dimensions))
+            return eval(f'{problem_name}({num_dimensions})')
     else:
         print(f'You need to choose one problem. Available problems: {__all__}')

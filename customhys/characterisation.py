@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Thu Sep 26 16:56:01 2019
 
@@ -6,12 +5,12 @@ Created on Thu Sep 26 16:56:01 2019
 """
 
 import numpy as np
-from sklearn.neighbors import KernelDensity
-from sklearn.model_selection import GridSearchCV
 import scipy.stats as st
+from sklearn.model_selection import GridSearchCV
+from sklearn.neighbors import KernelDensity
 
 
-class Characteriser():
+class Characteriser:
 
     # _normal_scaling_factor = np.power(1 / (4 * np.pi), 1/10)
 

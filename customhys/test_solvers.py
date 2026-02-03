@@ -1,4 +1,3 @@
-from unittest.mock import patch
 
 from customhys.experiment import Experiment
 
@@ -22,4 +21,3 @@ def test_dynamic():
 #def test_neural_network():
 #  exp = Experiment("./tests/neural_network.json")
 #  exp.run()
-    
