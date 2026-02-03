@@ -369,7 +369,7 @@ def df2dict(df):
     return {df_dict["index"][x]: df_dict["data"][x] for x in range(len(df_dict["index"]))}
 
 
-def check_fields(default_dict, new_dict):
+def check_fields(default_dict: dict, new_dict: dict | None):
     """
     Return the dictionary with default keys and values updated by using the information of ``new_dict``
     :param dict default_dict:
@@ -378,6 +378,8 @@ def check_fields(default_dict, new_dict):
         Dictionary with new values.
     :return: dict.
     """
+    if new_dict is None:
+        return default_dict
     # Check if the entered variable has different values
     for key in list(set(default_dict.keys()) & set(new_dict.keys())):
         default_dict[key] = new_dict[key]
@@ -401,7 +403,7 @@ def save_json(variable_to_save, file_name=None, suffix=None):
     suffix = "_" + suffix if suffix else ""
 
     # Create the new file
-    with open(f"./{file_name}{suffix}.json", "w", encoding="utf-8") as json_file:
+    with open(f"{file_name}{suffix}.json", "w", encoding="utf-8") as json_file:
         json.dump(variable_to_save, json_file, cls=NumpyEncoder)
 
 
@@ -412,6 +414,10 @@ def read_json(data_file):
         Filename of the json file.
     :return: dict or list.
     """
+    # Add .json extension if not present and file doesn't exist
+    if not data_file.endswith(".json") and not os.path.exists(data_file):
+        data_file = f"{data_file}.json"
+
     with open(data_file, encoding="utf-8") as json_file:
         data = json.load(json_file)
 

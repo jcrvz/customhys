@@ -90,7 +90,7 @@ test-all:  ## Run all tests including setup and integration tests
 	@uv run python tests/test_makefile.py || echo "⚠ Makefile tests failed"
 	@echo ""
 	@echo "→ Pytest tests (73 tests)..."
-	@uv run python -m pytest tests/test_benchmark_func.py tests/test_operators.py tests/test_metaheuristic.py -q || echo "⚠ Pytest tests had issues"
+	@uv run python -m pytest tests/ -q || echo "⚠ Pytest tests had issues"
 	@echo ""
 	@echo "=============================================="
 	@echo "✅ Test suite complete!"

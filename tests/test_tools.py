@@ -59,7 +59,7 @@ class TestJSONOperations:
         """Test saving and reading JSON files."""
         with tempfile.TemporaryDirectory() as tmpdir:
             test_data = {"key": "value", "number": 42}
-            test_file = Path(tmpdir) / "test.json"
+            test_file = Path(tmpdir) / "test"
 
             # Save JSON
             tl.save_json(test_data, str(test_file))
@@ -72,7 +72,7 @@ class TestJSONOperations:
     def test_read_json_with_file(self):
         """Test reading an existing JSON file."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            test_file = Path(tmpdir) / "test.json"
+            test_file = Path(tmpdir) / "test"
             test_data = {"test": 123}
 
             # Create JSON file
