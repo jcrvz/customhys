@@ -182,7 +182,7 @@ class Metaheuristic:
         Reset the ``historical`` variables.
         :return: None.
         """
-        self.historical = dict(fitness=list(), position=list(), centroid=list(), radius=list())
+        self.historical = {"fitness":[], "position":[], "centroid":[], "radius":[]}
 
     def update_historicals(self):
         """

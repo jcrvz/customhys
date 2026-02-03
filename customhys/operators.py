@@ -826,8 +826,8 @@ def linear_system(pop, matrix=None, dt=0.1, offset="globalbest", noise=0.0):
         raise OperatorsError('matrix must be a 2D or 3D array')
 
     # Build per-agent affine term so x* is the fixed point for each agent
-    I = np.eye(num_dimensions)
-    I_batch = np.tile(I, (num_agents, 1, 1))         # (num_agents, num_dimensions, num_dimensions)
+    identity_matrix = np.eye(num_dimensions)
+    I_batch = np.tile(identity_matrix, (num_agents, 1, 1))         # (num_agents, num_dimensions, num_dimensions)
     # b_i = x* @ (I - M_i)   -> result shape (num_agents, num_dimensions)
     b = np.einsum('ad,adk->ak', x_star, I_batch - M)
 
@@ -913,7 +913,8 @@ def random_unstable_matrix(n: int, *, num_unstable: int = 1,
     if not (0.0 < stable_radius[0] < stable_radius[1] < 1.0):
         raise ValueError("stable_radius must satisfy 0 < rmin < rmax < 1")
 
-    blocks, k, remaining = [], 0, n
+    # k = 0
+    blocks, remaining = [], n
 
     # Place unstable eigenvalues/pairs first
     u = 0
@@ -1003,12 +1004,12 @@ def generate_mixed_matrices(
     if n <= 0 or dim <= 0:
         raise ValueError("n and dim must be positive integers")
 
-    stable_kwargs = {} if stable_kwargs is None else dict(stable_kwargs)
-    unstable_kwargs = {} if unstable_kwargs is None else dict(unstable_kwargs)
+    stable_kwargs = {} if stable_kwargs is None else {**stable_kwargs}
+    unstable_kwargs = {} if unstable_kwargs is None else {**unstable_kwargs}
 
     rng = np.random.default_rng(seed)
     n_stable = int(round(stable_ratio * n))
-    n_unstable = n - n_stable
+    # n_unstable = n - n_stable
 
     matrices = np.empty((n, dim, dim), dtype=float)
     is_stable = np.empty(n, dtype=bool)
@@ -1131,112 +1132,100 @@ def obtain_operators(num_vals=5):
     """
     return [
         # First line for the initial search operator
-        ('random_search', dict(scale=[1.0], distribution=['uniform']), ['greedy']),
+        ('random_search',
+         {
+             "scale":[1.0], "distribution": ['uniform']}, ['greedy']),
         (
             'central_force_dynamic',
-            dict(
-                gravity=[*np.linspace(0.0, 0.01, num_vals)],
-                alpha=[*np.linspace(0.0, 0.01, num_vals)],
-                beta=[*np.linspace(1.00, 2.00, num_vals)],
-                dt=[*np.linspace(0.0, 2.0, num_vals)]),
+            {
+                "gravity":  [*np.linspace(0.0, 0.01, num_vals)],
+                "alpha":    [*np.linspace(0.0, 0.01, num_vals)],
+                "beta":     [*np.linspace(1.00, 2.00, num_vals)],
+                "dt":   [*np.linspace(0.0, 2.0, num_vals)],
+            },
             __selectors__),
         (
             'differential_crossover',
-            dict(
-                crossover_rate=[*np.linspace(0.0, 1.0, num_vals)],
-                version=['binomial', 'exponential']),
+            {"crossover_rate": [*np.linspace(0.0, 1.0, num_vals)], "version": ['binomial', 'exponential']},
             __selectors__),
         (
             'differential_mutation',
-            dict(
-                expression=['rand', 'best', 'current', 'current-to-best', 'rand-to-best', 'rand-to-best-and-current'],
-                num_rands=[1, 2, 3],
-                factor=[*np.linspace(0.0, 2.5, num_vals)]),
+            {"expression": ['rand', 'best', 'current', 'current-to-best', 'rand-to-best', 'rand-to-best-and-current'],
+             "num_rands": [1, 2, 3],
+             "factor": [*np.linspace(0.0, 2.5, num_vals)]},
             __selectors__),
         (
             'firefly_dynamic',
-            dict(
-                distribution=['uniform', 'gaussian', 'levy'],
-                alpha=[*np.linspace(0.0, 0.5, num_vals)],
-                beta=[*np.linspace(0.01, 1.0, num_vals)],
-                gamma=[*np.linspace(1.0, 1000.0, num_vals)]),
+            {"distribution": ['uniform', 'gaussian', 'levy'],
+             "alpha": [*np.linspace(0.0, 0.5, num_vals)],
+             "beta": [*np.linspace(0.01, 1.0, num_vals)],
+             "gamma": [*np.linspace(1.0, 1000.0, num_vals)]},
             __selectors__),
         (
             'genetic_crossover',
-            dict(
-                pairing=['rank', 'cost', 'random', 'tournament_2_100', 'tournament_2_75', 'tournament_2_50',
+            {"pairing": ['rank', 'cost', 'random', 'tournament_2_100', 'tournament_2_75', 'tournament_2_50',
                          'tournament_3_100', 'tournament_3_75', 'tournament_3_50'],
-                crossover=['single', 'two', 'uniform', 'blend', 'linear_0.5_0.5'],
-                mating_pool_factor=[*np.linspace(0.1, 0.9, num_vals)]),
+             "crossover": ['single', 'two', 'uniform', 'blend', 'linear_0.5_0.5'],
+             "mating_pool_factor": [*np.linspace(0.1, 0.9, num_vals)]},
             __selectors__),
         (
             'genetic_mutation',
-            dict(
-                scale=[*np.linspace(0.01, 1.0, num_vals)],
-                elite_rate=[*np.linspace(0.0, 0.9, num_vals)],
-                mutation_rate=[*np.linspace(0.1, 0.9, num_vals)],
-                distribution=['uniform', 'gaussian', 'levy']),
+            {"scale": [*np.linspace(0.01, 1.0, num_vals)],
+             "elite_rate": [*np.linspace(0.0, 0.9, num_vals)],
+             "mutation_rate": [*np.linspace(0.1, 0.9, num_vals)],
+             "distribution": ['uniform', 'gaussian', 'levy']},
             __selectors__),
         (
             'gravitational_search',
-            dict(
-                gravity=[*np.linspace(0.0, 1.0, num_vals)],
-                alpha=[*np.linspace(0.0, 0.04, num_vals)]),
+            {"gravity": [*np.linspace(0.0, 1.0, num_vals)],
+             "alpha": [*np.linspace(0.0, 0.04, num_vals)]},
             __selectors__),
         (
             'random_flight',  # Particular case for Levy's flight
-            dict(
-                scale=[*np.linspace(0.01, 1.0, num_vals)],
-                distribution=['levy'],
-                beta=[*np.linspace(1.00, 2.00, num_vals)]),
+            {"scale": [*np.linspace(0.01, 1.0, num_vals)],
+             "distribution": ['levy'],
+             "beta": [*np.linspace(1.00, 2.00, num_vals)]},
             __selectors__),
         (
             'random_flight',
-            dict(
-                scale=[*np.linspace(0.01, 1.0, num_vals)],
-                distribution=['uniform', 'gaussian']),
+            {"scale": [*np.linspace(0.01, 1.0, num_vals)],
+             "distribution": ['uniform', 'gaussian']},
             __selectors__),
         (
             'local_random_walk',
-            dict(
-                probability=[*np.linspace(0.01, 0.99, num_vals)],
-                scale=[*np.linspace(0.01, 1.0, num_vals)],
-                distribution=['uniform', 'gaussian', 'levy']),
+            {"probability": [*np.linspace(0.01, 0.99, num_vals)],
+             "scale": [*np.linspace(0.01, 1.0, num_vals)],
+             "distribution": ['uniform', 'gaussian', 'levy']},
             __selectors__),
         (
-            'random_sample',
-            dict(),
-            __selectors__),
+            'random_sample', {}, __selectors__),
         (
             'random_search',
-            dict(
-                scale=[*np.linspace(0.01, 1.0, num_vals)],
-                distribution=['uniform', 'gaussian', 'levy']),
+            {"scale": [*np.linspace(0.01, 1.0, num_vals)],
+             "distribution": ['uniform', 'gaussian', 'levy']},
             __selectors__),
         (
             'spiral_dynamic',
-            dict(
-                radius=[*np.linspace(0.001, 0.999, num_vals)],
-                angle=[*np.linspace(0.0, 180.0, num_vals)],
-                sigma=[*np.linspace(0.0, 0.5, num_vals)]),
+            {"radius": [*np.linspace(0.001, 0.999, num_vals)],
+             "angle": [*np.linspace(0.0, 180.0, num_vals)],
+             "sigma": [*np.linspace(0.0, 0.5, num_vals)]},
             __selectors__),
         (
             'swarm_dynamic',
-            dict(
-                factor=[*np.linspace(0.01, 1.0, num_vals)],
-                self_conf=[*np.linspace(0.01, 4.99, num_vals)],
-                swarm_conf=[*np.linspace(0.01, 4.99, num_vals)],
-                version=['inertial', 'constriction'],
-                distribution=['uniform', 'gaussian', 'levy']),
+            {"factor": [*np.linspace(0.01, 1.0, num_vals)],
+             "self_conf": [*np.linspace(0.01, 4.99, num_vals)],
+             "swarm_conf": [*np.linspace(0.01, 4.99, num_vals)],
+             "version": ['inertial', 'constriction'],
+             "distribution": ['uniform', 'gaussian', 'levy']},
             __selectors__),
         (
             'linear_system',
-            dict(
-                matrix=[None],  # Use strings to indicate random matrices
-                dt=[*np.linspace(0.01, 1.0, num_vals)],
-                offset=['subpopmean', 'globalbest'],
-                noise=[*np.linspace(0.0, 0.1, num_vals)]
-            ),
+            {
+                "matrix":   [None],  # Use strings to indicate random matrices
+                "dt":       [*np.linspace(0.01, 1.0, num_vals)],
+                "offset":   ['subpopmean', 'globalbest'],
+                "noise":    [*np.linspace(0.0, 0.1, num_vals)]
+            },
             __selectors__),
     ]
 
@@ -1342,7 +1331,8 @@ def process_operators(simple_heuristics):
             for parameter, value in parameters.items():
 
                 # Check if a value is string
-                if type(value) == str:
+                if isinstance(value, str):
+                    str_parameters.append(parameter)
                     str_parameters.append(f"{parameter}='{value}'")
                 else:
                     str_parameters.append(f'{parameter}={value}')

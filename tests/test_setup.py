@@ -22,9 +22,17 @@ def test_core_imports():
         import scipy
         import sklearn
         import tqdm
+
+        print(matplotlib)
+        print(numpy)
+        print(pandas)
+        print(scipy)
+        print(sklearn)
+        print(tqdm)
+
         print("✓ All core dependencies imported successfully")
     except ImportError as e:
-        raise AssertionError(f"Core dependency import failed: {e}")
+        raise AssertionError(f"Core dependency import failed: {e}") from e
 
 
 def test_customhys_imports():
@@ -40,9 +48,17 @@ def test_customhys_imports():
             tools,
             visualisation,
         )
+        print(benchmark_func)
+        print(experiment)
+        print(hyperheuristic)
+        print(metaheuristic)
+        print(operators)
+        print(population)
+        print(tools)
+        print(visualisation)
         print("✓ All customhys modules imported successfully")
     except ImportError as e:
-        raise AssertionError(f"Customhys module import failed: {e}")
+        raise AssertionError(f"Customhys module import failed: {e}") from e
 
 
 def test_customhys_version():

@@ -1,7 +1,7 @@
 """
 Created on Wed Jan 15 15:37:54 2020
 
-@author: L03130342
+@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: j.m.cruzduarte@ieee.org
 """
 
 import matplotlib.pyplot as plt
@@ -29,7 +29,7 @@ def show_performance_overview(steps, historical_fitness, performances=None):
     plt.xlabel(r'Step'), plt.ylabel(r'Fitness')
 
     if performances is not None:
-        perf_plot = ax.plot(performances, 'o--', label='Performance')
+        ax.plot(performances, 'o--', label='Performance')
         handles, labels = ax.get_legend_handles_labels()
         plt.legend([pc, handles[0]], ['Raw data', labels[0]], frameon=False)
     else:

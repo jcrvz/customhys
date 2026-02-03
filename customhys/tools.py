@@ -193,7 +193,7 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
         subfolder_names = subfolder_names_raw
 
     # Define the basic data structure
-    data = {'problem': list(), 'dimensions': list(), 'results': list()}
+    data = {'problem': [], 'dimensions': [], 'results': []}
 
     for subfolder in subfolder_names:
         # Extract the problem name and the number of dimensions
@@ -220,59 +220,59 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
             last_step = -1
             label_operator = 'operator_id'
             # Initialise iteration data
-            file_data = {'operator_id': list(),
-                         'performance': list(),
-                         'statistics': list(),
-                         'fitness': list()}
+            file_data = {'operator_id': [],
+                         'performance': [],
+                         'statistics': [],
+                         'fitness': []}
 
         elif kind == 'basic_metaheuristic':
             last_step = -1
             label_operator = 'operator_id'
             # Initialise iteration data
-            file_data = {'operator_id': list(),
-                         'performance': list(),
-                         'statistics': list(),
-                         'fitness': list(),
-                         'hist_fitness': list()}  # !remove -> 'hist_fitness': list()
+            file_data = {'operator_id': [],
+                         'performance': [],
+                         'statistics': [],
+                         'fitness': [],
+                         'hist_fitness': []}  # !remove -> 'hist_fitness': []
 
         elif kind == 'unknown':
             last_step = int(file_names[-1].split('-')[0])
             label_operator = 'step'
-            file_data = dict()
+            file_data = {}
 
         elif kind in ['dynamic_metaheuristic', 'neural_network']:
             last_step = int(file_names[-1].split('-')[0])
             label_operator = 'rep'
-            file_data = {'rep': list(),
-                         'hist_fitness': list(),
-                         'encoded_solution': list(),
-                         'performance': list()}
+            file_data = {'rep': [],
+                         'hist_fitness': [],
+                         'encoded_solution': [],
+                         'performance': []}
 
         elif kind == 'dynamic_transfer_learning':
             last_step = int(file_names[-1].split('-')[0])
             label_operator = 'step'
-            file_data = dict()
+            file_data = {}
 
         elif kind == 'static_transfer_learning':
             last_step = int(file_names[-1].split('-')[0])
             label_operator = 'step'
-            file_data = {'step': list(),
-                         'encoded_solution': list(),
-                         'performance': list(),
-                         'hist_fitness': list(),
-                         'hist_positions': list()}
+            file_data = {'step': [],
+                         'encoded_solution': [],
+                         'performance': [],
+                         'hist_fitness': [],
+                         'hist_positions': []}
 
         else:
             # Generic data
             last_step = int(file_names[-1].split('-')[0])
             label_operator = 'step'
             # Initialise iteration data
-            file_data = {'step': list(),
-                         'performance': list(),
-                         'statistics': list(),
-                         'encoded_solution': list(),
-                         'hist_fitness': list(),
-                         'hist_positions': list()}
+            file_data = {'step': [],
+                         'performance': [],
+                         'statistics': [],
+                         'encoded_solution': [],
+                         'hist_fitness': [],
+                         'hist_positions': []}
 
         # Walk on the subfolder's files
         for file_name in tqdm(file_names, desc=f'{problem_name} {dimensions}, last={last_step}'):
@@ -302,7 +302,7 @@ def preprocess_files(main_folder='data_files/raw/', kind='brute_force', only_las
                     if len(file_data) == 0:  # The first entering
                         # Read the available fields from the first file and create the corresponding lists
                         for field in keys_to_use:
-                            file_data[field] = list()
+                            file_data[field] = []
 
                     # Fill the file_data
                     for field in list(keys_to_use):
@@ -419,7 +419,7 @@ def merge_json(data_folder: str, list_of_fields: list = None, save_file: bool = 
 
     file_names = sorted(raw_file_names, key=lambda x: int(x.split('-')[0]))
 
-    temporal_pretable = list()
+    temporal_pretable = []
 
     for file_name in tqdm(file_names):
         temporal_data = read_json(data_folder + '/' + file_name)
