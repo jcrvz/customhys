@@ -1,17 +1,17 @@
-# -*- coding: utf-8 -*-
 """
 This module contains the class Population.
 
 Created on Tue Sep 17 14:29:43 2019
 
-@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
+@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: j.m.cruzduarte@ieee.org
 """
+
 from math import isfinite
 
 import numpy as np
 
-__all__ = ['Population']
-__selectors__ = ['all', 'greedy', 'metropolis', 'probabilistic']
+__all__ = ["Population"]
+__selectors__ = ["all", "greedy", "metropolis", "probabilistic"]
 
 
 class Population:
@@ -21,7 +21,7 @@ class Population:
 
     # Internal variables
     iteration = 0
-    rotation_matrix = []
+    # rotation_matrix = []
 
     # Parameters per selection method
     metropolis_temperature = 1000.0
@@ -50,13 +50,13 @@ class Population:
         if len(boundaries[0]) == len(boundaries[1]):
             self.num_dimensions = len(boundaries[0])
         else:
-            raise PopulationError('Lower and upper boundaries must have the same length')
+            raise PopulationError("Lower and upper boundaries must have the same length")
 
         # Read the upper and lower boundaries of search space
         self.lower_boundaries = np.array(boundaries[0]) if isinstance(boundaries[0], list) else boundaries[0]
         self.upper_boundaries = np.array(boundaries[1]) if isinstance(boundaries[1], list) else boundaries[1]
         self.span_boundaries = self.upper_boundaries - self.lower_boundaries
-        self.centre_boundaries = (self.upper_boundaries + self.lower_boundaries) / 2.
+        self.centre_boundaries = (self.upper_boundaries + self.lower_boundaries) / 2.0
 
         # Read number of agents in population
         assert isinstance(num_agents, int)
@@ -69,12 +69,12 @@ class Population:
 
         # General fitness measurements
         self.global_best_position = np.full(self.num_dimensions, np.nan)
-        self.global_best_fitness = float('inf')
+        self.global_best_fitness = float("inf")
 
         self.current_best_position = np.full(self.num_dimensions, np.nan)
-        self.current_best_fitness = float('inf')
+        self.current_best_fitness = float("inf")
         self.current_worst_position = np.full(self.num_dimensions, np.nan)
-        self.current_worst_fitness = -float('inf')
+        self.current_worst_fitness = -float("inf")
 
         self.particular_best_positions = np.full((self.num_agents, self.num_dimensions), np.nan)
         self.particular_best_fitness = np.full(self.num_agents, np.nan)
@@ -124,8 +124,12 @@ class Population:
 
         :returns: str
         """
-        return ('x_best = ' + str(self.rescale_back(self.global_best_position)) +
-                ', f_best = ' + str(self.global_best_fitness))
+        return (
+            "x_best = "
+            + str(self.rescale_back(self.global_best_position))
+            + ", f_best = "
+            + str(self.global_best_fitness)
+        )
 
     def get_positions(self):
         """
@@ -137,7 +141,8 @@ class Population:
         :returns: numpy.ndarray
         """
         return np.tile(self.centre_boundaries, (self.num_agents, 1)) + self._positions * np.tile(
-            self.span_boundaries / 2., (self.num_agents, 1))
+            self.span_boundaries / 2.0, (self.num_agents, 1)
+        )
 
     def set_positions(self, positions):
         """
@@ -151,8 +156,11 @@ class Population:
 
         :returns: numpy.ndarray
         """
-        return 2. * (positions - np.tile(self.centre_boundaries, (self.num_agents, 1))) / np.tile(
-            self.span_boundaries, (self.num_agents, 1))
+        return (
+            2.0
+            * (positions - np.tile(self.centre_boundaries, (self.num_agents, 1)))
+            / np.tile(self.span_boundaries, (self.num_agents, 1))
+        )
 
     def revert_positions(self):
         """
@@ -163,9 +171,10 @@ class Population:
         self.velocities = np.copy(self.backup_velocities)
         self.particular_best_fitness = np.copy(self.backup_particular_best_fitness)
         self.particular_best_positions = np.copy(self.backup_particular_best_positions)
-        self.update_positions('global', 'greedy')
+        self.update_positions("global", "greedy")
 
-    def update_positions(self, level: str ='population', selector: (str, list[str]) = 'greedy'):
+    def update_positions(self, level: str = "population", selector: str | list[str] = "greedy"):
+        # def update_positions(self, level: str ='population', selector: (str, list[str]) = 'greedy'):
         """
         Update the population positions according to the level and selection scheme.
 
@@ -179,17 +188,17 @@ class Population:
             Selection method. The selectors available are: 'greedy', 'probabilistic', 'metropolis', 'all', and 'none'.
             The default is 'all'.
 
-        :returns: None.s
+        :returns: None.
         """
         # Check if the selector is a list
 
         # Update global positions, velocities and fitness
-        if level == 'global':
+        if level == "global":
             if isinstance(selector, str):
                 self.__selection_on_particular([selector] * self.num_agents)
                 self.__selection_on_global(selector)
             else:
-                raise PopulationError('Invalid global selector!')
+                raise PopulationError("Invalid global selector!")
 
         else:
             # Check if selector is a list and this has the same length as the number of agents
@@ -200,19 +209,19 @@ class Population:
             elif isinstance(selector, str):
                 selector = [selector] * self.num_agents
             else:
-                raise PopulationError('Invalid selector!')
+                raise PopulationError("Invalid selector!")
 
             # Update population positions, velocities and fitness
-            if level == 'population':
+            if level == "population":
                 self.__selection_on_population(selector)
 
             # Update particular positions, velocities and fitness
-            elif level == 'particular':
+            elif level == "particular":
                 self.__selection_on_particular(selector)
 
             # Raise an error
             else:
-                raise PopulationError('Invalid update level')
+                raise PopulationError("Invalid update level")
 
     def __selection_on_population(self, selector):
         # backup the previous position to prevent losses
@@ -224,9 +233,9 @@ class Population:
             if self._selection(self.fitness[agent_id], self.previous_fitness[agent_id], selector[agent_id]):
                 self.__update_best_and_worst()
                 # if new positions are improved, then update the previous register
-                #self.previous_fitness[agent_id] = np.copy(self.fitness[agent_id])
-                #self.previous_positions[agent_id, :] = np.copy(self._positions[agent_id, :])
-                #self.previous_velocities[agent_id, :] = np.copy(self.velocities[agent_id, :])
+                # self.previous_fitness[agent_id] = np.copy(self.fitness[agent_id])
+                # self.previous_positions[agent_id, :] = np.copy(self._positions[agent_id, :])
+                # self.previous_velocities[agent_id, :] = np.copy(self.velocities[agent_id, :])
 
             else:
                 # ... otherwise, return to previous values
@@ -234,14 +243,11 @@ class Population:
                 self._positions[agent_id, :] = np.copy(self.previous_positions[agent_id, :])
                 self.velocities[agent_id, :] = np.copy(self.previous_velocities[agent_id, :])
 
-
     def __update_best_and_worst(self):
         # Update the current best and worst positions (forced to greedy)
-        self.current_best_position = np.copy(
-            self._positions[self.fitness.argmin(), :])
+        self.current_best_position = np.copy(self._positions[self.fitness.argmin(), :])
         self.current_best_fitness = np.min(self.fitness)
-        self.current_worst_position = np.copy(
-            self._positions[self.fitness.argmax(), :])
+        self.current_worst_position = np.copy(self._positions[self.fitness.argmax(), :])
         self.current_worst_fitness = np.min(self.fitness)
 
     def __selection_on_particular(self, selector):
@@ -249,11 +255,13 @@ class Population:
         self.backup_particular_best_positions = np.copy(self.particular_best_positions)
 
         for agent_id in range(self.num_agents):
-            if self._selection(self.fitness[agent_id], self.particular_best_fitness[agent_id], selector[agent_id]) or not isfinite(self.particular_best_fitness[agent_id]):
+            if self._selection(
+                self.fitness[agent_id], self.particular_best_fitness[agent_id], selector[agent_id]
+            ) or not isfinite(self.particular_best_fitness[agent_id]):
                 self.particular_best_fitness[agent_id] = np.copy(self.fitness[agent_id])
                 self.particular_best_positions[agent_id, :] = np.copy(self._positions[agent_id, :])
 
-    def __selection_on_global(self, selector='greedy'):
+    def __selection_on_global(self, selector="greedy"):
         # Read current global best agent_id
         candidate_position = np.copy(self.current_best_position)
         candidate_fitness = np.copy(self.current_best_fitness)
@@ -286,7 +294,7 @@ class Population:
     # ==============
     # TODO Add more initialisation operators like grid, boundary, etc.
 
-    def initialise_positions(self, scheme='random'):
+    def initialise_positions(self, scheme="random"):
         """
         Initialise population by an initialisation scheme.
 
@@ -298,7 +306,7 @@ class Population:
 
         :returns: None.
         """
-        if scheme == 'vertex':
+        if scheme == "vertex":
             self._positions = self._grid_matrix(self.num_dimensions, self.num_agents)
         else:
             self._positions = np.random.uniform(-1, 1, (self.num_agents, self.num_dimensions))
@@ -311,10 +319,11 @@ class Population:
     @staticmethod
     def _grid_matrix(num_dimensions, num_agents):
 
-        total_vertices = 2 ** num_dimensions
+        total_vertices = 2**num_dimensions
 
-        basic_matrix = 2 * np.array(
-            [[int(x) for x in list(format(k, '0{}b'.format(num_dimensions)))] for k in range(total_vertices)]) - 1
+        basic_matrix = (
+            2 * np.array([[int(x) for x in list(format(k, f"0{num_dimensions}b"))] for k in range(total_vertices)]) - 1
+        )
 
         output_matrix = np.copy(basic_matrix)
 
@@ -368,7 +377,7 @@ class Population:
         """
         return self.centre_boundaries + position * (self.span_boundaries / 2)
 
-    def _selection(self, new, old, selector='greedy'):
+    def _selection(self, new, old, selector="greedy"):
         """
         Answer the question: 'should this new position be accepted?' To do so, a selection procedure is applied.
 
@@ -384,38 +393,47 @@ class Population:
         if not isfinite(old):
             return True
 
-        if selector == 'greedy':
+        if selector == "greedy":
             return new <= old
 
         # Metropolis selection
-        elif selector == 'metropolis':
+        elif selector == "metropolis":
             if new <= old:
                 selection_condition = True
             else:
-                selection_condition = bool(np.exp(-(new - old) / (
-                        self.metropolis_boltzmann * self.metropolis_temperature *
-                        ((1 - self.metropolis_rate) ** self.iteration) + 1e-23)) > np.random.rand())
+                selection_condition = bool(
+                    np.exp(
+                        -(new - old)
+                        / (
+                            self.metropolis_boltzmann
+                            * self.metropolis_temperature
+                            * ((1 - self.metropolis_rate) ** self.iteration)
+                            + 1e-23
+                        )
+                    )
+                    > np.random.rand()
+                )
             return selection_condition
 
         # Probabilistic selection
-        elif selector == 'probabilistic':
+        elif selector == "probabilistic":
             return bool((new <= old) or (np.random.rand() <= self.probability_selection))
 
         # All selection
-        elif selector in ['all', 'direct']:
+        elif selector in ["all", "direct"]:
             return True
 
         # None selection
-        elif selector == 'none':
+        elif selector == "none":
             return False
         else:
-            raise PopulationError('Invalid selector!')
+            raise PopulationError("Invalid selector!")
             return None
-
 
 
 class PopulationError(Exception):
     """
     Simple PopulationError to manage exceptions.
     """
+
     pass

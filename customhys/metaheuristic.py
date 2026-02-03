@@ -1,28 +1,36 @@
-# -*- coding: utf-8 -*-
 """
 This module contains the Metaheuristic class.
 
 Created on Thu Sep 26 16:56:01 2019
 
-@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: jorge.cruz@tec.mx
+@author: Jorge Mario Cruz-Duarte (jcrvz.github.io), e-mail: j.m.cruzduarte@ieee.org
 """
 
 import numpy as np
+
 from . import operators as Operators
 from .population import Population
 
-__all__ = ['Metaheuristic', 'Population', 'Operators']
+__all__ = ["Metaheuristic", "Population", "Operators"]
 __operators__ = Operators.__all__
-__selectors__ = ['greedy', 'probabilistic', 'metropolis', 'all', 'none']
+__selectors__ = ["greedy", "probabilistic", "metropolis", "all", "none"]
 
 
 class Metaheuristic:
     """
-        This is the Metaheuristic class, each object corresponds to a metaheuristic implemented with a sequence of
-        search operators from op, and it is based on a population from Population.
+    This is the Metaheuristic class, each object corresponds to a metaheuristic implemented with a sequence of
+    search operators from op, and it is based on a population from Population.
     """
-    def __init__(self, problem, search_operators=None, num_agents: int = 30, num_iterations: int = 100,
-                 initial_scheme: str = 'random', verbose: bool = False):
+
+    def __init__(
+        self,
+        problem,
+        search_operators=None,
+        num_agents: int = 30,
+        num_iterations: int = 100,
+        initial_scheme: str = "random",
+        verbose: bool = False,
+    ):
         """
         Create a population-based metaheuristic by employing different simple search operators.
 
@@ -47,16 +55,19 @@ class Metaheuristic:
         """
         # Read the problem function
         self.finalisation_conditions = None
-        self._problem_function = problem['function']
+        self._problem_function = problem["function"]
 
         # Create population
-        self.pop = Population(problem['boundaries'], num_agents, problem['is_constrained'])
+        self.pop = Population(problem["boundaries"], num_agents, problem["is_constrained"])
 
         # Check and read the search_operators
         if search_operators:
             if not isinstance(search_operators, list):
                 search_operators = [search_operators]
+            # Store original operators for direct calling
+            self._search_operators_orig = search_operators
             self.perturbators, self.selectors = Operators.process_operators(search_operators)
+            # TODO: consider operators without being dictionary
 
         # Define the maximum number of iterations
         self.num_iterations = num_iterations
@@ -68,7 +79,7 @@ class Metaheuristic:
         self.num_agents = num_agents
 
         # Initialise historical variables
-        self.historical = dict()
+        self.historical: dict = {}
 
         # Set additional variables
         self.verbose = verbose
@@ -87,28 +98,30 @@ class Metaheuristic:
         self.pop.evaluate_fitness(self._problem_function)
 
         # Update population, particular, and global
-        self.pop.update_positions('population', 'all')  # Default
-        self.pop.update_positions('particular', 'all')
-        self.pop.update_positions('global', 'greedy')
+        self.pop.update_positions("population", "all")  # Default
+        self.pop.update_positions("particular", "all")
+        self.pop.update_positions("global", "greedy")
 
     def apply_search_operator(self, perturbator, selector):
-        # Split operator
-        operator_name, operator_params = perturbator.split('(')
+        # Find the index of this perturbator and use original parameters
+        idx = self.perturbators.index(perturbator)
+        operator_name, operator_params, _ = self._search_operators_orig[idx]
 
-        # Apply an operator
-        exec('Operators.' + operator_name + '(self.pop,' + operator_params)
+        # Get the operator function and call it directly
+        operator_func = getattr(Operators, operator_name)
+        operator_func(self.pop, **operator_params)
 
         # Evaluate fitness values
         self.pop.evaluate_fitness(self._problem_function)
 
         # Update population
         if selector in __selectors__:
-            self.pop.update_positions('population', selector)
+            self.pop.update_positions("population", selector)
         else:
             self.pop.update_positions()
 
         # Update global position
-        self.pop.update_positions('global', 'greedy')
+        self.pop.update_positions("global", "greedy")
 
     def run(self):
         """
@@ -126,10 +139,10 @@ class Metaheuristic:
         self.update_historicals()
 
         # Report which operators are going to use
-        self._verbose('\nSearch operators to employ:')
-        for perturbator, selector in zip(self.perturbators, self.selectors):
-            self._verbose("{} with {}".format(perturbator, selector))
-        self._verbose("{}".format('-' * 50))
+        self._verbose("\nSearch operators to employ:")
+        for perturbator, selector in zip(self.perturbators, self.selectors, strict=True):
+            self._verbose(f"{perturbator} with {selector}")
+        self._verbose("{}".format("-" * 50))
 
         # Start optimisaton procedure
         while not self.finaliser():
@@ -137,7 +150,7 @@ class Metaheuristic:
             self.pop.iteration += 1
 
             # Implement the sequence of operators and selectors
-            for perturbator, selector in zip(self.perturbators, self.selectors):
+            for perturbator, selector in zip(self.perturbators, self.selectors, strict=True):
 
                 # Apply the corresponding search operator
                 self.apply_search_operator(perturbator, selector)
@@ -146,7 +159,7 @@ class Metaheuristic:
                 self.update_historicals()
 
             # Verbose (if so) some information
-            self._verbose('{}\npop. radius: {}'.format(self.pop.iteration, self.historical['radius'][-1]))
+            self._verbose("{}\npop. radius: {}".format(self.pop.iteration, self.historical["radius"][-1]))
             self._verbose(self.pop.get_state())
 
     def set_finalisation_conditions(self, conditions):
@@ -169,14 +182,14 @@ class Metaheuristic:
         Deliver the last position and fitness value obtained after ``run`` the metaheuristic procedure.
         :returns: ndarray, float
         """
-        return self.historical['position'][-1], self.historical['fitness'][-1]
+        return self.historical["position"][-1], self.historical["fitness"][-1]
 
     def reset_historicals(self):
         """
         Reset the ``historical`` variables.
         :return: None.
         """
-        self.historical = dict(fitness=list(), position=list(), centroid=list(), radius=list())
+        self.historical = {"fitness": [], "position": [], "centroid": [], "radius": []}
 
     def update_historicals(self):
         """
@@ -184,14 +197,15 @@ class Metaheuristic:
         :return: None.
         """
         # Update historical variables
-        self.historical['fitness'].append(np.copy(self.pop.global_best_fitness))
-        self.historical['position'].append(np.copy(self.pop.global_best_position))
+        self.historical["fitness"].append(np.copy(self.pop.global_best_fitness))
+        self.historical["position"].append(np.copy(self.pop.global_best_position))
 
         # Update population centroid and radius
         current_centroid = np.array(self.pop.positions).mean(0)
-        self.historical['centroid'].append(np.copy(current_centroid))
-        self.historical['radius'].append(np.max(np.linalg.norm(self.pop.positions - np.tile(
-            current_centroid, (self.num_agents, 1)), 2, 1)))
+        self.historical["centroid"].append(np.copy(current_centroid))
+        self.historical["radius"].append(
+            np.max(np.linalg.norm(self.pop.positions - np.tile(current_centroid, (self.num_agents, 1)), 2, 1))
+        )
 
     def _verbose(self, text_to_print):
         """
