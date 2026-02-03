@@ -13,10 +13,10 @@ def run_test_file(test_file, use_pytest=True):
     """Run a single test file."""
     print(f"\n{'=' * 70}")
     print(f"Running: {test_file.name}")
-    print('=' * 70)
+    print("=" * 70)
 
     if use_pytest:
-        cmd = ['pytest', str(test_file), '-v', '--tb=short']
+        cmd = ["pytest", str(test_file), "-v", "--tb=short"]
     else:
         cmd = [sys.executable, str(test_file)]
 
@@ -37,12 +37,12 @@ def main():
     # - test_hyperheuristic: Computationally intensive (several minutes runtime)
     # - test_tools: Import issues with tqdm/scipy interaction
     test_files = [
-        ('test_setup.py', False),                       # Run standalone
-        ('test_makefile.py', False),                    # Run standalone
-        ('test_benchmark_func.py', True),               # Run with pytest
-        ('test_operators.py', True),                    # Run with pytest
-        ('test_metaheuristic.py', True),                # Run with pytest
-        ('test_population_update_positions.py', True),  # Run with pytest
+        ("test_setup.py", False),  # Run standalone
+        ("test_makefile.py", False),  # Run standalone
+        ("test_benchmark_func.py", True),  # Run with pytest
+        ("test_operators.py", True),  # Run with pytest
+        ("test_metaheuristic.py", True),  # Run with pytest
+        ("test_population_update_positions.py", True),  # Run with pytest
         # ('test_tools.py', True),                      # SKIPPED: Import hangs
         # ('test_hyperheuristic.py', True),             # SKIPPED: Too slow (run separately)
     ]
@@ -103,5 +103,5 @@ def main():
         return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

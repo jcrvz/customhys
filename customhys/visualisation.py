@@ -11,32 +11,38 @@ def show_performance_overview(steps, historical_fitness, performances=None):
     num_steps = len(steps)
 
     ax = plt.subplot()
-    violin_parts = ax.violinplot(historical_fitness, range(num_steps),
-                                 showmeans=True, showmedians=True, showextrema=True,
-                                 )
+    violin_parts = ax.violinplot(
+        historical_fitness,
+        range(num_steps),
+        showmeans=True,
+        showmedians=True,
+        showextrema=True,
+    )
 
-    for pc in violin_parts['bodies']:
-        pc.set_facecolor('green')
-        pc.set_edgecolor('black')
+    for pc in violin_parts["bodies"]:
+        pc.set_facecolor("green")
+        pc.set_edgecolor("black")
 
-    violin_parts['cmeans'].set_edgecolor('red')
-    violin_parts['cbars'].set_edgecolor('green')
-    violin_parts['cmedians'].set_edgecolor('blue')
-    violin_parts['cmins'].set_edgecolor('black')
-    violin_parts['cmaxes'].set_edgecolor('black')
+    violin_parts["cmeans"].set_edgecolor("red")
+    violin_parts["cbars"].set_edgecolor("green")
+    violin_parts["cmedians"].set_edgecolor("blue")
+    violin_parts["cmins"].set_edgecolor("black")
+    violin_parts["cmaxes"].set_edgecolor("black")
 
     plt.xticks(ticks=range(num_steps), labels=steps)
-    plt.xlabel(r'Step'), plt.ylabel(r'Fitness')
+    plt.xlabel(r"Step"), plt.ylabel(r"Fitness")
 
     if performances is not None:
-        ax.plot(performances, 'o--', label='Performance')
+        ax.plot(performances, "o--", label="Performance")
         handles, labels = ax.get_legend_handles_labels()
-        plt.legend([pc, handles[0]], ['Raw data', labels[0]], frameon=False)
+        plt.legend([pc, handles[0]], ["Raw data", labels[0]], frameon=False)
     else:
-        plt.legend([pc], ['Raw data'], frameon=False)
+        plt.legend([pc], ["Raw data"], frameon=False)
 
     plt.tight_layout()
     plt.show()
+
+
 # READ RAW DATA FILES
 # def read_data_files(main_folder_name='raw_data/'):
 #     # Define the basic data structure

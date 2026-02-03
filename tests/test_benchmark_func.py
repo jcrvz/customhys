@@ -14,18 +14,18 @@ class TestBenchmarkFunctions:
 
     def test_all_functions_listed(self):
         """Test that __all__ contains function names."""
-        assert hasattr(bf, '__all__')
+        assert hasattr(bf, "__all__")
         assert len(bf.__all__) > 0
-        assert 'Sphere' in bf.__all__
-        assert 'Rastrigin' in bf.__all__
-        assert 'Rosenbrock' in bf.__all__
+        assert "Sphere" in bf.__all__
+        assert "Rastrigin" in bf.__all__
+        assert "Rosenbrock" in bf.__all__
 
     @pytest.mark.parametrize("dimensions", [2, 5, 10])
     def test_sphere_function_creation(self, dimensions):
         """Test Sphere function creation with different dimensions."""
         fun = bf.Sphere(dimensions)
         assert fun.variable_num == dimensions
-        assert fun.func_name == 'Sphere'
+        assert fun.func_name == "Sphere"
 
     def test_sphere_function_evaluation(self):
         """Test Sphere function evaluation."""
@@ -121,10 +121,10 @@ class TestBenchmarkFunctionProperties:
         fun = bf.Sphere(2)
         problem = fun.get_formatted_problem()
 
-        assert 'function' in problem
-        assert 'boundaries' in problem
-        assert callable(problem['function'])
-        assert len(problem['boundaries']) == 2
+        assert "function" in problem
+        assert "boundaries" in problem
+        assert callable(problem["function"])
+        assert len(problem["boundaries"]) == 2
 
 
 class TestBenchmarkFunctionValues:
@@ -172,10 +172,9 @@ class TestBenchmarkFunctionValues:
 class TestMultipleBenchmarkFunctions:
     """Test multiple benchmark functions."""
 
-    @pytest.mark.parametrize("func_name", [
-        'Sphere', 'Rastrigin', 'Rosenbrock', 'Ackley1',
-        'Griewank', 'Schwefel', 'Levy'
-    ])
+    @pytest.mark.parametrize(
+        "func_name", ["Sphere", "Rastrigin", "Rosenbrock", "Ackley1", "Griewank", "Schwefel", "Levy"]
+    )
     def test_function_instantiation(self, func_name):
         """Test that common functions can be instantiated."""
         if hasattr(bf, func_name):
@@ -185,9 +184,7 @@ class TestMultipleBenchmarkFunctions:
             # Function names might have spaces, just check it exists and is not empty
             assert len(fun.func_name) > 0
 
-    @pytest.mark.parametrize("func_name", [
-        'Sphere', 'Rastrigin', 'Rosenbrock'
-    ])
+    @pytest.mark.parametrize("func_name", ["Sphere", "Rastrigin", "Rosenbrock"])
     def test_function_evaluation_no_errors(self, func_name):
         """Test that functions can be evaluated without errors."""
         func_class = getattr(bf, func_name)
@@ -236,5 +233,5 @@ class TestBenchmarkFunctionEdgeCases:
         assert np.isfinite(result_max)
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

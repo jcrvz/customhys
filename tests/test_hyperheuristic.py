@@ -16,13 +16,15 @@ from customhys import benchmark_func as bf
 from customhys import hyperheuristic as hh
 
 # Mark all tests in this module as slow
-pytestmark = pytest.mark.skip(reason="Hyperheuristic tests are computationally intensive. Run explicitly with pytest tests/test_hyperheuristic.py")
+pytestmark = pytest.mark.skip(
+    reason="Hyperheuristic tests are computationally intensive. Run explicitly with pytest tests/test_hyperheuristic.py"
+)
 
 
 # Change to the customhys package directory so relative paths work
 # The hyperheuristic module expects 'collections/filename.txt'
 TEST_DIR = Path(__file__).parent
-CUSTOMHYS_DIR = TEST_DIR.parent / 'customhys'
+CUSTOMHYS_DIR = TEST_DIR.parent / "customhys"
 
 # Store original directory
 ORIGINAL_DIR = os.getcwd()
@@ -41,14 +43,14 @@ def teardown_module():
 def get_test_parameters(**overrides):
     """Get default test parameters merged with any overrides."""
     defaults = {
-        'cardinality': 2,
-        'cardinality_min': 1,
-        'num_replicas': 5,
-        'num_iterations': 10,
-        'num_agents': 10,
-        'as_mh': False,
-        'num_steps': 10,  # Reduce for faster testing
-        'verbose': False  # Disable verbose for tests
+        "cardinality": 2,
+        "cardinality_min": 1,
+        "num_replicas": 5,
+        "num_iterations": 10,
+        "num_agents": 10,
+        "as_mh": False,
+        "num_steps": 10,  # Reduce for faster testing
+        "verbose": False,  # Disable verbose for tests
     }
     defaults.update(overrides)
     return defaults
@@ -62,9 +64,7 @@ class TestHyperheuristicCreation:
         fun = bf.Sphere(2)
 
         hyper = hh.Hyperheuristic(
-            heuristic_space='default.txt',
-            problem=fun.get_formatted_problem(),
-            parameters=get_test_parameters()
+            heuristic_space="default.txt", problem=fun.get_formatted_problem(), parameters=get_test_parameters()
         )
 
         assert hyper is not None
@@ -74,18 +74,13 @@ class TestHyperheuristicCreation:
         fun = bf.Rastrigin(2)
 
         hyper = hh.Hyperheuristic(
-            heuristic_space='default.txt',
+            heuristic_space="default.txt",
             problem=fun.get_formatted_problem(),
-            parameters=get_test_parameters(
-                cardinality=3,
-                num_replicas=10,
-                num_iterations=20,
-                num_agents=15
-            )
+            parameters=get_test_parameters(cardinality=3, num_replicas=10, num_iterations=20, num_agents=15),
         )
 
         assert hyper.max_cardinality == 3
-        assert hyper.parameters['num_replicas'] == 10
+        assert hyper.parameters["num_replicas"] == 10
 
 
 class TestHyperheuristicSearch:
@@ -96,16 +91,16 @@ class TestHyperheuristicSearch:
         fun = bf.Sphere(2)
 
         hyper = hh.Hyperheuristic(
-            heuristic_space='default.txt',
+            heuristic_space="default.txt",
             problem=fun.get_formatted_problem(),
             parameters={
-                'cardinality': 2,
-                'num_replicas': 3,
-                'num_iterations': 5,
-                'num_agents': 10,
-                'as_mh': False,
-                'num_steps': 10  # Reduce steps for faster testing
-            }
+                "cardinality": 2,
+                "num_replicas": 3,
+                "num_iterations": 5,
+                "num_agents": 10,
+                "as_mh": False,
+                "num_steps": 10,  # Reduce steps for faster testing
+            },
         )
 
         try:
@@ -120,22 +115,22 @@ class TestHyperheuristicSearch:
         fun = bf.Sphere(2)
 
         hyper = hh.Hyperheuristic(
-            heuristic_space='default.txt',
+            heuristic_space="default.txt",
             problem=fun.get_formatted_problem(),
             parameters={
-                'cardinality': 2,
-                'num_replicas': 2,
-                'num_iterations': 5,
-                'num_agents': 5,
-                'as_mh': False,
-                'num_steps': 10
-            }
+                "cardinality": 2,
+                "num_replicas": 2,
+                "num_iterations": 5,
+                "num_agents": 5,
+                "as_mh": False,
+                "num_steps": 10,
+            },
         )
 
         try:
             hyper.run()
             # Check if results are stored
-            assert hasattr(hyper, 'results')
+            assert hasattr(hyper, "results")
         except Exception:
             pytest.skip("Hyperheuristic requires specific configuration")
 
@@ -149,15 +144,15 @@ class TestHyperheuristicCardinality:
         fun = bf.Sphere(2)
 
         hyper = hh.Hyperheuristic(
-            heuristic_space='default.txt',
+            heuristic_space="default.txt",
             problem=fun.get_formatted_problem(),
             parameters={
-                'cardinality': cardinality,
-                'num_replicas': 2,
-                'num_iterations': 5,
-                'num_agents': 5,
-                'as_mh': False
-            }
+                "cardinality": cardinality,
+                "num_replicas": 2,
+                "num_iterations": 5,
+                "num_agents": 5,
+                "as_mh": False,
+            },
         )
 
         assert hyper.cardinality == cardinality
@@ -171,15 +166,9 @@ class TestHyperheuristicHeuristicSpace:
         fun = bf.Sphere(2)
 
         hyper = hh.Hyperheuristic(
-            heuristic_space='default.txt',
+            heuristic_space="default.txt",
             problem=fun.get_formatted_problem(),
-            parameters={
-                'cardinality': 2,
-                'num_replicas': 2,
-                'num_iterations': 5,
-                'num_agents': 5,
-                'as_mh': False
-            }
+            parameters={"cardinality": 2, "num_replicas": 2, "num_iterations": 5, "num_agents": 5, "as_mh": False},
         )
 
         assert hyper.heuristic_space is not None
@@ -189,20 +178,14 @@ class TestHyperheuristicHeuristicSpace:
         fun = bf.Sphere(2)
 
         custom_heuristics = [
-            ('random_search', {'scale': 1.0, 'distribution': 'uniform'}, 'greedy'),
-            ('local_random_walk', {'probability': 0.75, 'scale': 1.0, 'distribution': 'gaussian'}, 'greedy'),
+            ("random_search", {"scale": 1.0, "distribution": "uniform"}, "greedy"),
+            ("local_random_walk", {"probability": 0.75, "scale": 1.0, "distribution": "gaussian"}, "greedy"),
         ]
 
         hyper = hh.Hyperheuristic(
             heuristic_space=custom_heuristics,
             problem=fun.get_formatted_problem(),
-            parameters={
-                'cardinality': 2,
-                'num_replicas': 2,
-                'num_iterations': 5,
-                'num_agents': 5,
-                'as_mh': False
-            }
+            parameters={"cardinality": 2, "num_replicas": 2, "num_iterations": 5, "num_agents": 5, "as_mh": False},
         )
 
         assert hyper.heuristic_space is not None
@@ -216,19 +199,13 @@ class TestHyperheuristicMetaheuristicGeneration:
         fun = bf.Sphere(2)
 
         hyper = hh.Hyperheuristic(
-            heuristic_space='default.txt',
+            heuristic_space="default.txt",
             problem=fun.get_formatted_problem(),
-            parameters={
-                'cardinality': 2,
-                'num_replicas': 2,
-                'num_iterations': 5,
-                'num_agents': 5,
-                'as_mh': False
-            }
+            parameters={"cardinality": 2, "num_replicas": 2, "num_iterations": 5, "num_agents": 5, "as_mh": False},
         )
 
         # Test that hyperheuristic has search space
-        assert hasattr(hyper, 'heuristic_space')
+        assert hasattr(hyper, "heuristic_space")
 
 
 class TestHyperheuristicReplicas:
@@ -240,15 +217,15 @@ class TestHyperheuristicReplicas:
         fun = bf.Sphere(2)
 
         hyper = hh.Hyperheuristic(
-            heuristic_space='default.txt',
+            heuristic_space="default.txt",
             problem=fun.get_formatted_problem(),
             parameters={
-                'cardinality': 2,
-                'num_replicas': num_replicas,
-                'num_iterations': 5,
-                'num_agents': 5,
-                'as_mh': False
-            }
+                "cardinality": 2,
+                "num_replicas": num_replicas,
+                "num_iterations": 5,
+                "num_agents": 5,
+                "as_mh": False,
+            },
         )
 
         assert hyper.num_replicas == num_replicas
@@ -261,21 +238,14 @@ class TestHyperheuristicParameters:
         """Test that parameters are validated correctly."""
         fun = bf.Sphere(2)
 
-        valid_params = {
-            'cardinality': 2,
-            'num_replicas': 5,
-            'num_iterations': 10,
-            'num_agents': 10
-        }
+        valid_params = {"cardinality": 2, "num_replicas": 5, "num_iterations": 10, "num_agents": 10}
 
         hyper = hh.Hyperheuristic(
-            heuristic_space='default.txt',
-            problem=fun.get_formatted_problem(),
-            parameters=valid_params
+            heuristic_space="default.txt", problem=fun.get_formatted_problem(), parameters=valid_params
         )
 
-        assert hyper.cardinality == valid_params['cardinality']
-        assert hyper.num_replicas == valid_params['num_replicas']
+        assert hyper.cardinality == valid_params["cardinality"]
+        assert hyper.num_replicas == valid_params["num_replicas"]
 
     def test_default_parameters(self):
         """Test default parameter values."""
@@ -283,38 +253,35 @@ class TestHyperheuristicParameters:
 
         # Create with minimal parameters
         hyper = hh.Hyperheuristic(
-            heuristic_space='default.txt',
+            heuristic_space="default.txt",
             problem=fun.get_formatted_problem(),
             parameters={
-                'cardinality': 2,
-            }
+                "cardinality": 2,
+            },
         )
 
         # Should have default values for other parameters
-        assert hasattr(hyper, 'cardinality')
+        assert hasattr(hyper, "cardinality")
 
 
 class TestHyperheuristicWithDifferentProblems:
     """Test hyperheuristic with different optimization problems."""
 
-    @pytest.mark.parametrize("func_class", [
-        bf.Sphere,
-        bf.Rastrigin,
-    ])
+    @pytest.mark.parametrize(
+        "func_class",
+        [
+            bf.Sphere,
+            bf.Rastrigin,
+        ],
+    )
     def test_hyperheuristic_different_problems(self, func_class):
         """Test hyperheuristic with different benchmark functions."""
         fun = func_class(2)
 
         hyper = hh.Hyperheuristic(
-            heuristic_space='default.txt',
+            heuristic_space="default.txt",
             problem=fun.get_formatted_problem(),
-            parameters={
-                'cardinality': 2,
-                'num_replicas': 2,
-                'num_iterations': 5,
-                'num_agents': 5,
-                'as_mh': False
-            }
+            parameters={"cardinality": 2, "num_replicas": 2, "num_iterations": 5, "num_agents": 5, "as_mh": False},
         )
 
         assert hyper is not None
@@ -328,19 +295,15 @@ class TestHyperheuristicSearchStrategy:
         fun = bf.Sphere(2)
 
         params = {
-            'cardinality': 2,
-            'num_replicas': 3,
-            'num_iterations': 10,
-            'num_agents': 10,
-            'cooling_rate': 0.95,  # SA parameter
-            'initial_temperature': 100.0  # SA parameter
+            "cardinality": 2,
+            "num_replicas": 3,
+            "num_iterations": 10,
+            "num_agents": 10,
+            "cooling_rate": 0.95,  # SA parameter
+            "initial_temperature": 100.0,  # SA parameter
         }
 
-        hyper = hh.Hyperheuristic(
-            heuristic_space='default.txt',
-            problem=fun.get_formatted_problem(),
-            parameters=params
-        )
+        hyper = hh.Hyperheuristic(heuristic_space="default.txt", problem=fun.get_formatted_problem(), parameters=params)
 
         assert hyper.cardinality == 2
 
@@ -353,22 +316,16 @@ class TestHyperheuristicDataStructure:
         fun = bf.Sphere(2)
 
         hyper = hh.Hyperheuristic(
-            heuristic_space='default.txt',
+            heuristic_space="default.txt",
             problem=fun.get_formatted_problem(),
-            parameters={
-                'cardinality': 2,
-                'num_replicas': 2,
-                'num_iterations': 5,
-                'num_agents': 5,
-                'as_mh': False
-            }
+            parameters={"cardinality": 2, "num_replicas": 2, "num_iterations": 5, "num_agents": 5, "as_mh": False},
         )
 
         # Check for expected attributes
-        assert hasattr(hyper, 'heuristic_space')
-        assert hasattr(hyper, 'problem')
-        assert hasattr(hyper, 'cardinality')
-        assert hasattr(hyper, 'num_replicas')
+        assert hasattr(hyper, "heuristic_space")
+        assert hasattr(hyper, "problem")
+        assert hasattr(hyper, "cardinality")
+        assert hasattr(hyper, "num_replicas")
 
 
 class TestHyperheuristicEdgeCases:
@@ -379,15 +336,9 @@ class TestHyperheuristicEdgeCases:
         fun = bf.Sphere(2)
 
         hyper = hh.Hyperheuristic(
-            heuristic_space='default.txt',
+            heuristic_space="default.txt",
             problem=fun.get_formatted_problem(),
-            parameters={
-                'cardinality': 1,
-                'num_replicas': 2,
-                'num_iterations': 5,
-                'num_agents': 5,
-                'as_mh': False
-            }
+            parameters={"cardinality": 1, "num_replicas": 2, "num_iterations": 5, "num_agents": 5, "as_mh": False},
         )
 
         assert hyper.cardinality == 1
@@ -397,19 +348,13 @@ class TestHyperheuristicEdgeCases:
         fun = bf.Sphere(2)
 
         hyper = hh.Hyperheuristic(
-            heuristic_space='default.txt',
+            heuristic_space="default.txt",
             problem=fun.get_formatted_problem(),
-            parameters={
-                'cardinality': 2,
-                'num_replicas': 2,
-                'num_iterations': 5,
-                'num_agents': 3,
-                'as_mh': False
-            }
+            parameters={"cardinality": 2, "num_replicas": 2, "num_iterations": 5, "num_agents": 3, "as_mh": False},
         )
 
         assert hyper is not None
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

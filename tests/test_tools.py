@@ -32,28 +32,19 @@ class TestBasicUtilities:
 
     def test_check_fields_function(self):
         """Test check_fields function for dictionary validation."""
-        default_config = {
-            'param1': 10,
-            'param2': 'value',
-            'param3': True
-        }
+        default_config = {"param1": 10, "param2": "value", "param3": True}
 
-        user_config = {
-            'param1': 20
-        }
+        user_config = {"param1": 20}
 
         result = tl.check_fields(default_config, user_config)
 
-        assert result['param1'] == 20  # User value
-        assert result['param2'] == 'value'  # Default value
-        assert result['param3'] is True  # Default value
+        assert result["param1"] == 20  # User value
+        assert result["param2"] == "value"  # Default value
+        assert result["param3"] is True  # Default value
 
     def test_check_fields_with_none(self):
         """Test check_fields with None values."""
-        default = {
-            'param1': 10,
-            'param2': 'value'
-        }
+        default = {"param1": 10, "param2": "value"}
 
         # Pass None for user config
         result = tl.check_fields(default, None)
@@ -67,8 +58,8 @@ class TestJSONOperations:
     def test_save_and_read_json(self):
         """Test saving and reading JSON files."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            test_data = {'key': 'value', 'number': 42}
-            test_file = Path(tmpdir) / 'test.json'
+            test_data = {"key": "value", "number": 42}
+            test_file = Path(tmpdir) / "test.json"
 
             # Save JSON
             tl.save_json(test_data, str(test_file))
@@ -81,16 +72,16 @@ class TestJSONOperations:
     def test_read_json_with_file(self):
         """Test reading an existing JSON file."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            test_file = Path(tmpdir) / 'test.json'
-            test_data = {'test': 123}
+            test_file = Path(tmpdir) / "test.json"
+            test_data = {"test": 123}
 
             # Create JSON file
-            with open(test_file, 'w') as f:
+            with open(test_file, "w") as f:
                 json.dump(test_data, f)
 
             # Read it
             result = tl.read_json(str(test_file))
-            assert result['test'] == 123
+            assert result["test"] == 123
 
 
 class TestDataStructures:
@@ -102,16 +93,13 @@ class TestDataStructures:
             import pandas as pd
 
             # Create test dataframe
-            df = pd.DataFrame({
-                'col1': [1, 2, 3],
-                'col2': ['a', 'b', 'c']
-            })
+            df = pd.DataFrame({"col1": [1, 2, 3], "col2": ["a", "b", "c"]})
 
             # Convert to dict
             result = tl.df2dict(df)
 
             assert isinstance(result, dict)
-            assert 'col1' in result or 0 in result  # Could be column-based or index-based
+            assert "col1" in result or 0 in result  # Could be column-based or index-based
         except ImportError:
             pytest.skip("Pandas not available")
 
@@ -185,6 +173,5 @@ class TestDataProcessing:
         assert std >= 0
 
 
-
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

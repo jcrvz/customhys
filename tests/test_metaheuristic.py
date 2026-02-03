@@ -17,16 +17,14 @@ class TestMetaheuristicCreation:
         """Test basic metaheuristic creation."""
         fun = bf.Sphere(2)
 
-        search_operators = [
-            ('random_search', {'scale': 1.0, 'distribution': 'uniform'}, 'greedy')
-        ]
+        search_operators = [("random_search", {"scale": 1.0, "distribution": "uniform"}, "greedy")]
 
         meta = mh.Metaheuristic(
             problem=fun.get_formatted_problem(),
             search_operators=search_operators,
             num_agents=10,
             num_iterations=5,
-            verbose=False
+            verbose=False,
         )
 
         assert meta is not None
@@ -38,8 +36,8 @@ class TestMetaheuristicCreation:
         fun = bf.Rastrigin(2)
 
         search_operators = [
-            ('random_search', {'scale': 1.0, 'distribution': 'uniform'}, 'greedy'),
-            ('local_random_walk', {'probability': 0.75, 'scale': 1.0, 'distribution': 'gaussian'}, 'greedy'),
+            ("random_search", {"scale": 1.0, "distribution": "uniform"}, "greedy"),
+            ("local_random_walk", {"probability": 0.75, "scale": 1.0, "distribution": "gaussian"}, "greedy"),
         ]
 
         meta = mh.Metaheuristic(
@@ -47,7 +45,7 @@ class TestMetaheuristicCreation:
             search_operators=search_operators,
             num_agents=10,
             num_iterations=5,
-            verbose=False
+            verbose=False,
         )
 
         # Operators are stored in perturbators and selectors
@@ -59,16 +57,14 @@ class TestMetaheuristicCreation:
 
         for dim in dimensions:
             fun = bf.Sphere(dim)
-            search_operators = [
-                ('random_search', {'scale': 1.0, 'distribution': 'uniform'}, 'greedy')
-            ]
+            search_operators = [("random_search", {"scale": 1.0, "distribution": "uniform"}, "greedy")]
 
             meta = mh.Metaheuristic(
                 problem=fun.get_formatted_problem(),
                 search_operators=search_operators,
                 num_agents=10,
                 num_iterations=5,
-                verbose=False
+                verbose=False,
             )
 
             assert meta.pop.num_dimensions == dim
@@ -81,45 +77,41 @@ class TestMetaheuristicExecution:
         """Test running a metaheuristic."""
         fun = bf.Sphere(2)
 
-        search_operators = [
-            ('random_search', {'scale': 1.0, 'distribution': 'uniform'}, 'greedy')
-        ]
+        search_operators = [("random_search", {"scale": 1.0, "distribution": "uniform"}, "greedy")]
 
         meta = mh.Metaheuristic(
             problem=fun.get_formatted_problem(),
             search_operators=search_operators,
             num_agents=10,
             num_iterations=10,
-            verbose=False
+            verbose=False,
         )
 
         meta.run()
 
         # Check that historical data was recorded
-        assert 'fitness' in meta.historical
-        assert len(meta.historical['fitness']) > 0
+        assert "fitness" in meta.historical
+        assert len(meta.historical["fitness"]) > 0
 
     def test_metaheuristic_optimization_progress(self):
         """Test that optimization makes progress."""
         fun = bf.Sphere(2)
 
-        search_operators = [
-            ('random_search', {'scale': 1.0, 'distribution': 'uniform'}, 'greedy')
-        ]
+        search_operators = [("random_search", {"scale": 1.0, "distribution": "uniform"}, "greedy")]
 
         meta = mh.Metaheuristic(
             problem=fun.get_formatted_problem(),
             search_operators=search_operators,
             num_agents=20,
             num_iterations=50,
-            verbose=False
+            verbose=False,
         )
 
         meta.run()
 
         # First fitness should be worse than last (for minimization)
-        first_fitness = meta.historical['fitness'][0]
-        last_fitness = meta.historical['fitness'][-1]
+        first_fitness = meta.historical["fitness"][0]
+        last_fitness = meta.historical["fitness"][-1]
 
         assert last_fitness <= first_fitness
 
@@ -127,16 +119,14 @@ class TestMetaheuristicExecution:
         """Test that results are in correct format."""
         fun = bf.Sphere(2)
 
-        search_operators = [
-            ('random_search', {'scale': 1.0, 'distribution': 'uniform'}, 'greedy')
-        ]
+        search_operators = [("random_search", {"scale": 1.0, "distribution": "uniform"}, "greedy")]
 
         meta = mh.Metaheuristic(
             problem=fun.get_formatted_problem(),
             search_operators=search_operators,
             num_agents=10,
             num_iterations=10,
-            verbose=False
+            verbose=False,
         )
 
         meta.run()
@@ -155,25 +145,26 @@ class TestMetaheuristicExecution:
 class TestMetaheuristicWithDifferentFunctions:
     """Test metaheuristic with different benchmark functions."""
 
-    @pytest.mark.parametrize("func_class", [
-        bf.Sphere,
-        bf.Rastrigin,
-        bf.Rosenbrock,
-    ])
+    @pytest.mark.parametrize(
+        "func_class",
+        [
+            bf.Sphere,
+            bf.Rastrigin,
+            bf.Rosenbrock,
+        ],
+    )
     def test_metaheuristic_different_functions(self, func_class):
         """Test metaheuristic with different functions."""
         fun = func_class(2)
 
-        search_operators = [
-            ('random_search', {'scale': 1.0, 'distribution': 'uniform'}, 'greedy')
-        ]
+        search_operators = [("random_search", {"scale": 1.0, "distribution": "uniform"}, "greedy")]
 
         meta = mh.Metaheuristic(
             problem=fun.get_formatted_problem(),
             search_operators=search_operators,
             num_agents=10,
             num_iterations=10,
-            verbose=False
+            verbose=False,
         )
 
         meta.run()
@@ -186,11 +177,14 @@ class TestMetaheuristicWithDifferentFunctions:
 class TestMetaheuristicSearchOperators:
     """Test metaheuristic with different search operators."""
 
-    @pytest.mark.parametrize("operator", [
-        ('random_search', {'scale': 1.0, 'distribution': 'uniform'}, 'greedy'),
-        ('random_sample', {}, 'greedy'),
-        ('local_random_walk', {'probability': 0.75, 'scale': 1.0, 'distribution': 'uniform'}, 'greedy'),
-    ])
+    @pytest.mark.parametrize(
+        "operator",
+        [
+            ("random_search", {"scale": 1.0, "distribution": "uniform"}, "greedy"),
+            ("random_sample", {}, "greedy"),
+            ("local_random_walk", {"probability": 0.75, "scale": 1.0, "distribution": "uniform"}, "greedy"),
+        ],
+    )
     def test_metaheuristic_with_operator(self, operator):
         """Test metaheuristic with different operators."""
         fun = bf.Sphere(2)
@@ -200,7 +194,7 @@ class TestMetaheuristicSearchOperators:
             search_operators=[operator],
             num_agents=10,
             num_iterations=10,
-            verbose=False
+            verbose=False,
         )
 
         meta.run()
@@ -213,21 +207,19 @@ class TestMetaheuristicSearchOperators:
 class TestMetaheuristicSelectors:
     """Test metaheuristic with different selectors."""
 
-    @pytest.mark.parametrize("selector", ['greedy', 'all', 'metropolis', 'probabilistic'])
+    @pytest.mark.parametrize("selector", ["greedy", "all", "metropolis", "probabilistic"])
     def test_metaheuristic_selectors(self, selector):
         """Test metaheuristic with different selection methods."""
         fun = bf.Sphere(2)
 
-        search_operators = [
-            ('random_search', {'scale': 1.0, 'distribution': 'uniform'}, selector)
-        ]
+        search_operators = [("random_search", {"scale": 1.0, "distribution": "uniform"}, selector)]
 
         meta = mh.Metaheuristic(
             problem=fun.get_formatted_problem(),
             search_operators=search_operators,
             num_agents=10,
             num_iterations=10,
-            verbose=False
+            verbose=False,
         )
 
         meta.run()
@@ -244,9 +236,7 @@ class TestMetaheuristicHistorical:
         """Test that fitness history is recorded."""
         fun = bf.Sphere(2)
 
-        search_operators = [
-            ('random_search', {'scale': 1.0, 'distribution': 'uniform'}, 'greedy')
-        ]
+        search_operators = [("random_search", {"scale": 1.0, "distribution": "uniform"}, "greedy")]
 
         num_iterations = 20
 
@@ -255,56 +245,52 @@ class TestMetaheuristicHistorical:
             search_operators=search_operators,
             num_agents=10,
             num_iterations=num_iterations,
-            verbose=False
+            verbose=False,
         )
 
         meta.run()
 
         # Should have num_iterations + 1 records (initial + iterations)
-        assert len(meta.historical['fitness']) == num_iterations + 1
+        assert len(meta.historical["fitness"]) == num_iterations + 1
 
     def test_historical_position_recorded(self):
         """Test that position history is recorded."""
         fun = bf.Sphere(2)
 
-        search_operators = [
-            ('random_search', {'scale': 1.0, 'distribution': 'uniform'}, 'greedy')
-        ]
+        search_operators = [("random_search", {"scale": 1.0, "distribution": "uniform"}, "greedy")]
 
         meta = mh.Metaheuristic(
             problem=fun.get_formatted_problem(),
             search_operators=search_operators,
             num_agents=10,
             num_iterations=10,
-            verbose=False
+            verbose=False,
         )
 
         meta.run()
 
-        assert 'position' in meta.historical
-        assert len(meta.historical['position']) > 0
-        assert len(meta.historical['position'][0]) == 2
+        assert "position" in meta.historical
+        assert len(meta.historical["position"]) > 0
+        assert len(meta.historical["position"][0]) == 2
 
     def test_historical_data_consistency(self):
         """Test that historical data is consistent."""
         fun = bf.Sphere(2)
 
-        search_operators = [
-            ('random_search', {'scale': 1.0, 'distribution': 'uniform'}, 'greedy')
-        ]
+        search_operators = [("random_search", {"scale": 1.0, "distribution": "uniform"}, "greedy")]
 
         meta = mh.Metaheuristic(
             problem=fun.get_formatted_problem(),
             search_operators=search_operators,
             num_agents=10,
             num_iterations=10,
-            verbose=False
+            verbose=False,
         )
 
         meta.run()
 
         # All historical arrays should have same length
-        assert len(meta.historical['fitness']) == len(meta.historical['position'])
+        assert len(meta.historical["fitness"]) == len(meta.historical["position"])
 
 
 class TestMetaheuristicPopulationSize:
@@ -315,16 +301,14 @@ class TestMetaheuristicPopulationSize:
         """Test metaheuristic with different population sizes."""
         fun = bf.Sphere(2)
 
-        search_operators = [
-            ('random_search', {'scale': 1.0, 'distribution': 'uniform'}, 'greedy')
-        ]
+        search_operators = [("random_search", {"scale": 1.0, "distribution": "uniform"}, "greedy")]
 
         meta = mh.Metaheuristic(
             problem=fun.get_formatted_problem(),
             search_operators=search_operators,
             num_agents=num_agents,
             num_iterations=10,
-            verbose=False
+            verbose=False,
         )
 
         meta.run()
@@ -337,14 +321,12 @@ class TestMetaheuristicPopulationSize:
 class TestMetaheuristicInitialization:
     """Test metaheuristic initialization schemes."""
 
-    @pytest.mark.parametrize("scheme", ['random', 'vertex'])
+    @pytest.mark.parametrize("scheme", ["random", "vertex"])
     def test_initialization_schemes(self, scheme):
         """Test different initialization schemes."""
         fun = bf.Sphere(2)
 
-        search_operators = [
-            ('random_search', {'scale': 1.0, 'distribution': 'uniform'}, 'greedy')
-        ]
+        search_operators = [("random_search", {"scale": 1.0, "distribution": "uniform"}, "greedy")]
 
         meta = mh.Metaheuristic(
             problem=fun.get_formatted_problem(),
@@ -352,7 +334,7 @@ class TestMetaheuristicInitialization:
             num_agents=10,
             num_iterations=10,
             initial_scheme=scheme,
-            verbose=False
+            verbose=False,
         )
 
         meta.run()
@@ -370,8 +352,8 @@ class TestMetaheuristicConvergence:
         fun = bf.Sphere(2)
 
         search_operators = [
-            ('random_search', {'scale': 1.0, 'distribution': 'uniform'}, 'greedy'),
-            ('local_random_walk', {'probability': 0.75, 'scale': 0.5, 'distribution': 'gaussian'}, 'greedy'),
+            ("random_search", {"scale": 1.0, "distribution": "uniform"}, "greedy"),
+            ("local_random_walk", {"probability": 0.75, "scale": 0.5, "distribution": "gaussian"}, "greedy"),
         ]
 
         meta = mh.Metaheuristic(
@@ -379,7 +361,7 @@ class TestMetaheuristicConvergence:
             search_operators=search_operators,
             num_agents=30,
             num_iterations=100,
-            verbose=False
+            verbose=False,
         )
 
         meta.run()
@@ -393,5 +375,5 @@ class TestMetaheuristicConvergence:
         assert np.isfinite(fitness_value)  # Should be a valid number
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

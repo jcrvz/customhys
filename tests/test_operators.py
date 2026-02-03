@@ -16,19 +16,19 @@ class TestOperatorsAvailability:
 
     def test_operators_list_exists(self):
         """Test that __all__ contains operators."""
-        assert hasattr(op, '__all__')
+        assert hasattr(op, "__all__")
         assert len(op.__all__) > 0
 
     def test_common_operators_present(self):
         """Test that common operators are available."""
         expected_operators = [
-            'random_search',
-            'random_sample',
-            'local_random_walk',
-            'swarm_dynamic',
-            'differential_mutation',
-            'genetic_crossover',
-            'spiral_dynamic',
+            "random_search",
+            "random_sample",
+            "local_random_walk",
+            "swarm_dynamic",
+            "differential_mutation",
+            "genetic_crossover",
+            "spiral_dynamic",
         ]
 
         for operator_name in expected_operators:
@@ -43,7 +43,7 @@ class TestRandomSearchOperator:
         """Create a test population."""
         fun = bf.Sphere(2)
         pop = pp.Population(fun.get_search_range(), num_agents=5)
-        pop.initialise_positions('random')
+        pop.initialise_positions("random")
         pop.evaluate_fitness(lambda x: fun.get_function_value(x))
         return pop
 
@@ -52,11 +52,7 @@ class TestRandomSearchOperator:
         original_positions = population.positions.copy()
 
         # Operators modify population in place
-        op.random_search(
-            population,
-            scale=1.0,
-            distribution='uniform'
-        )
+        op.random_search(population, scale=1.0, distribution="uniform")
 
         new_positions = population.positions
         assert new_positions.shape == original_positions.shape
@@ -67,21 +63,13 @@ class TestRandomSearchOperator:
         original_positions = population.positions.copy()
 
         # Small scale should produce smaller changes
-        op.random_search(
-            population,
-            scale=0.01,
-            distribution='uniform'
-        )
+        op.random_search(population, scale=0.01, distribution="uniform")
 
         small_scale_positions = population.positions.copy()
 
         # Reset and try large scale
         population.positions = original_positions.copy()
-        op.random_search(
-            population,
-            scale=1.0,
-            distribution='uniform'
-        )
+        op.random_search(population, scale=1.0, distribution="uniform")
 
         large_scale_positions = population.positions
 
@@ -89,15 +77,11 @@ class TestRandomSearchOperator:
 
     def test_random_search_distributions(self, population):
         """Test random_search with different distributions."""
-        distributions = ['uniform', 'gaussian', 'levy']
+        distributions = ["uniform", "gaussian", "levy"]
 
         for dist in distributions:
             original_positions = population.positions.copy()
-            op.random_search(
-                population,
-                scale=1.0,
-                distribution=dist
-            )
+            op.random_search(population, scale=1.0, distribution=dist)
             # Check that positions changed
             assert population.positions.shape == original_positions.shape
             # Reset for next test
@@ -112,7 +96,7 @@ class TestLocalRandomWalk:
         """Create a test population."""
         fun = bf.Sphere(2)
         pop = pp.Population(fun.get_search_range(), num_agents=5)
-        pop.initialise_positions('random')
+        pop.initialise_positions("random")
         pop.evaluate_fitness(lambda x: fun.get_function_value(x))
         return pop
 
@@ -120,12 +104,7 @@ class TestLocalRandomWalk:
         """Test that local_random_walk can be executed."""
         original_positions = population.positions.copy()
 
-        op.local_random_walk(
-            population,
-            probability=0.75,
-            scale=1.0,
-            distribution='uniform'
-        )
+        op.local_random_walk(population, probability=0.75, scale=1.0, distribution="uniform")
 
         assert population.positions.shape == original_positions.shape
 
@@ -134,12 +113,7 @@ class TestLocalRandomWalk:
         # Test that it runs without error with different probabilities
         for prob in [0.0, 0.5, 1.0]:
             original_positions = population.positions.copy()
-            op.local_random_walk(
-                population,
-                probability=prob,
-                scale=1.0,
-                distribution='uniform'
-            )
+            op.local_random_walk(population, probability=prob, scale=1.0, distribution="uniform")
             # Just check it doesn't crash and maintains shape
             assert population.positions.shape == original_positions.shape
             # Reset for next test
@@ -154,7 +128,7 @@ class TestSwarmDynamic:
         """Create a test population with best positions."""
         fun = bf.Sphere(2)
         pop = pp.Population(fun.get_search_range(), num_agents=5)
-        pop.initialise_positions('random')
+        pop.initialise_positions("random")
         pop.evaluate_fitness(lambda x: fun.get_function_value(x))
 
         # Initialize particular best
@@ -168,29 +142,19 @@ class TestSwarmDynamic:
         original_positions = population.positions.copy()
 
         op.swarm_dynamic(
-            population,
-            factor=0.7,
-            self_conf=2.54,
-            swarm_conf=2.56,
-            version='inertial',
-            distribution='uniform'
+            population, factor=0.7, self_conf=2.54, swarm_conf=2.56, version="inertial", distribution="uniform"
         )
 
         assert population.positions.shape == original_positions.shape
 
     def test_swarm_dynamic_versions(self, population):
         """Test different swarm dynamic versions."""
-        versions = ['inertial', 'constriction']
+        versions = ["inertial", "constriction"]
 
         for version in versions:
             original_positions = population.positions.copy()
             op.swarm_dynamic(
-                population,
-                factor=0.7,
-                self_conf=2.54,
-                swarm_conf=2.56,
-                version=version,
-                distribution='uniform'
+                population, factor=0.7, self_conf=2.54, swarm_conf=2.56, version=version, distribution="uniform"
             )
             assert population.positions.shape == original_positions.shape
             # Reset for next test
@@ -205,7 +169,7 @@ class TestDifferentialMutation:
         """Create a test population."""
         fun = bf.Sphere(2)
         pop = pp.Population(fun.get_search_range(), num_agents=5)
-        pop.initialise_positions('random')
+        pop.initialise_positions("random")
         pop.evaluate_fitness(lambda x: fun.get_function_value(x))
         return pop
 
@@ -213,28 +177,18 @@ class TestDifferentialMutation:
         """Test that differential_mutation can be executed."""
         original_positions = population.positions.copy()
 
-        op.differential_mutation(
-            population,
-            expression='rand',
-            num_rands=1,
-            factor=0.8
-        )
+        op.differential_mutation(population, expression="rand", num_rands=1, factor=0.8)
 
         assert population.positions.shape == original_positions.shape
 
     def test_differential_mutation_expressions(self, population):
         """Test different differential mutation expressions."""
-        expressions = ['rand', 'best', 'current-to-best']
+        expressions = ["rand", "best", "current-to-best"]
 
         for expr in expressions:
             try:
                 original_positions = population.positions.copy()
-                op.differential_mutation(
-                    population,
-                    expression=expr,
-                    num_rands=1,
-                    factor=0.8
-                )
+                op.differential_mutation(population, expression=expr, num_rands=1, factor=0.8)
                 assert population.positions.shape == original_positions.shape
                 # Reset for next test
                 population.positions = original_positions.copy()
@@ -251,7 +205,7 @@ class TestGeneticOperators:
         """Create a test population."""
         fun = bf.Sphere(2)
         pop = pp.Population(fun.get_search_range(), num_agents=5)
-        pop.initialise_positions('random')
+        pop.initialise_positions("random")
         pop.evaluate_fitness(lambda x: fun.get_function_value(x))
         return pop
 
@@ -259,12 +213,7 @@ class TestGeneticOperators:
         """Test that genetic_crossover can be executed."""
         original_positions = population.positions.copy()
 
-        op.genetic_crossover(
-            population,
-            pairing='rank',
-            crossover='blend',
-            mating_pool_factor=0.4
-        )
+        op.genetic_crossover(population, pairing="rank", crossover="blend", mating_pool_factor=0.4)
 
         assert population.positions.shape == original_positions.shape
 
@@ -272,10 +221,7 @@ class TestGeneticOperators:
         """Test that genetic_mutation can be executed."""
         original_positions = population.positions.copy()
 
-        op.genetic_mutation(
-            population,
-            mutation_rate=0.1
-        )
+        op.genetic_mutation(population, mutation_rate=0.1)
 
         assert population.positions.shape == original_positions.shape
 
@@ -288,7 +234,7 @@ class TestSpiralDynamic:
         """Create a test population."""
         fun = bf.Sphere(2)
         pop = pp.Population(fun.get_search_range(), num_agents=5)
-        pop.initialise_positions('random')
+        pop.initialise_positions("random")
         pop.evaluate_fitness(lambda x: fun.get_function_value(x))
         return pop
 
@@ -296,12 +242,7 @@ class TestSpiralDynamic:
         """Test that spiral_dynamic can be executed."""
         original_positions = population.positions.copy()
 
-        op.spiral_dynamic(
-            population,
-            radius=0.9,
-            angle=22.5,
-            sigma=0.1
-        )
+        op.spiral_dynamic(population, radius=0.9, angle=22.5, sigma=0.1)
 
         assert population.positions.shape == original_positions.shape
 
@@ -312,12 +253,7 @@ class TestSpiralDynamic:
 
         for r in radii:
             original_positions = population.positions.copy()
-            op.spiral_dynamic(
-                population,
-                radius=r,
-                angle=22.5,
-                sigma=0.1
-            )
+            op.spiral_dynamic(population, radius=r, angle=22.5, sigma=0.1)
             assert population.positions.shape == original_positions.shape
             # Reset for next test
             population.positions = original_positions.copy()
@@ -328,7 +264,7 @@ class TestOperatorHelpers:
 
     def test_obtain_operators_function(self):
         """Test obtain_operators helper function."""
-        if hasattr(op, 'obtain_operators'):
+        if hasattr(op, "obtain_operators"):
             operators = op.obtain_operators(num_vals=3)
             assert isinstance(operators, list)
             assert len(operators) > 0
@@ -342,7 +278,7 @@ class TestOperatorOutputBounds:
         """Create a test population."""
         fun = bf.Sphere(2)
         pop = pp.Population(fun.get_search_range(), num_agents=5)
-        pop.initialise_positions('random')
+        pop.initialise_positions("random")
         pop.evaluate_fitness(lambda x: fun.get_function_value(x))
         return pop
 
@@ -351,7 +287,7 @@ class TestOperatorOutputBounds:
         original_positions = population.positions.copy()
 
         # Test random_search
-        op.random_search(population, scale=0.5, distribution='uniform')
+        op.random_search(population, scale=0.5, distribution="uniform")
         # Positions should still be finite
         assert np.all(np.isfinite(population.positions))
 
@@ -361,5 +297,5 @@ class TestOperatorOutputBounds:
         assert np.all(np.isfinite(population.positions))
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

@@ -48,6 +48,7 @@ def test_customhys_imports():
             tools,
             visualisation,
         )
+
         print(benchmark_func)
         print(experiment)
         print(hyperheuristic)
@@ -64,7 +65,8 @@ def test_customhys_imports():
 def test_customhys_version():
     """Verify customhys version is correct."""
     import customhys
-    assert hasattr(customhys, '__version__')
+
+    assert hasattr(customhys, "__version__")
     assert customhys.__version__ == "1.1.8"
     print(f"✓ Customhys version: {customhys.__version__}")
 
@@ -73,6 +75,7 @@ def test_optional_ml_import():
     """Test TensorFlow import (optional dependency)."""
     try:
         import tensorflow as tf
+
         print(f"✓ TensorFlow available: {tf.__version__}")
     except ImportError:
         print("ℹ TensorFlow not installed (optional dependency)")
@@ -83,7 +86,7 @@ def test_benchmark_functions():
     from customhys import benchmark_func as bf
 
     # Test that __all__ is defined and has functions
-    assert hasattr(bf, '__all__')
+    assert hasattr(bf, "__all__")
     assert len(bf.__all__) > 0
 
     # Test creating a simple benchmark function
@@ -110,7 +113,7 @@ def test_operators_available():
     """Test that operators are available."""
     from customhys import operators as op
 
-    assert hasattr(op, '__all__')
+    assert hasattr(op, "__all__")
     assert len(op.__all__) > 0
     print(f"✓ Search operators available: {len(op.__all__)} operators")
 
@@ -119,23 +122,13 @@ def test_metaheuristic_creation():
     """Test creating a simple metaheuristic."""
     from customhys import metaheuristic as mh
 
-    problem = {
-        'function': lambda x: sum(x**2),
-        'is_constrained': False,
-        'boundaries': [[-100, 100], [-100, 100]]
-    }
+    problem = {"function": lambda x: sum(x**2), "is_constrained": False, "boundaries": [[-100, 100], [-100, 100]]}
 
     # Simple search operator
-    search_operators = [
-        ('random_search', {'scale': 1.0, 'distribution': 'uniform'}, 'greedy')
-    ]
+    search_operators = [("random_search", {"scale": 1.0, "distribution": "uniform"}, "greedy")]
 
     meta = mh.Metaheuristic(
-        problem=problem,
-        search_operators=search_operators,
-        num_agents=10,
-        num_iterations=5,
-        verbose=False
+        problem=problem, search_operators=search_operators, num_agents=10, num_iterations=5, verbose=False
     )
 
     assert meta is not None
@@ -151,16 +144,14 @@ def test_simple_optimization():
     # Simple sphere function
     fun = bf.Sphere(2)
 
-    search_operators = [
-        ('random_search', {'scale': 1.0, 'distribution': 'uniform'}, 'greedy')
-    ]
+    search_operators = [("random_search", {"scale": 1.0, "distribution": "uniform"}, "greedy")]
 
     meta = mh.Metaheuristic(
         problem=fun.get_formatted_problem(),
         search_operators=search_operators,
         num_agents=10,
         num_iterations=10,
-        verbose=False
+        verbose=False,
     )
 
     # Run optimization
@@ -168,8 +159,8 @@ def test_simple_optimization():
 
     # Check that we have a result
     assert meta.historical is not None
-    assert 'fitness' in meta.historical
-    assert len(meta.historical['fitness']) > 0
+    assert "fitness" in meta.historical
+    assert len(meta.historical["fitness"]) > 0
     print(f"✓ Simple optimization completed (best fitness: {meta.historical['fitness'][-1]:.6f})")
 
 
@@ -178,14 +169,14 @@ def test_project_files_exist():
     project_root = Path(__file__).parent.parent
 
     required_files = [
-        'pyproject.toml',
-        'setup.py',
-        'requirements.txt',
-        'Makefile',
-        'README.md',
-        'LICENSE',
-        'CHANGELOG.md',
-        'CONTRIBUTING.md',
+        "pyproject.toml",
+        "setup.py",
+        "requirements.txt",
+        "Makefile",
+        "README.md",
+        "LICENSE",
+        "CHANGELOG.md",
+        "CONTRIBUTING.md",
     ]
 
     for file_name in required_files:
@@ -198,7 +189,7 @@ def test_project_files_exist():
 def test_uv_lock_exists():
     """Verify uv.lock file exists (for UV project management)."""
     project_root = Path(__file__).parent.parent
-    uv_lock = project_root / 'uv.lock'
+    uv_lock = project_root / "uv.lock"
 
     if uv_lock.exists():
         print(f"✓ uv.lock exists ({uv_lock.stat().st_size / 1024:.1f} KB)")
@@ -213,17 +204,17 @@ def test_package_data_files():
     import customhys
 
     customhys_path = Path(customhys.__file__).parent
-    collections_path = customhys_path / 'collections'
+    collections_path = customhys_path / "collections"
 
     assert collections_path.exists(), "collections directory not found"
 
     # Check for some collection files
-    collection_files = list(collections_path.glob('*.txt'))
+    collection_files = list(collections_path.glob("*.txt"))
     assert len(collection_files) > 0, "No collection files found"
     print(f"✓ Package data files present ({len(collection_files)} collection files)")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     """Run all tests when executed directly."""
 
     print("=" * 60)
@@ -231,10 +222,7 @@ if __name__ == '__main__':
     print("=" * 60)
 
     # Get all test functions
-    test_functions = [
-        obj for name, obj in globals().items()
-        if name.startswith('test_') and callable(obj)
-    ]
+    test_functions = [obj for name, obj in globals().items() if name.startswith("test_") and callable(obj)]
 
     passed = 0
     failed = 0
