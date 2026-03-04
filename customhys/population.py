@@ -9,6 +9,7 @@ Created on Tue Sep 17 14:29:43 2019
 from math import isfinite
 
 import numpy as np
+from scipy.stats.qmc import Halton, Sobol
 
 __all__ = ["Population"]
 __selectors__ = ["all", "greedy", "metropolis", "probabilistic"]
@@ -299,16 +300,42 @@ class Population:
         Initialise population by an initialisation scheme.
 
         :param str scheme: optional
-            Initialisation scheme. It is only 'random' and 'vertex' initialisation in the current version. We are
-            working on implementing initialisation methods. The 'random' consists of using a random uniform distribution
-            in [-1,1]. Otherwise, 'vertex' uses the vertices of nested hyper-cubes to allocate the agents. The default
-            is 'random'.
+            Initialisation scheme. Available schemes are:
+            - 'random': Random uniform distribution in [-1,1] (default)
+            - 'vertex': Vertices of nested hyper-cubes
+            - 'lhs': Latin Hypercube Sampling
+            - 'sobol': Sobol quasi-random sequences
+            - 'halton': Halton quasi-random sequences
+            - 'beta': Beta distribution
+            - 'normal': Normal (Gaussian) distribution
+            - 'lognormal': Lognormal distribution
+            - 'exponential': Exponential distribution
+            - 'rayleigh': Rayleigh distribution
 
         :returns: None.
         """
+        scheme = "random" if scheme is None else str(scheme).strip().lower()
+
         if scheme == "vertex":
             self._positions = self._grid_matrix(self.num_dimensions, self.num_agents)
+        elif scheme == "lhs":
+            self._positions = self._lhs(self.num_dimensions, self.num_agents)
+        elif scheme == "sobol":
+            self._positions = self._sobol(self.num_dimensions, self.num_agents)
+        elif scheme == "halton":
+            self._positions = self._halton(self.num_dimensions, self.num_agents)
+        elif scheme == "beta":
+            self._positions = self._beta(self.num_dimensions, self.num_agents)
+        elif scheme == "normal":
+            self._positions = self._normal(self.num_dimensions, self.num_agents)
+        elif scheme == "lognormal":
+            self._positions = self._lognormal(self.num_dimensions, self.num_agents)
+        elif scheme == "exponential":
+            self._positions = self._exponential(self.num_dimensions, self.num_agents)
+        elif scheme == "rayleigh":
+            self._positions = self._rayleigh(self.num_dimensions, self.num_agents)
         else:
+            # Default to random if scheme is not recognized
             self._positions = np.random.uniform(-1, 1, (self.num_agents, self.num_dimensions))
 
     # ================
@@ -336,6 +363,169 @@ class Population:
         output_matrix = output_matrix[:num_agents, :]
 
         return output_matrix
+
+    @staticmethod
+    def _lhs(num_dimensions, num_agents):
+        """
+        Initialise population using Latin Hypercube Sampling (LHS).
+
+        Ensures that each interval in each dimension is covered exactly once,
+        providing stratified sampling across the search space.
+
+        :param int num_dimensions: Number of dimensions
+        :param int num_agents: Number of agents
+        :returns: numpy.ndarray
+        """
+        segments = np.arange(num_agents) / num_agents
+        segment_width = 1.0 / num_agents
+        sample = np.zeros((num_agents, num_dimensions))
+
+        for d in range(num_dimensions):
+            perm = np.random.permutation(num_agents)
+            for i in range(num_agents):
+                offset = np.random.uniform(0, segment_width)
+                sample[perm[i], d] = segments[i] + offset
+
+        return sample * 2 - 1
+
+    @staticmethod
+    def _sobol(num_dimensions, num_agents):
+        """
+        Initialise population using Sobol quasi-random sequences.
+
+        Sobol generates uniformly distributed points in the hypercube [0,1]^dim,
+        providing better coverage than purely random sampling.
+
+        Note: This method generates 2^m points where m = ceil(log2(num_agents)).
+        If 2^m > num_agents, excess points are discarded.
+
+        :param int num_dimensions: Number of dimensions
+        :param int num_agents: Number of agents
+        :returns: numpy.ndarray
+        """
+        m = int(np.ceil(np.log2(num_agents)))
+
+        sobol = Sobol(d=num_dimensions, scramble=True)
+
+        sample = sobol.random_base2(m)
+
+        seq = sample[:num_agents]
+
+        return seq * 2 - 1
+
+    @staticmethod
+    def _halton(num_dimensions, num_agents):
+        """
+        Initialise population using Halton quasi-random sequences.
+
+        Halton generates uniformly distributed points in the hypercube [0,1]^dim,
+        providing better coverage than purely random sampling.
+
+        :param int num_dimensions: Number of dimensions
+        :param int num_agents: Number of agents
+        :returns: numpy.ndarray
+        """
+        halton = Halton(d=num_dimensions, scramble=True)
+
+        sample = halton.random(n=num_agents)
+
+        return sample * 2 - 1
+
+    @staticmethod
+    def _beta(num_dimensions, num_agents, a=0.5, b=0.5):
+        """
+        Initialise population using Beta distribution.
+
+        Beta distribution generates points uniformly distributed in [0,1]^dim,
+        with parameters controlling concentration towards edges or center.
+
+        :param int num_dimensions: Number of dimensions
+        :param int num_agents: Number of agents
+        :param float a: Alpha parameter of Beta distribution (default: 0.5)
+        :param float b: Beta parameter of Beta distribution (default: 0.5)
+        :returns: numpy.ndarray
+        """
+        sample = np.random.beta(a, b, size=(num_agents, num_dimensions))
+
+        return sample * 2 - 1
+
+    @staticmethod
+    def _normal(num_dimensions, num_agents, mean=0.5, std=0.25):
+        """
+        Initialise population using Normal (Gaussian) distribution.
+
+        Normal distribution generates points concentrated around the center,
+        with most points within 3 standard deviations.
+
+        :param int num_dimensions: Number of dimensions
+        :param int num_agents: Number of agents
+        :param float mean: Mean of the normal distribution on [0,1] (default: 0.5)
+        :param float std: Standard deviation on [0,1] (default: 0.25)
+        :returns: numpy.ndarray
+        """
+        sample = np.random.normal(mean, std, size=(num_agents, num_dimensions))
+
+        sample = np.clip(sample, 0, 1)
+
+        return sample * 2 - 1
+
+    @staticmethod
+    def _lognormal(num_dimensions, num_agents, mean=0.0, sigma=0.5):
+        """
+        Initialise population using Lognormal distribution.
+
+        Lognormal distribution is suitable for generating points with
+        positive skewness and concentration towards smaller values.
+
+        :param int num_dimensions: Number of dimensions
+        :param int num_agents: Number of agents
+        :param float mean: Mean of underlying normal distribution (default: 0.0)
+        :param float sigma: Standard deviation of underlying normal (default: 0.5)
+        :returns: numpy.ndarray
+        """
+        sample = np.random.lognormal(mean, sigma, size=(num_agents, num_dimensions))
+
+        sample = np.clip(sample, 0, 1)
+
+        return sample * 2 - 1
+
+    @staticmethod
+    def _exponential(num_dimensions, num_agents, scale=0.5):
+        """
+        Initialise population using Exponential distribution.
+
+        Exponential distribution generates points with exponential decay,
+        concentrated towards zero.
+
+        :param int num_dimensions: Number of dimensions
+        :param int num_agents: Number of agents
+        :param float scale: Scale parameter (default: 0.5)
+        :returns: numpy.ndarray
+        """
+        sample = np.random.exponential(scale, size=(num_agents, num_dimensions))
+
+        sample = np.clip(sample, 0, 1)
+
+        return sample * 2 - 1
+
+    @staticmethod
+    def _rayleigh(num_dimensions, num_agents, scale=0.4):
+        """
+        Initialise population using Rayleigh distribution.
+
+        Rayleigh distribution generates points with concentration
+        away from zero, suitable for magnitude-based initialization.
+
+        :param int num_dimensions: Number of dimensions
+        :param int num_agents: Number of agents
+        :param float scale: Scale parameter (default: 0.4)
+        :returns: numpy.ndarray
+        """
+        sample = np.random.rayleigh(scale, size=(num_agents, num_dimensions))
+
+        sample = np.clip(sample, 0, 1)
+
+        return sample * 2 - 1
 
     def _check_simple_constraints(self):
         """

@@ -1,29 +1,37 @@
-# -*- coding: utf-8 -*-
-import setuptools
 import pathlib
 
+import setuptools
+
 # The text of the README file
-README = (pathlib.Path(__file__).parent / 'README.md').read_text(encoding='utf-8')
+README = (pathlib.Path(__file__).parent / "README.md").read_text(encoding="utf-8")
 
 setuptools.setup(
-    name='customhys',
-    version='1.1.8',
+    name="customhys",
+    version="1.1.8",
     packages=setuptools.find_packages(),
-    url='https://github.com/jcrvz/customhys',
-    license='MIT License',
-    author='Jorge Mario Cruz-Duarte',
-    author_email='jorge.cruz-duarte@univ-lille.fr',
-    description='This framework provides tools for solving, but not limited to, continuous optimisation problems '
-                'using a hyper-heuristic approach for customising metaheuristics.',
-    long_description_content_type='text/markdown',
+    url="https://github.com/jcrvz/customhys",
+    license="MIT License",
+    author="Jorge Mario Cruz-Duarte",
+    author_email="jorge.cruz-duarte@univ-lille.fr",
+    description="This framework provides tools for solving, but not limited to, continuous optimisation problems "
+    "using a hyper-heuristic approach for customising metaheuristics.",
+    long_description_content_type="text/markdown",
     long_description=README,
-    keywords=['metaheuristics', 'hyper-heuristic', 'optimization', 'automatic design', 'global optimization',
-              'evolutionary computation', 'bio-inspired', 'algorithm design'],
+    keywords=[
+        "metaheuristics",
+        "hyper-heuristic",
+        "optimization",
+        "automatic design",
+        "global optimization",
+        "evolutionary computation",
+        "bio-inspired",
+        "algorithm design",
+    ],
     python_requires=">=3.10",
     install_requires=[
-        line.strip() for line in
-        (pathlib.Path(__file__).parent / 'requirements.txt').read_text(encoding='utf-8').split('\n')
-        if line.strip() and not line.strip().startswith('#')
+        line.strip()
+        for line in (pathlib.Path(__file__).parent / "requirements.txt").read_text(encoding="utf-8").split("\n")
+        if line.strip() and not line.strip().startswith("#")
     ],
     extras_require={
         "ml": [
@@ -47,5 +55,4 @@ setuptools.setup(
         ],
     },
     include_package_data=True,
-
 )

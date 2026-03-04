@@ -23,7 +23,7 @@
       "save_model": false,
       "memory_length":  60,
       "encoder" : "default",
-      "epochs": 10, 
+      "epochs": 10,
       "model_architecture": "LSTM",
       "model_architecture_layers": [
         [20, "sigmoid", "LSTM"]

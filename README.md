@@ -3,14 +3,14 @@
 <div>
     <img align="left" alt="Module Dependency Diagram" src="https://raw.githubusercontent.com/jcrvz/customhys/master/docfiles/chm_logo.png" title="Customhys logo" width="25%"/>
 </div>
-<div align="justify"> 
+<div align="justify">
     <b>Customising optimisation metaheuristics via hyper-heuristic search</b> (CUSTOMHyS). This framework provides tools for solving, but not limited to, continuous optimisation problems using a hyper-heuristic approach for customising metaheuristics. Such an approach is powered by a strategy based on Simulated Annealing. Also, several search operators serve as building blocks for tailoring metaheuristics. They were extracted from ten well-known metaheuristics in the literature.
 </div>
 
 Detailed information about this framework can be found in [[1, 2]](#references). Plus, the code for each module is well-documented.
 
 
-### 🛠 Requirements: 
+### 🛠 Requirements:
 
 * Check the [requirements.txt](requirements.txt) file.
 * For Apple Silicon, one may need to install TensorFlow via `conda` such as:
@@ -41,7 +41,7 @@ Source: [``population.py``](customhys/population.py)
 
 ### 🦾 Search Operators (low-level heuristics)
 
-This module has a collection of search operators (simple heuristics) extracted from several well-known metaheuristics in the literature. Such operators work over a population, i.e., modify the individuals' positions. 
+This module has a collection of search operators (simple heuristics) extracted from several well-known metaheuristics in the literature. Such operators work over a population, i.e., modify the individuals' positions.
 
 Source: [``operators.py``](customhys/operators.py)
 
@@ -93,7 +93,7 @@ data_frame = {dict: N}
 :  :
 |-- 'results' = {list: N}
 |  |-- 0 = {dict: 6}
-|  |  |-- 'iteration' = {list: M}   
+|  |  |-- 'iteration' = {list: M}
 |  |  |  |-- 0 = {int}
 :  :  :  :
 |  |  |-- 'time' = {list: M}

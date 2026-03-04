@@ -4,8 +4,8 @@ Quick validation script to verify project setup.
 Run this to check if everything is working correctly.
 """
 
-import sys
 import subprocess
+import sys
 from pathlib import Path
 
 
@@ -13,7 +13,7 @@ def print_header(title):
     """Print a formatted header."""
     print(f"\n{'=' * 70}")
     print(f"  {title}")
-    print('=' * 70)
+    print("=" * 70)
 
 
 def check_item(description, condition, details=None):
@@ -27,12 +27,7 @@ def check_item(description, condition, details=None):
 
 def run_command(cmd):
     """Run a command and return success status."""
-    result = subprocess.run(
-        cmd,
-        shell=True,
-        capture_output=True,
-        text=True
-    )
+    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     return result.returncode == 0, result.stdout.strip(), result.stderr.strip()
 
 
@@ -45,11 +40,7 @@ def main():
     # Check Python version
     print_header("Python Environment")
     python_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
-    all_passed &= check_item(
-        "Python 3.10+",
-        sys.version_info >= (3, 10),
-        f"Version: {python_version}"
-    )
+    all_passed &= check_item("Python 3.10+", sys.version_info >= (3, 10), f"Version: {python_version}")
 
     # Check UV installation
     print_header("Build Tools")
@@ -57,14 +48,12 @@ def main():
     all_passed &= check_item(
         "UV installed (optional but recommended)",
         uv_installed,
-        uv_version if uv_installed else "Not installed - using pip"
+        uv_version if uv_installed else "Not installed - using pip",
     )
 
     make_installed, _, _ = run_command("command -v make")
     all_passed &= check_item(
-        "Make available",
-        make_installed,
-        "Makefile commands available" if make_installed else "Install make"
+        "Make available", make_installed, "Makefile commands available" if make_installed else "Install make"
     )
 
     # Check project files
@@ -73,11 +62,11 @@ def main():
     project_root = Path(__file__).parent
 
     critical_files = {
-        'pyproject.toml': 'Project configuration',
-        'setup.py': 'Setup script',
-        'requirements.txt': 'Dependencies',
-        'Makefile': 'Build commands',
-        'README.md': 'Documentation',
+        "pyproject.toml": "Project configuration",
+        "setup.py": "Setup script",
+        "requirements.txt": "Dependencies",
+        "Makefile": "Build commands",
+        "README.md": "Documentation",
     }
 
     for filename, description in critical_files.items():
@@ -86,9 +75,9 @@ def main():
 
     # Check optional files
     optional_files = {
-        'uv.lock': 'UV lockfile (for reproducibility)',
-        'CHANGELOG.md': 'Version history',
-        'CONTRIBUTING.md': 'Contribution guidelines',
+        "uv.lock": "UV lockfile (for reproducibility)",
+        "CHANGELOG.md": "Version history",
+        "CONTRIBUTING.md": "Contribution guidelines",
     }
 
     print()
@@ -101,10 +90,11 @@ def main():
 
     try:
         import customhys
+
         check_item("customhys package", True, f"Version {customhys.__version__}")
 
         # Test core modules
-        modules = ['benchmark_func', 'population', 'operators', 'metaheuristic']
+        modules = ["benchmark_func", "population", "operators", "metaheuristic"]
         for module in modules:
             try:
                 exec(f"from customhys import {module}")
@@ -118,25 +108,25 @@ def main():
 
     # Check dependencies (with error handling)
     print_header("Core Dependencies")
-    core_deps = ['numpy', 'scipy', 'matplotlib', 'pandas', 'sklearn']
+    core_deps = ["numpy", "scipy", "matplotlib", "pandas", "sklearn"]
 
     for dep in core_deps:
         try:
             __import__(dep)
             check_item(dep, True)
-        except (ImportError, ValueError) as e:
+        except (ImportError, ValueError):
             # ValueError can occur with numpy/pandas version mismatch
-            check_item(dep, False, f"Import error (may need reinstall)")
-            if dep in ['numpy', 'pandas']:
+            check_item(dep, False, "Import error (may need reinstall)")
+            if dep in ["numpy", "pandas"]:
                 print(f"  ℹ Hint: Try 'uv sync' or 'pip install --upgrade {dep}'")
 
     # Check optional dependencies
     print()
     optional_deps = {
-        'tensorflow': 'Machine Learning',
-        'pytest': 'Testing',
-        'black': 'Code Formatting',
-        'ruff': 'Linting',
+        "tensorflow": "Machine Learning",
+        "pytest": "Testing",
+        "black": "Code Formatting",
+        "ruff": "Linting",
     }
 
     for dep, description in optional_deps.items():
@@ -177,5 +167,5 @@ def main():
         return 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

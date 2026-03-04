@@ -61,13 +61,19 @@ class Metaheuristic:
         self.pop = Population(problem["boundaries"], num_agents, problem["is_constrained"])
 
         # Check and read the search_operators
-        if search_operators:
+        self._search_operators_orig = []
+        self.perturbators = []
+        self.selectors = []
+        if search_operators is not None:
+            if isinstance(search_operators, np.ndarray):
+                search_operators = search_operators.tolist()
             if not isinstance(search_operators, list):
                 search_operators = [search_operators]
-            # Store original operators for direct calling
-            self._search_operators_orig = search_operators
-            self.perturbators, self.selectors = Operators.process_operators(search_operators)
-            # TODO: consider operators without being dictionary
+            if len(search_operators) > 0:
+                # Store original operators for direct calling
+                self._search_operators_orig = search_operators
+                self.perturbators, self.selectors = Operators.process_operators(search_operators)
+                # TODO: consider operators without being dictionary
 
         # Define the maximum number of iterations
         self.num_iterations = num_iterations
@@ -103,9 +109,13 @@ class Metaheuristic:
         self.pop.update_positions("global", "greedy")
 
     def apply_search_operator(self, perturbator, selector):
-        # Find the index of this perturbator and use original parameters
-        idx = self.perturbators.index(perturbator)
-        operator_name, operator_params, _ = self._search_operators_orig[idx]
+        # Dynamic HH can pass a full operator tuple directly.
+        if isinstance(perturbator, tuple):
+            operator_name, operator_params, _ = perturbator
+        else:
+            # Find the index of this perturbator and use original parameters
+            idx = self.perturbators.index(perturbator)
+            operator_name, operator_params, _ = self._search_operators_orig[idx]
 
         # Get the operator function and call it directly
         operator_func = getattr(Operators, operator_name)

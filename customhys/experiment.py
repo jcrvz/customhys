@@ -326,6 +326,7 @@ def read_config_file(config_file=None, exp_config=None, hh_config=None, prob_con
             "allow_weight_matrix": True,
             "learning_portion": 0.37,
             "solver": "static",
+            "initial_scheme": "random",
             "tabu_idx": None,
             "model_params": None,
             "limit_time": None,
