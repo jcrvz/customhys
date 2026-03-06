@@ -45,6 +45,20 @@ class Hyperheuristic:
     collection from Operators to build metaheuristics using the Metaheuristic module.
     """
 
+    _VALID_INITIAL_SCHEMES = {
+        "random",
+        "vertex",
+        "sobol",
+        "halton",
+        "beta",
+        "normal",
+        "lognormal",
+        "exponential",
+        "rayleigh",
+        "weibull",
+        "lhs",
+    }
+
     def __init__(self, heuristic_space="default.txt", problem=None, parameters=None, file_label="", weights_array=None):
         """
         Create a hyper-heuristic process using a operator collection as heuristic space.
@@ -138,11 +152,25 @@ class Hyperheuristic:
         # Initialise other parameters
         self.parameters = parameters
         self.file_label = file_label
+        raw_initial_scheme = parameters.get("initial_scheme", parameters.get("intial_scheme", "random"))
+        self.initial_scheme = self._select_initial_scheme(raw_initial_scheme)
+        self.parameters["initial_scheme"] = self.initial_scheme
 
         self.max_cardinality = None
         self.min_cardinality = None
         self.num_iterations = None
         self.toggle_seq_as_meta(parameters["as_mh"])
+
+    def _select_initial_scheme(self, initial_scheme):
+        scheme = "random" if initial_scheme is None else str(initial_scheme).strip().lower()
+        if scheme == "auto":
+            scheme = random.choice(tuple(self._VALID_INITIAL_SCHEMES))
+
+        if scheme not in self._VALID_INITIAL_SCHEMES:
+            valid = ", ".join(sorted(self._VALID_INITIAL_SCHEMES))
+            raise HyperheuristicError(f"Invalid initial_scheme '{initial_scheme}'. Valid values: {valid}")
+
+        return scheme
 
     def toggle_seq_as_meta(self, as_mh=None):
         if as_mh is None:
@@ -270,7 +298,7 @@ class Hyperheuristic:
                 p=operators_weights,
             )
 
-        elif isinstance(sol, (np.ndarray, list)):
+        elif isinstance(sol, np.ndarray | list):
             # Bypass the current weights vector to highlight the ``top`` most relevant ones.
             if (operators_weights is not None) and (top is not None):
                 operators_weights = self.__adjust_frequencies(operators_weights, to_only=top)
@@ -480,13 +508,13 @@ class Hyperheuristic:
         mode = mode if mode is not None else self.parameters["solver"]
 
         if mode == "dynamic":
-            return self._solve_dynamic(save_steps)
+            return self._solve_dynamic(save_steps, initial_scheme=self.initial_scheme)
         elif mode == "neural_network":
             return self._solve_neural_network(save_steps)
         else:  # default: 'static'
-            return self._solve_static(save_steps)
+            return self._solve_static(save_steps, initial_scheme=self.initial_scheme)
 
-    def _solve_static(self, save_steps=True):
+    def _solve_static(self, save_steps=True, initial_scheme="random"):
         """
         Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each meatheuristic is
         run 'num_replicas' times to obtain statistics and then its performance. Once the process ends, it returns:
@@ -506,7 +534,9 @@ class Hyperheuristic:
         current_solution = self._obtain_candidate_solution()
 
         # Evaluate this solution
-        current_performance, current_details = self.evaluate_candidate_solution(current_solution)
+        current_performance, current_details = self.evaluate_candidate_solution(
+            current_solution, initial_scheme=initial_scheme
+        )
 
         # Initialise some additional variables
         initial_energy = np.abs(current_performance) + 1
@@ -550,7 +580,9 @@ class Hyperheuristic:
             candidate_solution = self._obtain_candidate_solution(sol=current_solution, action=action)
 
             # Evaluate this candidate solution
-            candidate_performance, candidate_details = self.evaluate_candidate_solution(candidate_solution)
+            candidate_performance, candidate_details = self.evaluate_candidate_solution(
+                candidate_solution, initial_scheme=initial_scheme
+            )
 
             # Print update
             if self.parameters["verbose"]:
@@ -618,7 +650,7 @@ class Hyperheuristic:
         # Return the best solution found and its details
         return best_solution, best_performance, historical_current, historical_best
 
-    def _solve_dynamic(self, save_steps=True):
+    def _solve_dynamic(self, save_steps=True, initial_scheme="random"):
         """
         Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each meatheuristic is
         run 'num_replicas' times to obtain statistics and then its performance. Once the process ends, it returns:
@@ -638,7 +670,10 @@ class Hyperheuristic:
         while rep < self.parameters["num_replicas"]:
             # Call the metaheuristic
             mh = Metaheuristic(
-                self.problem, num_agents=self.parameters["num_agents"], num_iterations=self.num_iterations
+                self.problem,
+                num_agents=self.parameters["num_agents"],
+                num_iterations=self.num_iterations,
+                initial_scheme=initial_scheme,
             )
 
             # %% INITIALISER PART
@@ -698,9 +733,7 @@ class Hyperheuristic:
 
                 # Prepare before evaluate the last search operator and apply it
                 candidate_search_operator = self.get_operators([candidate_enc_so[-1]])
-                perturbators, selectors = op.process_operators(candidate_search_operator)
-
-                mh.apply_search_operator(perturbators[0], selectors[0])
+                mh.apply_search_operator(candidate_search_operator[0], candidate_search_operator[0][2])
 
                 # Extract the population and fitness values, and their best values
                 current_fitness = np.copy(mh.pop.global_best_fitness)
@@ -812,7 +845,9 @@ class Hyperheuristic:
         for rep in range(self.parameters["num_replicas"]):
             # Metaheuristic
             mh = Metaheuristic(
-                self.problem, num_agents=self.parameters["num_agents"], num_iterations=self.num_iterations
+                self.problem,
+                num_agents=self.parameters["num_agents"],
+                num_iterations=self.num_iterations,
             )
 
             # Initialiser
@@ -977,7 +1012,7 @@ class Hyperheuristic:
             model.save()
         return model
 
-    def evaluate_candidate_solution(self, encoded_sequence):
+    def evaluate_candidate_solution(self, encoded_sequence, initial_scheme=None):
         """
         Evaluate the current sequence as a hyper/meta-heuristic. This process is repeated ``parameters['num_replicas']``
         times and, then, the performance is determined. In the end, the method returns the performance value and the
@@ -988,10 +1023,14 @@ class Hyperheuristic:
             module for further information.
         :return float, dict: Performance and raw data.
         """
+        initial_scheme = self._select_initial_scheme(self.initial_scheme if initial_scheme is None else initial_scheme)
+
         # Decode the sequence corresponding to the hyper/meta-heuristic
         search_operators = encoded_sequence
-        if isinstance(encoded_sequence[0], int) or isinstance(encoded_sequence[0], np.int64):
-            search_operators = self.get_operators(encoded_sequence)
+        if len(encoded_sequence) == 0:
+            raise HyperheuristicError("encoded_sequence cannot be empty")
+        if isinstance(encoded_sequence[0], int | np.integer):
+            search_operators = self.get_operators(np.asarray(encoded_sequence, dtype=int).tolist())
 
         # Initialise the historical registers
         historical_data = []
@@ -1001,7 +1040,13 @@ class Hyperheuristic:
         # Run the metaheuristic several times
         for _ in range(self.parameters["num_replicas"]):
             # Call the metaheuristic
-            mh = Metaheuristic(self.problem, search_operators, self.parameters["num_agents"], self.num_iterations)
+            mh = Metaheuristic(
+                self.problem,
+                search_operators,
+                self.parameters["num_agents"],
+                self.num_iterations,
+                initial_scheme=initial_scheme,
+            )
 
             # Run this metaheuristic
             mh.run()
@@ -1038,7 +1083,9 @@ class Hyperheuristic:
             operator = [self.heuristic_space[operator_id]]
 
             # Evaluate it within the metaheuristic structure
-            operator_performance, operator_details = self.evaluate_candidate_solution(operator)
+            operator_performance, operator_details = self.evaluate_candidate_solution(
+                operator, initial_scheme=self.initial_scheme
+            )
 
             # Save information
             if save_steps:
@@ -1074,7 +1121,9 @@ class Hyperheuristic:
                 operator = [operator]
 
             # Evaluate it within the metaheuristic structure
-            operator_performance, operator_details = self.evaluate_candidate_solution(operator)
+            operator_performance, operator_details = self.evaluate_candidate_solution(
+                operator, initial_scheme=self.initial_scheme
+            )
 
             # Save information
             if save_steps:
