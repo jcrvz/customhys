@@ -179,12 +179,6 @@ This module intends to provide several tools for plotting results from the exper
 
 Source: [``visualisation.py``](customhys/visualisation.py)
 
-## Sponsors
-
-<a href="https://tec.mx/en" target="_blank"><img src="https://github.com/jcrvz/customhys/raw/master/docfiles/logoTEC_full.png" width="250"></a>
-<a href="http://www.cas.cn/" target="_blank"><img src="https://github.com/jcrvz/customhys/raw/master/docfiles/cas_logo.png" width="250"></a>
-<a href="https://www.gob.mx/conacyt" target="_blank"><img src="https://github.com/jcrvz/customhys/raw/master/docfiles/conacyt-logo.png" width="250"></a>
-
 ## References
 
 ### Seminal Papers
@@ -196,6 +190,8 @@ The seminal papers that describe the framework's theoretical background and soft
 
 ### Published Journal Papers
 These are the journal articles that have been published using this framework:
+1. [G. C. Duque-Gimenez, D. F. Zambrano-Gutierrez, M. Rodriguez-Nieto, J. L. Menchaca, J. M. Cruz-Duarte, D. G. Zárate-Triviño, J. G. Avina-Cervantes, J. C. Ortiz-Bayliss, _Viscoelastic Characterization of the Human Osteosarcoma Cancer Cell Line MG-63 Using a Fractional-Order Zener Model Through Automated Algorithm Design and Configuration_, **Nature Scientific Reports**, 15, 31436, 2025.](https://doi.org//10.1038/s41598-025-16174-3)
+1. [D. F. Zambrano-Gutierrez, J. M. Cruz-Duarte, H. Castañeda, J. G. Avina-Cervantes, _Optimization of Adaptive Sliding Mode Controllers Using Customized Metaheuristics in DC-DC Buck-Boost Converters_, **Swarm and Evolutionary Computation**, 12(23), 370, 2024.](https://doi.org/10.3390/math12233709)
 1. [J. M. Tapia-Avitia, J. M. Cruz‐Duarte, I. Amaya, J. C. Ortiz-Bayliss, H. Terashima-Marín, and N. Pillay, _Analysing Hyper-Heuristics based on Neural Networks for the Automatic Design of Population-based Metaheuristics in Continuous Optimisation Problems_, **Swarm and Evolutionary Computation**, 89, 101616, 2024.](https://doi.org/10.1016/j.swevo.2024.101616)
 1. [D. F. Zambrano-Gutierrez, G. H. Valencia-Rivera, J. G. Avina-Cervantes, I. Amaya, and J. M. Cruz-Duarte, _Designing Heuristic-Based Tuners for Fractional-Order PID Controllers in Automatic Voltage Regulator Systems Using a Hyper-heuristic Approach_, **Fractal Fract**, 2024.](https://doi.org/10.3390/fractalfract8040223)
 1. [D. F. Zambrano-Gutierrez, J. M. Cruz-Duarte, J. G. Avina-Cervantes, J. C. Ortiz-Bayliss, J. J. Yanez-Borjas, and I. Amaya, _Automatic Design of Metaheuristics for Practical Engineering Applications_, **IEEE Access**., vol. 11, pp. 7262-7276, 2023.](https://doi.org/10.1109/ACCESS.2023.3236836)
@@ -203,6 +199,7 @@ These are the journal articles that have been published using this framework:
 
 ### Presented Conference Papers
 These are the conference articles that have been presented using this framework:
+1. [D. F. Zambrano-Gutierrez, J. Ramos-Frutos, O. Ramos-Soto, J. G. Avina-Cervantes, D. Oliva, J. M. Cruz-Duarte, _Automated Tailoring of Heuristic-Based Renyi’s Entropy Maximizers for Efficient Melanoma Segmentation_, **2025 IEEE Symposium on Computational Intelligence in Image, Signal Processing and Synthetic Media (CISM)**, 2024.](https://doi.org/10.1109/CISM64958.2025.11060871)
 1. [D. F.  Zambrano-Gutierrez, J. M. Cruz-Duarte, J. C. Ortiz-Bayliss, I. Amaya, and J. G. Avina-Cervantes, _Beyond Traditional Tuning: Unveiling Metaheuristic Operator Trends in PID Control Tuning for Automatic Voltage Regulation_, **2024 IEEE Congress on Evolutionary Computation (CEC)**, 2024.](https://doi.org/10.1109/CEC60901.2024.10611968)
 1. [G. Pérez-Espinosa, J. M. Cruz-Duarte, I. Amaya, J. C. Ortiz-Bayliss, H. Terashima-Marín, and N. Pillay, _Tailoring Metaheuristics for Designing Thermodynamic-Optimal Cooling Devices for Microelectronic Thermal Management Applications_, **2024 IEEE Congress on Evolutionary Computation (CEC)**, 2024.](https://doi.org/10.1109/CEC60901.2024.10611938)
 1. [D. Acosta-Ugalde, J. M. Cruz-Duarte, S. E. Conant-Pablos, and J. G. Falcón-Cardona, _Beyond 'Novel' Metaphor-based Metaheuristics: An Interactive Algorithm Design Software_, **2024 IEEE Congress on Evolutionary Computation (CEC)**, 2024.](https://doi.org/10.1109/CEC60901.2024.10611912)
@@ -212,3 +209,9 @@ These are the conference articles that have been presented using this framework:
 1. [J. M. Tapia-Avitia, J. M. Cruz-Duarte, I. Amaya, J. C. Ortiz-Bayliss, H. Terashima-Marin, and N. Pillay. _A Primary Study on Hyper-Heuristics Powered by Artificial Neural Networks for Customising Population-based Metaheuristics in Continuous Optimisation Problems_, **2022 IEEE Congress on Evolutionary Computation (CEC)**, 2022.](https://doi.org/10.1109/CEC55065.2022.9870275)
 1. [J. M. Cruz-Duarte, I. Amaya, J. C. Ortiz-Bayliss, N. Pillay. _A Transfer Learning Hyper-heuristic Approach for Automatic Tailoring of Unfolded Population-based Metaheuristics_, **2022 IEEE Congress on Evolutionary Computation (CEC)**, 2022.](https://doi.org/10.1109/CEC55065.2022.9870426)
 1. [J. M. Cruz-Duarte, I. Amaya, J. C. Ortiz-Bayliss, N. Pillay. _Automated Design of Unfolded Metaheuristics and the Effect of Population Size_. **2021 IEEE Congress on Evolutionary Computation (CEC)**, 1155–1162, 2021.](https://doi.org/10.1109/CEC45853.2021.9504879)
+
+## Sponsors
+
+<a href="https://tec.mx/en" target="_blank"><img src="https://github.com/jcrvz/customhys/raw/master/docfiles/logoTEC_full.png" width="250"></a>
+<a href="http://www.cas.cn/" target="_blank"><img src="https://github.com/jcrvz/customhys/raw/master/docfiles/cas_logo.png" width="250"></a>
+<a href="https://www.gob.mx/conacyt" target="_blank"><img src="https://github.com/jcrvz/customhys/raw/master/docfiles/conacyt-logo.png" width="250"></a>
