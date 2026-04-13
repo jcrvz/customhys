@@ -627,7 +627,7 @@ def random_flight(pop, scale=1.0, distribution="levy", beta=1.5):
     :param str distribution: optional.
         It is the distribution to draw the random samples. The default is 'levy'.
     :param float beta: optional
-        It is the distribution parameter between [1.0, 3.0]. This paramenter only has sense when distribution='levy'.
+        It is the distribution parameter between [1.0, 3.0]. This parameter only has sense when distribution='levy'.
          The default is 1.5.
 
     :return: None.

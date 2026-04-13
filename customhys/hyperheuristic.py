@@ -7,6 +7,7 @@ Created on Thu Jan  9 15:36:43 2020
 """
 
 import json
+import os
 import random
 from datetime import datetime
 from os import makedirs as _create_path
@@ -97,13 +98,12 @@ class Hyperheuristic:
             Weights of the search operators, if there is a-priori information about them. The default is None.
         """
         # Read the heuristic space
-        # TODO: fix for any OS (now, it only works for Windows)
         if isinstance(heuristic_space, list):
             self.heuristic_space_label = "custom_list"
             self.heuristic_space = heuristic_space
         elif isinstance(heuristic_space, str):
             self.heuristic_space_label = heuristic_space[: heuristic_space.rfind(".")].split("_")[0]
-            with open("collections/" + heuristic_space, encoding="utf-8") as operators_file:
+            with open(os.path.join("collections", heuristic_space), encoding="utf-8") as operators_file:
                 self.heuristic_space = [eval(line.rstrip("\n")) for line in operators_file]
         else:
             raise HyperheuristicError("Invalid heuristic_space")
@@ -516,7 +516,7 @@ class Hyperheuristic:
 
     def _solve_static(self, save_steps=True, initial_scheme="random"):
         """
-        Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each meatheuristic is
+        Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each metaheuristic is
         run 'num_replicas' times to obtain statistics and then its performance. Once the process ends, it returns:
             - solution: The sequence of search operators that compose the metaheuristic.
             - performance: The metric value defined in ``get_performance``.
@@ -652,7 +652,7 @@ class Hyperheuristic:
 
     def _solve_dynamic(self, save_steps=True, initial_scheme="random"):
         """
-        Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each meatheuristic is
+        Run the hyper-heuristic based on Simulated Annealing (SA) to find the best metaheuristic. Each metaheuristic is
         run 'num_replicas' times to obtain statistics and then its performance. Once the process ends, it returns:
             - solution: The sequence of search operators that compose the metaheuristic.
             - performance: The metric value defined in ``get_performance``.
@@ -679,7 +679,7 @@ class Hyperheuristic:
             # %% INITIALISER PART
             mh.apply_initialiser()
 
-            # Extract the population and fitness vealues, and their best values
+            # Extract the population and fitness values, and their best values
             current_fitness = np.copy(mh.pop.global_best_fitness)
             current_position = np.copy(mh.pop.rescale_back(mh.pop.global_best_position))
 
@@ -1320,7 +1320,7 @@ def _save_step(step_number, variable_to_save, prefix=""):
 def _get_stored_sample_sequences(filters, folder_name="./data_files/sequences/"):
     """
     Search and read stored sequences that satisfy certain properties.
-    :param dict filters: Diccionary with additional constraints.
+    :param dict filters: Dictionary with additional constraints.
     :param str folder_name: Folder that stores the sequences files.
     :return list, list: Return the list of sequences with their respective fitness.
     """
@@ -1337,7 +1337,7 @@ def _get_stored_sample_sequences(filters, folder_name="./data_files/sequences/")
     files_in_folder = jt.read_folder_files(folder_name)
     sequences_files = [file_name for file_name in files_in_folder if is_valid_file(file_name)]
 
-    # Limit the number of sequences retreived from a problem
+    # Limit the number of sequences retrieved from a problem
     limit_seqs = filters["limit_seqs"]
     sequences_per_problem = {}
 

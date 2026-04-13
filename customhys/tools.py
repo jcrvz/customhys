@@ -204,9 +204,9 @@ def preprocess_files(
 
     for subfolder in subfolder_names:
         # Extract the problem name and the number of dimensions
-        subfolder_splitted_name = subfolder.split("-")
-        problem_name = subfolder_splitted_name[0]
-        dimensions = subfolder_splitted_name[1]
+        subfolder_name_parts = subfolder.split("-")
+        problem_name = subfolder_name_parts[0]
+        dimensions = subfolder_name_parts[1]
 
         # Store information about this subfolder
         data["problem"].append(problem_name)
@@ -287,7 +287,7 @@ def preprocess_files(
             operator_id = int(file_name.split("-")[0])
 
             # Read json file
-            with open(temporal_full_path + "/" + file_name) as json_file:
+            with open(os.path.join(temporal_full_path, file_name)) as json_file:
                 temporal_data = json.load(json_file)
 
             if kind in ["dynamic_metaheuristic", "neural_network"]:
