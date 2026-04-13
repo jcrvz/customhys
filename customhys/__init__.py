@@ -9,5 +9,5 @@ __all__ = [
     "visualisation",
 ]
 # Under revision: 'characterisation', 'visualisation'
-__version__ = "1.1.8"
+__version__ = "1.1.9"
 __author__ = "Jorge M. Cruz-Duarte"

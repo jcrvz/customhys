@@ -245,6 +245,18 @@ setup-dev: check-uv  ## Complete development setup
 	fi
 	@echo "Development environment ready!"
 
+docs:  ## Build documentation locally
+	@echo "Building documentation..."
+	@if [ -n "$(UV)" ]; then \
+		uv run sphinx-build -b html docs docs/_build/html; \
+	else \
+		sphinx-build -b html docs docs/_build/html; \
+	fi
+	@echo "Documentation built at docs/_build/html/index.html"
+
+docs-clean:  ## Clean built documentation
+	rm -rf docs/_build
+
 validate:  ## Validate package setup
 	@if [ -n "$(UV)" ]; then \
 		uv run python setup.py check; \

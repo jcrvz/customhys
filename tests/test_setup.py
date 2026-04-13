@@ -67,7 +67,7 @@ def test_customhys_version():
     import customhys
 
     assert hasattr(customhys, "__version__")
-    assert customhys.__version__ == "1.1.8"
+    assert customhys.__version__ == "1.1.9"
     print(f"✓ Customhys version: {customhys.__version__}")
 
 

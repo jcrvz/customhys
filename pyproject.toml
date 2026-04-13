@@ -1,6 +1,6 @@
 [project]
 name = "customhys"
-version = "1.1.8"
+version = "1.1.9"
 description = "This framework provides tools for solving, but not limited to, continuous optimisation problems using a hyper-heuristic approach for customising metaheuristics."
 keywords = ["metaheuristics", "hyper-heuristic", "optimization", "automatic design", "global optimization", "evolutionary computation", "bio-inspired", "algorithm design"]
 readme = "README.md"
@@ -15,7 +15,7 @@ requires-python = ">=3.10"
 dependencies = [
     "numpy>=1.26.4,<2.0.0",
     "scipy>=1.13.1",
-    "matplotlib>=3.9.0",
+    "matplotlib>=3.9.2",
     "fonttools>=4.54.0",  # Fix CVE-2025-66034
     "pandas>=2.2.0",
     "tqdm>=4.66.3",
@@ -40,7 +40,7 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/jcrvz/customhys"
 Repository = "https://github.com/jcrvz/customhys"
-Documentation = "https://github.com/jcrvz/customhys/blob/master/README.md"
+Documentation = "https://customhys.readthedocs.io/"
 "Bug Tracker" = "https://github.com/jcrvz/customhys/issues"
 
 [project.optional-dependencies]
