@@ -44,7 +44,7 @@ class Metaheuristic:
             the ``benchmark_func`` module.
         :param list search_operators:
             A list of available search operators. These operators must correspond to those available in the
-            ``operators`` module. This parameter is mandatory for mataheuristic implementations, for using parts of this
+            ``operators`` module. This parameter is mandatory for metaheuristic implementations, for using parts of this
             class, these can be provided as a list of ``operators``.
         :param int num_agents: Optional.
             Number of agents or population size. The default is 30.

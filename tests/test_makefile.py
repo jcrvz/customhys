@@ -25,10 +25,8 @@ def test_uv_installed():
         version = version_result.stdout.strip() if version_result.returncode == 0 else "unknown"
         print(f"✓ UV installed at: {uv_path}")
         print(f"  Version: {version}")
-        return True
     else:
         print("ℹ UV not installed (falling back to pip)")
-        return False
 
 
 def test_make_available():
@@ -36,10 +34,8 @@ def test_make_available():
     result = run_command("command -v make", check=False)
     if result.returncode == 0:
         print(f"✓ Make available at: {result.stdout.strip()}")
-        return True
     else:
         print("✗ Make not available")
-        return False
 
 
 def test_makefile_exists():

@@ -71,7 +71,7 @@ Source: [``tools.py``](customhys/tools.py)
 
 ### 🧠 Machine Learning
 
-This module contains the implementation of Machine Learning models which can power a hyper-heuristic model from this framework. In particular, it is implemented a wrapper for a Neural Network model from Tensorflow. Also, contains auxiliar data structures which process sample of sequences to generate training data for Machine Learning models.
+This module contains the implementation of Machine Learning models which can power a hyper-heuristic model from this framework. In particular, it is implemented a wrapper for a Neural Network model from Tensorflow. Also, contains auxiliary data structures which process sample of sequences to generate training data for Machine Learning models.
 
 Source: [``machine_learning.py``](customhys/machine_learning.py)
 
@@ -165,7 +165,7 @@ where:
 
 ## 🏗️ Work-in-Progress
 
-The following modules are available, but they may do not work. They are currently under developing.
+The following modules are available, but they may not work. They are currently under development.
 
 ### 🌡️ Characterisation
 

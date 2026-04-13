@@ -249,7 +249,7 @@ class Population:
         self.current_best_position = np.copy(self._positions[self.fitness.argmin(), :])
         self.current_best_fitness = np.min(self.fitness)
         self.current_worst_position = np.copy(self._positions[self.fitness.argmax(), :])
-        self.current_worst_fitness = np.min(self.fitness)
+        self.current_worst_fitness = np.max(self.fitness)
 
     def __selection_on_particular(self, selector):
         self.backup_particular_best_fitness = np.copy(self.particular_best_fitness)
