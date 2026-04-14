@@ -1,6 +1,6 @@
 [project]
 name = "customhys"
-version = "1.1.9"
+version = "2.0.0-alpha"
 description = "This framework provides tools for solving, but not limited to, continuous optimisation problems using a hyper-heuristic approach for customising metaheuristics."
 keywords = ["metaheuristics", "hyper-heuristic", "optimization", "automatic design", "global optimization", "evolutionary computation", "bio-inspired", "algorithm design"]
 readme = "README.md"
