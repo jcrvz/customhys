@@ -13,7 +13,7 @@ Detailed information about this framework can be found in [[1, 2]](#references).
 ### 🛠 Requirements:
 
 * Check the [requirements.txt](requirements.txt) file.
-* For Apple Silicon, one may need to install TensorFlow via `conda` such as:
+* For Apple Silicon, one may need to install TensorFlow via `conda`, such as:
 ```shell
 conda install -c apple tensorflow-deps
 ```
@@ -21,7 +21,7 @@ Further information can be found at [Install TensorFlow on Mac M1/M2 with GPU su
 
 ## 🧰 Modules
 
-The modules that comprise this framework depend on some basic Python packages, as well as they liaise each other. The module dependency diagram is presented as follows:
+The modules that comprise this framework depend on some basic Python packages, and they liaise with each other. The module dependency diagram is presented as follows:
 
 ![Module Dependency Diagram](https://github.com/jcrvz/customhys/blob/master/docfiles/dependency_diagram.png?raw=true)
 
@@ -35,7 +35,7 @@ Source: [``benchmark_func.py``](customhys/benchmark_func.py)
 
 ### 👯‍♂️ Population
 
-This module contains the class Population. A Population object corresponds to a set of agents or individuals within a problem domain. These agents themselves do not explore the function landscape, but they know when to update the position according to a selection procedure.
+This module contains the class Population. A Population object corresponds to a set of agents or individuals within a problem domain. These agents themselves do not explore the function landscape, but they know when to update their position according to a selection procedure.
 
 Source: [``population.py``](customhys/population.py)
 
@@ -71,7 +71,7 @@ Source: [``tools.py``](customhys/tools.py)
 
 ### 🧠 Machine Learning
 
-This module contains the implementation of Machine Learning models which can power a hyper-heuristic model from this framework. In particular, it is implemented a wrapper for a Neural Network model from Tensorflow. Also, contains auxiliary data structures which process sample of sequences to generate training data for Machine Learning models.
+This module contains the implementation of Machine Learning models, which can power a hyper-heuristic model from this framework. In particular, it is implemented a wrapper for a Neural Network model from Tensorflow. Also, contains auxiliary data structures which process samples of sequences to generate training data for Machine Learning models.
 
 Source: [``machine_learning.py``](customhys/machine_learning.py)
 
@@ -210,7 +210,9 @@ These are the conference articles that have been presented using this framework:
 1. [J. M. Cruz-Duarte, I. Amaya, J. C. Ortiz-Bayliss, N. Pillay. _A Transfer Learning Hyper-heuristic Approach for Automatic Tailoring of Unfolded Population-based Metaheuristics_, **2022 IEEE Congress on Evolutionary Computation (CEC)**, 2022.](https://doi.org/10.1109/CEC55065.2022.9870426)
 1. [J. M. Cruz-Duarte, I. Amaya, J. C. Ortiz-Bayliss, N. Pillay. _Automated Design of Unfolded Metaheuristics and the Effect of Population Size_. **2021 IEEE Congress on Evolutionary Computation (CEC)**, 1155–1162, 2021.](https://doi.org/10.1109/CEC45853.2021.9504879)
 
-## Sponsors
+## Former Sponsors
+
+This project was born thanks to the initial support of the institutions listed below from 2019 to 2021. They are no longer maintaining it or involved in any form, and perhaps they don't even know they were part of it. Now, it is an independent project maintained by some volunteers, including its creator, who appreciate the contribution of those men in suits who once approved that boring budget line that allowed us, you and me, to share these words.
 
 <a href="https://tec.mx/en" target="_blank"><img src="https://github.com/jcrvz/customhys/raw/master/docfiles/logoTEC_full.png" width="250"></a>
 <a href="http://www.cas.cn/" target="_blank"><img src="https://github.com/jcrvz/customhys/raw/master/docfiles/cas_logo.png" width="250"></a>
