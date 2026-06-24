@@ -30,6 +30,16 @@ __all__ = [
     "genetic_mutation",
     "genetic_crossover",
     "linear_system",
+    "initialize_random",
+    "initialize_sobol",
+    "initialize_halton",
+    "initialize_grid",
+    "initialize_lhs",
+    "initialize_beta",
+    "initialize_normal",
+    "initialize_lognormal",
+    "initialize_exponential",
+    "initialize_rayleigh",
 ]
 
 
@@ -53,7 +63,31 @@ def get_operator_aliases():
         "spiral_dynamic": "SD",
         "swarm_dynamic": "PS",
         "linear_system": "LS",
+        "initialize_random": "IR",
+        "initialize_sobol": "IS",
+        "initialize_halton": "IH",
+        "initialize_grid": "IG",
+        "initialize_lhs": "IL",
+        "initialize_beta": "IB",
+        "initialize_normal": "IN",
+        "initialize_lognormal": "IW",
+        "initialize_exponential": "IE",
+        "initialize_rayleigh": "IY",
     }, {"greedy": "g", "all": "d", "metropolis": "m", "probabilistic": "p"}
+
+
+_ROLE_PREFIXES: dict[str, str] = {
+    "initialize_": "initialize",
+}
+
+
+def _get_role(op_tuple) -> str:
+    """Return the role of an operator tuple derived from its name prefix."""
+    name = op_tuple[0]
+    for prefix, role in _ROLE_PREFIXES.items():
+        if name.startswith(prefix):
+            return role
+    return "perturb"
 
 
 # %% SEARCH OPERATORS
@@ -1156,6 +1190,122 @@ def get_rotation_matrix(dimensions, angle=0.3927):
     return rotation_matrix
 
 
+# %% INITIALIZER OPERATORS
+
+
+def initialize_random(pop):
+    """
+    Reinitialise the population using uniform random sampling in [-1, 1].
+
+    This operator resets all agent positions, functioning as a destructive
+    restart that explores the full search space.
+
+    :param population pop: population object.
+    :return: None.
+    """
+    pop.initialise_positions("random")
+
+
+def initialize_sobol(pop, scramble=True):
+    """
+    Reinitialise the population using Sobol quasi-random sequences.
+
+    :param population pop: population object.
+    :param bool scramble: optional. Whether to apply scrambling. Default is True.
+    :return: None.
+    """
+    pop.initialise_positions("sobol", scramble=scramble)
+
+
+def initialize_halton(pop, scramble=True):
+    """
+    Reinitialise the population using Halton quasi-random sequences.
+
+    :param population pop: population object.
+    :param bool scramble: optional. Whether to apply scrambling. Default is True.
+    :return: None.
+    """
+    pop.initialise_positions("halton", scramble=scramble)
+
+
+def initialize_grid(pop):
+    """
+    Reinitialise the population on the vertices of nested hypercubes.
+
+    :param population pop: population object.
+    :return: None.
+    """
+    pop.initialise_positions("vertex")
+
+
+def initialize_lhs(pop):
+    """
+    Reinitialise the population using Latin Hypercube Sampling.
+
+    :param population pop: population object.
+    :return: None.
+    """
+    pop.initialise_positions("lhs")
+
+
+def initialize_beta(pop, a=0.5, b=0.5):
+    """
+    Reinitialise the population using a Beta distribution.
+
+    :param population pop: population object.
+    :param float a: optional. Alpha parameter of Beta distribution. Default is 0.5.
+    :param float b: optional. Beta parameter of Beta distribution. Default is 0.5.
+    :return: None.
+    """
+    pop.initialise_positions("beta", a=a, b=b)
+
+
+def initialize_normal(pop, mean=0.5, std=0.25):
+    """
+    Reinitialise the population using a Normal (Gaussian) distribution.
+
+    :param population pop: population object.
+    :param float mean: optional. Mean of the distribution on [0, 1]. Default is 0.5.
+    :param float std: optional. Standard deviation on [0, 1]. Default is 0.25.
+    :return: None.
+    """
+    pop.initialise_positions("normal", mean=mean, std=std)
+
+
+def initialize_lognormal(pop, mean=0.0, sigma=0.5):
+    """
+    Reinitialise the population using a Lognormal distribution.
+
+    :param population pop: population object.
+    :param float mean: optional. Mean of the underlying normal distribution. Default is 0.0.
+    :param float sigma: optional. Standard deviation of the underlying normal. Default is 0.5.
+    :return: None.
+    """
+    pop.initialise_positions("lognormal", mean=mean, sigma=sigma)
+
+
+def initialize_exponential(pop, scale=0.5):
+    """
+    Reinitialise the population using an Exponential distribution.
+
+    :param population pop: population object.
+    :param float scale: optional. Scale parameter. Default is 0.5.
+    :return: None.
+    """
+    pop.initialise_positions("exponential", scale=scale)
+
+
+def initialize_rayleigh(pop, scale=0.4):
+    """
+    Reinitialise the population using a Rayleigh distribution.
+
+    :param population pop: population object.
+    :param float scale: optional. Scale parameter. Default is 0.4.
+    :return: None.
+    """
+    pop.initialise_positions("rayleigh", scale=scale)
+
+
 class OperatorsError(Exception):
     """
     Simple OperatorError to manage exceptions.
@@ -1353,7 +1503,8 @@ def build_operators(heuristics: list | None = None, file_name: str = "operators_
     file = open("collections/" + file_name + ".txt", "w", encoding="utf-8")
 
     # For each simple heuristic, read their parameters and values
-    for operator, parameters, selectors in heuristics:
+    for heuristic in heuristics:
+        operator, parameters, selectors = heuristic[0], heuristic[1], heuristic[2]
         # Update the total classes counter
         total_counters[0] += 1
 
@@ -1386,7 +1537,7 @@ def build_operators(heuristics: list | None = None, file_name: str = "operators_
         elif num_parameters == 0:
             num_combinations = num_selectors
             for selector in selectors:
-                file.write("('{}', {}, '{}')\n".format(operator, "{}", selector))
+                file.write(f"('{operator}', {{}}, '{selector}')\n")
 
         # Update the total combination counter
         total_counters[1] += num_combinations * num_selectors
@@ -1415,7 +1566,8 @@ def process_operators(simple_heuristics):
     selectors = []
 
     # For each simple heuristic, read their parameters and values
-    for operator, parameters, selector in simple_heuristics:
+    for op_tuple in simple_heuristics:
+        operator, parameters, selector = op_tuple[0], op_tuple[1], op_tuple[2]
         # Store selectors
         selectors.append(selector)
 
