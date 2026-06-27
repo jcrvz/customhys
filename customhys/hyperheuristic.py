@@ -378,9 +378,12 @@ class Hyperheuristic:
                 else:
                     encoded_neighbour = np.copy(sol)
 
-            elif (action == "RemoveLast") and (current_cardinality > self.min_cardinality):
-                # Delete an operator randomly selected
-                encoded_neighbour = np.delete(sol, -1)
+            elif action == "RemoveLast":
+                min_card = max(self.min_cardinality, 2) if has_init_ops else self.min_cardinality
+                if current_cardinality > min_card:
+                    encoded_neighbour = np.delete(sol, -1)
+                else:
+                    encoded_neighbour = np.copy(sol)
 
             elif action == "RemoveMany":
                 min_card = max(self.min_cardinality, 2) if has_init_ops else self.min_cardinality
@@ -1108,7 +1111,8 @@ class Hyperheuristic:
             module for further information.
         :return float, dict: Performance and raw data.
         """
-        initial_scheme = self._select_initial_scheme(self.initial_scheme if initial_scheme is None else initial_scheme)
+        _raw_scheme = self.initial_scheme if initial_scheme is None else initial_scheme
+        initial_scheme = _raw_scheme if isinstance(_raw_scheme, tuple) else self._select_initial_scheme(_raw_scheme)
 
         # Decode the sequence corresponding to the hyper/meta-heuristic
         search_operators = encoded_sequence

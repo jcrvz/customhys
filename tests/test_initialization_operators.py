@@ -10,6 +10,8 @@ Covers:
 - evaluate_candidate_solution extracts init op from sequence
 """
 
+import ast
+
 import numpy as np
 import pytest
 
@@ -65,7 +67,7 @@ class TestGetRole:
             "default_initializers.txt",
         )
         with open(path, encoding="utf-8") as f:
-            entries = [eval(line.strip()) for line in f if line.strip()]
+            entries = [ast.literal_eval(line.strip()) for line in f if line.strip()]
         for entry in entries:
             assert op._get_role(entry) == "initialize", f"Expected 'initialize' role for {entry}"
 

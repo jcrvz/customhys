@@ -1571,24 +1571,13 @@ def process_operators(simple_heuristics):
         # Store selectors
         selectors.append(selector)
 
-        if len(parameters) >= 0:
-            sep = ","
-            str_parameters = []
-
-            for parameter, value in parameters.items():
-
-                # Check if a value is string
-                if isinstance(value, str):
-                    str_parameters.append(parameter)
-                    str_parameters.append(f"{parameter}='{value}'")
-                else:
-                    str_parameters.append(f"{parameter}={value}")
-
-            # Create an executable string with given arguments
-            full_string = f"{operator}({sep.join(str_parameters)})"
-        else:
-            # Create an executable string with default arguments
-            full_string = f"{operator}()"
+        str_parameters = []
+        for parameter, value in parameters.items():
+            if isinstance(value, str):
+                str_parameters.append(f"{parameter}='{value}'")
+            else:
+                str_parameters.append(f"{parameter}={value}")
+        full_string = f"{operator}({','.join(str_parameters)})"
 
         # Store the read operator
         executable_operators.append(full_string)

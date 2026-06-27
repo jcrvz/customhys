@@ -9,6 +9,8 @@ Covers:
 - SA loop integration: HH selects and uses init ops correctly with real benchmark problems
 """
 
+import ast
+
 import numpy as np
 import pytest
 
@@ -273,7 +275,7 @@ class TestBuildOperatorsOutput:
         ]
         op.build_operators(heuristics=heuristics, file_name="test_mixed")
         content = (tmp_path / "collections" / "test_mixed.txt").read_text(encoding="utf-8")
-        entries = [eval(line.strip()) for line in content.splitlines() if line.strip()]
+        entries = [ast.literal_eval(line.strip()) for line in content.splitlines() if line.strip()]
         roles = [op._get_role(e) for e in entries]
         assert roles[0] == "initialize"
         assert roles[1] == "perturb"
