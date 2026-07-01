@@ -172,6 +172,13 @@ class Hyperheuristic:
 
         return scheme
 
+    @property
+    def initialization_operators(self):
+        """Return a list of (index, op_tuple) for operators with role='initialize' in the heuristic space."""
+        return [
+            (i, op_tuple) for i, op_tuple in enumerate(self.heuristic_space) if op._get_role(op_tuple) == "initialize"
+        ]
+
     def toggle_seq_as_meta(self, as_mh=None):
         if as_mh is None:
             self.parameters["as_mh"] = not self.parameters["as_mh"]
@@ -202,6 +209,9 @@ class Hyperheuristic:
                 "Roll",
                 "RollMany",
             ]
+            # Allow changing the init operator when the space has at least 2 init operators
+            if len(self.initialization_operators) >= 2:
+                available_options.append("ChangeInitOperator")
 
         # Black list (to avoid repeating the some actions in a row)
         if previous_action:
@@ -265,6 +275,9 @@ class Hyperheuristic:
         """
         # Create a new MH with min_cardinality from scratch by using a weights array (if so)
         # if action is given, it is assumed the way of obtaining this intial solution
+        init_indices = [i for i, _ in self.initialization_operators]
+        has_init_ops = len(init_indices) > 0
+
         if sol is None:
             if action == "max_frequency":
                 # Each search operator per step corresponds to the most frequent one: uMH weight matrix is required
@@ -278,25 +291,41 @@ class Hyperheuristic:
                     else (self.max_cardinality + self.min_cardinality) // 2
                 )
 
+                # When init operators exist, index 0 is reserved for one of them.
+                # Keep at least one operator in the tail so a perturbation sequence can run.
+                if has_init_ops:
+                    initial_cardinality = max(initial_cardinality, 2)
+
                 operators_weights = operators_weights if operators_weights else self.weights
 
+                tail_size = initial_cardinality - 1 if has_init_ops else initial_cardinality
                 encoded_neighbour = np.random.choice(
                     self.current_space if (operators_weights is None) else self.num_operators,
-                    initial_cardinality,
+                    tail_size,
                     replace=self.parameters["repeat_operators"],
                     p=operators_weights,
                 )
+
+                if has_init_ops:
+                    encoded_neighbour = np.concatenate(
+                        ([np.random.choice(init_indices)], np.asarray(encoded_neighbour))
+                    )
 
         # If sol is an integer, assume that it refers to the cardinality
         elif isinstance(sol, int):
             operators_weights = self.weights if operators_weights is None else operators_weights
 
+            cardinality = max(sol, 2) if has_init_ops else sol
+            tail_size = cardinality - 1 if has_init_ops else cardinality
             encoded_neighbour = np.random.choice(
                 self.current_space if (operators_weights is None) else self.num_operators,
-                sol,
+                tail_size,
                 replace=self.parameters["repeat_operators"],
                 p=operators_weights,
             )
+
+            if has_init_ops:
+                encoded_neighbour = np.concatenate(([np.random.choice(init_indices)], np.asarray(encoded_neighbour)))
 
         elif isinstance(sol, np.ndarray | list):
             # Bypass the current weights vector to highlight the ``top`` most relevant ones.
@@ -326,7 +355,8 @@ class Hyperheuristic:
                 #
                 #       | operator 1 | operator 2 | operator 3 |     ...      |  operator N  |
                 #       0 <--------> 1 <--------> 2 <--------> 3 <-- ... --> N-1 <---------> N
-                operator_location = np.random.randint(current_cardinality + 1)
+                min_insert = 1 if has_init_ops else 0
+                operator_location = np.random.randint(min_insert, current_cardinality + 1)
 
                 # Add the selected operator
                 encoded_neighbour = np.array((*sol[:operator_location], selected_operator, *sol[operator_location:]))
@@ -336,23 +366,43 @@ class Hyperheuristic:
                 for _ in range(np.random.randint(1, self.max_cardinality - current_cardinality + 1)):
                     encoded_neighbour = self._obtain_candidate_solution(sol=encoded_neighbour, action="Add")
 
-            elif (action == "Remove") and (current_cardinality > self.min_cardinality):
-                # Delete an operator randomly selected
-                encoded_neighbour = np.delete(sol, np.random.randint(current_cardinality))
+            elif action == "Remove":
+                min_card = max(self.min_cardinality, 2) if has_init_ops else self.min_cardinality
+                if current_cardinality > min_card:
+                    remove_idx = (
+                        np.random.randint(1, current_cardinality)
+                        if has_init_ops
+                        else np.random.randint(current_cardinality)
+                    )
+                    encoded_neighbour = np.delete(sol, remove_idx)
+                else:
+                    encoded_neighbour = np.copy(sol)
 
-            elif (action == "RemoveLast") and (current_cardinality > self.min_cardinality):
-                # Delete an operator randomly selected
-                encoded_neighbour = np.delete(sol, -1)
+            elif action == "RemoveLast":
+                min_card = max(self.min_cardinality, 2) if has_init_ops else self.min_cardinality
+                if current_cardinality > min_card:
+                    encoded_neighbour = np.delete(sol, -1)
+                else:
+                    encoded_neighbour = np.copy(sol)
 
-            elif (action == "RemoveMany") and (current_cardinality > self.min_cardinality + 1):
-                encoded_neighbour = np.copy(sol)
-                for _ in range(np.random.randint(1, current_cardinality - self.min_cardinality + 1)):
-                    encoded_neighbour = self._obtain_candidate_solution(sol=encoded_neighbour, action="Remove")
+            elif action == "RemoveMany":
+                min_card = max(self.min_cardinality, 2) if has_init_ops else self.min_cardinality
+                if current_cardinality > min_card + 1:
+                    encoded_neighbour = np.copy(sol)
+                    for _ in range(np.random.randint(1, current_cardinality - min_card + 1)):
+                        encoded_neighbour = self._obtain_candidate_solution(sol=encoded_neighbour, action="Remove")
+                else:
+                    encoded_neighbour = np.copy(sol)
 
             elif action == "Shift":
                 # Perturbate an operator randomly selected excluding the existing ones
                 encoded_neighbour = np.copy(sol)
-                encoded_neighbour[np.random.randint(current_cardinality)] = np.random.choice(
+                shift_idx = (
+                    np.random.randint(1, current_cardinality)
+                    if has_init_ops
+                    else np.random.randint(current_cardinality)
+                )
+                encoded_neighbour[shift_idx] = np.random.choice(
                     np.setdiff1d(self.current_space, sol)
                     if not self.parameters["repeat_operators"]
                     else self.num_operators
@@ -366,7 +416,11 @@ class Hyperheuristic:
             elif action == "LocalShift":  # It only works with the full set
                 # Perturbate an operator randomly selected +/- 1 excluding the existing ones
                 encoded_neighbour = np.copy(sol)
-                operator_location = np.random.randint(current_cardinality)
+                operator_location = (
+                    np.random.randint(1, current_cardinality)
+                    if has_init_ops
+                    else np.random.randint(current_cardinality)
+                )
                 neighbour_direction = 1 if random.random() < 0.5 else -1  # +/- 1
                 selected_operator = (encoded_neighbour[operator_location] + neighbour_direction) % self.num_operators
 
@@ -383,7 +437,22 @@ class Hyperheuristic:
 
             elif (action == "Swap") and (current_cardinality > 1):
                 # Swap two elements randomly chosen
-                if current_cardinality == 2:
+                start_idx = 1 if has_init_ops else 0
+                tail_len = current_cardinality - start_idx
+
+                if tail_len <= 1:
+                    encoded_neighbour = np.copy(sol)
+
+                elif tail_len == 2:
+                    encoded_neighbour = np.copy(sol)
+                    encoded_neighbour[start_idx:] = encoded_neighbour[start_idx:][::-1]
+
+                elif tail_len > 2:
+                    encoded_neighbour = np.copy(sol)
+                    ind1, ind2 = np.random.choice(np.arange(start_idx, current_cardinality), 2, replace=False)
+                    encoded_neighbour[ind1], encoded_neighbour[ind2] = encoded_neighbour[ind2], encoded_neighbour[ind1]
+
+                elif current_cardinality == 2:
                     encoded_neighbour = np.copy(sol)[::-1]
 
                 elif current_cardinality > 2:
@@ -396,21 +465,40 @@ class Hyperheuristic:
 
             elif action == "Mirror":
                 # Mirror the sequence of the encoded_neighbour
-                encoded_neighbour = np.copy(sol)[::-1]
+                encoded_neighbour = np.copy(sol)
+                if has_init_ops:
+                    encoded_neighbour[1:] = encoded_neighbour[1:][::-1]
+                else:
+                    encoded_neighbour = encoded_neighbour[::-1]
 
             elif action == "Roll":
                 # Move a step forward or backward, depending on a random variable, all the sequence
-                encoded_neighbour = np.roll(sol, 1 if random.random() < 0.5 else -1)
+                encoded_neighbour = np.copy(sol)
+                roll_step = 1 if random.random() < 0.5 else -1
+                if has_init_ops:
+                    encoded_neighbour[1:] = np.roll(encoded_neighbour[1:], roll_step)
+                else:
+                    encoded_neighbour = np.roll(encoded_neighbour, roll_step)
 
             elif action == "RollMany":
                 # Move many (at random) steps forward or backward, depending on a random variable, all the sequence
-                encoded_neighbour = np.roll(
-                    sol, np.random.randint(current_cardinality) * (1 if random.random() < 0.5 else -1)
-                )
+                encoded_neighbour = np.copy(sol)
+                roll_step = np.random.randint(current_cardinality) * (1 if random.random() < 0.5 else -1)
+                if has_init_ops:
+                    encoded_neighbour[1:] = np.roll(encoded_neighbour[1:], roll_step)
+                else:
+                    encoded_neighbour = np.roll(encoded_neighbour, roll_step)
 
             elif action == "Restart":
                 # Restart the entire sequence
                 encoded_neighbour = self._obtain_candidate_solution(current_cardinality)
+
+            elif action == "ChangeInitOperator":
+                # Swap the initialization operator at position 0 for another one
+                init_candidates = [i for i in init_indices if i != sol[0]] if sol[0] in init_indices else init_indices
+                encoded_neighbour = np.copy(sol)
+                if init_candidates:
+                    encoded_neighbour[0] = np.random.choice(init_candidates)
 
             else:
                 raise HyperheuristicError(f"Invalid action = {action} to perform!")
@@ -1023,7 +1111,8 @@ class Hyperheuristic:
             module for further information.
         :return float, dict: Performance and raw data.
         """
-        initial_scheme = self._select_initial_scheme(self.initial_scheme if initial_scheme is None else initial_scheme)
+        _raw_scheme = self.initial_scheme if initial_scheme is None else initial_scheme
+        initial_scheme = _raw_scheme if isinstance(_raw_scheme, tuple) else self._select_initial_scheme(_raw_scheme)
 
         # Decode the sequence corresponding to the hyper/meta-heuristic
         search_operators = encoded_sequence
@@ -1031,6 +1120,23 @@ class Hyperheuristic:
             raise HyperheuristicError("encoded_sequence cannot be empty")
         if isinstance(encoded_sequence[0], int | np.integer):
             search_operators = self.get_operators(np.asarray(encoded_sequence, dtype=int).tolist())
+
+        # Extract an initialization operator from the head of the sequence (if present).
+        # When found, it overrides initial_scheme and is removed from the search operator list.
+        if search_operators and op._get_role(search_operators[0]) == "initialize":
+            init_op = search_operators[0]
+            initial_scheme = (init_op[0], init_op[1])  # ('scheme_name', {params})
+            search_operators = search_operators[1:]
+            if not search_operators:
+                raise HyperheuristicError(
+                    "encoded_sequence must contain at least one perturbation operator after the initialization operator"
+                )
+
+        # Metaheuristic expects operators as 3-tuples (name, params, selector).
+        # Keep role handling at HH level and strip optional role suffix here.
+        search_operators = [
+            (op_tuple[0], op_tuple[1], op_tuple[2]) if len(op_tuple) > 3 else op_tuple for op_tuple in search_operators
+        ]
 
         # Initialise the historical registers
         historical_data = []

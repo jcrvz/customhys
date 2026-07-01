@@ -295,12 +295,14 @@ class Population:
     # ==============
     # TODO Add more initialisation operators like grid, boundary, etc.
 
-    def initialise_positions(self, scheme="random"):
+    def initialise_positions(self, scheme=None, **kwargs):
         """
         Initialise population by an initialisation scheme.
 
-        :param str scheme: optional
-            Initialisation scheme. Available schemes are:
+        :param str|tuple scheme: optional
+            Initialisation scheme. Accepts either a string name or a tuple
+            ``('scheme_name', {'param': value, ...})`` for parameterised schemes.
+            Available schemes are:
             - 'random': Random uniform distribution in [-1,1] (default)
             - 'vertex': Vertices of nested hyper-cubes
             - 'lhs': Latin Hypercube Sampling
@@ -311,29 +313,43 @@ class Population:
             - 'lognormal': Lognormal distribution
             - 'exponential': Exponential distribution
             - 'rayleigh': Rayleigh distribution
+        :param kwargs: optional keyword arguments forwarded to the selected scheme.
 
         :returns: None.
         """
+        # Handle tuple format: ('scheme_name', {param: value, ...})
+        if isinstance(scheme, tuple):
+            params = scheme[1] if len(scheme) > 1 else {}
+            kwargs = {**params, **kwargs}
+            scheme = scheme[0]
+
         scheme = "random" if scheme is None else str(scheme).strip().lower()
+
+        # Strip the 'initialize_' prefix used by operators.py function names
+        # e.g. 'initialize_sobol' → 'sobol', 'initialize_grid' → 'vertex'
+        if scheme.startswith("initialize_"):
+            scheme = scheme[len("initialize_") :]
+            if scheme == "grid":
+                scheme = "vertex"
 
         if scheme == "vertex":
             self._positions = self._grid_matrix(self.num_dimensions, self.num_agents)
         elif scheme == "lhs":
             self._positions = self._lhs(self.num_dimensions, self.num_agents)
         elif scheme == "sobol":
-            self._positions = self._sobol(self.num_dimensions, self.num_agents)
+            self._positions = self._sobol(self.num_dimensions, self.num_agents, **kwargs)
         elif scheme == "halton":
-            self._positions = self._halton(self.num_dimensions, self.num_agents)
+            self._positions = self._halton(self.num_dimensions, self.num_agents, **kwargs)
         elif scheme == "beta":
-            self._positions = self._beta(self.num_dimensions, self.num_agents)
+            self._positions = self._beta(self.num_dimensions, self.num_agents, **kwargs)
         elif scheme == "normal":
-            self._positions = self._normal(self.num_dimensions, self.num_agents)
+            self._positions = self._normal(self.num_dimensions, self.num_agents, **kwargs)
         elif scheme == "lognormal":
-            self._positions = self._lognormal(self.num_dimensions, self.num_agents)
+            self._positions = self._lognormal(self.num_dimensions, self.num_agents, **kwargs)
         elif scheme == "exponential":
-            self._positions = self._exponential(self.num_dimensions, self.num_agents)
+            self._positions = self._exponential(self.num_dimensions, self.num_agents, **kwargs)
         elif scheme == "rayleigh":
-            self._positions = self._rayleigh(self.num_dimensions, self.num_agents)
+            self._positions = self._rayleigh(self.num_dimensions, self.num_agents, **kwargs)
         else:
             # Default to random if scheme is not recognized
             self._positions = np.random.uniform(-1, 1, (self.num_agents, self.num_dimensions))
@@ -349,7 +365,11 @@ class Population:
         total_vertices = 2**num_dimensions
 
         basic_matrix = (
-            2 * np.array([[int(x) for x in list(format(k, f"0{num_dimensions}b"))] for k in range(total_vertices)]) - 1
+            2
+            * np.array(
+                [[int(x) for x in list(format(k, f"0{num_dimensions}b"))] for k in range(total_vertices)], dtype=float
+            )
+            - 1
         )
 
         output_matrix = np.copy(basic_matrix)
@@ -389,7 +409,7 @@ class Population:
         return sample * 2 - 1
 
     @staticmethod
-    def _sobol(num_dimensions, num_agents):
+    def _sobol(num_dimensions, num_agents, scramble=True):
         """
         Initialise population using Sobol quasi-random sequences.
 
@@ -401,11 +421,12 @@ class Population:
 
         :param int num_dimensions: Number of dimensions
         :param int num_agents: Number of agents
+        :param bool scramble: optional. Whether to apply scrambling. Default is True.
         :returns: numpy.ndarray
         """
         m = int(np.ceil(np.log2(num_agents)))
 
-        sobol = Sobol(d=num_dimensions, scramble=True)
+        sobol = Sobol(d=num_dimensions, scramble=scramble)
 
         sample = sobol.random_base2(m)
 
@@ -414,7 +435,7 @@ class Population:
         return seq * 2 - 1
 
     @staticmethod
-    def _halton(num_dimensions, num_agents):
+    def _halton(num_dimensions, num_agents, scramble=True):
         """
         Initialise population using Halton quasi-random sequences.
 
@@ -423,9 +444,10 @@ class Population:
 
         :param int num_dimensions: Number of dimensions
         :param int num_agents: Number of agents
+        :param bool scramble: optional. Whether to apply scrambling. Default is True.
         :returns: numpy.ndarray
         """
-        halton = Halton(d=num_dimensions, scramble=True)
+        halton = Halton(d=num_dimensions, scramble=scramble)
 
         sample = halton.random(n=num_agents)
 
