@@ -55,6 +55,22 @@ class TestBasicUtilities:
 class TestJSONOperations:
     """Test JSON save/load operations."""
 
+    def test_save_numpy_statistics(self, tmp_path):
+        """Saved experiment statistics contain NumPy scalars as well as arrays."""
+        data = {
+            "encoded_solution": np.array([1, 2], dtype=np.int64),
+            "details": {
+                "statistics": {"nob": np.int64(3), "Avg": np.float32(1.5)},
+                "valid": np.bool_(True),
+            },
+        }
+        path = str(tmp_path / "statistics")
+        tl.save_json(data, path)
+        assert tl.read_json(path) == {
+            "encoded_solution": [1, 2],
+            "details": {"statistics": {"nob": 3, "Avg": 1.5}, "valid": True},
+        }
+
     def test_save_and_read_json(self):
         """Test saving and reading JSON files."""
         with tempfile.TemporaryDirectory() as tmpdir:
