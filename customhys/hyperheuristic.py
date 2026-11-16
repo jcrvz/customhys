@@ -145,7 +145,7 @@ class Hyperheuristic:
         self.current_space = np.arange(self.num_operators)
 
         # Read the weights (if it is entered)
-        self.weights = weights_array
+        self.weights = self._align_weights(weights_array)
         self.weight_matrix = None
         self.transition_matrix = None
 
@@ -171,6 +171,33 @@ class Hyperheuristic:
             raise HyperheuristicError(f"Invalid initial_scheme '{initial_scheme}'. Valid values: {valid}")
 
         return scheme
+
+    def _align_weights(self, weights):
+        """
+        Return ``weights`` as a vector with one entry per operator of the heuristic space.
+
+        Precomputed weights (e.g., ``operators_weights.json``) only cover the perturbation operators. If the heuristic
+        space also contains initialization operators, the weights are expanded with zeros at those positions, so the
+        initializers are never drawn into the body of a sequence by the weighted sampling (they are still chosen
+        for position 0 and by ``ChangeInitOperator``). Weights that do not match either size are rejected.
+        """
+        if weights is None:
+            return None
+
+        weights = np.asarray(weights, dtype=float)
+        if weights.ndim == 1 and weights.size == self.num_operators:
+            return weights
+
+        init_indices = [i for i, _ in self.initialization_operators]
+        if weights.ndim == 1 and init_indices and weights.size == self.num_operators - len(init_indices):
+            aligned = np.zeros(self.num_operators)
+            aligned[np.setdiff1d(np.arange(self.num_operators), init_indices)] = weights
+            return aligned
+
+        raise HyperheuristicError(
+            f"weights_array has shape {weights.shape}, but the heuristic space has {self.num_operators} operators"
+            + (f" ({self.num_operators - len(init_indices)} excluding initializers)" if init_indices else "")
+        )
 
     @property
     def initialization_operators(self):
