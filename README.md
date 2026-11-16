@@ -12,26 +12,12 @@ Detailed information about this framework can be found in [[1, 2]](#references).
 
 ### 🛠 Requirements:
 
-* Python 3.10 or later; the example notebooks are tested with Python 3.12.
-* Check [pyproject.toml](pyproject.toml) and [requirements.txt](requirements.txt) for dependencies.
-* TensorFlow is optional, only needed for machine-learning features (`pip install ".[ml]"`).
-
-## 📓 Example notebooks
-
-Start with the tutorial in [English](examples/Tutorial_English.ipynb),
-[Español](examples/Tutorial_Spanish.ipynb), or
-[Português (Brasil)](examples/Tutorial_Portuguese_BR.ipynb).
-For a short linear-system operator example, see [quickTest](examples/quickTest.ipynb).
-
-From the repository root, install and open the examples:
-
+* Check the [requirements.txt](requirements.txt) file.
+* For Apple Silicon, one may need to install TensorFlow via `conda`, such as:
 ```shell
-python -m pip install -e ".[examples]"
-python -m jupyterlab examples
+conda install -c apple tensorflow-deps
 ```
-
-Select the kernel for that environment and run all cells from a fresh kernel.
-See the [examples guide](examples/README.md) for execution, generated files and validation.
+Further information can be found at [Install TensorFlow on Mac M1/M2 with GPU support](https://medium.com/mlearning-ai/install-tensorflow-on-mac-m1-m2-with-gpu-support-c404c6cfb580) by D. Ganzaroli.
 
 ## 🧰 Modules
 
