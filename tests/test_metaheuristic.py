@@ -10,6 +10,35 @@ from customhys import benchmark_func as bf
 from customhys import metaheuristic as mh
 
 
+def test_rosenbrock_replay_keeps_positions_and_fitness_consistent():
+    """Regression for the tutorial sequence that returned f=0.014 at f(x)=7138."""
+
+    def rosenbrock(point):
+        x, y = point
+        return float((1 - x) ** 2 + 100 * (y - x**2) ** 2)
+
+    problem = {
+        "function": rosenbrock,
+        "boundaries": ([-2.0, -1.0], [2.0, 3.0]),
+        "is_constrained": True,
+    }
+    sequence = [
+        ("random_search", {"scale": 0.2, "distribution": "gaussian"}, "greedy"),
+        ("random_sample", {}, "greedy"),
+        ("local_random_walk", {"probability": 0.75, "scale": 0.1, "distribution": "gaussian"}, "greedy"),
+    ]
+    np.random.seed(43)
+    run = mh.Metaheuristic(problem, sequence, num_agents=32, num_iterations=80, initial_scheme="lhs")
+    run.run()
+    normalised, fitness = run.get_solution()
+    position = run.pop.rescale_back(normalised)
+    np.testing.assert_allclose(rosenbrock(position), fitness, atol=1e-10)
+    best_positions = run.pop.rescale_back(np.asarray(run.historical["position"]))
+    assert np.all(best_positions >= run.pop.lower_boundaries)
+    assert np.all(best_positions <= run.pop.upper_boundaries)
+    np.testing.assert_allclose([rosenbrock(point) for point in best_positions], run.historical["fitness"], atol=1e-10)
+
+
 class TestMetaheuristicCreation:
     """Test metaheuristic object creation."""
 
