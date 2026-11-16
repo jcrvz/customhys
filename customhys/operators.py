@@ -132,7 +132,7 @@ def central_force_dynamic(pop, gravity=0.001, alpha=0.01, beta=1.5, dt=1.0):
             delta_positions * np.tile(quotient.transpose(), (1, pop.num_dimensions)), 0
         )
 
-    pop.positions += 0.5 * acceleration * (dt**2)
+    pop.positions = pop.positions + 0.5 * acceleration * (dt**2)
 
 
 def differential_crossover(pop, crossover_rate=0.2, version="binomial"):
@@ -308,7 +308,7 @@ def firefly_dynamic(pop, alpha=1.0, beta=1.0, gamma=100.0, distribution="uniform
         )
 
     # Move fireflies according to their attractions
-    pop.positions += alpha * epsilon_value + beta * difference_positions
+    pop.positions = pop.positions + alpha * epsilon_value + beta * difference_positions
 
 
 def genetic_crossover(pop, pairing="rank", crossover="blend", mating_pool_factor=0.4):
@@ -539,8 +539,11 @@ def genetic_crossover(pop, pairing="rank", crossover="blend", mating_pool_factor
     else:
         raise OperatorsError("Invalid pairing method")
 
-    # Store offspring positions in the current population
-    pop.positions[offspring_indices, :] = np.copy(offsprings)
+    # Store offspring positions in the current population. Assign through the setter (not by indexing in place) so
+    # that the population records the pre-proposal state for the selection step.
+    new_positions = np.copy(pop.positions)
+    new_positions[offspring_indices, :] = offsprings
+    pop.positions = new_positions
 
 
 def genetic_mutation(pop, scale=1.0, elite_rate=0.1, mutation_rate=0.25, distribution="uniform"):
@@ -596,8 +599,10 @@ def genetic_mutation(pop, scale=1.0, elite_rate=0.1, mutation_rate=0.25, distrib
         else:
             raise OperatorsError("Invalid distribution!")
 
-        # Store mutants
-        pop.positions[flat_rows, flat_columns] += scale * mutants
+        # Store mutants (assign through the setter so the pre-proposal state is recorded)
+        new_positions = np.copy(pop.positions)
+        new_positions[flat_rows, flat_columns] += scale * mutants
+        pop.positions = new_positions
 
 
 def gravitational_search(pop, gravity=1.0, alpha=0.02):
@@ -647,7 +652,7 @@ def gravitational_search(pop, gravity=1.0, alpha=0.02):
     pop.velocities = acceleration + np.random.rand(pop.num_agents, pop.num_dimensions) * pop.velocities
 
     # Update positions
-    pop.positions += pop.velocities
+    pop.positions = pop.positions + pop.velocities
 
 
 def random_flight(pop, scale=1.0, distribution="levy", beta=1.5):
@@ -683,7 +688,9 @@ def random_flight(pop, scale=1.0, distribution="levy", beta=1.5):
         raise OperatorsError("Invalid distribution!")
 
     # Move each agent using levy random displacements
-    pop.positions += scale * random_samples * (pop.positions - np.tile(pop.global_best_position, (pop.num_agents, 1)))
+    pop.positions = pop.positions + scale * random_samples * (
+        pop.positions - np.tile(pop.global_best_position, (pop.num_agents, 1))
+    )
 
 
 def local_random_walk(pop, probability=0.75, scale=1.0, distribution="uniform"):
@@ -714,7 +721,7 @@ def local_random_walk(pop, probability=0.75, scale=1.0, distribution="uniform"):
     r_2 = np.random.rand(pop.num_agents, pop.num_dimensions)
 
     # Move positions with a displacement due permutations and probabilities
-    pop.positions += (
+    pop.positions = pop.positions + (
         scale
         * r_1
         * (
@@ -762,7 +769,7 @@ def random_search(pop, scale=0.01, distribution="uniform"):
         raise OperatorsError("Invalid distribution!")
 
     # Move each agent using uniform random displacements
-    pop.positions += scale * random_step
+    pop.positions = pop.positions + scale * random_step
 
 
 def spiral_dynamic(pop, radius=0.9, angle=22.5, sigma=0.1):
@@ -784,12 +791,16 @@ def spiral_dynamic(pop, radius=0.9, angle=22.5, sigma=0.1):
     # Determine the rotation matrix
     rotation_matrix = get_rotation_matrix(pop.num_dimensions, np.deg2rad(angle))
 
+    new_positions = np.copy(pop.positions)
     for agent in range(pop.num_agents):
         random_radii = np.random.uniform(radius - sigma, radius + sigma, pop.num_dimensions)
         # If random radii need to be constrained to [0, 1]:
-        pop.positions[agent, :] = pop.global_best_position + random_radii * np.matmul(
+        new_positions[agent, :] = pop.global_best_position + random_radii * np.matmul(
             rotation_matrix, (pop.positions[agent, :] - pop.global_best_position)
         )
+
+    # Assign once through the setter so the population records the pre-proposal state
+    pop.positions = new_positions
 
 
 def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56, version="constriction", distribution="uniform"):
@@ -851,7 +862,7 @@ def swarm_dynamic(pop, factor=1.0, self_conf=2.54, swarm_conf=2.56, version="con
         raise OperatorsError("Invalid swarm_dynamic version")
 
     # Move each agent using velocity's information
-    pop.positions += pop.velocities
+    pop.positions = pop.positions + pop.velocities
 
 
 def linear_system(pop, matrix=None, dt=0.1, offset="globalbest", noise=0.0):
@@ -915,11 +926,14 @@ def linear_system(pop, matrix=None, dt=0.1, offset="globalbest", noise=0.0):
     # Euler: X_{t+1} = X_t + dt * ( X_t @ A_i + c_i )
     # X @ A_i -> (num_agents,num_dimensions) via batched matmul
     drift = np.einsum("ad,adj->aj", pop.positions, A_all) + c_all
-    pop.positions = pop.positions + dt * drift
+    proposed_positions = pop.positions + dt * drift
 
     # Optional additive noise, per agent & dimension ---
     if noise != 0.0:
-        pop.positions += np.random.normal(scale=noise, size=(num_agents, num_dimensions))
+        proposed_positions += np.random.normal(scale=noise, size=(num_agents, num_dimensions))
+
+    # Assign once so the population retains the state before this proposal.
+    pop.positions = proposed_positions
 
 
 # %% INTERNAL METHODS

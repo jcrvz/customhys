@@ -11,6 +11,53 @@ from customhys import operators as op
 from customhys import population as pp
 
 
+@pytest.mark.parametrize(
+    "operator, kwargs",
+    [
+        ("central_force_dynamic", {}),
+        ("firefly_dynamic", {}),
+        ("gravitational_search", {}),
+        ("random_flight", {}),
+        ("local_random_walk", {}),
+        ("random_search", {}),
+        ("swarm_dynamic", {}),
+        ("spiral_dynamic", {}),
+        ("genetic_mutation", {}),
+        ("genetic_crossover", {}),
+        ("linear_system", {"matrix": np.eye(2) * 0.8, "offset": "particularbest", "noise": 0.01}),
+    ],
+)
+def test_rejected_operator_restores_positions_and_fitness(operator, kwargs):
+    """Rejecting a proposal must restore the coordinates evaluated previously."""
+    np.random.seed(42)
+    problem = bf.Rastrigin(2)
+    pop = pp.Population(problem.get_search_range(), num_agents=8)
+    pop.initialise_positions("random")
+    pop.evaluate_fitness(problem.get_function_value)
+    pop.update_positions("population", "all")
+    pop.update_positions("particular", "all")
+    pop.update_positions("global", "greedy")
+
+    # Accept one move first, so stale "previous" registers (from before this move) differ from the current state
+    op.random_search(pop, scale=0.2)
+    pop.evaluate_fitness(problem.get_function_value)
+    pop.update_positions("population", "all")
+    pop.update_positions("global", "greedy")
+    original_positions = pop.positions.copy()
+    original_fitness = pop.fitness.copy()
+
+    getattr(op, operator)(pop, **kwargs)
+    pop.evaluate_fitness(problem.get_function_value)
+    pop.update_positions("population", "none")
+
+    np.testing.assert_array_equal(pop.positions, original_positions)
+    np.testing.assert_array_equal(pop.fitness, original_fitness)
+    np.testing.assert_allclose(
+        [problem.get_function_value(position) for position in pop.get_positions()],
+        pop.fitness,
+    )
+
+
 class TestOperatorsAvailability:
     """Test operators module structure."""
 
